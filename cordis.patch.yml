@@ -1,0 +1,4 @@
+# DSH 插件装载补丁：把本包插进宿主 cordis 配置
+- insert:
+    - id: novel-studio
+      name: dsh-novel-studio

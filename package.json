@@ -1,0 +1,50 @@
+{
+  "name": "dsh-novel-studio",
+  "version": "0.2.0",
+  "description": "小说工坊 DSH 插件版：把作品库接进 DSH，由 DSH Agent 代替恍然梦做建议、审稿与编辑。",
+  "icon": "./src/client/assets/plugin-icon.png",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./client": "./lib/client.js",
+    "./core": "./src/core/library.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "lib",
+    "assets",
+    "skills",
+    "docs",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "~4.0.5",
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.5",
+    "@deepseek-ai/schemastery": "~3.18.5"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-connection",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-session",
+        "@deepseek-ai/dsh-client-ui-sidebar",
+        "@deepseek-ai/dsh-client-ui-sidebar-right",
+        "@deepseek-ai/dsh-client-ui-workspace"
+      ]
+    }
+  },
+  "scripts": {
+    "smoke": "node scripts/smoke.mjs",
+    "copy-app": "node scripts/copy-app.mjs"
+  },
+  "license": "MIT",
+  "private": true
+}
