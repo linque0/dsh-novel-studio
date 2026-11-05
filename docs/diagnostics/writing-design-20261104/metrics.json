@@ -1,0 +1,250 @@
+[
+  {
+    "kind": "reference",
+    "width": 695,
+    "file": "reference-695.png",
+    "data": [
+      {
+        "selector": ".ed-head",
+        "x": 248,
+        "y": 62,
+        "width": 347,
+        "height": 103.796875,
+        "padding": "0px 0px 12px",
+        "font": "Inter, \"Noto Sans SC\", \"Microsoft YaHei\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "lineHeight": "normal",
+        "background": "none"
+      },
+      {
+        "selector": ".editor-toolbar",
+        "x": 248,
+        "y": 165.796875,
+        "width": 347,
+        "height": 34,
+        "padding": "0px 8px",
+        "font": "Inter, \"Noto Sans SC\", \"Microsoft YaHei\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "lineHeight": "normal",
+        "background": "none"
+      },
+      {
+        "selector": ".paper",
+        "x": 248,
+        "y": 209.796875,
+        "width": 347,
+        "height": 662.203125,
+        "padding": "40px 36px",
+        "font": "Inter, \"Noto Sans SC\", \"Microsoft YaHei\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "lineHeight": "normal",
+        "background": "linear-gradient(150deg, rgba(24, 27, 33, 0.55), rgba(12, 14, 18, 0.72))"
+      },
+      {
+        "selector": ".tiptap",
+        "x": 284,
+        "y": 249.796875,
+        "width": 265,
+        "height": 5016.375,
+        "padding": "0px",
+        "font": "\"Noto Serif SC\", \"Source Han Serif SC\", \"Songti SC\", SimSun, serif",
+        "fontSize": "17.5px",
+        "lineHeight": "34.125px",
+        "background": "none"
+      }
+    ],
+    "clip": {
+      "x": 246,
+      "y": 56,
+      "width": 351,
+      "height": 844,
+      "scale": 1
+    }
+  },
+  {
+    "kind": "plugin",
+    "width": 695,
+    "file": "plugin-695.png",
+    "data": [
+      {
+        "selector": ".editor-head",
+        "x": 24,
+        "y": 78,
+        "width": 647,
+        "height": 107.984375,
+        "padding": "0px 0px 12px",
+        "font": "Inter, \"Noto Sans SC\", \"Microsoft YaHei\", system-ui, sans-serif",
+        "fontSize": "14px",
+        "lineHeight": "22.4px",
+        "background": "none"
+      },
+      {
+        "selector": ".editor-toolbar",
+        "x": 24,
+        "y": 185.984375,
+        "width": 647,
+        "height": 34,
+        "padding": "0px 8px",
+        "font": "Inter, \"Noto Sans SC\", \"Microsoft YaHei\", system-ui, sans-serif",
+        "fontSize": "14px",
+        "lineHeight": "22.4px",
+        "background": "none"
+      },
+      {
+        "selector": ".rich-host",
+        "x": 24,
+        "y": 229.984375,
+        "width": 647,
+        "height": 602.015625,
+        "padding": "56px 64px",
+        "font": "Inter, \"Noto Sans SC\", \"Microsoft YaHei\", system-ui, sans-serif",
+        "fontSize": "14px",
+        "lineHeight": "22.4px",
+        "background": "linear-gradient(150deg, rgba(24, 27, 33, 0.55), rgba(12, 14, 18, 0.72))"
+      },
+      {
+        "selector": ".tiptap",
+        "x": 88,
+        "y": 285.984375,
+        "width": 511,
+        "height": 2934.75,
+        "padding": "0px",
+        "font": "\"Noto Serif SC\", \"Source Han Serif SC\", \"Songti SC\", SimSun, serif",
+        "fontSize": "17.5px",
+        "lineHeight": "34.125px",
+        "background": "none"
+      }
+    ],
+    "clip": {
+      "x": 22,
+      "y": 72,
+      "width": 651,
+      "height": 828,
+      "scale": 1
+    }
+  },
+  {
+    "kind": "reference",
+    "width": 1280,
+    "file": "reference-1280.png",
+    "data": [
+      {
+        "selector": ".ed-head",
+        "x": 338,
+        "y": 74,
+        "width": 576,
+        "height": 103.796875,
+        "padding": "0px 0px 12px",
+        "font": "Inter, \"Noto Sans SC\", \"Microsoft YaHei\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "lineHeight": "normal",
+        "background": "none"
+      },
+      {
+        "selector": ".editor-toolbar",
+        "x": 338,
+        "y": 177.796875,
+        "width": 576,
+        "height": 34,
+        "padding": "0px 8px",
+        "font": "Inter, \"Noto Sans SC\", \"Microsoft YaHei\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "lineHeight": "normal",
+        "background": "none"
+      },
+      {
+        "selector": ".paper",
+        "x": 338,
+        "y": 221.796875,
+        "width": 576,
+        "height": 650.203125,
+        "padding": "56px 64px",
+        "font": "Inter, \"Noto Sans SC\", \"Microsoft YaHei\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "lineHeight": "normal",
+        "background": "linear-gradient(150deg, rgba(24, 27, 33, 0.55), rgba(12, 14, 18, 0.72))"
+      },
+      {
+        "selector": ".tiptap",
+        "x": 402,
+        "y": 277.796875,
+        "width": 438,
+        "height": 3276,
+        "padding": "0px",
+        "font": "\"Noto Serif SC\", \"Source Han Serif SC\", \"Songti SC\", SimSun, serif",
+        "fontSize": "17.5px",
+        "lineHeight": "34.125px",
+        "background": "none"
+      }
+    ],
+    "clip": {
+      "x": 336,
+      "y": 68,
+      "width": 580,
+      "height": 832,
+      "scale": 1
+    }
+  },
+  {
+    "kind": "plugin",
+    "width": 1280,
+    "file": "plugin-1280.png",
+    "data": [
+      {
+        "selector": ".editor-head",
+        "x": 241,
+        "y": 90,
+        "width": 770,
+        "height": 107.984375,
+        "padding": "0px 0px 12px",
+        "font": "Inter, \"Noto Sans SC\", \"Microsoft YaHei\", system-ui, sans-serif",
+        "fontSize": "14px",
+        "lineHeight": "22.4px",
+        "background": "none"
+      },
+      {
+        "selector": ".editor-toolbar",
+        "x": 241,
+        "y": 197.984375,
+        "width": 770,
+        "height": 34,
+        "padding": "0px 8px",
+        "font": "Inter, \"Noto Sans SC\", \"Microsoft YaHei\", system-ui, sans-serif",
+        "fontSize": "14px",
+        "lineHeight": "22.4px",
+        "background": "none"
+      },
+      {
+        "selector": ".rich-host",
+        "x": 241,
+        "y": 241.984375,
+        "width": 770,
+        "height": 590.015625,
+        "padding": "56px 64px",
+        "font": "Inter, \"Noto Sans SC\", \"Microsoft YaHei\", system-ui, sans-serif",
+        "fontSize": "14px",
+        "lineHeight": "22.4px",
+        "background": "linear-gradient(150deg, rgba(24, 27, 33, 0.55), rgba(12, 14, 18, 0.72))"
+      },
+      {
+        "selector": ".tiptap",
+        "x": 305,
+        "y": 297.984375,
+        "width": 634,
+        "height": 2388.75,
+        "padding": "0px",
+        "font": "\"Noto Serif SC\", \"Source Han Serif SC\", \"Songti SC\", SimSun, serif",
+        "fontSize": "17.5px",
+        "lineHeight": "34.125px",
+        "background": "none"
+      }
+    ],
+    "clip": {
+      "x": 239,
+      "y": 84,
+      "width": 774,
+      "height": 816,
+      "scale": 1
+    }
+  }
+]

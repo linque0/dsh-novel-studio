@@ -1,0 +1,345 @@
+/* 语言令牌 + 胶囊外壳（T2）。
+ *
+ * 为什么单开一份：dsh.css 按页面分区、已经三千行，而「玻璃面 / 分隔线 / 三级墨色 / 字体词表 /
+ * 胶囊半径 / 顶栏高度」是全站共用的东西。先在这里定死，后面的页面直接引用，
+ * 不会再有第二套近似 rgba 与第三种圆角。
+ * 根选择器带 html，是为了压过 dsh.css 里 body[data-skin='dsh'] .original-shelf .app-topbar
+ * 那类 (0,3,1) 的组合；本文件在 index.js 里排在 dsh.css 之后，同权重时也是后写为胜。 */
+
+/* ---- 令牌：浅色为默认（宿主没给 data-ns-dark 时走这一段）---- */
+html body[data-skin='dsh'] {
+  /* 三级玻璃：数字越大越薄。浅色底不需要那么厚的白，所以比暗色整体低一档。 */
+  --nsx-glass-1: color-mix(in srgb, var(--ns-layer-1, #fafafa) 66%, transparent);
+  --nsx-glass-2: color-mix(in srgb, var(--ns-layer-1, #fafafa) 46%, transparent);
+  --nsx-glass-3: color-mix(in srgb, var(--ns-layer-1, #fafafa) 26%, transparent);
+  --nsx-line: var(--ns-border-2, rgba(15, 17, 21, 0.10));
+  --nsx-ink-1: var(--ns-label-1, #0f1115);
+  --nsx-ink-2: var(--ns-label-2, #61666b);
+  --nsx-ink-3: var(--ns-caption, #81858c);
+  /* 浅色要看清玻璃后面的东西，模糊半径反而可以小一点。 */
+  --nsx-blur: 18px;
+  --nsx-pill: 999px;
+  --nsx-radius-lg: 16px;
+  --nsx-serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", serif;
+  --nsx-sans: -apple-system, "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  --nsx-shadow-1: 0 1px 2px rgba(15, 17, 21, 0.06), 0 6px 18px rgba(15, 17, 21, 0.08);
+  --nsx-shadow-2: 0 12px 36px rgba(15, 17, 21, 0.16), 0 2px 6px rgba(15, 17, 21, 0.08);
+  --nsx-topbar-h: 64px;
+  /* 顶栏是浮起来的胶囊（上下各留 8px），正文页抽屉与遮罩的 top 吃这个高度才不会钻进胶囊里。 */
+  --ns-topbar-h: calc(var(--nsx-topbar-h) + 16px);
+}
+
+/* ---- 令牌：暗色分支 ---- */
+html[data-ns-dark] body[data-skin='dsh'] {
+  --nsx-glass-1: color-mix(in srgb, var(--ns-layer-1, #232324) 88%, transparent);
+  --nsx-glass-2: color-mix(in srgb, var(--ns-layer-1, #232324) 70%, transparent);
+  --nsx-glass-3: color-mix(in srgb, var(--ns-layer-1, #232324) 50%, transparent);
+  --nsx-line: var(--ns-border-2, rgba(255, 255, 255, 0.12));
+  --nsx-ink-1: var(--ns-label-1, #f9fafb);
+  --nsx-ink-2: var(--ns-label-2, #cfd3d6);
+  --nsx-ink-3: var(--ns-caption, #81858c);
+  --nsx-blur: 24px;
+  --nsx-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.36), 0 10px 28px rgba(0, 0, 0, 0.44);
+  --nsx-shadow-2: 0 18px 48px rgba(0, 0, 0, 0.56), 0 2px 8px rgba(0, 0, 0, 0.40);
+}
+
+/* 顶栏三档高度与书架卡宽同步（64 / 52 / 44）：只收高度，内容不降级。 */
+@media (max-width: 899px) {
+  html body[data-skin='dsh'] { --nsx-topbar-h: 52px; }
+}
+@media (max-width: 559px) {
+  html body[data-skin='dsh'] { --nsx-topbar-h: 44px; }
+}
+
+/* ---- 外壳：把 AutoHideTopbar 自带的底板擦掉，胶囊才浮在页面背景上 ---- */
+html body[data-skin='dsh'] .app-topbar-shell .wb-topbar-content {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* ---- 胶囊顶栏：左右与上下各留 8px，不贴任何一条边 ---- */
+html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) {
+  box-sizing: border-box;
+  height: var(--nsx-topbar-h);
+  margin: 8px;
+  padding: 0 8px 0 14px;
+  gap: 12px;
+  border: 1px solid var(--nsx-line);
+  border-radius: var(--nsx-pill);
+  background: var(--nsx-glass-1);
+  -webkit-backdrop-filter: blur(var(--nsx-blur)) saturate(1.6);
+  backdrop-filter: blur(var(--nsx-blur)) saturate(1.6);
+  box-shadow: var(--nsx-shadow-1);
+  color: var(--nsx-ink-1);
+  transition: background-color 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease;
+}
+
+/* 品牌字走衬线：整屏只有书名与这一处唱同一条嗓子，--nsx-serif 也只在这里落地。 */
+html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-brand-text {
+  font-family: var(--nsx-serif);
+}
+
+/* 导航收成中间一枚玻璃胶囊：不再撑满整条，两侧留白由 auto margin 平分。 */
+html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) .app-topnav {
+  flex: 0 1 auto;
+  margin-inline: auto;
+  justify-content: center;
+  gap: 2px;
+  height: auto;
+  min-width: 0;
+  max-width: 100%;
+  padding: 4px;
+  border-radius: var(--nsx-pill);
+  background: var(--nsx-glass-2);
+  /* 窄栏放不下时横向滚动，滚动条本身不要出现在胶囊里。 */
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) .app-topnav::-webkit-scrollbar {
+  display: none;
+}
+
+html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) .app-topnav-item {
+  height: 30px;
+  /* 不许被压扁：收缩会把「书架」挤成一条白缝，字直接看不见了。 */
+  flex: none;
+  padding: 8px 16px;
+  border-radius: var(--nsx-pill);
+  color: var(--nsx-ink-2);
+  font: 500 13px/1 var(--nsx-sans);
+  letter-spacing: 0;
+  transition: color 0.18s ease, background-color 0.18s ease;
+}
+html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) .app-topnav-item:is(:hover, .active) {
+  background: var(--nsx-glass-3);
+  color: var(--nsx-ink-1);
+}
+/* 当前页做成反色实心胶囊：一屏里只有一个强调块，其余靠位置和墨色分级。 */
+html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) .app-topnav-item.active {
+  background: var(--nsx-ink-1);
+  color: #ffffff;
+}
+html[data-ns-dark] body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) .app-topnav-item.active {
+  background: #ffffff;
+  color: #17181c;
+}
+
+/* ---- 560–899：七项胶囊放不进 374px，第 7 项「设置」被裁在字形中间 ----
+ * 实测（760 宽）：items 共 7×58 + 6×2 间距 + 8 内边距 = 418px 内容塞进 374px 容器，
+ * 居中 justify 把溢出平摊到两端，首末两项各剩 36/58 可见（settings right=439 > 容器 right=417）。
+ * 收掉「设置」后 6 项 = 366px ≤ 374px，首末项都完整；「设置」仍在顶栏 ⋯ 的「模块」分区
+ * （AppTopbar 的 children=APP_NAVIGATION），入口不丢。右缘渐隐只是项数/长名的兜底。
+ * 只此一档：≥900 放得下、<560 走另一套顶栏，两档外观不变。 */
+/* 宽度分档：先收紧内边距与字号，再由 AppTopbar 按实测宽度收掉放不下的项（data-fit），
+ * 最后才用两缘渐隐提示"还有更多在 ⋯ 里"。三档都动，是因为 560–660 这一段连六项都放不下。 */
+@media (max-width: 899px) {
+  html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) .app-topnav-item {
+    padding: 8px 11px;
+    font-size: 12.5px;
+  }
+}
+@media (min-width: 900px) and (max-width: 1140px) {
+  html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) .app-topnav-item {
+    padding: 8px 12px;
+  }
+}
+/* 放不下时横向滚动：滚轮翻页、停留在整项上，两侧渐隐只提示"哪边还有内容"。
+ * 溢出时必须改成 flex-start：居中排布的内容溢出会往两侧平摊，起始项被推到滚动原点之外，
+ * 滚到 sl=0 也拉不回来（实测 640 宽时「书架」永远差半个字）。 */
+html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) .app-topnav {
+  scroll-behavior: smooth;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+}
+html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) .app-topnav[data-ovf] {
+  justify-content: flex-start;
+}
+html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) .app-topnav-item {
+  scroll-snap-align: center;
+}
+html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) .app-topnav[data-ovf='end'] {
+  -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 14px), transparent 100%);
+  mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 14px), transparent 100%);
+}
+html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) .app-topnav[data-ovf='start'] {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 100%);
+}
+html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) .app-topnav[data-ovf='both'] {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+}
+
+/* ---- 顶栏搜索槽：三档宽度（260 / 200 / 隐藏），<560 整条搜索让位给模块内入口 ---- */
+html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) [data-topbar-search] {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 260px;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--nsx-line);
+  border-radius: var(--nsx-pill);
+  background: var(--nsx-glass-3);
+  color: var(--nsx-ink-2);
+  font: 400 13px/1 var(--nsx-sans);
+}
+html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) [data-topbar-search] :is(input, .n-input) {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--nsx-ink-1);
+  font: inherit;
+  outline: none;
+}
+@media (max-width: 899px) {
+  html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) [data-topbar-search] { width: 200px; }
+}
+@media (max-width: 559px) {
+  html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) [data-topbar-search] { display: none; }
+}
+
+/* ---- 圆钮：只给纯图标按钮；＋新书上架带文字，符号由 ::before 补，按钮本身仍是 42 圆 ---- */
+@media (min-width: 560px) {
+  /* 2026-11：宽档（≥560）不再保留 ⋯ —— 它的「模块」区与导航胶囊同源、「动作」区就是右簇那些按钮，
+     属于纯重复入口。窄档（≤559）的 ⋯ 由 dsh.css 的 559 媒体块单独打开，不在这里。 */
+  html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) :is(.app-topbar-more, .app-topbar-create, .app-topbar-actions > button) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border: 1px solid var(--nsx-line);
+    border-radius: 50%;
+    background: var(--nsx-glass-2);
+    color: var(--nsx-ink-2);
+    font: 400 17px/1 var(--nsx-sans);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
+  }
+  html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) :is(.app-topbar-more, .app-topbar-create, .app-topbar-actions > button):is(:hover, :focus-visible) {
+    background: var(--nsx-glass-1);
+    border-color: var(--nsx-ink-3);
+    color: var(--nsx-ink-1);
+  }
+  /* 文字按钮转图标圆钮：字号归零藏字，::before 补符号，可读名留在 aria-label 上。 */
+  html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-create {
+    font-size: 0;
+  }
+  html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-create::before {
+    content: '＋';
+    font-size: 18px;
+    line-height: 1;
+  }
+  html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) :is(.app-topbar-more, .app-topbar-create):disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+/* ---- 顶栏右簇分档收窄（T10）----
+ * 缺陷成因：下面的圆钮规则把 .app-topbar-actions > button 压成 42px 定宽，按钮里的
+ * 「搜索」「更多」文字却没有归零，17px 的字溢出圆钮，1280 下先压住保存态、再把末字裁到顶栏外。
+ * 收窄的职责因此交给容器（min-width:0 / nowrap / overflow:hidden）：容器可以在自己盒子里裁尾巴，
+ * 不会再让定宽兄弟互相挤压。 */
+@media (min-width: 560px) {
+  html body[data-skin='dsh'] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-actions {
+    flex: 0 1 auto;
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+  /* 保存态与 ⋯ 在 dsh 顶栏里是 .app-topbar 的直接子项，这一层只声明同一份收窄契约。 */
+  html body[data-skin='dsh'] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) :is(.app-topbar-save, .app-topbar-more-wrap) {
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+  /* 「搜索」「更多」在 ⋯ 的「动作」分区里都有等价项（Workbench narrowActions），
+     dsh 顶栏不再为它们留宽；⋯ 在所有宽度都可见，入口一个没丢。 */
+  html body[data-skin='dsh'] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-actions > button {
+    display: none;
+  }
+}
+
+/* ≥900：宽屏放得下，保存态保留文字——作者读「已保存 12:03」比读一个点快。 */
+@media (min-width: 900px) {
+  html body[data-skin='dsh'] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-actions .save-badge {
+    display: inline-flex;
+  }
+}
+/* 560–899：保存态只留圆点。字号归零即可，颜色与呼吸仍在 .save-dot 自己身上。 */
+@media (min-width: 560px) and (max-width: 899px) {
+  html body[data-skin='dsh'] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-actions .save-badge {
+    display: inline-flex;
+    font-size: 0;
+    gap: 0;
+  }
+}
+
+/* ---- 自动隐藏开关：从浮在内容上的一枚胶囊改成顶栏内右端的一枚圆钮 ----
+ * 绝对定位的钮不参与 flex，所以右簇的避让靠顶栏自己的内边距让位（56px = 8 边距 + 10 空隙 + 28 钮 + 10），
+ * 这样两者永不重叠，钮也永远落在顶栏矩形内。 */
+@media (min-width: 560px) {
+  html body[data-skin='dsh'] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) {
+    padding-right: 56px;
+  }
+  html body[data-skin='dsh'] .app-topbar-shell .wb-topbar-pin {
+    top: calc(8px + var(--nsx-topbar-h, 64px) / 2);
+    right: 18px;
+    bottom: auto;
+    left: auto;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    gap: 0;
+    border: 0.5px solid var(--nsx-line);
+    border-radius: var(--nsx-pill);
+    background: transparent;
+    color: var(--nsx-ink-3);
+    font-size: 0;
+    line-height: 1;
+  }
+  /* 文字归零只藏字：可读名留在 aria-label 上，符号单独给字号。 */
+  html body[data-skin='dsh'] .app-topbar-shell .wb-topbar-pin > span {
+    font-size: 13px;
+    line-height: 1;
+  }
+  /* 状态看得见：自动隐藏开着（aria-pressed）是实心态，固定住时退回描边态。 */
+  html body[data-skin='dsh'] .app-topbar-shell .wb-topbar-pin[aria-pressed='true'],
+  html body[data-skin='dsh'] .app-topbar-shell .wb-topbar-pin:hover {
+    background: var(--nsx-glass-2);
+    border-color: var(--nsx-ink-3);
+    color: var(--nsx-ink-1);
+  }
+}
+/* ---- 弹层：与顶栏同一套玻璃，modal / card / popover / 菜单 / dialog 共用一份 ---- */
+html body[data-skin='dsh'] :is(.n-modal, .n-card, .n-popover, .n-dropdown-menu, .n-dialog) {
+  background-color: var(--nsx-glass-1);
+  -webkit-backdrop-filter: blur(var(--nsx-blur)) saturate(1.4);
+  backdrop-filter: blur(var(--nsx-blur)) saturate(1.4);
+  border: 1px solid var(--nsx-line);
+  border-radius: var(--nsx-radius-lg);
+  box-shadow: var(--nsx-shadow-2);
+  color: var(--nsx-ink-1);
+}
+
+/* ---- 减动效：模糊与过渡一起关掉，reduced-motion 下不再由 GPU blur 撑动效 ---- */
+@media (prefers-reduced-motion: reduce) {
+  html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    transition: none;
+  }
+  html body[data-skin='dsh'] :is(.app-topnav-item, .app-topbar-more, .app-topbar-create, .n-modal, .n-card, .n-popover, .n-dropdown-menu, .n-dialog) {
+    transition: none;
+    animation: none;
+  }
+}

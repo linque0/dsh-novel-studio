@@ -1,0 +1,83 @@
+{
+  "name": "纸本叙事工作台",
+  "version": 3,
+  "date": "2026-10-18",
+  "generatedWith": "built-in image_gen",
+  "originalSize": [
+    1536,
+    1024
+  ],
+  "webSize": [
+    900,
+    600
+  ],
+  "assets": [
+    {
+      "id": "event",
+      "type": "event card",
+      "png": "originals/event.png",
+      "webp": "event.webp"
+    },
+    {
+      "id": "note",
+      "type": "sticky note",
+      "png": "originals/note.png",
+      "webp": "note.webp"
+    },
+    {
+      "id": "cite",
+      "type": "quotation card",
+      "png": "originals/cite.png",
+      "webp": "cite.webp"
+    },
+    {
+      "id": "anchor",
+      "type": "chapter bookmark",
+      "png": "originals/anchor.png",
+      "webp": "anchor.webp"
+    },
+    {
+      "id": "volume",
+      "type": "volume index",
+      "png": "originals/volume.png",
+      "webp": "volume.webp"
+    },
+    {
+      "id": "event-diamond",
+      "type": "event diamond",
+      "png": "originals/event-diamond.png"
+    },
+    {
+      "id": "event-para",
+      "type": "event para",
+      "png": "originals/event-para.png"
+    },
+    {
+      "id": "event-ellipse",
+      "type": "event ellipse",
+      "png": "originals/event-ellipse.png"
+    }
+  ],
+  "vectors": [
+    "connector-specimen.svg"
+  ],
+  "note": "事件四种形状使用匹配纸面与前端矢量轮廓；文字和连线实时绘制；容器可换色，文本框透明。",
+  "eventShapes": {
+    "process": {
+      "image": "event.webp",
+      "material": "冷白棉纸"
+    },
+    "diamond": {
+      "image": "originals/event-diamond.png",
+      "material": "象牙压纹纸"
+    },
+    "para": {
+      "image": "originals/event-para.png",
+      "material": "灰蓝纤维纸"
+    },
+    "ellipse": {
+      "image": "originals/event-ellipse.png",
+      "material": "浅青柔纹纸"
+    }
+  }
+}

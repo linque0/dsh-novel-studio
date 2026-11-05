@@ -1,6 +1,6 @@
 {
   "name": "dsh-novel-studio",
-  "version": "0.2.0",
+  "version": "0.2.7",
   "description": "小说工坊 DSH 插件版：把作品库接进 DSH，由 DSH Agent 代替恍然梦做建议、审稿与编辑。",
   "icon": "./src/client/assets/plugin-icon.png",
   "type": "module",
@@ -42,8 +42,15 @@
     }
   },
   "scripts": {
+    "build:app": "node app/node_modules/vite/bin/vite.js build --config app/vite.config.mjs",
+    "link:app-deps": "node scripts/link-app-deps.mjs",
+    "verify:app": "node scripts/verify-app.mjs",
     "smoke": "node scripts/smoke.mjs",
-    "copy-app": "node scripts/copy-app.mjs"
+    "copy-app": "node scripts/copy-app.mjs",
+    "copy-plugin-app": "node scripts/copy-plugin-app.mjs",
+    "contract": "node scripts/host-contract.mjs && node scripts/client-contract.mjs",
+    "preview": "node scripts/preview.mjs",
+    "import-desktop": "node scripts/import-from-desktop.mjs"
   },
   "license": "MIT",
   "private": true

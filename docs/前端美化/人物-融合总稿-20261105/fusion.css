@@ -1,0 +1,15 @@
+/* A's reading room and C's relationship theatre share one shell. */
+body[data-view=profile]{--left:248px;--right:304px}
+body[data-view=graph]{--left:220px;--right:332px}
+body[data-view=profile] .mini-network{height:65px;margin:0 0 13px}
+body[data-view=profile] .relation-row{min-height:50px;padding:6px 0}
+body[data-view=profile] .context-section+.context-section{margin-top:23px;padding-top:20px}
+.module-head .segmented{position:relative}
+.module-head .segmented button{font-size:12px;padding:6px 12px}
+.inspector-label .inspector-heading{display:flex;align-items:center;gap:7px;min-width:0}
+.inspector-label .inspector-heading>span{max-width:125px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+.context-pane .compact-dossier .prose{font-size:14px;line-height:1.95}
+.relation-view-link{width:100%}
+.mobile-context-back{display:none}
+@media(max-width:1099px){.mobile-context-back{display:inline-flex}.module-head .segmented button{font-size:12px}.context-pane .compact-dossier .prose{font-size:15px}}
+@media(max-width:559px){.module-head .segmented button{font-size:11px;padding:6px 12px}.module-head .head-actions{justify-content:flex-start}.context-pane .compact-dossier .prose{font-size:14px}}

@@ -12,16 +12,21 @@
       src/index.js          服务端入口：工具 / 静态路由 / RPC / 技能 / 稳定提示词
       src/core/library.js   作品库：索引 + 实体文件 + 日志 + CAS + 幂等 + 快照
       src/core/tools.js     只读工具定义（studio_works / studio_outline / studio_read）
-      src/adapters/dsh/     静态托管、RPC
+      src/core/format.js    净化 / 取纯文本 / 字数 / 相对时间（宿主无关纯函数，当前界面未使用）
+      src/core/view.js      视图模型：shelf / createWork / openWork / chapter（当前界面未使用）
+      src/adapters/dsh/     静态托管、RPC（shelf.list / work.create / work.open / chapter.get + 旧 8 个 action）
       src/client/iframe-shim.js   注入 iframe 的 window.native 替身
-      lib/client.js         客户端 bundle（手写 ModuleLoader 格式，只用 react）
-      assets/app/           小说工坊 dist 的拷贝（npm run copy-app 生成）
-      scripts/smoke.mjs     不依赖宿主的冒烟
+      lib/client.js         客户端 bundle（手写 ModuleLoader 格式，只用 react；面板 = 诊断条 + iframe）
+      app/                  前端工程源码（fork 自 novel-studio）+ 独立构建配置
+      assets/app/           npm run build:app 的产物（插件运行时挂载点）
+      scripts/smoke.mjs     不依赖宿主的冒烟（75 项）
 
 ## 常用命令
 
-    npm run copy-app       # 从 ../novel-studio/dist 复制构建产物
-    npm run smoke          # 核心库 / 静态托管 / RPC / 工具 冒烟（31 项）
+    npm run contract       # 宿主契约预检（挑剔假宿主跑 apply）+ 客户端契约（guide 卡片/正文座位）
+    npm run smoke          # 核心库 / 静态托管 / RPC / 视图模型 / 工具 冒烟（75 项）
+    npm run build:app      # 构建插件版前端 → assets/app（app/ 是 fork 出来的独立前端工程）
+    npm run copy-app       # 从 ../novel-studio/dist 复制构建产物（桌面版完整界面，旧路径）
     node scripts/install-local.mjs   # 挂进 DSH 桌面 profile（幂等，改前自动备份）
 
 安装脚本做三件事：在 C:\Users\<你>\dsh-plugins\dsh-novel-studio 建一个无空格的目录联接（指向本仓库）、
@@ -51,6 +56,8 @@
 
 **技能**：6 个（project / write / plan / memory / revise / review），渐进披露，project 为共享段。
 
+**界面**：正文页的章节栏可收起 —— 场景皮肤在目录页右上角、原版/赤月戏在面板底部「收起章节栏」，另有 `更多 → 收起目录栏`；收起后左缘留 22px 竖排细轨（「章节」），点一下即恢复，正文因此多出约 230px 宽。偏好写进 appconfig（`sidePanelOpen`），大纲模块沿用自有的 `outlineSideOpen` 不受影响；面板窗口（`inPanel`）与独立正文窗（`navigation-only`）不显示该控件。桌面版与插件版共用同一份前端代码，两边行为一致。
+
 ## 数据层进度
 
 - **M2（进行中）**：桌面版已具备作品库主进程通道（`electron/library-ipc.js`，7 个通道）与渲染层桥（`src/services/library.js`），核心实现与插件共用 `novel-studio/packages/novel-core/library.js`。
@@ -58,20 +65,133 @@
 - **M3 同步层（已接）**：桌面版 `src/services/library-sync.js` + 插件版 iframe 内的同一份前端代码，都会把 Dexie 变更批量提交到作品库、并轮询拉取库的增量回灌 Dexie。冲突以库为准并重放一次；队列有界（200 条）。
 - **仍未做**：桌面版首次全量迁移仍需作者显式触发（`window.__ns.library.migrateToLibrary()`）；插件版不需要（库就是它的权威源）。
 
-## 运行时探针
+## 导入软件版作品（两条路，殊途同归）
 
-面板顶部一行同时显示三个探针，任何一环断了都能直接看出来：
+1. **面板里点「导入软件版备份」**：桌面版 设置 → 数据与备份 → 导出备份，得到 JSON；插件面板选它即可（写入作品库并自动重载界面）。
+2. **命令行一次性拉取**（作者机器上跑，桌面版可开可关）：
 
-- **静态**：`GET /api/novelstudio/app/index.html` → 期望 200 + 「桥✓」（shim 已注入）
-- **健康**：`GET /api/novelstudio/health` → 期望 200，带路由数、版本、作品库状态
-- **RPC**：`POST /api/novelstudio/rpc {action:'plugin.info'}` → 期望 200
+       cd dsh-novel-studio
+       node scripts/import-from-desktop.mjs          # 启动/复用桌面版 → dump → 写入作品库
+       node scripts/import-from-desktop.mjs --keep   # 不关闭桌面版
 
-另配「复制诊断」按钮（一键复制三段探测结果，便于排查）。
+   脚本以 `--remote-debugging-port=9222` 连桌面版渲染进程，用 Dexie 直接 dump 全部表；
+   只迁 `SOURCE_TABLES` + `appconfig`/`aipresets`/`aipresetstate`，AI 记忆表（aikb/aidoc/aikbvec…）按设计**不迁**——它们是可重建读模型。
+   dump 副本留在 `dsh-novel-studio/.tmp/desktop-dump.json`。
 
-## 插件版内的 AI 入口
+## 本地复现台（不用重启 DSH 就能查 SPA 报错）
 
-`iframe-shim.js` 在宿主判定为 `dsh` 时会隐藏恍然梦对话面板（`.ai-panel.agent-panel`），
-右下角常驻徽标「AI 由 DSH 会话承担」。M5 会换成正式开关；当前做法是可逆的最小措施。
+    node scripts/preview.mjs            # 起静态+RPC → Electron 隐窗口加载 9s → 打印控制台/页面状态 → 截图
+    node scripts/preview.mjs --serve    # 只起服务，浏览器手动看（端口 NS_PORT，默认 18688）
+
+会写 `.tmp/preview.png`（截图）与 `.tmp/preview.log`（控制台）。定位 iframe 空白页时首选这个。
+原生面板的离线预览台是 `npm run preview:panel`（八张截图 + 断言，不依赖 DSH 宿主）。
+
+## 界面（唯一外观：隐现）
+
+面板 = 顶部诊断条 + 备份导入 + **整块 iframe**（`/api/novelstudio/app/index.html`）。所有模块都在：
+书架 / 正文 / 大纲 / 设定 / 人物 / 灵感 / 设置 / 图谱 / 统计 / 回收站 / 导入导出。
+
+插件版只有**一套外观**：设计稿「书架 · 流动封面（隐现）」（`docs/前端美化/书架-流动封面-20261103/`，
+代码落点见同目录 `接入说明.md`）。original / gravity / glaze / crimson 四套桌面皮肤已从插件版项目中移除
+（组件、样式、45.7 MB 素材、`three` 依赖），`body[data-skin]` 恒为 `dsh`，设置窗口不再有皮肤与主题入口。
+
+- 书架：满屏流动底（网格渐变 + 有序抖动，WebGL2 双通道 + CPU 兜底）+ 玻璃封面流转图 + 聚焦书名 + 底部 dock；
+  换书首尾环绕（末本再往后回到第一本）；卡片封面在挂载/切回书架时按 ref 绑定即补画，不会出现空封面。
+  顶栏是浮起的胶囊导航，点其它项＝打开当前聚焦作品的对应模块，无作品时禁用。
+- **入口只有一处**：右侧栏「开始」页卡片栏里的「小说工坊」（图标 + 标题 + 一行说明，`guide.order = 15`，点开即加载整块界面）。
+  左栏底部那枚「工坊」按钮与它重复，已下线。宿主只渲染定义里带 `guide` 的 tab 类型，
+  这条契约（以及"左栏不再注册重复入口"）由 `npm run contract` 里的客户端预检守着。
+- 顶栏自适应：560–899 收紧内边距与字号、≥900 恢复常态；仍放不下时导航不折叠，而是**横向可滚动**——
+  鼠标滚轮直接翻出其余入口（轮询换算成水平滚动），溢出侧渐隐提示，溢出时容器改 flex-start 保证首项不被推到滚动原点之外。
+  ⋯ 的「模块」分区始终列出全部入口，两条路都能到。
+- 语言令牌：`app/plugin/dsh/language.css` 的 `--nsx-*`（玻璃三级 / 描边 / 文字三级 / 模糊 / 胶囊圆角 / 宋体题名 / 阴影 / 顶栏高度）。书架固定暗色，其它页跟随宿主亮暗。
+- 顶栏高度三档：≥900 为 64、560–899 为 52、<560 为 44（`--nsx-topbar-h` 单一来源；抽屉与遮罩的 `top` = 该值 + 16px）。
+- 工作台：编辑区半透明玻璃（`--nsx-glass-1` + `blur(18px)`），正文行宽仍 ≤36em、行高 1.9、工具栏 34、字号跟随宿主。
+- 令牌桥：shim 读宿主父窗口 body 上 `--dsw-*` / `--dsh-*` 的**计算后现值**（含第三方主题插件与壁纸的改写），
+  映射成 iframe 内的 `--ns-*`，并用 MutationObserver 跟随深浅色与字号；取不到的令牌不写入，交给回退值。
+  因此 dsh 界面会跟着你的 DSH 主题走，而不是自带一套配色。
+- 窄栏适配：右栏 <560px 时顶栏 44px（作品名 + 当前页签 + 保存点 + ⋯）、章节栏折成 22px 竖排细轨、
+  批注栏改右侧抽屉（`top` 跟 `--ns-topbar-h`，不盖顶栏）、书架按 128px 卡宽一环一屏；≥900px 恢复宽档。
+- 验收：`npm run verify:app` 真 Chrome 跑 **42 项断言 / 6 场景**（380、760、1280 × 书架、正文），含背板后端、
+  顶栏按档高度、顶栏不遮内容、正文 36em、工具栏 34、无横向溢出、可见「恍然梦」= 0。
+- 产物：**本仓库自己构建** —— `npm run build:app` 直接写 `assets/app`（源码在 `app/`，见下节），当前 129 文件、约 26.4 MB。
+
+**已归档的方案**：2026-11 曾试过「原生三视图（书架/目录/正文）替换整套界面」，方向是错的——它把大纲、
+人物、设定这些真实模块从界面里拿掉了。源码与截图证据留在 `.tmp/attempt-native-ui/`（不入 git）；
+`src/core/format.js`、`src/core/view.js` 与四个 RPC action 保留，但当前没有任何界面调用它们。
+
+## 前端工程（app/）
+
+插件版界面从桌面仓库 **fork** 出来，本仓库自己构建前端，**不再依赖 `F:\deepseek workplace\novel-studio` 的源码**。
+
+    app/
+      index.html              Vite 入口（插件版）
+      vite.config.mjs         独立构建配置：root=app/，base './'，产物 ../assets/app，__NS_PLUGIN__=true
+      package.json            只声明依赖与工具元数据，不参与运行时
+      src/                    界面源码（322 文件，fork 自 novel-studio/src）
+      plugin/dsh/             插件专属皮肤层 index.js / dsh.css / theme.js（与 src/ 同级，main.js 的 './../plugin/dsh/index.js' 照旧成立）
+      docs/使用手册.md         构建输入：HelpManual.vue 里 '../../docs/使用手册.md?raw' 导入，缺了构建直接失败
+      tools/verify-seeds.mjs  构建输入：App.vue 的 DEV-only 动态 import —— rollup 静态解析这条路径，缺了也失败
+      public/licenses/        仅为产物字节对齐：三份字体许可由 public/ 原样复制，删掉产物少三个文件（不影响界面）
+      node_modules/           指向 novel-studio/node_modules 的目录联接（见下）
+
+**两项目边界**
+
+- 本仓库：`app/` 是唯一前端源码与构建入口，`npm run build:app` 直接产出 `assets/app`（覆盖旧拷贝）。
+- 桌面仓库：只管桌面版（`vite build` → `dist`）与它自己的 `dist-plugin`；**不再参与**插件版构建。
+- 插件侧 Node 代码（`src/**`、`lib/**`、iframe-shim）与前端工程无关，两边互不影响。
+
+**用法（三条命令）**
+
+    npm run link:app-deps  # 只在首次 / 联接丢失时：重建目录联接（不联网、不装包；已就绪则幂等 exit 0）
+    npm run build:app      # = node app/node_modules/vite/bin/vite.js build --config app/vite.config.mjs
+    npm run verify:app     # 真 Chrome 加载 assets/app 跑 42 项外观断言（6 场景），任一失败即 exit 1
+
+产物：`assets/app/` 129 文件、约 26.4 MB、1 个 CSS（`cssCodeSplit: false`）、index.html 直接 `<link>` 引用该 CSS。
+改完界面必须重跑一次构建；DSH 端仍是「完全退出并重启 DSH 才生效」。
+
+**node_modules 是目录联接（本机不允许 npm install）**
+
+    app/node_modules  --(NTFS 目录联接 junction)-->  F:\deepseek workplace\novel-studio\node_modules
+
+由来：vite 从项目根解析依赖，本机离线、不能 `npm i`，于是把桌面包已装齐的依赖联接过来。
+联接丢失（换机、桌面仓库 `npm ci` 过、路径变了）时先跑 `npm run link:app-deps`：已就绪且能解析
+`vite` 就 exit 0，否则重建 junction；目标不存在时打印两条修复路并 exit 1（不会自动联网）。
+将来要独立安装：删掉联接，在 `app/` 里装自己的依赖（`app/package.json` 已按桌面版声明全部 23 个 dependencies）。
+
+    cmd /c rmdir app\node_modules     # 只删联接，不会删到桌面包本体
+    cd app && npm install             # 之后 app/node_modules 是真实目录，构建命令不变
+
+**从桌面仓库 resync（人工步骤，没有自动同步）**
+
+`app/src` 与 `novel-studio/src` 从此各自演化。要吸收桌面版的新改动时：
+
+1. `git diff --no-index --stat ../novel-studio/src app/src` 先看哪些文件真的变了。
+2. **逐文件挑选**，不要整目录覆盖：界面/逻辑修复（布局、样式、store、通用组件）才搬；桌面专属件
+   （Electron、`window.native` 全量、拆窗、多皮肤选择器）一律不搬。
+3. 一次只搬一个主题；搬完立刻 `npm run build:app`，再跑 `npm run verify:app` —— PASS 才算搬完（`assets/app` 的实际渲染是唯一判据；旧的人工截图对照见「本地复现台」）。
+4. `plugin/dsh/dsh.css` 的覆盖规则跟着组件 DOM 走：组件结构变了要同步核对皮肤规则。
+
+整目录覆盖会一次性丢掉本仓库在 `app/src` 里的插件化改动（`__NS_PLUGIN__` 分支、窄栏规则、恍然梦隐藏），
+并让 resync 变成无法审计的动作——所以它只能是人工的、逐文件的。
+
+## 更新前端产物与「重新载入」
+
+面板顶栏的「重新载入」只重建 iframe；**能不能看到新界面取决于静态产物怎么被路由**：
+
+| 改动 | 生效方式 |
+|---|---|
+| `app/src` → `npm run build:app`（`assets/app` 里的哈希 js/css/字体） | **热**：点「重新载入」即可，不需要重启 DSH |
+| `src/*.js`（插件服务端：工具、RPC、路由） | 重载插件：重启 DSH（本 profile 未开 HMR 的按目录监听） |
+| `lib/client.js`（面板本身） | 至少刷新 DSH 页面；客户端模块清单在启动时合成，稳妥做法是重启一次 |
+
+顶栏那句诊断就是判据：`热路由` = 前缀路由在跑（上表第一行成立）；`需重启` = 宿主没有 webServer、回落
+逐文件注册（文件名集合冻结在启动那一刻）；`资源 N ✓` / `资源 缺 N` 来自健康探针逐个落盘核对
+`index.html` 引用的产物文件。
+
+**2026-11 的白屏事故**：静态产物原来在 `apply()` 时按文件名逐条注册精确路由，而 `index.html` 每次都是
+现读磁盘的 —— 重建后它立刻指向新的哈希资源，那些路径没注册 → 404 → 面板白屏、点「重新载入」也没用。
+现在整个 `/api/novelstudio/app/` 由 webServer 前缀路由承接（按请求实时读盘），无 webServer 的组合仍回落精确路由。
 
 ## 宿主契约（读 dsh-client-connection 源码核实，写插件必须遵守）
 
@@ -80,9 +200,21 @@
 3. **路径必须在 `/api/` 之下**，否则注册时校验失败。
 4. 访问控制由宿主负责：非 owner 主体拿到 403；未认证得到 401（所以 curl 直接打永远是 401，只能在宿主页面里验）。
 5. 同一 path 只能注册一次，重复注册抛错。
+6. **要热更新静态产物就走 `webServer` 前缀路由**：`ctx.get('webServer').register({ kind: 'prefix', path, handler })`，
+   handler 拿原始 `req/res`；宿主按「精确表 → 最长前缀胜」匹配，且**每次请求现查表**，所以启动之后新增的
+   文件天然可服务（这正是「重建产物不用重启」的依据）。单席位的 `registerFallback` 已被 DSH 主界面占走，别抢。
+7. 前缀路由**不经过** connection 的鉴权闸门，要自己调 `ctx.connection.requestRejection(request)`
+   （与精确路由内部的 `admit()` 同一个判定）拿 401/403。
 
-## 已知限制（M0）
+## 已知限制
 
-- iframe 里没有 Electron 拆窗、全局快捷键与 window.native 全量能力（shim 只覆盖最小子集）
-- 写工具（studio_propose / studio_apply / studio_undo）尚未开放
-- 桌面版还没接上同一个库（M2 才做投影化）
+- **dsh 皮肤是 CSS 层覆盖**（`app/plugin/dsh/dsh.css`，约 2,960 行、零 `!important`）；组件逻辑只在
+  必要处加了显示条件（恍然梦入口、设置页 AI 分区、窄栏侧栏宽度），功能代码零改动。
+- 少数颜色写在组件内联样式里（画布连线标签、幕布行标签色、MubuTree 折叠按钮内边距），CSS 层压不过，
+  需 `!important` 才能改——按"零 !important"的约定保留原样。
+- 新建关系的默认颜色回落为 accent，所以「开箱新建」的关系连线是同一种蓝；多色来自既有数据。
+- 已应用过的提案 + 版本历史等次要弹层只做了令牌级跟随，没有逐屏像素核对。
+- iframe 里没有 Electron 拆窗、全局快捷键与 `window.native` 全量能力（shim 只覆盖最小子集）。
+- 桌面版窗口窄于 1180px 时**不会**被插件窄栏规则影响（该钳制带 `nsPlugin` 守卫，桌面分支不生效）。
+- 前端产物是热的（见「更新前端产物」），但 `src/*.js` 这类**插件服务端代码**仍要靠 DSH 的 HMR / Plugin Manager
+  重载，或重启一次；本 profile 没有开启按目录监听。

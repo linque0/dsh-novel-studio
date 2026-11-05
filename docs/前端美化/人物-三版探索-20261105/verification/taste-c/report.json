@@ -1,0 +1,1517 @@
+{
+ "url": "http://127.0.0.1:57910/c-relationships.html?static",
+ "at": "2026-11-05T13:04:12.331Z",
+ "allow": [
+  "glass",
+  "shadow",
+  "gradient"
+ ],
+ "viewports": [
+  {
+   "width": 1440,
+   "height": 900,
+   "load": "load",
+   "screens": 1,
+   "filled": [
+    0.83
+   ],
+   "motion": {
+    "elements": 1,
+    "css": 0,
+    "transitions": 0,
+    "scripted": 1,
+    "videos": 0,
+    "playingVideos": 0
+   },
+   "metrics": {
+    "viewport": {
+     "w": 1440,
+     "h": 900
+    },
+    "page": {
+     "height": 900,
+     "screens": 1,
+     "words": 187,
+     "img": 0,
+     "video": 0,
+     "canvas": 1,
+     "svg": 45,
+     "sections": 4,
+     "horizontalOverflow": 0,
+     "overflowCulprits": [],
+     "uiFragments": 0,
+     "uiAbuse": false,
+     "realPictures": 1,
+     "videoCount": 0,
+     "uiPictures": 0,
+     "pictureSamples": [],
+     "blendText": 0,
+     "sideScrollers": 0,
+     "brokenImages": [],
+     "emoji": [],
+     "videosNoPoster": 0
+    },
+    "hero": {
+     "text": "人物关系图",
+     "words": 1,
+     "chars": 5,
+     "lines": 1,
+     "size": 24,
+     "vw": 1.7,
+     "font": "Noto Serif SC",
+     "weight": 500,
+     "tracking": 0.03,
+     "leading": 1.5,
+     "top": 159,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "h1": {
+     "text": "人物关系图",
+     "words": 1,
+     "lines": 1,
+     "size": 24,
+     "font": "Noto Serif SC"
+    },
+    "headings": [
+     {
+      "text": "林照",
+      "words": 1,
+      "chars": 2,
+      "lines": 1,
+      "size": 29,
+      "vw": 2,
+      "font": "Noto Serif SC",
+      "weight": 500,
+      "tracking": 0.07,
+      "leading": 1.35,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "right",
+      "widthRatio": 0.15,
+      "top": 227,
+      "tag": "h2",
+      "kind": "heading"
+     },
+     {
+      "text": "林",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 31,
+      "vw": 2.2,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "right",
+      "widthRatio": 0.04,
+      "top": 230,
+      "tag": "span",
+      "kind": "heading"
+     }
+    ],
+    "headingSummary": {
+     "count": 2,
+     "maxLines": 1,
+     "over2Lines": 0,
+     "statements": 0,
+     "centered": 0,
+     "medianWords": 1,
+     "mixedFontHeadings": 0
+    },
+    "type": {
+     "families": [
+      {
+       "family": "Microsoft YaHei",
+       "share": 0.92,
+       "mono": false
+      },
+      {
+       "family": "Noto Serif SC",
+       "share": 0.08,
+       "mono": false
+      }
+     ],
+     "familyCount": 2,
+     "sizes": [
+      11,
+      12,
+      13,
+      14,
+      17,
+      19,
+      20,
+      24,
+      29,
+      31
+     ],
+     "sizeCount": 10,
+     "notLoaded": [
+      "Microsoft YaHei"
+     ],
+     "body": {
+      "font": "Microsoft YaHei",
+      "size": 14,
+      "leading": 1.9,
+      "weight": 400,
+      "tracking": 0,
+      "contrast": null
+     },
+     "measureChars": 40,
+     "max": {
+      "size": 31,
+      "vw": 2.2,
+      "font": "Noto Serif SC",
+      "text": "林"
+     },
+     "monoShare": 0,
+     "monoProseShare": 0,
+     "monoFamilies": [],
+     "monoSamples": [],
+     "microLabels": 0,
+     "microLabelShare": 0,
+     "microSamples": [],
+     "upperShare": 0.01,
+     "centerShare": 0.12,
+     "smallText": 3
+    },
+    "eyebrows": [
+     {
+      "text": "主角",
+      "above": "林照",
+      "upper": false,
+      "tracked": false,
+      "mono": false,
+      "pill": false,
+      "size": 11,
+      "top": 202
+     }
+    ],
+    "numbered": [
+     {
+      "text": "01",
+      "size": 11,
+      "top": 438
+     },
+     {
+      "text": "02",
+      "size": 11,
+      "top": 892
+     },
+     {
+      "text": "03",
+      "size": 11,
+      "top": 1209
+     },
+     {
+      "text": "04",
+      "size": 11,
+      "top": 1613
+     }
+    ],
+    "color": {
+     "bodyBg": "#292333",
+     "bodyBgHsl": {
+      "h": 263,
+      "s": 0.19,
+      "l": 0.17
+     },
+     "dark": true,
+     "sectionBgs": [
+      {
+       "color": "#30283b",
+       "top": 0,
+       "hsl": {
+        "h": 265,
+        "s": 0.19,
+        "l": 0.19
+       }
+      }
+     ],
+     "textColors": [
+      {
+       "color": "#e2d9e8",
+       "share": 0.3
+      },
+      {
+       "color": "#b1a4bd",
+       "share": 0.29
+      },
+      {
+       "color": "#f4eef7",
+       "share": 0.14
+      },
+      {
+       "color": "#ded3e6",
+       "share": 0.1
+      },
+      {
+       "color": "#c9bed3",
+       "share": 0.03
+      }
+     ],
+     "button": {
+      "bg": "#fbf8fc",
+      "hsl": {
+       "h": 285,
+       "s": 0.4,
+       "l": 0.98
+      },
+      "fg": "#302839"
+     },
+     "lowContrast": []
+    },
+    "buttons": {
+     "count": 12,
+     "inHero": 12,
+     "radius": 10,
+     "height": 69,
+     "withShadow": 0,
+     "withGradient": 0,
+     "mono": 0,
+     "upper": 0,
+     "heroLabels": [
+      "人物",
+      "林 林照 主角 · 阿照",
+      "沈 沈砚 主角 · 记录者",
+      "闻 闻舟 导师 · 老船长",
+      "顾 顾清晏 反派 · 议事长"
+     ]
+    },
+    "surfaces": {
+     "shadowStatic": 6,
+     "shadowOverlay": 0,
+     "shadowSamples": [
+      "button.graph-node.tone-sage → rgba(185, 211, 194, 0.08) 0px 0px 0px 5px, rgba(16, 11, 30, 0.2) 0px 12px 25px 0",
+      "button.graph-node.tone-mauve → rgba(12, 8, 20, 0.17) 0px 9px 25px 0px",
+      "button.graph-node.tone-ochre → rgba(12, 8, 20, 0.17) 0px 9px 25px 0px",
+      "button.graph-node.tone-slate → rgba(12, 8, 20, 0.17) 0px 9px 25px 0px"
+     ],
+     "gradients": 1,
+     "scrims": 0,
+     "gradientSamples": [
+      "div#graph-stage.graph-stage → radial-gradient(rgba(215, 201, 229, 0.16) 0.7px, rgba(0, 0, 0, 0) 0.7px)"
+     ],
+     "gradientText": 0,
+     "hairlines": 8,
+     "hairlineSamples": [
+      "header.module-head 798px",
+      "div.graph-subbar 798px",
+      "footer.graph-foot 798px",
+      "div.inspector-label 330px",
+      "section.dossier-section 282px"
+     ],
+     "outlinedBoxes": 3,
+     "dashed": 0,
+     "blurred": 4,
+     "roundedBoxes": 3,
+     "boxRadius": 20,
+     "squareMedia": 2,
+     "roundedMedia": 0,
+     "mediaRadius": 0,
+     "textShadow": 0,
+     "cardRows": [
+      {
+       "count": 3,
+       "iconTopped": true,
+       "rounded": false,
+       "top": 864
+      }
+     ]
+    },
+    "heroMedia": [
+     {
+      "type": "bg-image",
+      "ratio": 1
+     },
+     {
+      "type": "canvas",
+      "ratio": 1
+     },
+     {
+      "type": "svg",
+      "ratio": 0.44
+     }
+    ],
+    "nav": {
+     "links": 1,
+     "fixed": false,
+     "height": 84,
+     "floatingPill": false,
+     "blur": false
+    },
+    "fontsLoaded": [
+     "noto serif sc"
+    ]
+   },
+   "layout": {
+    "viewport": {
+     "w": 1440,
+     "h": 900
+    },
+    "pageH": 900,
+    "margins": {
+     "left": 39,
+     "right": 53
+    },
+    "sections": [],
+    "gaps": [],
+    "h1s": [
+     {
+      "text": "人物关系图",
+      "size": 24,
+      "top": 159,
+      "firstScreen": true
+     }
+    ],
+    "edgeText": [],
+    "edges": [
+     {
+      "x": 1105,
+      "n": 2
+     },
+     {
+      "x": 75,
+      "n": 1
+     },
+     {
+      "x": 293,
+      "n": 1
+     },
+     {
+      "x": 1173,
+      "n": 1
+     }
+    ],
+    "leftBlocks": 5,
+    "bodySize": 14,
+    "stage": true,
+    "explains": false,
+    "slivers": [],
+    "voidShare": 0,
+    "voidBox": null
+   },
+   "app": {
+    "viewport": {
+     "w": 1440,
+     "h": 900
+    },
+    "dark": true,
+    "ground": "#292333",
+    "sidebar": null,
+    "topbar": {
+     "h": 84
+    },
+    "canvas": {
+     "left": 39,
+     "right": 51
+    },
+    "hero": {
+     "text": "人物关系图",
+     "words": 1,
+     "chars": 5,
+     "lines": 1,
+     "size": 24,
+     "vw": 1.7,
+     "font": "Noto Serif SC",
+     "weight": 500,
+     "tracking": 0.03,
+     "leading": 1.5,
+     "top": 159,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "charts": 4,
+    "layout": {
+     "panels": 3,
+     "firstScreen": 3,
+     "ragged": [],
+     "voids": []
+    },
+    "tiles": 0,
+    "panels": {
+     "count": 6,
+     "radii": [
+      [
+       20,
+       3
+      ],
+      [
+       0,
+       3
+      ]
+     ],
+     "heavyBorders": 6,
+     "borderSamples": [
+      "#ffffff on #292333 (15.19:1)",
+      "#ffffff on #292333 (15.19:1)",
+      "#ffffff on #292333 (15.19:1)"
+     ],
+     "heavyShadows": 0,
+     "softShadows": 0,
+     "shadowSamples": [],
+     "glass": 3
+    },
+    "chips": {
+     "count": 0,
+     "hues": 0,
+     "samples": []
+    },
+    "numbers": {
+     "cells": 0,
+     "leftAligned": 0,
+     "figures": 5,
+     "tabularShare": 0,
+     "kpiMax": 11
+    },
+    "rows": null,
+    "chartHues": 1,
+    "placeholders": [],
+    "type": {
+     "under13": 0.5,
+     "tiny": 0,
+     "tinySamples": [],
+     "sizes": [
+      11,
+      12,
+      13,
+      14,
+      17,
+      19,
+      20,
+      24,
+      29
+     ]
+    },
+    "title": {
+     "text": "人物关系图",
+     "size": 24,
+     "top": 159
+    },
+    "colourShare": 0
+   },
+   "consoleErrors": []
+  },
+  {
+   "width": 760,
+   "height": 475,
+   "load": "load",
+   "screens": 1,
+   "filled": [
+    0.65
+   ],
+   "motion": {
+    "elements": 1,
+    "css": 0,
+    "transitions": 0,
+    "scripted": 1,
+    "videos": 0,
+    "playingVideos": 0
+   },
+   "metrics": {
+    "viewport": {
+     "w": 760,
+     "h": 475
+    },
+    "page": {
+     "height": 475,
+     "screens": 1,
+     "words": 58,
+     "img": 0,
+     "video": 0,
+     "canvas": 1,
+     "svg": 45,
+     "sections": 4,
+     "horizontalOverflow": 0,
+     "overflowCulprits": [],
+     "uiFragments": 0,
+     "uiAbuse": false,
+     "realPictures": 1,
+     "videoCount": 0,
+     "uiPictures": 0,
+     "pictureSamples": [],
+     "blendText": 0,
+     "sideScrollers": 0,
+     "brokenImages": [],
+     "emoji": [],
+     "videosNoPoster": 0
+    },
+    "hero": {
+     "text": "人物关系图",
+     "words": 1,
+     "chars": 5,
+     "lines": 1,
+     "size": 24,
+     "vw": 3.2,
+     "font": "Noto Serif SC",
+     "weight": 500,
+     "tracking": 0.03,
+     "leading": 1.5,
+     "top": 216,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "h1": {
+     "text": "人物关系图",
+     "words": 1,
+     "lines": 1,
+     "size": 24,
+     "font": "Noto Serif SC"
+    },
+    "headings": [],
+    "headingSummary": {
+     "count": 0,
+     "maxLines": 0,
+     "over2Lines": 0,
+     "statements": 0,
+     "centered": 0,
+     "medianWords": null,
+     "mixedFontHeadings": 0
+    },
+    "type": {
+     "families": [
+      {
+       "family": "Microsoft YaHei",
+       "share": 0.82,
+       "mono": false
+      },
+      {
+       "family": "Noto Serif SC",
+       "share": 0.18,
+       "mono": false
+      }
+     ],
+     "familyCount": 2,
+     "sizes": [
+      11,
+      12,
+      17,
+      18,
+      19,
+      20,
+      24
+     ],
+     "sizeCount": 7,
+     "notLoaded": [
+      "Microsoft YaHei"
+     ],
+     "body": null,
+     "measureChars": null,
+     "max": {
+      "size": 24,
+      "vw": 3.2,
+      "font": "Noto Serif SC",
+      "text": "人物关系图"
+     },
+     "monoShare": 0,
+     "monoProseShare": 0,
+     "monoFamilies": [],
+     "monoSamples": [],
+     "microLabels": 0,
+     "microLabelShare": 0,
+     "microSamples": [],
+     "upperShare": 0,
+     "centerShare": 0.53,
+     "smallText": 3
+    },
+    "eyebrows": [],
+    "numbered": [],
+    "color": {
+     "bodyBg": "#292333",
+     "bodyBgHsl": {
+      "h": 263,
+      "s": 0.19,
+      "l": 0.17
+     },
+     "dark": true,
+     "sectionBgs": [
+      {
+       "color": "#30283b",
+       "top": 0,
+       "hsl": {
+        "h": 265,
+        "s": 0.19,
+        "l": 0.19
+       }
+      }
+     ],
+     "textColors": [
+      {
+       "color": "#b1a4bd",
+       "share": 0.37
+      },
+      {
+       "color": "#f4eef7",
+       "share": 0.25
+      },
+      {
+       "color": "#bbacc7",
+       "share": 0.09
+      },
+      {
+       "color": "#e3dbe9",
+       "share": 0.07
+      },
+      {
+       "color": "#c9bed3",
+       "share": 0.07
+      }
+     ],
+     "button": {
+      "bg": "#ede8f1",
+      "hsl": {
+       "h": 273,
+       "s": 0.24,
+       "l": 0.93
+      },
+      "fg": "#332a3c"
+     },
+     "lowContrast": []
+    },
+    "buttons": {
+     "count": 1,
+     "inHero": 1,
+     "radius": "pill",
+     "height": 30,
+     "withShadow": 0,
+     "withGradient": 0,
+     "mono": 0,
+     "upper": 0,
+     "heroLabels": [
+      "一度关系"
+     ]
+    },
+    "surfaces": {
+     "shadowStatic": 0,
+     "shadowOverlay": 0,
+     "shadowSamples": [],
+     "gradients": 1,
+     "scrims": 0,
+     "gradientSamples": [
+      "div#graph-stage.graph-stage → radial-gradient(rgba(215, 201, 229, 0.16) 0.7px, rgba(0, 0, 0, 0) 0.7px)"
+     ],
+     "gradientText": 0,
+     "hairlines": 3,
+     "hairlineSamples": [
+      "header.module-head 718px",
+      "div.graph-subbar 718px",
+      "footer.graph-foot 718px"
+     ],
+     "outlinedBoxes": 1,
+     "dashed": 0,
+     "blurred": 2,
+     "roundedBoxes": 1,
+     "boxRadius": 18,
+     "squareMedia": 2,
+     "roundedMedia": 0,
+     "mediaRadius": 0,
+     "textShadow": 0,
+     "cardRows": []
+    },
+    "heroMedia": [
+     {
+      "type": "bg-image",
+      "ratio": 1
+     },
+     {
+      "type": "canvas",
+      "ratio": 1
+     }
+    ],
+    "nav": {
+     "links": 1,
+     "fixed": false,
+     "height": 84,
+     "floatingPill": false,
+     "blur": false
+    },
+    "fontsLoaded": [
+     "noto serif sc"
+    ]
+   },
+   "layout": {
+    "viewport": {
+     "w": 760,
+     "h": 475
+    },
+    "pageH": 475,
+    "margins": {
+     "left": 25,
+     "right": 25
+    },
+    "sections": [],
+    "gaps": [],
+    "h1s": [
+     {
+      "text": "人物关系图",
+      "size": 24,
+      "top": 216,
+      "firstScreen": true
+     }
+    ],
+    "edgeText": [],
+    "edges": [
+     {
+      "x": 47,
+      "n": 1
+     }
+    ],
+    "leftBlocks": 1,
+    "bodySize": 16,
+    "stage": true,
+    "explains": false,
+    "slivers": [],
+    "voidShare": 0,
+    "voidBox": null
+   },
+   "app": {
+    "viewport": {
+     "w": 760,
+     "h": 475
+    },
+    "dark": true,
+    "ground": "#292333",
+    "sidebar": null,
+    "topbar": {
+     "h": 84
+    },
+    "canvas": {
+     "left": 24,
+     "right": 24
+    },
+    "hero": {
+     "text": "人物关系图",
+     "words": 1,
+     "chars": 5,
+     "lines": 1,
+     "size": 24,
+     "vw": 3.2,
+     "font": "Noto Serif SC",
+     "weight": 500,
+     "tracking": 0.03,
+     "leading": 1.5,
+     "top": 216,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "charts": 3,
+    "layout": {
+     "panels": 1,
+     "firstScreen": 1,
+     "ragged": [],
+     "voids": []
+    },
+    "tiles": 0,
+    "panels": {
+     "count": 1,
+     "radii": [
+      [
+       18,
+       1
+      ]
+     ],
+     "heavyBorders": 1,
+     "borderSamples": [
+      "#ffffff on #292333 (15.19:1)"
+     ],
+     "heavyShadows": 0,
+     "softShadows": 0,
+     "shadowSamples": [],
+     "glass": 1
+    },
+    "chips": {
+     "count": 0,
+     "hues": 0,
+     "samples": []
+    },
+    "numbers": {
+     "cells": 0,
+     "leftAligned": 0,
+     "figures": 1,
+     "tabularShare": 0,
+     "kpiMax": 11
+    },
+    "rows": null,
+    "chartHues": 1,
+    "placeholders": [],
+    "type": {
+     "under13": 0.53,
+     "tiny": 0,
+     "tinySamples": [],
+     "sizes": [
+      11,
+      12,
+      13,
+      14,
+      17,
+      18,
+      20,
+      24,
+      36
+     ]
+    },
+    "title": {
+     "text": "人物关系图",
+     "size": 24,
+     "top": 216
+    },
+    "colourShare": 0
+   },
+   "consoleErrors": []
+  },
+  {
+   "width": 380,
+   "height": 238,
+   "load": "load",
+   "screens": 1,
+   "filled": [
+    0.48
+   ],
+   "motion": {
+    "elements": 1,
+    "css": 0,
+    "transitions": 0,
+    "scripted": 1,
+    "videos": 0,
+    "playingVideos": 0
+   },
+   "metrics": {
+    "viewport": {
+     "w": 380,
+     "h": 238
+    },
+    "page": {
+     "height": 238,
+     "screens": 1,
+     "words": 58,
+     "img": 0,
+     "video": 0,
+     "canvas": 1,
+     "svg": 45,
+     "sections": 4,
+     "horizontalOverflow": 0,
+     "overflowCulprits": [],
+     "uiFragments": 0,
+     "uiAbuse": false,
+     "realPictures": 1,
+     "videoCount": 0,
+     "uiPictures": 0,
+     "pictureSamples": [],
+     "blendText": 0,
+     "sideScrollers": 0,
+     "brokenImages": [],
+     "emoji": [],
+     "videosNoPoster": 0
+    },
+    "hero": {
+     "text": "人物关系图",
+     "words": 1,
+     "chars": 5,
+     "lines": 1,
+     "size": 24,
+     "vw": 6.3,
+     "font": "Noto Serif SC",
+     "weight": 500,
+     "tracking": 0.03,
+     "leading": 1.5,
+     "top": 203,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "h1": {
+     "text": "人物关系图",
+     "words": 1,
+     "lines": 1,
+     "size": 24,
+     "font": "Noto Serif SC"
+    },
+    "headings": [
+     {
+      "text": "人物关系图",
+      "words": 1,
+      "chars": 5,
+      "lines": 1,
+      "size": 24,
+      "vw": 6.3,
+      "font": "Noto Serif SC",
+      "weight": 500,
+      "tracking": 0.025,
+      "leading": 1.5,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.32,
+      "top": 203,
+      "tag": "h1",
+      "kind": "heading"
+     },
+     {
+      "text": "林",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 22,
+      "vw": 5.8,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "center",
+      "position": "center",
+      "widthRatio": 0.02,
+      "top": 360,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "林照",
+      "words": 1,
+      "chars": 2,
+      "lines": 1,
+      "size": 23,
+      "vw": 6.1,
+      "font": "Noto Serif SC",
+      "weight": 500,
+      "tracking": 0,
+      "leading": 1.4,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "center",
+      "position": "center",
+      "widthRatio": 0.09,
+      "top": 370,
+      "tag": "h3",
+      "kind": "heading"
+     },
+     {
+      "text": "沈",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 22,
+      "vw": 5.8,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "center",
+      "position": "left",
+      "widthRatio": 0.02,
+      "top": 398,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "闻",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 22,
+      "vw": 5.8,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "center",
+      "position": "right",
+      "widthRatio": 0.02,
+      "top": 398,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "顾",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 22,
+      "vw": 5.8,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "center",
+      "position": "left",
+      "widthRatio": 0.02,
+      "top": 431,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "唐",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 22,
+      "vw": 5.8,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "center",
+      "position": "right",
+      "widthRatio": 0.02,
+      "top": 431,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "白",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 22,
+      "vw": 5.8,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "center",
+      "position": "center",
+      "widthRatio": 0.02,
+      "top": 464,
+      "tag": "span",
+      "kind": "heading"
+     }
+    ],
+    "headingSummary": {
+     "count": 8,
+     "maxLines": 1,
+     "over2Lines": 0,
+     "statements": 0,
+     "centered": 7,
+     "medianWords": 1,
+     "mixedFontHeadings": 0
+    },
+    "type": {
+     "families": [
+      {
+       "family": "Microsoft YaHei",
+       "share": 0.82,
+       "mono": false
+      },
+      {
+       "family": "Noto Serif SC",
+       "share": 0.18,
+       "mono": false
+      }
+     ],
+     "familyCount": 2,
+     "sizes": [
+      11,
+      13,
+      17,
+      21,
+      22,
+      23,
+      24
+     ],
+     "sizeCount": 7,
+     "notLoaded": [
+      "Microsoft YaHei"
+     ],
+     "body": null,
+     "measureChars": null,
+     "max": {
+      "size": 24,
+      "vw": 6.3,
+      "font": "Noto Serif SC",
+      "text": "人物关系图"
+     },
+     "monoShare": 0,
+     "monoProseShare": 0,
+     "monoFamilies": [],
+     "monoSamples": [],
+     "microLabels": 0,
+     "microLabelShare": 0,
+     "microSamples": [],
+     "upperShare": 0,
+     "centerShare": 0.62,
+     "smallText": 3
+    },
+    "eyebrows": [
+     {
+      "text": "长夜将明 人物",
+      "above": "人物关系图",
+      "upper": false,
+      "tracked": false,
+      "mono": false,
+      "pill": false,
+      "size": 11,
+      "top": 179
+     },
+     {
+      "text": "拖动人物排布 · 拖动空白平移",
+      "above": "林照",
+      "upper": false,
+      "tracked": false,
+      "mono": false,
+      "pill": false,
+      "size": 11,
+      "top": 344
+     },
+     {
+      "text": "拖动人物排布 · 拖动空白平移",
+      "above": "沈",
+      "upper": false,
+      "tracked": false,
+      "mono": false,
+      "pill": false,
+      "size": 11,
+      "top": 344
+     },
+     {
+      "text": "拖动人物排布 · 拖动空白平移",
+      "above": "顾",
+      "upper": false,
+      "tracked": false,
+      "mono": false,
+      "pill": false,
+      "size": 11,
+      "top": 344
+     }
+    ],
+    "numbered": [],
+    "color": {
+     "bodyBg": "#292333",
+     "bodyBgHsl": {
+      "h": 263,
+      "s": 0.19,
+      "l": 0.17
+     },
+     "dark": true,
+     "sectionBgs": [
+      {
+       "color": "#30283b",
+       "top": 0,
+       "hsl": {
+        "h": 265,
+        "s": 0.19,
+        "l": 0.19
+       }
+      }
+     ],
+     "textColors": [
+      {
+       "color": "#b1a4bd",
+       "share": 0.37
+      },
+      {
+       "color": "#f4eef7",
+       "share": 0.25
+      },
+      {
+       "color": "#bbacc7",
+       "share": 0.09
+      },
+      {
+       "color": "#e3dbe9",
+       "share": 0.07
+      },
+      {
+       "color": "#c9bed3",
+       "share": 0.07
+      }
+     ],
+     "button": {
+      "bg": "#ede8f1",
+      "hsl": {
+       "h": 273,
+       "s": 0.24,
+       "l": 0.93
+      },
+      "fg": "#332a3c"
+     },
+     "lowContrast": []
+    },
+    "buttons": {
+     "count": 2,
+     "inHero": 0,
+     "radius": "pill",
+     "height": 30,
+     "withShadow": 0,
+     "withGradient": 0,
+     "mono": 0,
+     "upper": 0,
+     "heroLabels": []
+    },
+    "surfaces": {
+     "shadowStatic": 0,
+     "shadowOverlay": 0,
+     "shadowSamples": [],
+     "gradients": 1,
+     "scrims": 0,
+     "gradientSamples": [
+      "div#graph-stage.graph-stage → radial-gradient(rgba(215, 201, 229, 0.16) 0.7px, rgba(0, 0, 0, 0) 0.7px)"
+     ],
+     "gradientText": 0,
+     "hairlines": 3,
+     "hairlineSamples": [
+      "header.module-head 354px",
+      "div.graph-subbar 354px",
+      "footer.graph-foot 354px"
+     ],
+     "outlinedBoxes": 0,
+     "dashed": 0,
+     "blurred": 2,
+     "roundedBoxes": 0,
+     "boxRadius": 0,
+     "squareMedia": 2,
+     "roundedMedia": 0,
+     "mediaRadius": 0,
+     "textShadow": 0,
+     "cardRows": []
+    },
+    "heroMedia": [
+     {
+      "type": "bg-image",
+      "ratio": 1
+     },
+     {
+      "type": "canvas",
+      "ratio": 1
+     }
+    ],
+    "nav": {
+     "links": 1,
+     "fixed": false,
+     "height": 76,
+     "floatingPill": false,
+     "blur": false
+    },
+    "fontsLoaded": [
+     "noto serif sc"
+    ]
+   },
+   "layout": {
+    "viewport": {
+     "w": 380,
+     "h": 238
+    },
+    "pageH": 238,
+    "margins": {
+     "left": 17,
+     "right": 17
+    },
+    "sections": [],
+    "gaps": [],
+    "h1s": [
+     {
+      "text": "人物关系图",
+      "size": 24,
+      "top": 203,
+      "firstScreen": true
+     }
+    ],
+    "edgeText": [],
+    "edges": [
+     {
+      "x": 33,
+      "n": 1
+     }
+    ],
+    "leftBlocks": 1,
+    "bodySize": 16,
+    "stage": true,
+    "explains": false,
+    "slivers": [],
+    "voidShare": 0,
+    "voidBox": null
+   },
+   "app": {
+    "viewport": {
+     "w": 380,
+     "h": 238
+    },
+    "dark": true,
+    "ground": "#292333",
+    "sidebar": null,
+    "topbar": {
+     "h": 76
+    },
+    "canvas": {
+     "left": 17,
+     "right": 17
+    },
+    "hero": {
+     "text": "人物关系图",
+     "words": 1,
+     "chars": 5,
+     "lines": 1,
+     "size": 24,
+     "vw": 6.3,
+     "font": "Noto Serif SC",
+     "weight": 500,
+     "tracking": 0.03,
+     "leading": 1.5,
+     "top": 203,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "charts": 4,
+    "layout": {
+     "panels": 1,
+     "firstScreen": 0,
+     "ragged": [],
+     "voids": []
+    },
+    "tiles": 0,
+    "panels": {
+     "count": 1,
+     "radii": [
+      [
+       0,
+       1
+      ]
+     ],
+     "heavyBorders": 1,
+     "borderSamples": [
+      "#ffffff on #292333 (15.19:1)"
+     ],
+     "heavyShadows": 0,
+     "softShadows": 0,
+     "shadowSamples": [],
+     "glass": 0
+    },
+    "chips": {
+     "count": 0,
+     "hues": 0,
+     "samples": []
+    },
+    "numbers": {
+     "cells": 0,
+     "leftAligned": 0,
+     "figures": 1,
+     "tabularShare": 0,
+     "kpiMax": 11
+    },
+    "rows": null,
+    "chartHues": 1,
+    "placeholders": [],
+    "type": {
+     "under13": 0.47,
+     "tiny": 0,
+     "tinySamples": [],
+     "sizes": [
+      11,
+      12,
+      13,
+      14,
+      17,
+      21,
+      23,
+      24,
+      31
+     ]
+    },
+    "title": {
+     "text": "人物关系图",
+     "size": 24,
+     "top": 203
+    },
+    "colourShare": 0
+   },
+   "consoleErrors": []
+  }
+ ],
+ "findings": [
+  {
+   "level": "WARN",
+   "id": "font-fallback",
+   "width": 1440,
+   "message": "Typeface(s) declared but not loaded, so a fallback is rendering: Microsoft YaHei",
+   "fix": "Fix the font URL / family name, or the screenshots you are judging are not the design.",
+   "alsoAt": [
+    760,
+    380
+   ]
+  },
+  {
+   "level": "WARN",
+   "id": "heavy-borders",
+   "width": 1440,
+   "message": "6 panel borders are dark against their ground: #ffffff on #292333 (15.19:1) | #ffffff on #292333 (15.19:1) | #ffffff on #292333 (15.19:1)",
+   "fix": "A panel border is a whisper: about 1.1–1.3:1 against its ground on a light screen (#e5e7eb–#ededed on white), and about 1.2–1.5:1 on a dark one (#1a1a1a on #000, #2e2e2e on #111). Darker lines turn the screen into a grid of boxes; keep the stronger line for controls."
+  },
+  {
+   "level": "WARN",
+   "id": "tiny-text",
+   "width": 1440,
+   "message": "50% of the text is under 13px.",
+   "fix": "Data and labels read at 13–14px; keep 11–12px for sublines and axis ticks.",
+   "alsoAt": [
+    760,
+    380
+   ]
+  }
+ ],
+ "images": [
+  {
+   "viewport": "desktop",
+   "width": 1440,
+   "fold": "F:\\deepseek workplace\\dsh-novel-studio\\docs\\前端美化\\人物-三版探索-20261105\\verification\\taste-c\\desktop-fold.jpg",
+   "pages": [
+    "F:\\deepseek workplace\\dsh-novel-studio\\docs\\前端美化\\人物-三版探索-20261105\\verification\\taste-c\\desktop-page-01.jpg"
+   ],
+   "film": []
+  },
+  {
+   "viewport": "tablet",
+   "width": 760,
+   "fold": "F:\\deepseek workplace\\dsh-novel-studio\\docs\\前端美化\\人物-三版探索-20261105\\verification\\taste-c\\tablet-fold.jpg",
+   "pages": [
+    "F:\\deepseek workplace\\dsh-novel-studio\\docs\\前端美化\\人物-三版探索-20261105\\verification\\taste-c\\tablet-page-01.jpg"
+   ],
+   "film": []
+  },
+  {
+   "viewport": "mobile",
+   "width": 380,
+   "fold": "F:\\deepseek workplace\\dsh-novel-studio\\docs\\前端美化\\人物-三版探索-20261105\\verification\\taste-c\\mobile-fold.jpg",
+   "pages": [
+    "F:\\deepseek workplace\\dsh-novel-studio\\docs\\前端美化\\人物-三版探索-20261105\\verification\\taste-c\\mobile-page-01.jpg"
+   ],
+   "film": []
+  }
+ ]
+}

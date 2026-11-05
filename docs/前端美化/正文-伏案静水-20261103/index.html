@@ -1,0 +1,2596 @@
+<!doctype html>
+<html lang="zh-CN" data-bg="ink">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>正文 · 伏案 · 设计稿</title>
+<link rel="icon" href="data:,">
+<style>
+/* style.1-base.css — 设计令牌 / 全局 / 背景层 / 材质总表 / 顶栏 / 细轨 / 层级
+   拼装顺序 1 → 2 → 3：令牌只在本文件声明，2 号与 3 号一律 var() 引用。 */
+
+/* ==== 1. 设计令牌 ==== */
+:root{
+  --st-bg:#07080b;
+  --st-paper:#0f1115;
+  --st-ink:#f4efe6;
+  --st-ink-2:#d9d2c6;
+  --st-ink-3:#9a948a;
+  --st-line:rgb(255 255 255/.14);
+  --st-glass-strong:rgb(255 255 255/.16);
+  --st-red:#c0483a;
+  --st-red-soft:#ff9384;
+  --st-serif:"Noto Serif SC","Source Han Serif SC","Songti SC","SimSun",serif;
+  --st-sans:Inter,"Noto Sans SC","Microsoft YaHei",system-ui,sans-serif;
+  --st-ease:cubic-bezier(.22,.61,.36,1);
+  --st-dur:320ms;
+  --st-radius:22px;
+  --st-radius-sm:12px;
+  --st-elev:0 26px 60px rgb(0 0 0/.5), inset 0 1px 0 rgb(255 255 255/.5);
+
+  /* 语义别名：全部由上面的原始令牌派生，2/3 号优先用这一层 */
+  --st-glass:rgb(255 255 255/.08);
+  --st-glass-soft:rgb(255 255 255/.045);
+  --st-glass-veil:rgb(255 255 255/.02);
+  --st-glass-fill:linear-gradient(145deg, rgb(255 255 255/.14), rgb(255 255 255/.045) 46%, rgb(255 255 255/.10));
+  --st-sheen:linear-gradient(118deg, rgb(255 255 255/.4), rgb(255 255 255/0) 26%, rgb(255 255 255/0) 64%, rgb(255 255 255/.2));
+  --st-glass-edge:1px solid rgb(255 255 255/.18);
+  --st-line-soft:rgb(255 255 255/.09);
+  --st-ink-dim:rgb(244 239 230/.62);
+  --st-scrim:rgb(3 4 7/.62);
+  --st-blur:18px;
+  --st-sat:1.5;
+  --st-z-bg:0;
+  --st-z-body:1;
+  --st-z-topbar:40;
+  --st-z-scrim:45;
+  --st-z-drawer:46;
+  --st-z-pop:50;
+}
+
+/* ==== 2. 全局 ==== */
+*{box-sizing:border-box}
+*{scrollbar-width:thin;scrollbar-color:rgb(255 255 255/.18) transparent}
+html,body{margin:0;height:100%}
+body{
+  background:var(--st-bg);
+  color:var(--st-ink);
+  font-family:var(--st-sans);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  overflow:hidden;
+}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
+#app{position:relative;display:flex;flex-direction:column;height:100%;overflow:hidden}
+::selection{background:rgb(192 72 58/.35)}
+:focus-visible{outline:2px solid rgb(255 255 255/.82);outline-offset:3px}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgb(255 255 255/.18);border-radius:8px}
+::-webkit-scrollbar-thumb:hover{background:rgb(255 255 255/.3)}
+::-webkit-scrollbar-corner{background:transparent}
+
+/* ==== 3. 背景层 ==== */
+.st-backdrop-wrap{
+  position:absolute;inset:0;z-index:0;
+  overflow:hidden;pointer-events:none;
+  background:var(--st-bg);
+}
+canvas.st-backdrop{position:absolute;inset:0;display:block;width:100%;height:100%}
+.st-layer{position:absolute;inset:0;pointer-events:none}
+.st-layer.dots{
+  opacity:.03;mix-blend-mode:overlay;
+  background-image:radial-gradient(circle, rgb(255 255 255/.95) .45px, transparent .8px);
+  background-size:2px 2px;
+}
+.st-layer.vignette{
+  background:
+    radial-gradient(130% 96% at 50% 38%, transparent 40%, rgb(3 4 7/.3) 100%),
+    linear-gradient(180deg, rgb(3 4 7/.26) 0%, rgb(3 4 7/0) 30%, rgb(3 4 7/.14) 64%, rgb(3 4 7/.38) 100%);
+}
+.st-layer.grain{
+  opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+}
+
+/* 无 WebGL 兜底 */
+html[data-bg-fallback='1'] #app{background:radial-gradient(120% 90% at 30% 8%, #131822 0%, #0a0c11 52%, #07080b 100%)}
+
+/* ==== 4. 材质总表（玻璃只在这里定义，2/3 号不再写玻璃底） ==== */
+.app-topnav,
+.st-pill,
+.rail,
+.side-panel,
+.rp-panel,
+.st-pop,
+.st-drawer,
+.focus-chip{
+  position:relative;
+  background:linear-gradient(145deg, rgb(255 255 255/.14), rgb(255 255 255/.045) 46%, rgb(255 255 255/.10));
+  border:1px solid rgb(255 255 255/.18);
+  backdrop-filter:blur(18px) saturate(1.5);
+  -webkit-backdrop-filter:blur(18px) saturate(1.5);
+  box-shadow:var(--st-elev);
+}
+.app-topnav::after,
+.st-pill::after,
+.rail::after,
+.side-panel::after,
+.rp-panel::after,
+.st-pop::after,
+.st-drawer::after,
+.focus-chip::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  pointer-events:none;
+  opacity:.55;
+  mix-blend-mode:screen;
+  background:linear-gradient(118deg, rgb(255 255 255/.4), rgb(255 255 255/0) 26%, rgb(255 255 255/0) 64%, rgb(255 255 255/.2));
+}
+.app-topbar{background:none}
+
+/* ==== 5. 顶栏 ==== */
+.app-topbar{
+  position:relative;
+  z-index:40;
+  flex:none;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:0 16px;
+  height:64px;
+}
+@media (min-width:900px){.app-topbar{height:64px}}
+@media (min-width:561px) and (max-width:899px){.app-topbar{height:52px}}
+@media (max-width:560px){.app-topbar{height:44px}}
+.app-topbar-brand{display:flex;align-items:center;gap:10px;border:0;background:none;padding:0 4px}
+.brand-name{font-size:19px;font-weight:800;letter-spacing:-.01em}
+.brand-latin{font-size:9px;font-weight:700;letter-spacing:.34em;opacity:.5}
+.app-topnav{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:2px;
+  padding:6px;
+  border-radius:999px;
+}
+.app-topnav-item{
+  border:0;background:none;color:var(--st-ink-2);
+  font-size:13px;font-weight:600;letter-spacing:.02em;
+  padding:8px 18px;border-radius:999px;
+  transition:background 180ms ease, color 180ms ease;
+}
+.app-topnav-item:hover{color:var(--st-ink);background:rgb(255 255 255/.08)}
+.app-topnav-item.is-active{background:#fff;color:#17181c}
+.app-topbar-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+.app-topbar-save{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;letter-spacing:.02em;color:var(--st-ink-3);
+  font-variant-numeric:tabular-nums;
+}
+.save-dot{width:6px;height:6px;border-radius:50%;background:rgb(255 255 255/.4)}
+[data-save-state='saving'] .save-dot{background:var(--st-red);animation:st-pulse 1.2s ease-in-out infinite}
+[data-save-state='dirty'] .save-dot{background:var(--st-red)}
+[data-save-state='saving'] .save-text{color:var(--st-ink-2)}
+@keyframes st-pulse{
+  0%,100%{opacity:1;box-shadow:0 0 0 0 rgb(192 72 58/.5)}
+  50%{opacity:.5;box-shadow:0 0 0 5px rgb(192 72 58/0)}
+}
+.st-pill{
+  height:34px;
+  display:inline-flex;align-items:center;gap:6px;
+  padding:0 14px;border-radius:999px;
+  font-size:12.5px;letter-spacing:.02em;
+  transition:background 180ms ease, transform 180ms var(--st-ease);
+}
+.st-pill:hover{transform:translateY(-1px)}
+.st-pill.st-icon{padding:0 12px;font-size:15px;letter-spacing:0}
+
+/* ==== 6. 细轨总表 ==== */
+.rail{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;
+  width:20px;flex:none;padding:12px 0;border-radius:999px;
+  writing-mode:vertical-lr;
+  font-size:11px;letter-spacing:.38em;
+  color:var(--st-ink-3);
+  transition:color 180ms ease, background 180ms ease;
+}
+.rail:hover{color:var(--st-ink)}
+
+/* ==== 7. 层级：背景 0 < 正文 1 < 顶栏 40 < 遮罩 45 < 抽屉 46 < 浮层 50 ==== */
+.wb-body{position:relative;z-index:1}
+.st-scrim{position:fixed;inset:0;z-index:45}
+.st-drawer{z-index:46}
+.st-pop{z-index:50}
+
+
+/* ============================================================
+   style.2-panels.css · 伏案静水 · 三栏内部 + 稿纸排版
+   拼接顺序 1 -> 2 -> 3：令牌由 1 号声明，本文件只 var() 消费
+   无外链/无导入、不声明根部令牌、不重复玻璃底/描边/阴影
+   ============================================================ */
+
+/* 0. 面板只补圆角，材质由材质总表给 */
+.side-panel,
+.rp-panel {
+  border-radius: var(--st-radius);
+}
+
+/* ---------------- 1. 三栏骨架 ---------------- */
+.wb-body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 16px;
+  padding: 4px 16px 16px;
+}
+
+.dir-rail {
+  order: -1;
+  align-self: stretch;
+}
+
+.rp-rail {
+  align-self: stretch;
+}
+
+/* ---------------- 2. 章节栏 ---------------- */
+.side-panel {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 252px;
+  overflow: hidden;
+}
+
+.sp-head {
+  flex: none;
+  padding: 14px 14px 10px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sp-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+
+.sp-meta {
+  font-size: 11px;
+  color: var(--st-ink-3);
+  letter-spacing: .02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.sp-collapse {
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--st-ink-3);
+  transition: background var(--st-dur) var(--st-ease), color var(--st-dur) var(--st-ease);
+}
+
+.sp-collapse:hover {
+  background: rgb(255 255 255 / .1);
+  color: var(--st-ink);
+}
+
+.sp-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 2px 8px 10px;
+  overscroll-behavior: contain;
+}
+
+.sp-vol {
+  font-size: 11px;
+  letter-spacing: .18em;
+  color: var(--st-ink-3);
+  padding: 12px 8px 6px;
+}
+
+.sp-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 6px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 180ms ease;
+}
+
+.sp-row:hover {
+  background: rgb(255 255 255 / .07);
+}
+
+.sp-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sp-count {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--st-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.sp-more {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  color: var(--st-ink-3);
+  opacity: 0;
+  font-size: 12px;
+  transition: opacity 160ms ease, background 160ms ease;
+}
+
+.sp-row:hover .sp-more {
+  opacity: 1;
+}
+
+.sp-more:hover {
+  background: rgb(255 255 255 / .12);
+  color: var(--st-ink);
+}
+
+.sp-row.is-current {
+  background: rgb(255 255 255 / .1);
+}
+
+.sp-row.is-current .sp-name {
+  color: #fff;
+}
+
+.sp-current-bar {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  border-radius: 2px;
+  background: var(--st-red);
+  box-shadow: 0 0 10px rgb(192 72 58 / .55);
+}
+
+.sp-foot {
+  flex: none;
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px;
+  border-top: 1px solid rgb(255 255 255 / .08);
+}
+
+.sp-foot button {
+  flex: 1;
+  height: 28px;
+  border-radius: 10px;
+  font-size: 12px;
+  color: var(--st-ink-2);
+  background: rgb(255 255 255 / .06);
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.sp-foot button:hover {
+  background: rgb(255 255 255 / .12);
+  color: #fff;
+}
+
+/* ---------------- 3. 批注栏 ---------------- */
+.rp-panel {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 280px;
+  overflow: hidden;
+}
+
+.rp-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 14px 10px;
+}
+
+.rp-title {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.rp-head button {
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  color: var(--st-ink-3);
+  font-size: 12px;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.rp-head button:hover {
+  background: rgb(255 255 255 / .1);
+  color: var(--st-ink);
+}
+
+.rp-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overscroll-behavior: contain;
+}
+
+.rp-group-title {
+  font-size: 10.5px;
+  letter-spacing: .26em;
+  color: var(--st-ink-3);
+  margin-bottom: 8px;
+}
+
+.note {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgb(255 255 255 / .05);
+  border-left: 2px solid var(--st-red);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: background 180ms ease;
+}
+
+.note:hover {
+  background: rgb(255 255 255 / .08);
+}
+
+.note-quote {
+  font-size: 11.5px;
+  color: var(--st-red-soft);
+  line-height: 1.6;
+}
+
+.note-text {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--st-ink-2);
+}
+
+.note-time {
+  font-size: 11px;
+  color: var(--st-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.rp-input {
+  width: 100%;
+  min-height: 72px;
+  resize: vertical;
+  border-radius: 12px;
+  border: 1px solid rgb(255 255 255 / .12);
+  background: rgb(255 255 255 / .04);
+  color: var(--st-ink);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.7;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.rp-input:focus {
+  border-color: rgb(255 255 255 / .3);
+}
+
+.rp-quick {
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--st-ink-2);
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgb(255 255 255 / .04);
+}
+
+.rp-asset {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgb(255 255 255 / .07);
+}
+
+.rp-asset-meta {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--st-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.rp-upload {
+  height: 28px;
+  border-radius: 10px;
+  font-size: 12px;
+  background: rgb(255 255 255 / .06);
+  color: var(--st-ink-2);
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.rp-upload:hover {
+  background: rgb(255 255 255 / .12);
+  color: #fff;
+}
+
+/* ---------------- 4. 编辑区与稿纸 ---------------- */
+.center-pane {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.rich-host {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ed-head {
+  flex: none;
+  width: min(36em, 100% - 96px);
+  margin: 6px auto 0;
+  padding-bottom: 12px;
+}
+
+.ed-title {
+  margin: 0;
+  font-family: var(--st-serif);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  line-height: 1.3;
+}
+
+.ed-latin {
+  margin-top: 6px;
+  font-size: 9px;
+  letter-spacing: .32em;
+  text-transform: uppercase;
+  color: var(--st-ink-3);
+}
+
+.ed-rule {
+  width: 42px;
+  height: 1px;
+  margin: 10px 0 12px;
+  background: var(--st-red);
+}
+
+.ed-goal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--st-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.goal-track {
+  flex: 1;
+  height: 2px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / .16);
+  overflow: hidden;
+}
+
+.goal-track i {
+  display: block;
+  height: 100%;
+  background: #fff;
+  border-radius: 999px;
+  transition: width 480ms var(--st-ease);
+}
+
+.paper {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  width: min(36em, 100% - 96px);
+  margin: 0 auto 12px;
+  border-radius: 24px;
+  background-color: var(--st-paper);
+  background-image: linear-gradient(150deg, rgb(24 27 33 / .55), rgb(12 14 18 / .72));
+  box-shadow: 0 30px 70px rgb(0 0 0 / .55), inset 0 1px 0 rgb(255 255 255 / .16);
+  padding: 56px 64px;
+  transition: opacity 120ms ease;
+  overscroll-behavior: contain;
+}
+
+.paper.is-swapping {
+  opacity: 0;
+}
+
+.rich-inner {
+  max-width: 100%;
+}
+
+.tiptap {
+  font-family: var(--st-serif);
+  font-size: 17.5px;
+  line-height: 1.95;
+  letter-spacing: .01em;
+  color: var(--st-ink);
+  outline: none;
+  min-height: 40vh;
+  text-align: justify;
+  text-justify: inter-ideograph;
+}
+
+.tiptap p {
+  margin: 0;
+  text-indent: 2em;
+}
+
+.tiptap p + p {
+  margin-top: 0;
+}
+
+.paper-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  font-size: 13px;
+  color: var(--st-ink-3);
+  font-family: var(--st-sans);
+  letter-spacing: .04em;
+}
+
+/* ---------------- 5. 滚动条细则 ---------------- */
+.sp-list::-webkit-scrollbar,
+.rp-scroll::-webkit-scrollbar,
+.paper::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.sp-list::-webkit-scrollbar-thumb,
+.rp-scroll::-webkit-scrollbar-thumb,
+.paper::-webkit-scrollbar-thumb {
+  background: rgb(255 255 255 / .14);
+  border-radius: 8px;
+}
+
+.sp-list::-webkit-scrollbar-track,
+.rp-scroll::-webkit-scrollbar-track,
+.paper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---------------- 6. 断点 ---------------- */
+@media (max-width: 1179px) {
+  .side-panel {
+    width: 168px;
+  }
+}
+
+@media (max-width: 899px) {
+  .rp-panel {
+    display: none;
+  }
+
+  .paper {
+    padding: 40px 36px;
+  }
+}
+
+@media (max-width: 560px) {
+  .side-panel {
+    display: none;
+  }
+
+  .ed-head,
+  .paper {
+    width: 100%;
+  }
+
+  .paper {
+    padding: 24px;
+    border-radius: 18px;
+  }
+}
+
+
+/* ==========================================================================
+   style.3-modes.css · 工具栏 / 浮层 / 抽屉 / 模式 / 响应式收尾
+   被 1→2→3 顺序拼进同一 style 容器；令牌由 1 号声明，本文件只 var() 使用。
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. 工具栏（高度固定 34px，会被量）
+   -------------------------------------------------------------------------- */
+.editor-toolbar{
+  flex:none;
+  width:min(36em,100% - 96px);
+  margin:0 auto 10px;
+  height:34px;
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  gap:2px;
+  padding:0 8px;
+  border-radius:12px;
+  overflow:hidden;
+  background:rgb(255 255 255/.06);
+  border:1px solid rgb(255 255 255/.12);
+  backdrop-filter:blur(14px) saturate(1.4);
+}
+
+.tb{
+  height:26px;
+  min-width:26px;
+  padding:0 7px;
+  border-radius:8px;
+  font-size:12.5px;
+  line-height:1;
+  color:var(--st-ink-2);
+  white-space:nowrap;
+  transition:background 160ms ease,color 160ms ease;
+}
+.tb:hover{
+  background:rgb(255 255 255/.1);
+  color:#fff;
+}
+.tb.on{
+  background:rgb(255 255 255/.16);
+  color:#fff;
+}
+.tb-sep{
+  width:1px;
+  height:16px;
+  margin:0 4px;
+  background:rgb(255 255 255/.12);
+  flex:none;
+}
+.tb b,.tb i,.tb u,.tb s{font-size:12.5px}
+
+/* --------------------------------------------------------------------------
+   2. 浮层 / 面板 / 遮罩
+   -------------------------------------------------------------------------- */
+.st-pop{
+  position:absolute;
+  z-index:50;
+  padding:6px;
+  border-radius:16px;
+  display:none;
+  min-width:180px;
+  transform-origin:top right;
+  animation:st-pop-in 200ms var(--st-ease) both;
+}
+@keyframes st-pop-in{
+  from{opacity:0;transform:translateY(-6px) scale(.98)}
+  to{opacity:1;transform:none}
+}
+.st-pop button{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  width:100%;
+  height:32px;
+  padding:0 10px;
+  border-radius:10px;
+  font-size:13px;
+  color:var(--st-ink-2);
+  text-align:left;
+}
+.st-pop button:hover{
+  background:rgb(255 255 255/.1);
+  color:#fff;
+}
+.st-pop .st-pop-sep{
+  height:1px;
+  margin:4px 6px;
+  background:rgb(255 255 255/.1);
+}
+
+#pop-menu{
+  top:calc(var(--st-topbar,64px) + 4px);
+  right:16px;
+  width:220px;
+}
+#pop-formats{
+  position:absolute;
+  right:max(16px,calc(50% - 18em));
+  top:auto;
+  width:200px;
+}
+#pop-ctx{
+  left:50%;
+  top:30%;
+  transform:translateX(-50%);
+  width:210px;
+}
+
+.st-sheet{
+  position:absolute;
+  left:50%;
+  top:14%;
+  transform:translateX(-50%);
+  width:min(520px,calc(100% - 32px));
+  z-index:50;
+  padding:14px;
+  border-radius:18px;
+  display:none;
+}
+
+#pop-search input{
+  width:100%;
+  height:34px;
+  border-radius:10px;
+  border:1px solid rgb(255 255 255/.14);
+  background:rgb(255 255 255/.05);
+  color:var(--st-ink);
+  font:inherit;
+  font-size:13px;
+  padding:0 12px;
+  outline:none;
+}
+.sr-list{
+  margin-top:10px;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.sr-item{
+  padding:9px 10px;
+  border-radius:10px;
+  font-size:12.5px;
+  color:var(--st-ink-2);
+}
+.sr-item:hover{background:rgb(255 255 255/.08)}
+.sr-item b{
+  display:block;
+  font-size:12.5px;
+  color:var(--st-ink);
+  margin-bottom:2px;
+}
+mark{
+  background:rgb(192 72 58/.32);
+  color:#fff;
+  border-radius:3px;
+  padding:0 1px;
+}
+
+.hi-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px;
+  border-radius:10px;
+  font-size:12.5px;
+  color:var(--st-ink-2);
+}
+.hi-row:hover{background:rgb(255 255 255/.08)}
+.hi-time{
+  flex:none;
+  font-variant-numeric:tabular-nums;
+  color:var(--st-ink-3);
+  font-size:11px;
+  width:88px;
+}
+.hi-diff{
+  flex:1;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.hi-words{
+  flex:none;
+  font-size:11px;
+  color:var(--st-ink-3);
+  font-variant-numeric:tabular-nums;
+}
+.hi-restore{
+  flex:none;
+  height:26px;
+  padding:0 10px;
+  border-radius:8px;
+  font-size:12px;
+  background:rgb(255 255 255/.1);
+  color:#fff;
+}
+
+.st-scrim{
+  position:absolute;
+  inset:0;
+  z-index:45;
+  background:rgb(3 4 7/.5);
+  backdrop-filter:blur(2px);
+  display:none;
+  animation:st-fade 200ms ease both;
+}
+@keyframes st-fade{
+  from{opacity:0}
+  to{opacity:1}
+}
+
+/* --------------------------------------------------------------------------
+   3. 场景可见性（data-scene 驱动）
+   -------------------------------------------------------------------------- */
+#app[data-scene='menu'] #pop-menu,
+#app[data-scene='formats'] #pop-formats,
+#app[data-scene='ctx'] #pop-ctx,
+#app[data-scene='search'] #pop-search,
+#app[data-scene='history'] #pop-history{display:block}
+
+#app[data-scene='search'] .st-scrim,
+#app[data-scene='history'] .st-scrim{display:block}
+
+/* --------------------------------------------------------------------------
+   4. 抽屉
+   -------------------------------------------------------------------------- */
+.st-drawer{
+  position:absolute;
+  top:0;
+  bottom:0;
+  z-index:46;
+  width:280px;
+  display:flex;
+  flex-direction:column;
+  overflow:auto;
+  padding:16px;
+  transition:transform 380ms var(--st-ease);
+  border-radius:0 22px 22px 0;
+}
+#drawer-dir{
+  left:0;
+  transform:translateX(-104%);
+}
+#drawer-notes{
+  right:0;
+  border-radius:22px 0 0 22px;
+  transform:translateX(104%);
+}
+#app.is-drawer-dir #drawer-dir{transform:none}
+#app.is-drawer-notes #drawer-notes{transform:none}
+
+.st-drawer{display:none}
+#app.is-drawer-dir #drawer-dir,
+#app.is-drawer-notes #drawer-notes{display:flex}
+
+/* --------------------------------------------------------------------------
+   5. 模式（focus / read）
+   -------------------------------------------------------------------------- */
+#app[data-mode='focus'] :is(.side-panel,.rp-panel,.rp-rail,.dir-rail,.editor-toolbar){display:none}
+#app[data-mode='read'] :is(.rp-panel,.rp-rail,.editor-toolbar){display:none}
+
+#app[data-mode='focus'] .ed-head,
+#app[data-mode='focus'] .paper,
+#app[data-mode='read'] .ed-head,
+#app[data-mode='read'] .paper{width:min(42em,100% - 64px)}
+
+.focus-chip{
+  position:absolute;
+  left:16px;
+  bottom:16px;
+  z-index:41;
+  width:32px;
+  height:32px;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  writing-mode:vertical-lr;
+  font-size:10px;
+  letter-spacing:.3em;
+  color:var(--st-ink-2);
+}
+#app[data-mode='focus'] .focus-chip{display:flex}
+
+/* --------------------------------------------------------------------------
+   6. 响应式收尾
+   -------------------------------------------------------------------------- */
+/* topbar 三档高度，供 #pop-menu 的 --st-topbar 回落值使用 */
+@media (min-width:900px){
+  #app{--st-topbar:64px}
+}
+@media (min-width:561px) and (max-width:899px){
+  #app{--st-topbar:52px}
+}
+@media (max-width:560px){
+  #app{--st-topbar:44px}
+}
+
+@media (max-width:560px){
+  .editor-toolbar{width:100%}
+  /* 窄栏收按钮：保留 撤销/重做/粗/斜/下划线/正文/更多格式/发送 */
+  .editor-toolbar :is([data-act=h1],[data-act=h2],[data-act=h3],[data-act=font-size],[data-act=color],[data-act=highlight],[data-act=link],[data-act=bookmark]){display:none}
+}
+
+@media (max-width:560px){
+  .app-topnav{
+    position:static;
+    left:auto;
+    transform:none;
+    order:-1;
+    flex:1;
+    justify-content:flex-start;
+    overflow:auto;
+    scrollbar-width:none;
+  }
+  .app-topnav::-webkit-scrollbar{display:none}
+  .app-topnav-item{padding:8px 12px}
+  .app-topbar-actions .st-pill[data-anchor='topbar-search']{display:none}
+  .app-topbar{gap:8px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:1ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:1ms!important;
+  }
+}
+
+.is-hidden{display:none!important}
+.st-pop[hidden]{display:none}
+
+/* ==========================================================================
+   第 2 轮修正（追加在文件末尾 = 层叠最后，只覆盖、不改上文）
+   取证：1440×900 / 380×900 真 Chrome 截图
+   ========================================================================== */
+
+/* --- D1 · 竖排细轨：面板展开时不再出现第四条列 ----------------------------- */
+.dir-rail,
+.rp-rail{display:none}
+#app.is-dir-collapsed .dir-rail{display:flex}
+#app.is-notes-collapsed .rp-rail{display:flex}
+@media (max-width:560px){
+  .dir-rail{display:flex}
+}
+@media (max-width:899px){
+  .rp-rail{display:flex}
+}
+
+/* --- D2 · 工具栏溢出：隐藏 5 枚次要按钮，收紧内边距，末项「发给 DSH」完整 ---- */
+.editor-toolbar :is([data-act=font-size],[data-act=color],[data-act=highlight],[data-act=link],[data-act=bookmark]){display:none}
+.tb{padding:0 6px}
+.tb-sep{margin:0 3px}
+
+/* --- D3 · 沉浸模式徽记：竖排圆点糊字 → 横向小胶囊 ---------------------------- */
+#app[data-mode='focus'] .focus-chip{
+  display:flex;
+  width:auto;
+  height:28px;
+  padding:0 12px;
+  border-radius:999px;
+  writing-mode:horizontal-tb;
+  letter-spacing:.06em;
+  font-size:11px;
+  left:16px;
+  bottom:16px;
+}
+
+/* --- D4 · 380 窄屏顶栏：导航不竖排、不压品牌，保存只留圆点 --------------------- */
+@media (max-width:560px){
+  .app-topbar{
+    gap:8px;
+    padding:0 10px;
+  }
+  .brand-latin{display:none}
+  .brand-name{
+    font-size:16px;
+    white-space:nowrap;
+  }
+  .app-topnav{
+    position:static;
+    left:auto;
+    transform:none;
+    order:0;
+    flex:1;
+    min-width:0;
+    display:flex;
+    gap:2px;
+    padding:4px;
+    overflow-x:auto;
+    justify-content:flex-start;
+    scrollbar-width:none;
+  }
+  .app-topnav::-webkit-scrollbar{display:none}
+  .app-topnav-item{
+    flex:none;
+    white-space:nowrap;
+    padding:7px 12px;
+    font-size:12.5px;
+  }
+  .app-topbar-actions{
+    margin-left:0;
+    flex:none;
+    gap:6px;
+  }
+  .app-topbar-save .save-text{display:none}
+}
+
+/* --- D5 · 380 细轨竖排字不再被切头 ------------------------------------------ */
+@media (max-width:560px){
+  .rail{
+    letter-spacing:.18em;
+    font-size:10px;
+  }
+}
+
+/* ==========================================================================
+   第 3 轮修正（继续追加在末尾；上文一行未动）
+   取证：1440×900 / 380×900 真 Chrome 截图 06-writing-380 / 12-history
+   ========================================================================== */
+
+/* --- D6 · 380 工具栏：硬裁剪 → 可横滑 + 右缘淡出（不隐藏任何 [data-act]） ---- */
+@media (max-width:560px){
+  .editor-toolbar{
+    overflow-x:auto;
+    overflow-y:hidden;
+    scrollbar-width:none;
+    -webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 24px),transparent 100%);
+    mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 24px),transparent 100%);
+  }
+  .editor-toolbar::-webkit-scrollbar{display:none}
+  .editor-toolbar .tb,
+  .editor-toolbar .tb-sep{flex:none}
+}
+
+/* --- D8 · 章节历史行：.st-pop button{width:100%} 波及行内按钮，恢复被撑满 ----- */
+.st-pop .hi-row{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+.st-pop .hi-restore,
+.st-pop .hi-row button{
+  width:auto;
+  flex:none;
+  padding:0 10px;
+}
+.st-pop .hi-diff{
+  flex:1 1 auto;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--st-ink-2);
+}
+.st-pop .hi-time{
+  flex:none;
+  width:88px;
+}
+.st-pop .hi-words{
+  flex:none;
+  margin-left:auto;
+}
+</style>
+</head>
+<body>
+<div id="app" data-scene="writing" data-mode="" data-bg="ink">
+  <div class="st-backdrop-wrap"><canvas class="st-backdrop" id="st-bg"></canvas><div class="st-layer dots"></div><div class="st-layer vignette"></div><div class="st-layer grain"></div></div>
+
+  <header class="app-topbar">
+    <button class="app-topbar-brand" type="button" data-anchor="brand"><span class="brand-name">小说工坊</span><small class="brand-latin">LATENT</small></button>
+    <nav class="app-topnav" aria-label="功能模块">
+      <button class="app-topnav-item" type="button" data-nav="shelf">书架</button>
+      <button class="app-topnav-item is-active" type="button" data-nav="chapters">正文</button>
+      <button class="app-topnav-item" type="button" data-nav="outline">大纲</button>
+      <button class="app-topnav-item" type="button" data-nav="lore">设定</button>
+      <button class="app-topnav-item" type="button" data-nav="characters">人物</button>
+      <button class="app-topnav-item" type="button" data-nav="snippets">灵感</button>
+      <button class="app-topnav-item" type="button" data-nav="settings">设置</button>
+    </nav>
+    <div class="app-topbar-actions">
+      <span class="app-topbar-save" data-save-state="saved" data-anchor="save"><span class="save-dot"></span><span class="save-text">已保存 19:04:12</span></span>
+      <button class="st-pill" type="button" data-anchor="topbar-search"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>搜索</span></button>
+      <button class="st-pill st-icon" type="button" data-anchor="topbar-more" aria-label="更多">⋯</button>
+    </div>
+  </header>
+
+  <div class="wb-body">
+    <aside class="side-panel" data-anchor="tree" aria-label="卷与章">
+      <div class="sp-head"><span class="sp-title">卷与章</span><span class="sp-meta"></span><button class="sp-collapse" type="button" data-anchor="dir-collapse" aria-label="收起章节栏">‹</button></div>
+      <div class="sp-list" id="tree-list"></div>
+      <div class="sp-foot"><button type="button" data-anchor="tree-new">＋ 新建章</button><button type="button" data-anchor="tree-new-volume">新建卷</button></div>
+    </aside>
+    <button class="rail dir-rail" type="button" data-anchor="dir-rail">章节</button>
+
+    <main class="center-pane">
+      <div class="ed-head">
+        <h1 class="ed-title" data-anchor="ed-title"></h1>
+        <div class="ed-latin"></div>
+        <div class="ed-rule"></div>
+        <div class="ed-goal" data-anchor="ed-goal"><span class="goal-track"><i></i></span><span class="goal-text"></span></div>
+      </div>
+      <div class="editor-toolbar" role="toolbar" aria-label="格式工具栏">
+        <button class="tb" type="button" data-act="undo" title="撤销">↶</button>
+        <button class="tb" type="button" data-act="redo" title="重做">↷</button>
+        <span class="tb-sep"></span>
+        <button class="tb" type="button" data-act="bold" title="加粗"><b>B</b></button>
+        <button class="tb" type="button" data-act="italic" title="斜体"><i>I</i></button>
+        <button class="tb" type="button" data-act="underline" title="下划线"><u>U</u></button>
+        <button class="tb" type="button" data-act="strike" title="删除线"><s>S</s></button>
+        <span class="tb-sep"></span>
+        <button class="tb" type="button" data-act="paragraph" title="正文">正文</button>
+        <button class="tb" type="button" data-act="h1" title="标题一">H1</button>
+        <button class="tb" type="button" data-act="h2" title="标题二">H2</button>
+        <button class="tb" type="button" data-act="h3" title="标题三">H3</button>
+        <span class="tb-sep"></span>
+        <button class="tb" type="button" data-act="font-size" title="字号">字号</button>
+        <button class="tb" type="button" data-act="color" title="字体颜色">A</button>
+        <button class="tb" type="button" data-act="highlight" title="底色">底色</button>
+        <button class="tb" type="button" data-act="link" title="超链接">链</button>
+        <button class="tb" type="button" data-act="more-formats" title="更多格式">更多格式 ⌄</button>
+        <button class="tb" type="button" data-act="bookmark" title="章节书签">书签</button>
+        <button class="tb" type="button" data-act="send" title="发送给 DSH">发给 DSH</button>
+      </div>
+      <div class="paper st-paper" id="paper"><div class="rich-host"><div class="rich-inner"><div class="tiptap" id="tiptap" contenteditable="true" spellcheck="false"></div></div></div></div>
+    </main>
+
+    <aside class="rp-panel" id="rp-panel" aria-label="批注与资料">
+      <div class="rp-head"><span class="rp-title">批注与资料</span><button type="button" data-anchor="notes-collapse" aria-label="收起批注栏">›</button></div>
+      <div class="rp-scroll">
+        <section class="rp-group"><div class="rp-group-title">本章批注</div><div id="notes-list" data-anchor="notes-list"></div></section>
+        <textarea class="rp-input" id="notes-input" data-anchor="notes-input" placeholder="批注内容…"></textarea>
+        <section class="rp-group"><div class="rp-group-title">本章要点</div><div class="rp-quick" data-anchor="notes-quick"></div></section>
+        <section class="rp-group"><div class="rp-group-title">素材</div><ul class="rp-assets" id="asset-list"></ul><button class="rp-upload" type="button" data-anchor="notes-upload">＋ 上传</button></section>
+      </div>
+    </aside>
+    <button class="rail rp-rail" type="button" data-anchor="notes-rail">批注栏</button>
+
+    <div class="st-pop" id="pop-menu">
+      <button type="button" data-menu="split">拆出独立窗口</button>
+      <button type="button" data-menu="bookmark">章节书签 · 第三章</button>
+      <button type="button" data-menu="dir">收起目录栏</button>
+      <div class="st-pop-sep"></div>
+      <button type="button" data-menu="focus">沉浸写作</button>
+      <button type="button" data-menu="read">阅读模式</button>
+      <div class="st-pop-sep"></div>
+      <button type="button" data-menu="settings">设置</button>
+    </div>
+    <div class="st-pop" id="pop-formats">
+      <button type="button" data-fmt="left">左对齐</button>
+      <button type="button" data-fmt="center">居中</button>
+      <button type="button" data-fmt="right">右对齐</button>
+      <button type="button" data-fmt="justify">两端对齐</button>
+      <div class="st-pop-sep"></div>
+      <button type="button" data-fmt="ul">无序列表</button>
+      <button type="button" data-fmt="ol">有序列表</button>
+      <div class="st-pop-sep"></div>
+      <button type="button" data-fmt="quote">引用</button>
+      <button type="button" data-fmt="clear">清除格式</button>
+    </div>
+    <div class="st-pop" id="pop-ctx" data-anchor="ctx-menu">
+      <button type="button">剪切</button><button type="button">复制</button><button type="button">粘贴</button>
+      <div class="st-pop-sep"></div>
+      <button type="button">加粗</button><button type="button">斜体</button>
+      <div class="st-pop-sep"></div>
+      <button type="button">插入双链</button><button type="button">查词</button><button type="button">发送给 DSH</button>
+    </div>
+    <div class="st-pop st-sheet" id="pop-search" data-anchor="search-panel">
+      <input type="search" id="search-input" data-anchor="search-input" placeholder="搜索章名、正文、批注…" aria-label="搜索">
+      <div class="sr-list">
+        <div class="sr-item"><b>第三章 · 咸水里的钟</b>潮水退到<mark>第三级盐阶</mark>的时候，钟声才从水底浮上来。</div>
+        <div class="sr-item"><b>第二章 · 灯船</b>他把<mark>盐阶</mark>上的灯一盏盏挪进船篷。</div>
+        <div class="sr-item"><b>批注 · 第二章</b>「盐阶」这个意象第二次出现，可以再压一层。</div>
+      </div>
+    </div>
+    <div class="st-pop st-sheet" id="pop-history" data-anchor="history-panel">
+      <div class="rp-group-title">章节历史</div>
+      <div id="hi-list"></div>
+    </div>
+    <div class="st-drawer" id="drawer-dir"><div class="rp-group-title">章节</div><div id="drawer-tree"></div></div>
+    <div class="st-drawer" id="drawer-notes"><div class="rp-group-title">批注</div><div id="drawer-notes-list"></div></div>
+    <div class="st-scrim" id="scrim"></div>
+    <div class="focus-chip" id="focus-chip">ESC 退出沉浸</div>
+  </div>
+</div>
+
+<script id="ns-inline">
+/* ==== inline:begin ==== */
+// blue-noise.js — 64×64 void-and-cluster 蓝噪声（原始 8bit 字节，base64）。
+// 由 tools/gen-blue-noise.mjs 生成，种子 20261103，勿手改。
+const BLUE_NOISE_SIZE = 64;
+const BLUE_NOISE_B64 = "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";
+/* studio-gl.js — 小说工坊「正文」界面背板：静水·墨晕（ink）/ 灯下·微光（lamp）/ 远山·雾（ridge）。
+   三支流体层片段着色器共用一套骨架：WebGL2/WebGL1 双通道、自适应分辨率、蓝噪声 6 级量化、
+   打字涟漪、色板插值；骨架沿用 app/src/services/latent/latent-gl.js，流体层与量化层是新的。
+
+   契约：
+     window.createStudioBackdrop(canvas, opts) -> api
+       opts = { mode:'ink'|'lamp'|'ridge', speed, pixel, palette:{a,b,c}, reduced, gpu }
+       api  = { setMode(m), setPalette(p,{duration}), pulse(strength), stats(), destroy() }
+     window.__nsStudioStats() -> 当前实例的 stats()；未建实例时给一份 backend:'css' 的空值。
+
+   取不到 WebGL 时不抛错、不 console.error：返回 backend:'css' 的空操作 api，由 index.html 的 CSS 兜底。 */
+
+;(function () {
+  'use strict'
+
+  var VERT = [
+    'attribute vec2 aPos;',
+    'varying vec2 v_uv;',
+    'void main(){ v_uv = aPos * 0.5 + 0.5; gl_Position = vec4(aPos, 0.0, 1.0); }'
+  ].join('\n')
+
+  /* 尘埃点精灵：位置用 CSS px，点大小 1 设备像素（真 1px）。 */
+  var DUST_VERT = [
+    'attribute vec2 aPos;',
+    'uniform vec2 u_size;',
+    'void main(){',
+    '  vec2 n = aPos / max(vec2(1.0), u_size);',
+    '  gl_Position = vec4(n.x * 2.0 - 1.0, 1.0 - n.y * 2.0, 0.0, 1.0);',
+    '  gl_PointSize = 1.0;',
+    '}'
+  ].join('\n')
+
+  var DUST_FRAG = [
+    'precision mediump float;',
+    'uniform float u_alpha;',
+    'void main(){ gl_FragColor = vec4(vec3(1.0, 0.93, 0.84) * u_alpha, 1.0); }'
+  ].join('\n')
+
+  /* 骨架：三支流体层共用的 uniform、噪声、量化、涟漪与颗粒。 */
+  var COMMON = [
+    '#ifdef GL_FRAGMENT_PRECISION_HIGH',
+    'precision highp float;',
+    '#else',
+    'precision mediump float;',
+    '#endif',
+    'uniform float u_time;',       /* 已按方向 flow 缩放的流体时间 */
+    'uniform float u_clock;',      /* 真实秒数：呼吸 24s 周期、山线视差 px/s 都按它算 */
+    'uniform vec2  u_resolution;',
+    'uniform float u_dpr;',        /* 设备像素 / CSS 像素（含自适应档位） */
+    'uniform vec3  u_pal0;',
+    'uniform vec3  u_pal1;',
+    'uniform vec3  u_pal2;',
+    'uniform float u_pixel;',
+    'uniform float u_ripple;',
+    'uniform float u_phase;',
+    'uniform sampler2D u_noise;',
+    'varying vec2 v_uv;',
+    '',
+    'float hash21(vec2 p){ p = fract(p * vec2(0.3183099, 0.3678794)) + 0.1; p += dot(p, p + 19.19); return fract(p.x * p.y); }',
+    'float vnoise(vec2 st){',
+    '  vec2 i = floor(st); vec2 f = fract(st);',
+    '  float a = hash21(i); float b = hash21(i + vec2(1.0, 0.0));',
+    '  float c = hash21(i + vec2(0.0, 1.0)); float d = hash21(i + vec2(1.0, 1.0));',
+    '  vec2 u = f * f * (3.0 - 2.0 * f);',
+    '  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);',
+    '}',
+    'float fbm4(vec2 st){',
+    '  float sum = 0.0; float amp = 0.5;',
+    '  for (int i = 0; i < 4; i++) { sum += amp * vnoise(st); st = st * 2.03 + vec2(11.7, 5.3); amp *= 0.5; }',
+    '  return sum;',
+    '}',
+    /* 蓝噪声 6 级量化：把连续 alpha 压成 0/0.2/0.4/0.6/0.8/1.0 六档，阈值取自 64×64 蓝噪声 */
+    'float quantize6(float a, vec2 fragPx){ return floor(clamp(a, 0.0, 1.0) * 5.0 + texture2D(u_noise, fragPx / 64.0).r) / 5.0; }',
+    /* 像素格：pixel 0 → 1px，0.35 → 2px，1 → 4px（设备像素） */
+    'vec2 pixelCell(vec2 fragPx){ float s = max(1.0, floor(1.0 + u_pixel * 3.0)); return floor(fragPx / s) * s + s * 0.5; }',
+    /* 打字涟漪：以画布中心为圆心、半径 220 CSS px 的墨晕光斑 */
+    'float rippleSpot(vec2 fragPx){ float d = length(fragPx - u_resolution * 0.5) / max(1.0, 220.0 * u_dpr); return exp(-d * d * 2.2); }',
+    'float grainAt(vec2 fragPx){ return hash21(floor(fragPx) + u_phase * 37.0) - 0.5; }',
+    'float vignetteAt(vec2 uv, float amount){ return 1.0 - amount * smoothstep(0.30, 0.92, length(uv - vec2(0.5)) * 1.30); }',
+    ''
+  ].join('\n')
+
+  /* ink 静水·墨晕：4 octave fbm 极慢对流 + 三层 1/d^2.2 墨团，色板压到 12–18% alpha。 */
+  var INK_FRAG = COMMON + [
+    'void main(){',
+    '  vec2 cell = pixelCell(gl_FragCoord.xy);',
+    '  vec2 uv = cell / u_resolution;',
+    '  float aspect = u_resolution.x / max(1.0, u_resolution.y);',
+    '  vec2 p = vec2(uv.x * aspect, uv.y);',
+    /* 呼吸：域扭曲振幅 0.006、周期 24s（2π/24 = 0.2618）、相位随机 */
+    '  float breathe = 0.006 * sin(u_clock * 0.26179939 + u_phase);',
+    '  vec2 flow = vec2(',
+    '    fbm4(p * 1.7 + vec2(u_time, -u_time * 0.7)),',
+    '    fbm4(p * 1.7 + vec2(5.2 - u_time * 0.8, 3.1 + u_time))',
+    '  ) - 0.5;',
+    '  vec2 q = p + flow * 0.055 + breathe;',
+    '  vec3 ink = vec3(0.0);',
+    '  float weight = 0.0;',
+    '  for (int i = 0; i < 3; i++) {',
+    '    float fi = float(i);',
+    '    vec2 center = vec2(0.5 * aspect + 0.26 * sin(u_time * 0.9 + fi * 2.1),',
+    '                       0.5 + 0.24 * cos(u_time * 0.7 + fi * 1.7));',
+    '    float d = length(q - center) + 0.001;',
+    '    float w = 1.0 / pow(d, 2.2);',
+    '    vec3 tint = u_pal1;',
+    '    if (i == 0) { tint = u_pal0; }',
+    '    if (i == 2) { tint = u_pal2; }',
+    '    ink += tint * w;',
+    '    weight += w;',
+    '  }',
+    '  ink /= max(0.0001, weight);',
+    '  float alpha = mix(0.12, 0.18, fbm4(q * 2.4));',
+    '  alpha += u_ripple * rippleSpot(cell) * 3.0;',
+    '  float cover = quantize6(alpha, cell);',
+    '  vec3 col = mix(u_pal1 * 0.30, ink, cover);',
+    '  col *= vignetteAt(uv, 0.34);',
+    '  col += vec3(grainAt(cell) * 0.03);',
+    '  gl_FragColor = vec4(col, 1.0);',
+    '}'
+  ].join('\n')
+
+  /* lamp 灯下·微光：单光源椭圆光池 + 边缘低频微颤（尘埃由 JS 逐帧算、用 GL_POINTS 画）。 */
+  var LAMP_FRAG = COMMON + [
+    'void main(){',
+    '  vec2 cell = pixelCell(gl_FragCoord.xy);',
+    '  vec2 uv = cell / u_resolution;',
+    '  vec2 t = vec2(uv.x, 1.0 - uv.y);',
+    /* 光池中心 uv y = 0.18（自上而下计），椭圆半径 0.62 / 0.42 */
+    '  float wob = 1.0 + 0.004 * (vnoise(vec2(u_clock * 0.13, 1.7)) - 0.5) * 2.0;',
+    '  float d = length((t - vec2(0.5, 0.18)) / vec2(0.62, 0.42)) * wob;',
+    '  float pool = clamp(exp(-d * d * 1.45) * 1.06, 0.0, 1.0);',
+    '  float cover = quantize6(pool + u_ripple * rippleSpot(cell) * 2.0, cell);',
+    '  vec3 col = mix(u_pal1, u_pal0, cover);',
+    '  col += u_pal0 * pool * 0.22;',
+    '  col *= vignetteAt(uv, 0.30);',
+    '  col += vec3(grainAt(cell) * 0.02);',
+    '  gl_FragColor = vec4(col, 1.0);',
+    '}'
+  ].join('\n')
+
+  /* ridge 远山·雾：上方近乎纯平 + 月晕，底部三分之一四层 1D 噪声山线（视差 0.3–1.2 px/s）。 */
+  var RIDGE_FRAG = COMMON + [
+    'void main(){',
+    '  vec2 cell = pixelCell(gl_FragCoord.xy);',
+    '  vec2 uv = cell / u_resolution;',
+    '  vec2 t = vec2(uv.x, 1.0 - uv.y);',
+    '  vec3 col = u_pal0;',
+    '  vec2 mt = (t - vec2(0.74, 0.20)) / vec2(0.30, 0.24);',
+    '  col += u_pal2 * exp(-dot(mt, mt) * 1.6) * 0.10;',
+    '  vec3 ink = u_pal0;',
+    '  float cover = 0.0;',
+    '  for (int i = 0; i < 4; i++) {',
+    '    float fi = float(i);',
+    '    float speed = 0.3 + fi * 0.3;',
+    '    float x = (cell.x + u_clock * speed) / u_resolution.x;',
+    '    float line = 0.64 + fi * 0.070',
+    '      + 0.070 * vnoise(vec2(x * (3.5 + fi * 2.0), 9.1 + fi * 5.7))',
+    '      + 0.028 * vnoise(vec2(x * (11.0 + fi * 4.0), 2.3 + fi * 3.1));',
+    '    float inside = smoothstep(line - 0.004, line + 0.004, t.y);',
+    '    float a = (0.52 + fi * 0.13) * inside;',
+    '    if (a > cover) {',
+    '      cover = a;',
+    '      ink = mix(u_pal0, u_pal1, 0.28 + fi * 0.16) * (1.0 - fi * 0.08);',
+    '    }',
+    '  }',
+    '  cover += 0.14 * fbm4(vec2(t.x * 2.6, t.y * 7.0 - u_time * 1.2)) * smoothstep(0.52, 0.95, t.y);',
+    '  cover += u_ripple * rippleSpot(cell) * 1.6;',
+    '  col = mix(col, ink, quantize6(cover, cell));',
+    '  col *= vignetteAt(uv, 0.22);',
+    '  col += vec3(grainAt(cell) * 0.02);',
+    '  gl_FragColor = vec4(col, 1.0);',
+    '}'
+  ].join('\n')
+
+  var SCALES = [1.5, 1.25, 1, 0.75]
+  var MAX_EDGE = 1600
+  var DPR_CAP = 2
+  var RIPPLE_MAX = 0.12
+  var RIPPLE_LIFE = 1400
+  var DUST_COUNT = 200
+
+  function toRgb(value, fallback) {
+    if (Array.isArray(value) && value.length >= 3) {
+      const list = value.slice(0, 3).map(Number)
+      const scale = list.some(v => v > 1.0001) ? 255 : 1
+      return list.map(v => Math.min(1, Math.max(0, (Number(v) || 0) / scale)))
+    }
+    if (typeof value === 'string') {
+      const text = value.trim()
+      const hex = /^#?([0-9a-f]{6})$/i.exec(text)
+      if (hex) {
+        const n = parseInt(hex[1], 16)
+        return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]
+      }
+      const rgb = /^rgba?\(([^)]+)\)$/i.exec(text)
+      if (rgb) {
+        const parts = rgb[1].split(',').map(x => parseFloat(x))
+        if (parts.length >= 3) return parts.slice(0, 3).map(v => Math.min(1, Math.max(0, (Number(v) || 0) / 255)))
+      }
+    }
+    return fallback
+  }
+
+  function normalizePalette(input, fallback) {
+    const src = input && typeof input === 'object' ? input : {}
+    return {
+      a: toRgb(src.a, fallback.a),
+      b: toRgb(src.b, fallback.b),
+      c: toRgb(src.c, fallback.c)
+    }
+  }
+
+  const FALLBACK_RGB = { a: [0.105, 0.14, 0.188], b: [0.133, 0.149, 0.169], c: [0.29, 0.165, 0.141] }
+
+  /* 三个方向：同骨架，只换流体层片元着色器与默认色板。flow 是各自的流体时间流速。 */
+  const MODES = {
+    ink: {
+      flow: 0.015,
+      frag: INK_FRAG,
+      palette: normalizePalette({ a: '#1b2430', b: '#22262b', c: '#4a2a24' }, FALLBACK_RGB)
+    },
+    lamp: {
+      flow: 0.02,
+      frag: LAMP_FRAG,
+      palette: normalizePalette({ a: '#2a1f18', b: '#08090c', c: '#1a1512' }, FALLBACK_RGB)
+    },
+    ridge: {
+      flow: 0.02,
+      frag: RIDGE_FRAG,
+      palette: normalizePalette({ a: '#07090d', b: '#101820', c: '#8fa6bd' }, FALLBACK_RGB)
+    }
+  }
+
+  const UNIFORM_NAMES = ['u_time', 'u_clock', 'u_resolution', 'u_dpr', 'u_pal0', 'u_pal1', 'u_pal2', 'u_pixel', 'u_ripple', 'u_phase', 'u_noise']
+
+  /* 64×64 蓝噪声：优先用同页 blue-noise.js 的全局常量（内联脚本里是 const，经典脚本共享全局词法环境），
+     独立引入时退回同尺寸确定性哈希噪声，保证纹理始终是 64×64、逐字节上传。 */
+  function noiseSource() {
+    const size = (typeof BLUE_NOISE_SIZE === 'number' && BLUE_NOISE_SIZE > 0) ? (BLUE_NOISE_SIZE | 0) : 64
+    const b64 = (typeof BLUE_NOISE_B64 === 'string') ? BLUE_NOISE_B64 : ''
+    const total = size * size
+    const bytes = new Uint8Array(total)
+    if (b64) {
+      try {
+        const bin = window.atob(b64)
+        if (bin.length >= total) {
+          for (let i = 0; i < total; i += 1) bytes[i] = bin.charCodeAt(i) & 0xff
+          return { size, bytes }
+        }
+      } catch (_error) { /* 解码失败就走下面的哈希兜底 */ }
+    }
+    for (let i = 0; i < total; i += 1) {
+      const h = Math.sin((i % size) * 12.9898 + Math.floor(i / size) * 78.233) * 43758.5453
+      bytes[i] = Math.round((h - Math.floor(h)) * 255)
+    }
+    return { size, bytes }
+  }
+
+  function compile(gl, type, source) {
+    const shader = gl.createShader(type)
+    gl.shaderSource(shader, source)
+    gl.compileShader(shader)
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) throw new Error(String(gl.getShaderInfoLog(shader) || 'compile'))
+    return shader
+  }
+
+  function link(gl, fragment) {
+    const program = gl.createProgram()
+    const vs = compile(gl, gl.VERTEX_SHADER, VERT)
+    const fs = compile(gl, gl.FRAGMENT_SHADER, fragment)
+    gl.attachShader(program, vs)
+    gl.attachShader(program, fs)
+    gl.linkProgram(program)
+    gl.deleteShader(vs)
+    gl.deleteShader(fs)
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(String(gl.getProgramInfoLog(program) || 'link'))
+    return program
+  }
+
+  function emptyStats(mode) {
+    return {
+      backend: 'css',
+      renderer: '',
+      avgFrameMs: 0,
+      scale: 0,
+      pixels: [0, 0],
+      noise: 'blue+dither',
+      mode: mode || 'ink',
+      time: 0,
+      ripple: { amp: 0 },
+      shaderLog: ''
+    }
+  }
+
+  /* 取不到 WebGL：不抛错、不 console.error，回调全部空操作，交给页面 CSS 兜底。 */
+  function cssFallback(reason, mode) {
+    let current = MODES[mode] ? mode : 'ink'
+    return {
+      backend: 'css',
+      setMode(next) { if (MODES[next]) current = next },
+      setPalette() {},
+      pulse() {},
+      stats() {
+        const base = emptyStats(current)
+        base.renderer = 'css-fallback:' + reason
+        return base
+      },
+      destroy() {}
+    }
+  }
+
+  let activeApi = null
+
+  function createStudioBackdrop(canvas, options) {
+    const opts = options && typeof options === 'object' ? options : {}
+    const wanted = MODES[opts.mode] ? opts.mode : 'ink'
+    if (!canvas || typeof canvas.getContext !== 'function') return cssFallback('no-canvas', wanted)
+    if (opts.gpu === false) return cssFallback('gpu-off', wanted)
+
+    let gl = null
+    try {
+      gl = canvas.getContext('webgl2', { antialias: false, alpha: false, depth: false, powerPreference: 'high-performance' })
+        || canvas.getContext('webgl', { antialias: false, alpha: false, depth: false })
+        || canvas.getContext('experimental-webgl', { antialias: false, alpha: false, depth: false })
+    } catch (_error) {
+      gl = null
+    }
+    if (!gl) return cssFallback('no-webgl', wanted)
+
+    /* 三支着色器各自编译，日志按方向拼起来；全通过时 shaderLog 是空串。 */
+    const programs = {}
+    const logs = []
+    for (const name of Object.keys(MODES)) {
+      try {
+        programs[name] = link(gl, MODES[name].frag)
+      } catch (error) {
+        programs[name] = null
+        logs.push(name + ': ' + error.message)
+      }
+    }
+    let dustProgram = null
+    try {
+      dustProgram = link(gl, DUST_FRAG)
+    } catch (error) {
+      dustProgram = null
+      logs.push('dust: ' + error.message)
+    }
+    let shaderLog = logs.join(' | ')
+
+    let current = programs[wanted] ? wanted : (programs.ink ? 'ink' : (programs.lamp ? 'lamp' : (programs.ridge ? 'ridge' : null)))
+    if (!current) {
+      try { gl.getExtension('WEBGL_lose_context')?.loseContext() } catch (_error) { /* 老浏览器没有该扩展 */ }
+      return cssFallback('shader-error', wanted)
+    }
+
+    const uniforms = {}
+    const attribs = {}
+    for (const name of Object.keys(programs)) {
+      if (!programs[name]) continue
+      uniforms[name] = {}
+      for (const key of UNIFORM_NAMES) uniforms[name][key] = gl.getUniformLocation(programs[name], key)
+      attribs[name] = gl.getAttribLocation(programs[name], 'aPos')
+    }
+
+    const quad = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, quad)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW)
+
+    const noise = noiseSource()
+    const noiseTex = gl.createTexture()
+    gl.bindTexture(gl.TEXTURE_2D, noiseTex)
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, noise.size, noise.size, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, noise.bytes)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
+
+    let dustLoc = -1
+    let dustSizeLoc = null
+    let dustAlphaLoc = null
+    let dustBuffer = null
+    let dustData = null
+    const dustBase = new Float32Array(DUST_COUNT * 2)
+    const dustPhase = new Float32Array(DUST_COUNT)
+    if (dustProgram) {
+      dustLoc = gl.getAttribLocation(dustProgram, 'aPos')
+      dustSizeLoc = gl.getUniformLocation(dustProgram, 'u_size')
+      dustAlphaLoc = gl.getUniformLocation(dustProgram, 'u_alpha')
+      dustBuffer = gl.createBuffer()
+      dustData = new Float32Array(DUST_COUNT * 2)
+      gl.bindBuffer(gl.ARRAY_BUFFER, dustBuffer)
+      gl.bufferData(gl.ARRAY_BUFFER, dustData.byteLength, gl.DYNAMIC_DRAW)
+    }
+
+    /* 固定种子的 LCG：同一次截图里的尘埃每次运行都落同一处，取证可复现。 */
+    let seed = 20261103
+    function rand() {
+      seed = (seed * 1664525 + 1013904223) % 4294967296
+      return seed / 4294967296
+    }
+
+    const palettePinned = Boolean(opts.palette)
+    let from = normalizePalette(opts.palette, MODES[current].palette)
+    let to = { a: from.a.slice(), b: from.b.slice(), c: from.c.slice() }
+    let blendStart = 0
+    let blendDuration = 0
+
+    const media = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null
+    const frozen = Boolean(opts.reduced) || Boolean(media && media.matches)
+    const flowScale = Number(opts.speed) > 0 ? Number(opts.speed) : 1
+    let pixel = Number.isFinite(Number(opts.pixel)) ? Math.min(1, Math.max(0, Number(opts.pixel))) : 0.35
+
+    let clock = 0
+    let rippleAmp = 0
+    let rippleAge = 0
+    let rippleMark = 0
+    let lastFrame = 0
+    let running = false
+    let raf = 0
+    let disposed = false
+    let contextLost = false
+    let scaleIndex = 0
+    let frameTimes = []
+    let avgFrameMs = 0
+    let cssW = 1
+    let cssH = 1
+    let effDpr = 1
+    const phase = Math.random() * Math.PI * 2
+
+    let rendererName = 'webgl'
+    try {
+      rendererName = String(gl.getParameter(gl.VERSION) || 'webgl')
+      const info = gl.getExtension('WEBGL_debug_renderer_info')
+      if (info) {
+        const unmasked = String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL) || '')
+        if (unmasked) rendererName += ' · ' + unmasked
+      }
+    } catch (_error) { /* 取不到就用兜底名字 */ }
+
+    function measure() {
+      const parent = canvas.parentElement
+      if (parent && parent.clientWidth > 0 && parent.clientHeight > 0) return [parent.clientWidth, parent.clientHeight]
+      if (canvas.clientWidth > 0 && canvas.clientHeight > 0) return [canvas.clientWidth, canvas.clientHeight]
+      return [window.innerWidth || 1, window.innerHeight || 1]
+    }
+
+    function seedDust() {
+      for (let i = 0; i < DUST_COUNT; i += 1) {
+        dustBase[i * 2] = rand() * Math.max(1, cssW)
+        dustBase[i * 2 + 1] = rand() * Math.max(1, cssH)
+        dustPhase[i] = rand() * Math.PI * 2
+      }
+    }
+
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, DPR_CAP)
+      const scale = SCALES[scaleIndex]
+      const size = measure()
+      cssW = Math.max(1, size[0])
+      cssH = Math.max(1, size[1])
+      let width = Math.max(1, Math.round(cssW * dpr * scale))
+      let height = Math.max(1, Math.round(cssH * dpr * scale))
+      const edge = Math.max(width, height)
+      if (edge > MAX_EDGE) {
+        const k = MAX_EDGE / edge
+        width = Math.max(1, Math.round(width * k))
+        height = Math.max(1, Math.round(height * k))
+      }
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width
+        canvas.height = height
+      }
+      effDpr = width / cssW
+      gl.viewport(0, 0, width, height)
+      seedDust()
+      /* 冻结态没有 rAF：尺寸一变压根不会重画，这里补一帧。 */
+      if (!running && !disposed && !contextLost) render(performance.now())
+    }
+
+    function currentPalette(now) {
+      const t = blendDuration > 0 ? Math.min(1, Math.max(0, (now - blendStart) / blendDuration)) : 1
+      const e = t * t * (3 - 2 * t)
+      return {
+        a: [from.a[0] + (to.a[0] - from.a[0]) * e, from.a[1] + (to.a[1] - from.a[1]) * e, from.a[2] + (to.a[2] - from.a[2]) * e],
+        b: [from.b[0] + (to.b[0] - from.b[0]) * e, from.b[1] + (to.b[1] - from.b[1]) * e, from.b[2] + (to.b[2] - from.b[2]) * e],
+        c: [from.c[0] + (to.c[0] - from.c[0]) * e, from.c[1] + (to.c[1] - from.c[1]) * e, from.c[2] + (to.c[2] - from.c[2]) * e]
+      }
+    }
+
+    function drawDust() {
+      if (!dustProgram || !dustBuffer) return
+      const height = Math.max(1, cssH)
+      for (let i = 0; i < DUST_COUNT; i += 1) {
+        /* 向上 0.4 px/s + sin 微抖，越界绕回底部 */
+        let y = dustBase[i * 2 + 1] - clock * 0.4
+        y = y - Math.floor(y / height) * height
+        dustData[i * 2] = dustBase[i * 2] + Math.sin(clock * 0.9 + dustPhase[i]) * 1.2
+        dustData[i * 2 + 1] = y
+      }
+      gl.useProgram(dustProgram)
+      gl.bindBuffer(gl.ARRAY_BUFFER, dustBuffer)
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, dustData)
+      gl.enableVertexAttribArray(dustLoc)
+      gl.vertexAttribPointer(dustLoc, 2, gl.FLOAT, false, 0, 0)
+      gl.uniform2f(dustSizeLoc, cssW, cssH)
+      gl.uniform1f(dustAlphaLoc, 0.10)
+      gl.enable(gl.BLEND)
+      gl.blendFunc(gl.ONE, gl.ONE)
+      gl.drawArrays(gl.POINTS, 0, DUST_COUNT)
+      gl.disable(gl.BLEND)
+    }
+
+    function render(now) {
+      const program = programs[current]
+      if (!program) return
+      const uni = uniforms[current]
+      const pal = currentPalette(now)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+      gl.viewport(0, 0, canvas.width, canvas.height)
+      gl.useProgram(program)
+      gl.bindBuffer(gl.ARRAY_BUFFER, quad)
+      gl.enableVertexAttribArray(attribs[current])
+      gl.vertexAttribPointer(attribs[current], 2, gl.FLOAT, false, 0, 0)
+      gl.uniform1f(uni.u_time, clock * MODES[current].flow * flowScale)
+      gl.uniform1f(uni.u_clock, clock)
+      gl.uniform2f(uni.u_resolution, canvas.width, canvas.height)
+      gl.uniform1f(uni.u_dpr, effDpr)
+      gl.uniform3fv(uni.u_pal0, new Float32Array(pal.a))
+      gl.uniform3fv(uni.u_pal1, new Float32Array(pal.b))
+      gl.uniform3fv(uni.u_pal2, new Float32Array(pal.c))
+      gl.uniform1f(uni.u_pixel, pixel)
+      gl.uniform1f(uni.u_ripple, rippleAmp)
+      gl.uniform1f(uni.u_phase, phase)
+      gl.activeTexture(gl.TEXTURE0)
+      gl.bindTexture(gl.TEXTURE_2D, noiseTex)
+      gl.uniform1i(uni.u_noise, 0)
+      gl.drawArrays(gl.TRIANGLES, 0, 3)
+      if (current === 'lamp') drawDust()
+    }
+
+    function draw(now) {
+      if (disposed || contextLost) return
+      const delta = Math.max(0, Math.min(64, now - lastFrame))
+      lastFrame = now
+
+      frameTimes.push(delta)
+      if (frameTimes.length > 60) frameTimes.shift()
+      if (frameTimes.length === 60) {
+        /* 自适应分辨率：60 帧均值 >22ms 降档、<12ms 升档 */
+        const average = frameTimes.reduce((sum, value) => sum + value, 0) / 60
+        avgFrameMs = Number(average.toFixed(2))
+        if (average > 22 && scaleIndex < SCALES.length - 1) {
+          scaleIndex += 1
+          frameTimes = []
+          resize()
+        } else if (average < 12 && scaleIndex > 0) {
+          scaleIndex -= 1
+          frameTimes = []
+          resize()
+        }
+      }
+
+      /* reduced：时钟不推进，u_time 恒定 */
+      if (!frozen) clock += delta / 1000
+
+      /* 涟漪按墙钟衰减：τ≈0.35s、1.4s 内归零。不用被夹住的 delta——软件渲染掉到 5fps 时
+         delta 每帧最多 64ms，衰减会比真实时间拖长两三倍，1.4s 到不了零。 */
+      if (rippleAmp > 0) {
+        const rippleDelta = Math.max(0, now - rippleMark)
+        rippleAmp *= Math.exp(-rippleDelta / 350)
+        rippleAge += rippleDelta
+        rippleMark = now
+        if (rippleAge >= RIPPLE_LIFE || rippleAmp < 0.0002) rippleAmp = 0
+      }
+
+      render(now)
+      raf = requestAnimationFrame(draw)
+    }
+
+    function start() {
+      if (running || disposed || contextLost || frozen) return
+      running = true
+      lastFrame = performance.now()
+      raf = requestAnimationFrame(draw)
+    }
+
+    function stop() {
+      running = false
+      if (raf) cancelAnimationFrame(raf)
+      raf = 0
+    }
+
+    const onResize = () => resize()
+    const parent = canvas.parentElement
+    const observer = (typeof ResizeObserver === 'function' && parent) ? new ResizeObserver(onResize) : null
+    /* 父容器量不到时（比如被 display:none 过一下）只剩 window，这条兜底必须留着 */
+    if (observer) observer.observe(parent)
+    const onVisibility = () => { if (document.hidden) stop(); else start() }
+    const onContextLost = (event) => {
+      event.preventDefault()
+      contextLost = true
+      stop()
+    }
+
+    window.addEventListener('resize', onResize)
+    document.addEventListener('visibilitychange', onVisibility)
+    canvas.addEventListener('webglcontextlost', onContextLost, false)
+
+    resize()
+    if (frozen) render(performance.now())
+    else start()
+
+    const api = {
+      backend: 'gpu',
+      setMode(next) {
+        if (!MODES[next] || !programs[next] || next === current) return
+        current = next
+        /* 调用方没指定过色板时，换方向就跟着换该方向的默认色板 */
+        if (!palettePinned) {
+          const now = performance.now()
+          from = currentPalette(now)
+          to = normalizePalette(null, MODES[next].palette)
+          blendDuration = frozen ? 0 : 300
+          blendStart = now
+        }
+        if (!running) render(performance.now())
+      },
+      setPalette(palette, options2) {
+        const now = performance.now()
+        from = currentPalette(now)
+        to = normalizePalette(palette, MODES[current].palette)
+        blendDuration = frozen ? 0 : Math.max(0, Number(options2 && options2.duration) || 300)
+        blendStart = now
+        if (!running) render(performance.now())
+      },
+      pulse(strength) {
+        const add = Number(strength)
+        if (!Number.isFinite(add) || add <= 0) return
+        rippleAmp = Math.min(RIPPLE_MAX, rippleAmp + add)
+        rippleAge = 0
+        rippleMark = performance.now()
+      },
+      stats() {
+        return {
+          backend: 'gpu',
+          renderer: rendererName,
+          avgFrameMs,
+          scale: SCALES[scaleIndex],
+          pixels: [canvas.width, canvas.height],
+          noise: 'blue+dither',
+          mode: current,
+          time: Number(clock.toFixed(3)),
+          ripple: { amp: Number(rippleAmp.toFixed(4)) },
+          shaderLog
+        }
+      },
+      destroy() {
+        if (disposed) return
+        disposed = true
+        stop()
+        if (observer) observer.disconnect()
+        window.removeEventListener('resize', onResize)
+        document.removeEventListener('visibilitychange', onVisibility)
+        canvas.removeEventListener('webglcontextlost', onContextLost)
+        gl.deleteBuffer(quad)
+        gl.deleteTexture(noiseTex)
+        for (const name of Object.keys(programs)) if (programs[name]) gl.deleteProgram(programs[name])
+        if (dustProgram) gl.deleteProgram(dustProgram)
+        if (dustBuffer) gl.deleteBuffer(dustBuffer)
+        /* 反复进出正文页会不断建上下文，浏览器上限约 16 个：不主动放弃，下一次切换就拿不到上下文 */
+        try { gl.getExtension('WEBGL_lose_context')?.loseContext() } catch (_error) { /* 老浏览器没有该扩展 */ }
+        if (activeApi === api) activeApi = null
+      }
+    }
+
+    activeApi = api
+    return api
+  }
+
+  function __nsStudioStats() {
+    if (activeApi) return activeApi.stats()
+    return emptyStats('ink')
+  }
+
+  window.createStudioBackdrop = createStudioBackdrop
+  window.__nsStudioStats = __nsStudioStats
+})()
+/* ==== inline:end ==== */
+</script>
+<script>
+window.NS_CONTENT = {
+  work: { title: '雾港纪年', author: '沈砚青', volumes: 3, chapters: 12, volumeTitles: ['卷一 · 盐霜初降', '卷二 · 潮线以北', '卷三 · 钟落之年'] },
+  goal: 3000,
+  chapters: [
+    { id:'c1', volume:1, title:'第一章 · 盐场夜话', words:1116, state:'done', latin:'CHAPTER ONE', text:'盐场的黄昏来得比别处慢。太阳落到西边那道堤坝后头去了，滩上的水还亮着，一片压着一片，像谁把碎瓷撒在泥里。叶汀把木耙横过来，耙齿在盐晶上刮出一声长响，白霜似的盐堆跟着塌了半边。\n\n她在这片滩上待了六个时辰。手掌早先磨破又结了茧，此刻握着耙柄，只觉得木纹一道道嵌进肉里。风从港口那边过来，带着鱼腥和铁锈的味道，把她的额发吹到眼睛上。\n\n“汀丫头，收工了。”蒋六叔在堤上喊。他提着一盏马灯，灯罩上糊了盐霜，光出来是毛的，一圈一圈荡在雾气里。\n\n叶汀应了一声，没动。她在看水。退潮退到最末的时候，滩面上会留下几道浅浅的沟，沟里的水不肯走，安静得像睡着了。她总觉得那些水里藏着东西，不是鱼，是别的。\n\n蒋六叔下到滩上来，脚踩在盐壳上，碎出细细的裂声。“看什么呢。”“看水。”“水有什么好看。”“水会说话。”\n\n蒋六叔笑了一声，笑声里没什么笑意。他把马灯挂在桩子上，蹲下去，用烟锅敲了敲盐堆。盐堆发出闷闷的一响，像敲在一只装满米的袋子上。\n\n“你这丫头，跟你阿爷一个样。”他说，“他当年也爱蹲在滩上看水，一看看到天亮。后来他上了灯船，就再没下来。”\n\n“都是从灯船上下不来的？”“不。”蒋六叔说，“有人是下来的，只是下来的时候，已经不肯说话了。”\n\n风忽然大了。滩上的盐末被卷起来，贴着地皮跑，跑到堤脚就散了。叶汀把手臂抱在胸前，听见远处有铁器相碰的声音，一下，隔很久，又一下。\n\n“那是何九的灯船。”蒋六叔说，“他每天这时候升灯。”“雾这么大，升灯给谁看。”“给水看。”\n\n叶汀转过头。蒋六叔的脸在马灯底下是黄的，皱纹一道一道，像滩上被水冲出来的沟。他说这话的时候没看她，眼睛望着港口的方向。\n\n“六叔，我阿爷上的那条船，叫什么名。”“雁回。”他说得很快，像早就备好了这两个字，“早没了。那年冬天雾大，船走的，连块板子都没回来。”\n\n叶汀没再问。她蹲下去，把手伸进最近那道水沟。水凉得刺人，指尖一进去就麻了。沟底是软泥，泥里埋着些硬东西，圆的，一片一片，像贝壳。\n\n她捞起一片，就着马灯看。不是贝壳。是一小块铜，边上长满绿锈，中间凸着一个模糊的字。\n\n“六叔。”她把铜片递过去，“这上头有字。”蒋六叔没接。他把马灯举高了些，光照在铜片上，字还是不清楚。他的喉结动了一下，说：“扔了。”\n\n“为什么。”“滩上的东西，别往家带。”他站起身，把烟锅插进腰里，“你阿爷就是爱捡。”\n\n叶汀把铜片攥在手心里。铜是凉的，攥久了，掌心那块地方慢慢热起来。她跟在蒋六叔后面往堤上走，走过一排排盐堆，走过那根挂灯的桩子。\n\n到了堤顶，她回头看了一眼。雾已经漫上滩面，白茫茫一片，盐堆、水沟、桩子都被吞了进去。只有港口那边，还有一星灯火悬在雾里，不摇，不动，像一只睁着的眼睛。\n\n那灯火底下，隐隐传来一声极低极长的响。不是铁器。是钟。' },
+    { id:'c2', volume:1, title:'第二章 · 灯船', words:1115, state:'done', latin:'CHAPTER TWO', text:'第二天雾没散。第三天也没散。雾港的秋天就是这样，海上来的白气一层压一层，压得人胸口发闷，连说话都像隔着一层棉花。\n\n叶汀照常上滩，晚上回家把铜片拿出来看。她点着油灯，用指甲抠那片绿锈，抠掉一层，字清楚了一点：一横，一竖，底下像个“水”。\n\n她睡不沉。半夜总要醒一回，醒了就听见港口那边有响声，很远，很闷，像有人在水底下敲一只瓮。\n\n第五天，她借了蒋六叔的小舢板。\n\n舢板是旧的，船底补过三回，桨架上缠着发黑的麻绳。叶汀把它从泥里推出来，脚陷进去，拔出来时带出一声黏响。她把桨放进水里，水是黑的，看不见桨叶。\n\n港口在雾里只剩一个轮廓。防波堤的石头一块块摞着，缝里长着青黑的海草。灯船系在堤外第三根系船柱上，船身漆掉了大半，露出底下灰白的木。\n\n“何九叔。”她把船靠过去，喊了一声。没人应。舱门开着一条缝，里面有光，橘黄的，很稳，说明灯还亮着。\n\n她把缆绳绕在柱子上，攀着船舷上去。甲板是湿的，一脚踩下去，水从木缝里挤出来。舱门口的铜钩上挂着一串铜片，风一吹，叮叮当当地碰。\n\n叶汀停住了。那串铜片里，有几片跟她枕下那片一模一样。\n\n“上来了就进来。”舱里有人说。声音不高，沙的，像砂纸擦过木头。\n\n何九坐在灯下面。灯是老式的船灯，铜壳，玻璃罩上熏出一圈黑。他正拧灯芯，手指关节很大，指甲缝里全是黑。他不抬头，只说：“你是蒋六的丫头。”\n\n“我是叶汀。叶承山的孙女。”何九的手停了一下，就一下，然后又拧起来。“哦。”他说，“承山。”\n\n舱里很窄，一张床，一只铁箱，一摞空油壶。墙上钉着一块木板，板上用炭笔画满了线，横的，竖的，还有一些小圈。叶汀多看了两眼，看不出是什么。\n\n“坐。”何九把灯芯拧好，光一下子亮了些，照得舱里黄澄澄的，“你来找我，是为了滩上那东西。”\n\n叶汀把铜片放在桌上。何九看了一眼，没伸手，反而往后靠了靠，靠得椅子腿发出咯的一声。\n\n“这是钟上的。”他说。“什么钟。”“咸水里的钟。”他抬起眼睛，眼白是黄的，“在底下响了几十年。雾大的时候能听见。听见的人不多，听见了也不说。”\n\n“为什么不捞。”“捞不上来。”何九说，“它在水底下，可它不在一个地方。今天在东边，明天在西边。有船去找过，找了三回。第三回，船没回来。”\n\n叶汀低头看那片铜。在灯下，绿锈的颜色更深了，那个字终于显出来，是一个“雁”。\n\n她的手指凉了。她想起蒋六叔说的那个名字。“何九叔，”她听见自己的声音很平，“雁回号，是不是？”\n\n何九没答。他伸手把灯罩扣上，光被压小了一圈。舱外的雾贴着玻璃，白得像一层没干透的漆。\n\n“回去。”他说，“滩上的活不能停。明早四点二十退潮，退到最低。你要真想知道，就到北塘第三道埂上去，站在那儿往水里看。”\n\n“看什么。”“看影子。”他说，“钟来的时候，水面上会有影子。你要是看见了，别告诉别人。”' },
+    { id:'c3', volume:1, title:'第三章 · 咸水里的钟', words:1791, state:'writing', latin:'CHAPTER THREE', text:'四点二十，天还黑着。叶汀提着马灯出门，巷子里只有两户人家亮着灯，光从窗纸里渗出来，淡淡的，像湿了水的黄纸。\n\n北塘在盐场最北边，走过去要半个多时辰。路是踩出来的土路，两边长着碱蓬，红得发暗，早上的露水把裤脚打湿了一大片。\n\n第三道埂是条窄堤，只容一人走。堤外的水已经退下去，露出一片滩涂，黑亮黑亮的，散着几条死鱼和一堆烂渔网。\n\n叶汀站在堤上，把马灯放在脚边。风从海上直吹过来，不带遮挡，冷得她牙齿轻轻磕了一下。她把领口拢紧，往水里看。\n\n起初什么都没有。滩涂上只有一些小水洼，映着天边那一点灰白。潮水退得很彻底，泥里的气孔都在冒泡，咕、咕，一粒一粒，像有人在下面慢慢呼吸。\n\n她等了很久。马灯的油耗了一截，灯芯有点歪，光开始闪。\n\n就在她打算坐下的时候，水面上出现了一道影子。\n\n那影子在滩涂中间，离她大约三十步。形状说不上来，不是圆的，也不是方的，边缘一圈一圈地软下去，像投进水里的一团墨刚刚散开。\n\n叶汀屏住呼吸。她慢慢蹲下去，让堤埂挡住自己的身子，只露出眼睛。\n\n影子动了。它不快，是横着移的，移得很稳，一尺一寸地往北去。它经过的滩面，水洼里泛起极细的波纹，一圈套一圈，往四下里推。\n\n然后，声音来了。\n\n那不是从海上传来的，也不是从港口。声音从脚底下上来，穿过堤埂的土，穿过她脚上的布鞋，先到脚心，再到膝盖。低沉，悠长，中间夹着一点颤，像一只极大的金属器皿被人轻轻撞了一下。\n\n叶汀的手按在堤面上。土是凉的，她却能感觉到那种震动，一下，隔约莫十个数，又一下。她数着，数到十七，第二下才来。\n\n她想起何九的话：它在水底下，可它不在一个地方。\n\n影子移到滩涂北头，停住了。那里水比别处深，是退潮时留下的一个洼子。影子在洼子上面沉着，边缘慢慢收拢，最后收成一小片。\n\n叶汀站起来，提着灯下堤。泥很软，第一脚陷到脚踝，拔出来要用手扶住旁边的草。她走得很慢，走了十几步，忽然停住。她看见泥里有东西。\n\n一截木头，斜插在泥里，露出水面半尺。木头上缠着烂绳，绳已经烂成一缕一缕，颜色发黑。她伸手拉了拉，纹丝不动。\n\n她换了个方向绕过去，看见了更多的木头。它们横七竖八地插在泥里，被盐和泥包住，看不出原来的样子。但叶汀认得，那是船的龙骨。\n\n不是一条船。是好几条。它们挤在一起，像一群搁浅的兽，脊背露在外面，被潮水磨得发亮。\n\n“别动。”\n\n声音从堤那边传来。叶汀回头，看见蒋六叔站在堤上，手里提着灯，灯旁边还站着一个人，是何九。\n\n两个人一前一后下到滩上。蒋六叔走得快，泥在他脚下好像不算什么。他到跟前，先看了看那些龙骨，再看叶汀，脸色很不好。\n\n“叫你别来。”他说。何九在后面说：“是我叫她来的。”\n\n蒋六叔没接话。他把灯举到那截木头上面，光顺着木纹走，走出一片暗红。他伸手在木头上摸了一圈，忽然停住。\n\n“这儿。”他说。\n\n木头上钉着一块铁牌，锈得几乎看不出形状。蒋六叔用指甲刮了两下，铁锈簌簌掉下来，露出两个凸起的字。叶汀凑过去，就着两盏灯的光看：雁回。\n\n风停了。滩上忽然安静得厉害，连水洼里的气泡都不响了。\n\n何九蹲下去，把耳朵贴在泥面上。他贴了很久，久到叶汀以为他睡着了。然后他抬起头，脸上没有一点表情，说：“它在下面。”\n\n“多远。”“不远。”何九把手掌压在泥上，像在试着什么，“就在这些船底下。它是跟着船沉下来的。”\n\n叶汀也蹲下去。她把手掌贴在泥面上，凉气顺着手臂往上爬。她闭上眼，屏住呼吸，等了很久。\n\n震动来了。一下，来得比在堤上清楚得多，从掌心一直震到肩头。她数着，数到十七，第二下。再数到十七，第三下。\n\n“它在数。”她睁开眼说。\n\n蒋六叔猛地转过头：“你说什么。”“它在数数。”叶汀说，“十七下，一直十七下。数到多少，它就不数了。”\n\n何九看着她。他眼睛里有一种叶汀看不懂的东西，不是害怕，倒像是等了很久的人终于等到了一样东西。他说：“数到三百六十，它就停一次。”\n\n“停多久。”“停到下一次涨潮。”\n\n天开始亮了。东边的雾薄了一层，透出一点灰蓝。滩涂的尽头，海面浮起一道白线，那条线不动，只在原地起伏，像一根绷紧的绳。\n\n“涨潮还有一个时辰。”何九站起来，拍了拍手上的泥，“一个时辰，够不够。”\n\n蒋六叔把烟锅掏出来，又塞回去。他看了看叶汀，又看了看那些埋在泥里的龙骨，最后看了看何九。“不够。”他说，“但我们也没有第二个潮了。”\n\n叶汀把那片铜从衣襟里拿出来。她把铜片举向天亮的方向，铜上的“雁”字对着灰白的天，什么也没映出来。就在那一瞬间，泥底下传来一声很长的响，比之前任何一声都长，长得像一口气吐不完。' },
+    { id:'c4', volume:1, title:'第四章 · 退潮的脚印', words:3080, state:'done', latin:'CHAPTER FOUR' },
+    { id:'c5', volume:2, title:'第五章 · 北塘的账', words:2940, state:'done', latin:'CHAPTER FIVE' },
+    { id:'c6', volume:2, title:'第六章 · 无风带', words:3310, state:'done', latin:'CHAPTER SIX' },
+    { id:'c7', volume:2, title:'第七章 · 锈锚', words:2540, state:'done', latin:'CHAPTER SEVEN' },
+    { id:'c8', volume:2, title:'第八章 · 盐商的秤', words:2870, state:'done', latin:'CHAPTER EIGHT' },
+    { id:'c9', volume:3, title:'第九章 · 白鹭汛', words:3120, state:'done', latin:'CHAPTER NINE' },
+    { id:'c10', volume:3, title:'第十章 · 钟出水面', words:2740, state:'done', latin:'CHAPTER TEN' },
+    { id:'c11', volume:3, title:'第十一章 · 逆流', words:2360, state:'done', latin:'CHAPTER ELEVEN' },
+    { id:'c12', volume:3, title:'第十二章 · 归港', words:1980, state:'done', latin:'CHAPTER TWELVE' },
+  ],
+  currentId: 'c3',
+  notes: [
+    { id:'n1', chapterId:'c3', quote:'影子动了。它不快，是横着移的', text:'影子的动线写得太顺，缺一个卡住的瞬间。建议在它经过水洼时停半拍，让读者以为它发现了叶汀，紧张感才立得住。', time:'19:02' },
+    { id:'n2', chapterId:'c3', quote:'像一只极大的金属器皿被人轻轻撞了一下', text:'「器皿」这个词太文，跟滩涂的粗粝不搭。换成渔民会用的物件，钟声才落在地上，不至于悬在半空。', time:'19:14' },
+    { id:'n3', chapterId:'c3', quote:'它们挤在一起，像一群搁浅的兽', text:'三条沉船这个比喻很好，可下一段没接住。此处补一句气味或者手上的触感，让「兽」落到实处，别让它飘走。', time:'19:26' },
+    { id:'n4', chapterId:'c3', quote:'数到三百六十，它就停一次', text:'「三百六十」把答案漏得太早，读者一眼就猜到。改成不整的数，或者干脆让何九含糊带过，留白更有力。', time:'19:41' }
+  ],
+  assets: [
+    { id:'a1', title:'雾港地图（手绘）', meta:'PNG · 2.4 MB' },
+    { id:'a2', title:'盐场潮汐表 · 九月', meta:'PDF · 812 KB' },
+    { id:'a3', title:'灯船测绘草图', meta:'JPG · 1.1 MB' }
+  ],
+  history: [
+    { id:'h1', time:'今天 18:41', words:1791, diff:'把第三章的钟声改成从水底传来，删掉何九的一段正面解释' },
+    { id:'h2', time:'今天 16:05', words:1615, diff:'补写沉船龙骨那一段，把叶汀下滩的动作拆成三拍' },
+    { id:'h3', time:'昨天 22:17', words:1915, diff:'重排第二章的对话，把蒋六叔的沉默整体提前两段' }
+  ],
+  copy: { emptyChapter:'本章还没有正文。写下第一句，故事就开始了。', focusHint:'沉浸写作 · Esc 退出', readHint:'阅读模式' }
+};
+</script>
+<script id="ns-app">
+/* ---- app.1-render.js ---- */
+/* app.1-render.js — 渲染层：只读 window.NS_CONTENT，写入既有容器，不产生任何外部依赖。 */
+(function () {
+  'use strict';
+
+  var C = window.NS_CONTENT || {};
+
+  var state = {
+    chapterId: C.currentId || '',
+    scene: 'writing',
+    mode: '',
+    save: 'saved'
+  };
+
+  function $(sel, root) {
+    return (root || document).querySelector(sel);
+  }
+
+  function hanLen(t) {
+    if (t === null || t === undefined) return 0;
+    return String(t).replace(/\s+/g, '').length;
+  }
+
+  function chapters() {
+    return C && Array.isArray(C.chapters) ? C.chapters : [];
+  }
+
+  function workInfo() {
+    return C.work || {};
+  }
+
+  function copyInfo() {
+    return C.copy || {};
+  }
+
+  function wordsOf(ch) {
+    if (!ch) return 0;
+    if (typeof ch.words === 'number' && isFinite(ch.words)) return ch.words;
+    var n = parseInt(ch.words, 10);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function currentChapter() {
+    var list = chapters();
+    for (var i = 0; i < list.length; i += 1) {
+      if (list[i].id === state.chapterId) return list[i];
+    }
+    return list.length ? list[0] : null;
+  }
+
+  function el(tag, cls, text) {
+    var node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text !== undefined && text !== null) node.textContent = String(text);
+    return node;
+  }
+
+  function setText(sel, text) {
+    var node = $(sel);
+    if (node) node.textContent = text === undefined || text === null ? '' : String(text);
+  }
+
+  function volumeName(volume) {
+    var titles = workInfo().volumeTitles;
+    var name = Array.isArray(titles) ? titles[volume - 1] : '';
+    return name || '卷' + volume;
+  }
+
+  function volumeCount(groupCount) {
+    var v = workInfo().volumes;
+    if (typeof v === 'number' && v > 0) return v;
+    if (Array.isArray(v) && v.length) return v.length;
+    return groupCount;
+  }
+
+  function groupByVolume() {
+    var groups = [];
+    var seen = {};
+    chapters().forEach(function (ch) {
+      var volume = ch && ch.volume ? ch.volume : 1;
+      if (!seen[volume]) {
+        seen[volume] = { volume: volume, items: [] };
+        groups.push(seen[volume]);
+      }
+      seen[volume].items.push(ch);
+    });
+    return groups;
+  }
+
+  function renderTree() {
+    var host = $('#tree-list');
+    if (!host) return;
+    var groups = groupByVolume();
+    var list = chapters();
+    var total = 0;
+    list.forEach(function (ch) { total += wordsOf(ch); });
+
+    setText('.sp-meta', volumeCount(groups.length) + ' 卷 · ' + list.length + ' 章 · 共 ' + total + ' 字');
+
+    host.textContent = '';
+    groups.forEach(function (group) {
+      var head = el('div', 'sp-vol', volumeName(group.volume) + ' · ' + group.items.length + ' 章');
+      head.setAttribute('data-anchor', 'tree-volume');
+      host.appendChild(head);
+
+      group.items.forEach(function (ch) {
+        var isCurrent = ch.id === state.chapterId;
+        var row = el('div', 'sp-row' + (isCurrent ? ' is-current' : ''));
+        row.setAttribute('data-anchor', 'tree-chapter');
+        row.setAttribute('data-id', ch.id);
+        row.setAttribute('role', 'button');
+        row.setAttribute('tabindex', '0');
+
+        var name = el('span', 'sp-name', ch.title || '');
+        var count = el('span', 'sp-count', wordsOf(ch));
+        count.setAttribute('data-anchor', 'tree-count');
+
+        var more = el('button', 'sp-more', '⋯');
+        more.type = 'button';
+        more.setAttribute('data-anchor', 'tree-menu');
+        more.setAttribute('data-id', ch.id);
+        more.setAttribute('aria-label', '更多');
+
+        if (isCurrent) {
+          /* 朱记竖条：当前章的实体标记（锚点也落在这里，行本身仍是最普通的 tree-chapter） */
+          var bar = el('span', 'sp-current-bar');
+          bar.setAttribute('data-anchor', 'tree-current');
+          row.appendChild(bar);
+        }
+
+        row.appendChild(name);
+        row.appendChild(count);
+        row.appendChild(more);
+        host.appendChild(row);
+      });
+    });
+  }
+
+  function renderHead() {
+    var ch = currentChapter();
+    var words = wordsOf(ch);
+    var goal = Number(C.goal) > 0 ? Number(C.goal) : 0;
+
+    setText('.ed-title', ch ? ch.title || '' : '');
+    setText('.ed-latin', ch ? ch.latin || '' : '');
+    setText('.ed-goal .goal-text', words + ' / ' + goal + ' 字');
+
+    var bar = $('.ed-goal .goal-track i');
+    if (bar) {
+      var ratio = goal > 0 ? words / goal : 0;
+      if (ratio < 0) ratio = 0;
+      if (ratio > 1) ratio = 1;
+      bar.style.width = (ratio * 100).toFixed(2) + '%';
+    }
+  }
+
+  function renderPaper() {
+    var host = $('#tiptap');
+    if (!host) return;
+    host.textContent = '';
+
+    var ch = currentChapter();
+    var text = ch && ch.text ? String(ch.text) : '';
+
+    if (!text.trim()) {
+      host.appendChild(el('div', 'paper-empty', copyInfo().emptyChapter || '这一章还是空白。'));
+      return;
+    }
+
+    text.split(/\n\n+/).forEach(function (seg) {
+      var paragraph = seg.replace(/^\s+/, '').replace(/\s+$/, '');
+      if (!paragraph) return;
+      host.appendChild(el('p', '', paragraph));
+    });
+  }
+
+  function renderNotes() {
+    var host = $('#notes-list');
+    if (!host) return;
+    host.textContent = '';
+
+    var notes = Array.isArray(C.notes) ? C.notes : [];
+    notes.forEach(function (note) {
+      if (!note || note.chapterId !== state.chapterId) return;
+      var card = el('div', 'note');
+      card.appendChild(el('div', 'note-quote', '「' + (note.quote || '') + '」'));
+      card.appendChild(el('div', 'note-text', note.text || ''));
+      card.appendChild(el('div', 'note-time', note.time || ''));
+      host.appendChild(card);
+    });
+  }
+
+  function renderAssets() {
+    var quick = $('.rp-quick');
+    if (quick) quick.textContent = '本章压到 1400 字：钟声要留到最后一句才响。';
+
+    var host = $('#asset-list');
+    if (!host) return;
+    host.textContent = '';
+
+    var assets = Array.isArray(C.assets) ? C.assets : [];
+    assets.forEach(function (asset, index) {
+      var item = el('li', 'rp-asset');
+      if (index === 0) item.setAttribute('data-anchor', 'notes-asset');
+      item.appendChild(el('span', '', asset && asset.title ? asset.title : ''));
+      item.appendChild(el('span', 'rp-asset-meta', asset && asset.meta ? asset.meta : ''));
+      host.appendChild(item);
+    });
+  }
+
+  function renderHistory() {
+    var host = $('#hi-list');
+    if (!host) return;
+    host.textContent = '';
+
+    var history = Array.isArray(C.history) ? C.history : [];
+    history.forEach(function (entry) {
+      var row = el('div', 'hi-row');
+      row.setAttribute('data-anchor', 'history-row');
+      row.appendChild(el('span', 'hi-time', (entry && entry.time) || ''));
+      row.appendChild(el('span', 'hi-diff', (entry && entry.diff) || ''));
+      row.appendChild(el('span', 'hi-words', ((entry && entry.words) || 0) + ' 字'));
+
+      var restore = el('button', 'hi-restore', '恢复');
+      restore.type = 'button';
+      restore.setAttribute('data-anchor', 'history-restore');
+      row.appendChild(restore);
+
+      host.appendChild(row);
+    });
+  }
+
+  function setChapter(id) {
+    if (!id) return;
+    state.chapterId = id;
+    renderTree();
+    renderHead();
+    renderPaper();
+    renderNotes();
+
+    var paper = $('#paper');
+    if (!paper) return;
+    paper.classList.add('is-swapping');
+    setTimeout(function () {
+      paper.classList.remove('is-swapping');
+    }, 120);
+  }
+
+  function pad2(n) {
+    return n < 10 ? '0' + n : String(n);
+  }
+
+  function clock() {
+    var now = new Date();
+    return pad2(now.getHours()) + ':' + pad2(now.getMinutes()) + ':' + pad2(now.getSeconds());
+  }
+
+  function setSave(saveState) {
+    var value = saveState || 'saved';
+    state.save = value;
+    var box = $('.app-topbar-save');
+    if (box) box.setAttribute('data-save-state', value);
+
+    var text = $('.app-topbar-save .save-text') || $('.save-text');
+    if (!text) return;
+    if (value === 'saving') {
+      text.textContent = '保存中…';
+    } else if (value === 'dirty') {
+      text.textContent = '未保存';
+    } else {
+      text.textContent = '已保存 ' + clock();
+    }
+  }
+
+  function showScene(name) {
+    state.scene = name || 'writing';
+    var app = $('#app');
+    if (app) app.setAttribute('data-scene', state.scene);
+  }
+
+  function setMode(name) {
+    state.mode = name || '';
+    var app = $('#app');
+    if (app) app.setAttribute('data-mode', state.mode);
+  }
+
+  function boot() {
+    if (window.NS_CONTENT && window.NS_CONTENT !== C) {
+      C = window.NS_CONTENT;
+      window.NSAPP.C = C;
+      if (!state.chapterId && C.currentId) state.chapterId = C.currentId;
+      if (!currentChapter() && chapters().length) state.chapterId = chapters()[0].id;
+    }
+
+    renderTree();
+    renderHead();
+    renderPaper();
+    renderNotes();
+    renderAssets();
+    renderHistory();
+
+    document.documentElement.dataset.ready = '1';
+  }
+
+  window.NSAPP = {
+    C: C,
+    $: $,
+    state: state,
+    hanLen: hanLen,
+    renderTree: renderTree,
+    renderHead: renderHead,
+    renderPaper: renderPaper,
+    renderNotes: renderNotes,
+    renderAssets: renderAssets,
+    renderHistory: renderHistory,
+    setChapter: setChapter,
+    setSave: setSave,
+    showScene: showScene,
+    setMode: setMode,
+    boot: boot
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () {
+      window.NSAPP.boot();
+    });
+  } else {
+    window.NSAPP.boot();
+  }
+})();
+
+
+/* ---- app.2-ui.js ---- */
+/* app.2-ui.js — 交互层（在 app.1-render.js 之后执行）。
+   只调用 NSAPP 与 window.createStudioBackdrop 契约：不实现着色器、不写样式、不请求外部资源。 */
+(function () {
+  'use strict';
+
+  var D = document;
+  var NS = null;        // window.NSAPP，渲染层提供
+  var APP = null;       // #app
+  var api = null;       // 背景渲染器契约，可能为 null
+  var PALETTE = { a: '#1b2430', b: '#22262b', c: '#4a2a24' };
+  var THROTTLE_MS = 80;
+  var SETTLE_MS = 600;
+  var lastPulseAt = 0;
+  var saveTimer = 0;
+  var qp = null;         // URL 参数，启动时读取一次
+
+  function el(id) { return D.getElementById(id); }
+
+  // 1. 背景引导：只调用，不实现
+  function bootBackdrop() {
+    qp = new URLSearchParams(location.search);
+    var bg = ['ink', 'lamp', 'ridge'].indexOf(qp.get('bg')) >= 0 ? qp.get('bg') : 'ink';
+    if (APP) APP.dataset.bg = bg;
+    D.documentElement.dataset.bg = bg;
+
+    var canvas = el('st-bg');
+    var created = null;
+    if (typeof window.createStudioBackdrop === 'function' && canvas) {
+      try {
+        created = window.createStudioBackdrop(canvas, {
+          mode: bg,
+          gpu: qp.get('gpu') !== '0',
+          reduced: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        });
+      } catch (err) {
+        created = null; // 渲染器缺失或失败：按无背景处理，不打印也不抛错
+      }
+    }
+    api = created || null;
+    if (!api) D.documentElement.dataset.bgFallback = '1';
+    return api;
+  }
+
+  // 启动即应用 URL 参数 ?scene=… / ?mode=…（取证脚本靠它直达各状态，不依赖点击）
+  function applyQueryState() {
+    if (!qp) qp = new URLSearchParams(location.search);
+    var wantScene = qp.get('scene');
+    if (['writing', 'notes', 'menu', 'formats', 'ctx', 'search', 'history'].indexOf(wantScene) >= 0) {
+      if (wantScene === 'formats') openFormats();
+      else NS.showScene(wantScene);
+    }
+    var wantMode = qp.get('mode');
+    if (wantMode === 'focus' || wantMode === 'read') NS.setMode(wantMode);
+  }
+
+  function scene() { return NS.state.scene; }
+  function setScene(name) { NS.showScene(name); }
+  function closeScene() { NS.showScene('writing'); }
+
+  function clearDrawers() {
+    if (!APP) return;
+    APP.classList.remove('is-drawer-dir');
+    APP.classList.remove('is-drawer-notes');
+  }
+
+  function openSearch() {
+    setScene('search');
+    window.requestAnimationFrame(function () {
+      var input = el('search-input');
+      if (input) input.focus();
+    });
+  }
+
+  // 设计稿 D7：浮层是 .wb-body 的子元素，静态定位会落到工具栏上方；改为按按钮矩形定位
+  function placeFormats() {
+    var pop = document.getElementById('pop-formats');
+    var btn = document.querySelector('[data-act=more-formats]');
+    if (!pop || !btn) return;
+    var r = btn.getBoundingClientRect();
+    pop.style.position = 'fixed';
+    pop.style.top = Math.round(r.bottom + 6) + 'px';
+    pop.style.right = Math.max(12, Math.round(window.innerWidth - r.right)) + 'px';
+    pop.style.left = 'auto';
+    pop.style.width = '200px';
+  }
+
+  function openFormats() {
+    setScene('formats');
+    placeFormats(); // 先让浮层 display 变 block，再按按钮矩形定位
+  }
+
+  // 2. 章节列表：事件委托
+  function bindTree() {
+    D.addEventListener('click', function (e) {
+      var t = e.target;
+      if (!t || !t.closest) return;
+      if (t.closest('#tree-list .sp-more')) { setScene('menu'); return; } // ⋯ 直接开菜单（演示）
+      var row = t.closest('#tree-list .sp-row[data-id]');
+      if (!row) return;
+      NS.setChapter(row.dataset.id);
+      if (api && api.setPalette) api.setPalette(PALETTE, { duration: 300 });
+    });
+  }
+
+  // 5. 菜单项
+  function onMenu(name) {
+    if (name === 'focus') { NS.setMode('focus'); closeScene(); return; }
+    if (name === 'read') { NS.setMode('read'); closeScene(); return; }
+    if (name === 'dir') { if (APP) APP.classList.toggle('is-dir-collapsed'); closeScene(); return; }
+    // split / bookmark / settings：设计稿内没有落地页，仅收起菜单
+    closeScene();
+  }
+
+  // 4./6./8. 顶栏入口、浮层入口、抽屉、工具栏
+  function bindChrome() {
+    D.addEventListener('click', function (e) {
+      var t = e.target;
+      if (!t || !t.closest) return;
+
+      if (e.altKey && t.closest('[data-act=bookmark]')) {
+        // 设计稿演示入口：工具栏没有独立的「章节历史」按钮，按住 Alt 点书签键打开历史
+        setScene('history');
+        return;
+      }
+      if (t.closest('[data-anchor=topbar-more]')) { setScene('menu'); return; }
+      if (t.closest('[data-act=more-formats]')) { openFormats(); return; }
+      if (t.closest('[data-anchor=topbar-search]')) { openSearch(); return; }
+      if (t.closest('[data-anchor=dir-rail]')) { if (APP) APP.classList.add('is-drawer-dir'); return; }
+      if (t.closest('[data-anchor=notes-rail]')) { if (APP) APP.classList.add('is-drawer-notes'); return; }
+      if (t.closest('#scrim')) { clearDrawers(); closeScene(); return; }
+
+      var item = t.closest('#pop-menu [data-menu]');
+      if (item) { onMenu(item.dataset.menu); return; }
+      if (t.closest('#pop-formats [data-fmt]')) { closeScene(); return; }
+
+      var tb = t.closest('.tb'); // 仅切换选中态，不做真实排版动作；同组互斥交给 CSS
+      if (tb) tb.classList.toggle('on');
+    });
+  }
+
+  // 3. 保存点（80ms 节流）+ 右键菜单场景
+  function bindEditor() {
+    D.addEventListener('contextmenu', function (e) {
+      if (!e.target || !e.target.closest || !e.target.closest('#tiptap')) return;
+      e.preventDefault();
+      setScene('ctx');
+    });
+
+    D.addEventListener('input', function (e) {
+      if (!e.target || !e.target.closest || !e.target.closest('#tiptap')) return;
+      if (saveTimer) window.clearTimeout(saveTimer); // 清掉上一个定时器，不叠加
+      saveTimer = window.setTimeout(function () {
+        saveTimer = 0;
+        NS.setSave('saved');
+      }, SETTLE_MS);
+
+      var now = Date.now();
+      if (now - lastPulseAt < THROTTLE_MS) return; // 80ms 节流
+      lastPulseAt = now;
+      NS.setSave('saving');
+      if (api && api.pulse) api.pulse(0.05);
+    }, { passive: true });
+  }
+
+  // 7. Esc（浮层 + 抽屉 + 模式）；4. Ctrl+Shift+F 搜索
+  function bindKeys() {
+    D.addEventListener('keydown', function (e) {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && String(e.key).toLowerCase() === 'f') {
+        e.preventDefault();
+        openSearch();
+        return;
+      }
+      if (e.key !== 'Escape') return;
+      clearDrawers();
+      if (scene() !== 'writing') closeScene();
+      if (NS.state.mode === 'focus' || NS.state.mode === 'read') NS.setMode('');
+    });
+  }
+
+  // 9. 取证钩子
+  function exposeHooks() {
+    window.__nsStudio = {
+      scene: function () { return NS.state.scene; },
+      setScene: function (s) { NS.showScene(s); },
+      setChapter: function (id) { NS.setChapter(id); },
+      signature: function () { return window.__nsStudioStats ? window.__nsStudioStats() : null; }
+    };
+  }
+
+  // 10. 统一在 DOMContentLoaded 之后绑定
+  function init() {
+    NS = window.NSAPP;
+    if (!NS) return; // 渲染层缺失：直接返回，不抛错
+    APP = el('app');
+    bootBackdrop();
+    applyQueryState();
+    bindTree();
+    bindChrome();
+    bindEditor();
+    bindKeys();
+    window.addEventListener('resize', function () {
+      if (scene() === 'formats') placeFormats();
+    });
+    exposeHooks();
+  }
+
+  if (D.readyState === 'loading') D.addEventListener('DOMContentLoaded', init, { once: true });
+  else init();
+})();
+</script>
+</body>
+</html>

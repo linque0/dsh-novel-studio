@@ -1,0 +1,124 @@
+/* flow-shell.css — 流动背板的共用外壳（主窗口 + 拆窗面板）
+ * 由 plugin/dsh/index.js 在 language.css 之后引入：同权重时后写为胜，用来压 dsh.css §5.1/5.2 的实底与玻璃。
+ * 只在 [data-flow] 的窗口生效，没有流动底的窗口观感一律不变。
+ * 选择器一律以 html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] 起头 (0,4,x)：
+ * 既高过 dsh.css 的 (0,3,1)（--ns-bg 实底、--nsx-glass-1 玻璃），也高过 latent-studio.css 材质表的 (0,3,2)，
+ * 不依赖两份样式与插件谁先打包，免得覆盖关系随构建顺序漂移。 */
+
+/* 壳层自己当画布的定位祖先：.st-backdrop-wrap 的 inset:0 只该钉满窗口，不该钉满视口
+ * （latent-studio.css §1 只给带 .latent-studio 的章节页写了这一句，其余模块靠这条补上）。 */
+html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] {
+  position: relative;
+}
+
+/* ---- 1. 内容地面让位：.wb-body 原本铺 --ns-bg 实底（dsh.css:305），会把画布整块盖住 ---- */
+html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] :is(.wb-body, .panel-body) {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+}
+/* 拆窗顶栏自带实底（PanelHost 的 scoped .panel-topbar{background:var(--bg-panel)}），底在上沿断开流动背板；
+ * 主窗口皮肤是把这个牌面擦成玻璃的（latent-shelf.css:45-52、latent-studio 顶栏同理），拆窗跟同一套。 */
+html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] .panel-topbar {
+  position: relative;
+  z-index: 40;
+  background-color: color-mix(in srgb, var(--ns-layer-1, #232324) 62%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  backdrop-filter: blur(20px) saturate(1.5);
+  border-bottom: 1px solid rgb(255 255 255 / .14);
+}
+
+/* ---- 2. 背景层：脱流钉满壳层，层级 = 背景 0 < 内容 1 < 顶栏 40（与 latent-studio.css §15 同一套几何）---- */
+html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] .st-backdrop-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] .st-backdrop-wrap > canvas.st-backdrop {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] .st-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] .st-layer.dots {
+  opacity: .03;
+  mix-blend-mode: overlay;
+  background-image: radial-gradient(circle, rgb(255 255 255 / .95) .45px, transparent .8px);
+  background-size: 2px 2px;
+}
+html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] .st-layer.vignette {
+  background:
+    radial-gradient(130% 96% at 50% 38%, transparent 40%, rgb(3 4 7 / .3) 100%),
+    linear-gradient(180deg, rgb(3 4 7 / .26) 0%, rgb(3 4 7 / 0) 30%, rgb(3 4 7 / .14) 64%, rgb(3 4 7 / .38) 100%);
+}
+/* 噪声与 latent-shelf.css:41 同一份 data:image/svg+xml：三处背板是同一块底，颗粒感必须同源 */
+html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] .st-layer.grain {
+  opacity: .05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+}
+
+/* ---- 3. 玻璃：侧栏/批注栏 62%、主区 52%，都留得下流动底；--ns-layer-1 深色回退 #232324 ---- */
+html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] :is(.side-panel, .right-panel) {
+  background-color: color-mix(in srgb, var(--ns-layer-1, #232324) 62%, transparent);
+  /* 材质表还给侧栏铺了 --ls-glass-fill 渐变，留着会把 62% 又拉回实底 */
+  background-image: none;
+  border: 1px solid rgb(255 255 255 / .16);
+  border-radius: 20px;
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  backdrop-filter: blur(20px) saturate(1.5);
+  box-shadow: 0 24px 56px rgb(0 0 0 / .46), inset 0 1px 0 rgb(255 255 255 / .38);
+  color: var(--ns-label-1, #f9fafb);
+}
+/* 主区玻璃只给非正文模块：latent-studio.css:308-312 把 .center-pane 定义成纯布局容器（transparent / border 0），
+ * 正文页的设计是「稿纸一块暗牌浮在流动底上」，章头与工具栏直接露背板；沉浸/阅读态（§1017-1027）也靠这条。
+ * 大纲/设定/人物/灵感四模块才需要一块玻璃底板托住内容，所以按 data-module 排除正文页。 */
+html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow]:not([data-module='chapters']):not([data-module='chapter']) .center-pane {
+  background-color: color-mix(in srgb, var(--ns-layer-1, #232324) 52%, transparent);
+  background-image: none;
+  border: 1px solid rgb(255 255 255 / .16);
+  border-radius: 20px;
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  backdrop-filter: blur(20px) saturate(1.5);
+  box-shadow: 0 24px 56px rgb(0 0 0 / .46), inset 0 1px 0 rgb(255 255 255 / .38);
+  color: var(--ns-label-1, #f9fafb);
+}
+
+/* ---- 4. 大纲 / 设定两页：宿主在这两个模块里各自多铺了一层不透明地面，52% 玻璃压在它上面，
+ *      流动底到画布下沿就断了。按模块单独拆，其余模块与正文页一条不动。 ---- */
+
+/* 4.1 大纲：三层地面叠在一起——外壳 .outline-surface（dsh.css:1150）、.om-wrap（:1154），
+ * 以及真正铺满画布的那两块 .om-wrap .oc-canvas（:1316）与 .om-wrap .oc-canvas-surface（:1323，权重 (0,6,2)）。
+ * 全部撤成透明，地面交给 .center-pane 的 52% 玻璃，与人物/灵感同档。
+ * 这里刻意复刻 dsh 的 .om-wrap 层级取同权重，靠「flow-shell.css 在 dsh.css 之后引入」压过它；
+ * 点阵保持 dsh 关掉的状态（:1325 background-image: none），画布透明度滑块在插件皮肤下本就只剩点阵可淡出。 */
+html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow][data-module='outline'] :is(.outline-surface, .om-wrap) {
+  background: transparent;
+}
+html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow][data-module='outline'] .om-wrap :is(.oc-canvas, .oc-canvas-surface) {
+  background: transparent;
+}
+
+/* 4.2 设定：外层 .lore-surface（dsh.css:766）本来就是 --ns-bg 实底，撤掉即可露出主区玻璃；
+ * 内层 .ob-editor（dsh.css:823，--nsx-glass-1≈88%）才是那块近黑的板，按主区同档收到 52% + 磨砂。 */
+html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow][data-module='lore'] .lore-surface {
+  background: transparent;
+}
+html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow][data-module='lore'] .ob-editor {
+  background: color-mix(in srgb, var(--ns-layer-1, #232324) 52%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  backdrop-filter: blur(20px) saturate(1.5);
+}
+/* 4.3 大纲文本视图：默认看到的就是它（dsh.css:1640 .outline-text-body 铺 --ns-bg 实底，
+ * 这才是那块 30 个采样点全是 rgb(21,21,23) 的平板 —— 画布视图的 .oc-canvas* 另外在 4.1 里处理）。
+ * 内容面自己不再铺底，地面交给 .center-pane 的 52% 玻璃，与人物/灵感同档；文字色沿用宿主令牌。 */
+html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow][data-module='outline'] .outline-text-body {
+  background: transparent;
+}

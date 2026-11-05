@@ -1,0 +1,351 @@
+{
+  "at": "2026-11-05T09:28:36.224Z",
+  "results": [
+    {
+      "name": "默认幕布编辑",
+      "pass": true
+    },
+    {
+      "name": "A没有独立标题正文模型",
+      "pass": true
+    },
+    {
+      "name": "A默认坐标与列宽",
+      "pass": true,
+      "evidence": [
+        {
+          "x": 28,
+          "y": 108,
+          "width": 220,
+          "height": 762
+        },
+        {
+          "x": 264,
+          "y": 108,
+          "width": 1148,
+          "height": 762
+        }
+      ]
+    },
+    {
+      "name": "输入显示待保存",
+      "pass": true
+    },
+    {
+      "name": "调宽保持编辑焦点与未提交草稿",
+      "pass": true
+    },
+    {
+      "name": "Esc取消当前条目输入",
+      "pass": true
+    },
+    {
+      "name": "A行尾进入B且条目身份一致",
+      "pass": true
+    },
+    {
+      "name": "返回A恢复光标和滚动",
+      "pass": true,
+      "evidence": {
+        "id": "watch",
+        "caret": 2,
+        "scroll": 70
+      }
+    },
+    {
+      "name": "Enter紧随当前条目创建同级并聚焦",
+      "pass": true
+    },
+    {
+      "name": "CtrlZ一次撤销新建",
+      "pass": true
+    },
+    {
+      "name": "Tab降级保留子树",
+      "pass": true
+    },
+    {
+      "name": "ShiftTab升级",
+      "pass": true
+    },
+    {
+      "name": "Alt方向键同级排序",
+      "pass": true
+    },
+    {
+      "name": "ShiftEnter条目内换行而非新节点",
+      "pass": true
+    },
+    {
+      "name": "中文组合输入不误建条目",
+      "pass": true
+    },
+    {
+      "name": "行首退格合并内容且不丢字",
+      "pass": true
+    },
+    {
+      "name": "撤销恢复被合并条目",
+      "pass": true
+    },
+    {
+      "name": "富文本同步到详情",
+      "pass": true
+    },
+    {
+      "name": "三层拖入归组",
+      "pass": true
+    },
+    {
+      "name": "拖入可撤销",
+      "pass": true
+    },
+    {
+      "name": "阻止拖入自身后代",
+      "pass": true
+    },
+    {
+      "name": "C层级展开不覆盖A折叠偏好",
+      "pass": true
+    },
+    {
+      "name": "层级图可以平移",
+      "pass": true
+    },
+    {
+      "name": "关系节点多步拖动按最终位移计算",
+      "pass": true,
+      "evidence": {
+        "x": 198.33333333333334,
+        "y": 123.33333333333333
+      }
+    },
+    {
+      "name": "关系拖动不改变父子层级",
+      "pass": true
+    },
+    {
+      "name": "双导图独立相机",
+      "pass": true
+    },
+    {
+      "name": "关系视图恢复相机",
+      "pass": true
+    },
+    {
+      "name": "C摘要进入B同一条目",
+      "pass": true
+    },
+    {
+      "name": "B返回C保留原中心",
+      "pass": true
+    },
+    {
+      "name": "弹窗后编辑仍可继续",
+      "pass": true
+    },
+    {
+      "name": "弹窗之后输入正常保存",
+      "pass": true
+    },
+    {
+      "name": "B编辑同步回A并定位",
+      "pass": true
+    },
+    {
+      "name": "刷新恢复共享内容与视图",
+      "pass": true
+    },
+    {
+      "name": "A 1440无页面横向溢出",
+      "pass": true
+    },
+    {
+      "name": "B 1440无页面横向溢出",
+      "pass": true
+    },
+    {
+      "name": "C层级 1440无页面横向溢出",
+      "pass": true
+    },
+    {
+      "name": "C关系 1440无页面横向溢出",
+      "pass": true
+    },
+    {
+      "name": "A 1280无页面横向溢出",
+      "pass": true
+    },
+    {
+      "name": "B 1280无页面横向溢出",
+      "pass": true
+    },
+    {
+      "name": "C层级 1280无页面横向溢出",
+      "pass": true
+    },
+    {
+      "name": "C关系 1280无页面横向溢出",
+      "pass": true
+    },
+    {
+      "name": "A 760无页面横向溢出",
+      "pass": true
+    },
+    {
+      "name": "B 760无页面横向溢出",
+      "pass": true
+    },
+    {
+      "name": "C层级 760无页面横向溢出",
+      "pass": true
+    },
+    {
+      "name": "C关系 760无页面横向溢出",
+      "pass": true
+    },
+    {
+      "name": "A 380无页面横向溢出",
+      "pass": true
+    },
+    {
+      "name": "B 380无页面横向溢出",
+      "pass": true
+    },
+    {
+      "name": "C层级 380无页面横向溢出",
+      "pass": true
+    },
+    {
+      "name": "C关系 380无页面横向溢出",
+      "pass": true
+    },
+    {
+      "name": "编写区无浅色面板",
+      "pass": true
+    },
+    {
+      "name": "标题显示当前层级名",
+      "pass": true,
+      "evidence": "地理与场所"
+    },
+    {
+      "name": "视图名只在切换器中出现",
+      "pass": true
+    },
+    {
+      "name": "全部设定：标题与 6 个分组",
+      "pass": true
+    },
+    {
+      "name": "全部设定：汇总全部条目",
+      "pass": true,
+      "evidence": 49
+    },
+    {
+      "name": "全部设定：分组头带条目计数",
+      "pass": true
+    },
+    {
+      "name": "全部设定：侧栏只保留一个当前项",
+      "pass": true
+    },
+    {
+      "name": "全部设定：侧栏范围项为当前",
+      "pass": true
+    },
+    {
+      "name": "全部设定：折叠只影响该设定集",
+      "pass": true,
+      "evidence": {
+        "rowsBefore": [
+          15,
+          8,
+          8,
+          6,
+          6,
+          6
+        ],
+        "rowsAfter": [
+          15,
+          5,
+          8,
+          6,
+          6,
+          6
+        ]
+      }
+    },
+    {
+      "name": "全部设定：编辑进入待保存",
+      "pass": true
+    },
+    {
+      "name": "全部设定：编辑写回共享条目",
+      "pass": true
+    },
+    {
+      "name": "回到当前设定集可见上一步修改",
+      "pass": true
+    },
+    {
+      "name": "全部设定：刷新恢复范围与滚动",
+      "pass": true,
+      "evidence": 260
+    },
+    {
+      "name": "全部设定：可跨设定集拖动",
+      "pass": true
+    },
+    {
+      "name": "跨设定集拖动可撤销",
+      "pass": true
+    },
+    {
+      "name": "全部设定：粘性头与滚动口对齐",
+      "pass": true,
+      "evidence": {
+        "scrollTop": 256,
+        "headTop": 256
+      }
+    },
+    {
+      "name": "全部设定：侧栏计数与分组头同口径",
+      "pass": true,
+      "evidence": "49,15,8,8,6,6,6"
+    },
+    {
+      "name": "正文行宽有上限",
+      "pass": true,
+      "evidence": {
+        "w": 680,
+        "max": "680px"
+      }
+    },
+    {
+      "name": "标签字号不小于 10px",
+      "pass": true
+    },
+    {
+      "name": "全部设定 1440无页面横向溢出",
+      "pass": true
+    },
+    {
+      "name": "全部设定 1280无页面横向溢出",
+      "pass": true
+    },
+    {
+      "name": "全部设定 760无页面横向溢出",
+      "pass": true
+    },
+    {
+      "name": "全部设定 380无页面横向溢出",
+      "pass": true
+    },
+    {
+      "name": "无运行异常",
+      "pass": true,
+      "evidence": []
+    }
+  ]
+}

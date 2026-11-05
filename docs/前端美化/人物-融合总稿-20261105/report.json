@@ -1,0 +1,324 @@
+{
+  "at": "2026-11-05T13:22:12.341Z",
+  "passed": 61,
+  "failed": 0,
+  "results": [
+    {
+      "name": "A 初始人数与两类关系",
+      "pass": true
+    },
+    {
+      "name": "A 1440 边界与横向溢出",
+      "pass": true,
+      "evidence": {
+        "width": 1440,
+        "overflow": false,
+        "visible": [
+          {
+            "x": 28,
+            "y": 108,
+            "right": 276,
+            "bottom": 870
+          },
+          {
+            "x": 292,
+            "y": 108,
+            "right": 1092,
+            "bottom": 870
+          },
+          {
+            "x": 1108,
+            "y": 108,
+            "right": 1412,
+            "bottom": 870
+          }
+        ]
+      }
+    },
+    {
+      "name": "A 1280 边界与横向溢出",
+      "pass": true,
+      "evidence": {
+        "width": 1280,
+        "overflow": false,
+        "visible": [
+          {
+            "x": 28,
+            "y": 108,
+            "right": 276,
+            "bottom": 870
+          },
+          {
+            "x": 292,
+            "y": 108,
+            "right": 932,
+            "bottom": 870
+          },
+          {
+            "x": 948,
+            "y": 108,
+            "right": 1252,
+            "bottom": 870
+          }
+        ]
+      }
+    },
+    {
+      "name": "A 760 边界与横向溢出",
+      "pass": true,
+      "evidence": {
+        "width": 760,
+        "overflow": false,
+        "visible": [
+          {
+            "x": 20,
+            "y": 166,
+            "right": 740,
+            "bottom": 880
+          }
+        ]
+      }
+    },
+    {
+      "name": "A 380 边界与横向溢出",
+      "pass": true,
+      "evidence": {
+        "width": 380,
+        "overflow": false,
+        "visible": [
+          {
+            "x": 12,
+            "y": 158,
+            "right": 368,
+            "bottom": 888
+          }
+        ]
+      }
+    },
+    {
+      "name": "A 新建后取消不留空人物",
+      "pass": true
+    },
+    {
+      "name": "A 新建保存进入人物名录",
+      "pass": true
+    },
+    {
+      "name": "A 别名搜索",
+      "pass": true
+    },
+    {
+      "name": "A 多角色筛选",
+      "pass": true
+    },
+    {
+      "name": "A 中文组合输入结束后保留完整别名",
+      "pass": true
+    },
+    {
+      "name": "A 头像入口不提前保存档案",
+      "pass": true
+    },
+    {
+      "name": "A 上传头像保留在原人物草稿",
+      "pass": true
+    },
+    {
+      "name": "A 切换人物保留原草稿",
+      "pass": true
+    },
+    {
+      "name": "A 返回原人物恢复草稿",
+      "pass": true
+    },
+    {
+      "name": "A 保存档案更新当前人物",
+      "pass": true
+    },
+    {
+      "name": "A 刷新恢复内容、头像和多角色",
+      "pass": true
+    },
+    {
+      "name": "A 取消回到已保存值",
+      "pass": true
+    },
+    {
+      "name": "A 保存失败保留输入且未冒充已保存",
+      "pass": true
+    },
+    {
+      "name": "A 建立人物关系",
+      "pass": true
+    },
+    {
+      "name": "A 修改人物关系",
+      "pass": true
+    },
+    {
+      "name": "A 移除人物关系",
+      "pass": true
+    },
+    {
+      "name": "A 撤销恢复人物关系",
+      "pass": true
+    },
+    {
+      "name": "A 关联设定在原型内阅读",
+      "pass": true
+    },
+    {
+      "name": "A 删除人物及关系",
+      "pass": true
+    },
+    {
+      "name": "A 撤销恢复人物及两类关系",
+      "pass": true
+    },
+    {
+      "name": "A 拖动调整侧栏",
+      "pass": true
+    },
+    {
+      "name": "A Home恢复默认栏宽",
+      "pass": true
+    },
+    {
+      "name": "A 收起名录保留展开入口",
+      "pass": true
+    },
+    {
+      "name": "A 760 抽屉焦点约束",
+      "pass": true
+    },
+    {
+      "name": "A 760 Esc关闭抽屉并归还焦点",
+      "pass": true
+    },
+    {
+      "name": "A 760 单区域查看详情",
+      "pass": true
+    },
+    {
+      "name": "A 380 抽屉焦点约束",
+      "pass": true
+    },
+    {
+      "name": "A 380 Esc关闭抽屉并归还焦点",
+      "pass": true
+    },
+    {
+      "name": "A 380 单区域查看详情",
+      "pass": true
+    },
+    {
+      "name": "A 关系图缩放",
+      "pass": true
+    },
+    {
+      "name": "A 全体网络保留8人",
+      "pass": true
+    },
+    {
+      "name": "A 一度网络保留当前及相邻人物",
+      "pass": true
+    },
+    {
+      "name": "A 人物节点原生拖动",
+      "pass": true
+    },
+    {
+      "name": "A 自定义字段可新增重命名并保存",
+      "pass": true
+    },
+    {
+      "name": "A 长姓名与长小传不造成横向溢出",
+      "pass": true
+    },
+    {
+      "name": "总稿默认卷宗，只有两个工作视图",
+      "pass": true
+    },
+    {
+      "name": "卷宗转关系保留人物、检索与草稿",
+      "pass": true
+    },
+    {
+      "name": "关系转卷宗保留同一份草稿",
+      "pass": true
+    },
+    {
+      "name": "往返视图恢复相机",
+      "pass": true
+    },
+    {
+      "name": "刷新恢复关系视图及草稿",
+      "pass": true
+    },
+    {
+      "name": "关系侧栏完整阅读入口进入卷宗",
+      "pass": true
+    },
+    {
+      "name": "关系视图使用独立栏宽",
+      "pass": true
+    },
+    {
+      "name": "回到卷宗恢复栏宽",
+      "pass": true
+    },
+    {
+      "name": "profile 1440 单工作区无横向溢出",
+      "pass": true
+    },
+    {
+      "name": "profile 1280 单工作区无横向溢出",
+      "pass": true
+    },
+    {
+      "name": "profile 760 单工作区无横向溢出",
+      "pass": true
+    },
+    {
+      "name": "profile 380 单工作区无横向溢出",
+      "pass": true
+    },
+    {
+      "name": "graph 1440 单工作区无横向溢出",
+      "pass": true
+    },
+    {
+      "name": "graph 1280 单工作区无横向溢出",
+      "pass": true
+    },
+    {
+      "name": "graph 760 单工作区无横向溢出",
+      "pass": true
+    },
+    {
+      "name": "graph 380 单工作区无横向溢出",
+      "pass": true
+    },
+    {
+      "name": "融合关系图手机姓名完整可见",
+      "pass": true
+    },
+    {
+      "name": "手机图谱点人进入人物档案",
+      "pass": true
+    },
+    {
+      "name": "手机档案进入完整卷宗",
+      "pass": true
+    },
+    {
+      "name": "共用流动背景正常挂载",
+      "pass": true
+    },
+    {
+      "name": "无浏览器运行异常",
+      "pass": true,
+      "evidence": []
+    }
+  ]
+}

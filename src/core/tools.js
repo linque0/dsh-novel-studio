@@ -17,6 +17,16 @@ const stripTags = (html) =>
 
 const chapterText = (row) => stripTags(row?.content ?? row?.text ?? row?.html ?? '');
 const orderOf = (row) => Number(row?.sortOrder ?? row?.order ?? row?.orderIndex ?? 0);
+const alive = (row) => !row?.deletedAt;
+/** 章节顺序 = 所属卷的 sortOrder + 卷内 sortOrder（真实数据是"卷内序号"） */
+const orderedChapters = (chapters, volumes) => {
+  const volumeOrder = new Map(volumes.map((row) => [row.id, orderOf(row)]));
+  return chapters
+    .filter(alive)
+    .map((row) => ({ row, volumeOrder: volumeOrder.get(row.volumeId) ?? Number.MAX_SAFE_INTEGER }))
+    .sort((a, b) => (a.volumeOrder - b.volumeOrder) || (orderOf(a.row) - orderOf(b.row)))
+    .map((item) => item.row);
+};
 
 function paged(items, cursor, limit) {
   const start = Math.max(0, Number(cursor) || 0);
@@ -61,11 +71,9 @@ export function createTools(library) {
       }
       const target = await requireWork(library, args.workId);
       if (target.error) return target;
-      const volumes = (await library.listEntities('volumes')).filter((v) => v.row.workId === target.id).map((v) => v.row).sort((a, b) => orderOf(a) - orderOf(b));
-      const chapters = (await library.listEntities('chapters'))
-        .filter((c) => c.row.workId === target.id)
-        .map((c) => ({ id: c.row.id, title: c.row.title || '未命名', volumeId: c.row.volumeId || null, order: orderOf(c.row), chars: chapterText(c.row).length }))
-        .sort((a, b) => a.order - b.order);
+      const volumes = (await library.listEntities('volumes')).filter((v) => v.row.workId === target.id && alive(v.row)).map((v) => v.row).sort((a, b) => orderOf(a) - orderOf(b));
+      const chapters = orderedChapters((await library.listEntities('chapters')).filter((c) => c.row.workId === target.id).map((c) => c.row), volumes)
+        .map((row) => ({ id: row.id, title: row.title || '未命名', volumeId: row.volumeId || null, order: orderOf(row), chars: chapterText(row).length }));
       return { work: { id: target.work.id, title: target.work.title, description: target.work.description || '' }, volumes: volumes.map((v) => ({ id: v.id, title: v.title || '未命名卷', order: orderOf(v) })), chapters, totalChapters: chapters.length };
     },
   };
@@ -85,17 +93,15 @@ export function createTools(library) {
     async execute(args = {}) {
       const target = await requireWork(library, args.workId);
       if (target.error) return target;
-      const volumes = new Map((await library.listEntities('volumes')).filter((v) => v.row.workId === target.id).map((v) => [v.row.id, v.row]));
-      const rows = (await library.listEntities('chapters'))
-        .filter((c) => c.row.workId === target.id)
-        .map((c) => ({
-          id: c.row.id,
-          title: c.row.title || '未命名',
-          volume: volumes.get(c.row.volumeId)?.title || null,
-          order: orderOf(c.row),
-          chars: chapterText(c.row).length,
-        }))
-        .sort((a, b) => a.order - b.order);
+      const volumeRows = (await library.listEntities('volumes')).filter((v) => v.row.workId === target.id && alive(v.row)).map((v) => v.row);
+      const volumes = new Map(volumeRows.map((row) => [row.id, row]));
+      const rows = orderedChapters((await library.listEntities('chapters')).filter((c) => c.row.workId === target.id).map((c) => c.row), volumeRows).map((row) => ({
+        id: row.id,
+        title: row.title || '未命名',
+        volume: volumes.get(row.volumeId)?.title || null,
+        order: orderOf(row),
+        chars: chapterText(row).length,
+      }));
       const page = paged(rows, args.cursor, args.limit);
       return { workId: target.id, ...page };
     },
@@ -120,18 +126,30 @@ export function createTools(library) {
       if (!['chapter', 'character', 'lore'].includes(kind)) return { error: 'kind 必须是 chapter/character/lore' };
       const id = String(args.id || '');
       if (!id) return { error: '缺少 id' };
-      const table = kind === 'chapter' ? 'chapters' : kind === 'character' ? 'characters' : 'lore';
-      if (!SYNC_TABLES.includes(table)) return { error: '不支持的表：' + table };
-      const entity = await library.readEntity(table, id);
+      const candidates = kind === 'chapter' ? ['chapters'] : kind === 'character' ? ['characters'] : ['lore', 'mubu'];
+      let entity = null;
+      let table = candidates[0];
+      for (const candidate of candidates) {
+        entity = await library.readEntity(candidate, id);
+        if (entity) {
+          table = candidate;
+          break;
+        }
+      }
       if (!entity) return { error: '对象不存在或已删除：' + id };
       const row = entity.row;
-      const text = kind === 'chapter' ? chapterText(row) : [row.name, row.aliases, stripTags(row.content || row.text || '')].filter(Boolean).join('\n');
+      const fieldText = row.fields && typeof row.fields === 'object'
+        ? Object.entries(row.fields).map(([key, value]) => key + '：' + stripTags(String(value ?? ''))).join('\n')
+        : '';
+      const text = kind === 'chapter'
+        ? chapterText(row)
+        : [row.name, row.aliases, fieldText, stripTags(row.content || row.text || '')].filter(Boolean).join('\n');
       const start = Math.max(0, Number(args.cursor) || 0);
       const size = Math.min(20000, Math.max(200, Number(args.maxChars) || 4000));
       const chunk = text.slice(start, start + size);
       const next = start + size < text.length ? start + size : null;
       return {
-        kind, id, title: row.title || row.name || '', revision: entity.revision,
+        kind, table, id, title: row.title || row.name || '', revision: entity.revision,
         text: chunk, cursor: start, nextCursor: next, truncated: next !== null, totalChars: text.length,
       };
     },
@@ -172,11 +190,12 @@ export function createTools(library) {
         targetTitle = chapter.row.title || targetTitle;
       }
       if (kind === 'setting.update') {
-        const table = ['lore', 'characters'].find(async () => false) || 'lore';
-        const entity = (await library.readEntity('lore', String(args.targetId || ''))) || (await library.readEntity('characters', String(args.targetId || '')));
+        const entity = (await library.readEntity('lore', String(args.targetId || '')))
+          || (await library.readEntity('mubu', String(args.targetId || '')))
+          || (await library.readEntity('characters', String(args.targetId || '')));
         if (!entity) return { error: '目标设定不存在：' + args.targetId };
         basis = { table: entity.table, id: entity.id, revision: entity.revision };
-        targetTitle = entity.row.name || targetTitle;
+        targetTitle = entity.row.name || entity.row.title || String(entity.row.text || '').split('\n')[0] || targetTitle;
       }
       const proposal = await library.writeProposal({
         workId: args.workId,
@@ -314,10 +333,16 @@ export function createTools(library) {
           items.push({ kind: label, table, id: entity.row.id, title: entity.row.title || entity.row.name || '', snippet: text.slice(Math.max(0, at - 40), at + query.length + 60) });
         }
       };
-      const [chapters, lore, characters] = await Promise.all([library.listEntities('chapters'), library.listEntities('lore'), library.listEntities('characters')]);
-      const entities = { chapters, lore, characters };
+      const [chapters, lore, mubu, characters] = await Promise.all([
+        library.listEntities('chapters').then((list) => list.filter((e) => alive(e.row))),
+        library.listEntities('lore').then((list) => list.filter((e) => alive(e.row))),
+        library.listEntities('mubu').then((list) => list.filter((e) => alive(e.row))),
+        library.listEntities('characters').then((list) => list.filter((e) => alive(e.row))),
+      ]);
+      const entities = { chapters, lore, mubu, characters };
       scan('chapters', 'chapter', (row) => chapterText(row));
       scan('lore', 'lore', (row) => stripTags(row.content || row.text || ''));
+      scan('mubu', 'lore', (row) => stripTags(row.text || row.content || ''));
       scan('characters', 'character', (row) => [row.name, row.aliases, stripTags(row.content || '')].filter(Boolean).join('\n'));
       return { query, total: items.length, items: items.slice(0, limit) };
     },

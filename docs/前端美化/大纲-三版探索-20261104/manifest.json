@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "project": "小说工坊 · 大纲",
+  "brief": "沿用书架风格，以同一组故事内容比较三种自由画布布局。",
+  "round": "01",
+  "nativeViewport": "1440x900",
+  "candidates": [
+    {
+      "id": "a",
+      "name": "A · 全景脉络",
+      "concept": "全景编排，让故事关系成为画面主体。",
+      "typography": "沿用书架 Noto Serif SC 标题，Microsoft YaHei 控件与正文。",
+      "palette": [
+        "#292536",
+        "#c6b1d9",
+        "#a7d9d0",
+        "#f3f3ef"
+      ],
+      "traits": [
+        "大画布",
+        "右侧详情",
+        "窄轨结构"
+      ],
+      "source": "a-panorama.html"
+    },
+    {
+      "id": "b",
+      "name": "B · 编排工作台",
+      "concept": "结构、画布、详情并置，减少编辑时的视线切换。",
+      "typography": "沿用书架 Noto Serif SC 标题，Microsoft YaHei 控件与正文。",
+      "palette": [
+        "#292536",
+        "#c6b1d9",
+        "#a7d9d0",
+        "#f3f3ef"
+      ],
+      "traits": [
+        "三栏并置",
+        "结构树常驻",
+        "紧凑节点"
+      ],
+      "source": "b-workbench.html"
+    },
+    {
+      "id": "c",
+      "name": "C · 分卷长镜",
+      "concept": "按容器展开全书，连续阅读跨卷的情节与伏笔。",
+      "typography": "沿用书架 Noto Serif SC 标题，Microsoft YaHei 控件与正文。",
+      "palette": [
+        "#292536",
+        "#c6b1d9",
+        "#a7d9d0",
+        "#f3f3ef"
+      ],
+      "traits": [
+        "分卷展开",
+        "跨卷连线",
+        "全书位置总览"
+      ],
+      "source": "c-volumes.html"
+    }
+  ]
+}

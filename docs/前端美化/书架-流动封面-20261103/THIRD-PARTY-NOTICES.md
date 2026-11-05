@@ -1,0 +1,36 @@
+# 第三方来源与许可
+
+## Paper Design — shaders
+
+本页背景（`latent-gl.js`）移植自 Folia 使用的 Paper Design 着色器：
+
+- 仓库：https://github.com/paper-design/shaders
+- 取用文件：
+  - `packages/shaders/src/shaders/mesh-gradient.ts`（MeshGradient，探针控制点 + distortion + swirl）
+  - `packages/shaders/src/shaders/dithering.ts`（Dithering，Bayer 抖动 + 像素化）
+  - `packages/shaders/src/shader-utils.ts`（`hash21` / `rotate` / PI 常量）
+- 许可：**MIT**（见上游 `LICENSE`）
+
+### 我们的改动（避免误认为逐字复制）
+
+1. GLSL 由 `#version 300 es`（`in/out`）改为 GLSL 100（`varying` / `gl_FragColor`），以兼容 WebGL1/2
+2. 着色器内联进 `latent-gl.js`，参数（distortion / swirl / grain）按书架调过
+3. Dithering 的 8×8 Bayer 表由 `const int[64]` 改成算术生成（GLSL 100 不允许动态下标访问数组常量）
+4. 增加了 UI 侧的双通道管线（MeshGradient → FBO → Dithering 合成）、配色插值、自适应分辨率、CPU 兜底
+
+### 上游许可证原文（节选）
+
+```
+                                 Apache License
+                           Version 2.0, January 2004
+                        http://www.apache.org/licenses/
+
+   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+
+   1. Definitions.
+
+      "License" shall mean the terms and conditions for use, reproduction,
+      and distribution as defined by Sections 1 through 9 of this document.
+```
+
+完整文本以上游仓库 `LICENSE` 为准。

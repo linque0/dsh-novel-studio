@@ -2,7 +2,7 @@
  * 结构对齐 dsh-cuigengji-plugin（cordis 插件：name / inject / Config / apply）。 */
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { existsSync, readFileSync, readdirSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 /* 宿主导入的稳健化：宿主一般会注入 @deepseek-ai/*，但解析失败时也要能加载，
  * 否则一个 specifier 就会让整个插件在启动阶段消失（排查时最难定位）。 */
@@ -31,7 +31,7 @@ const z = (schemastery && schemastery.default) || zFallback;
 const defineTool = (toolsLib && toolsLib.defineTool) || ((spec) => spec);
 import { openLibrary, LAYOUT } from './core/library.js';
 import { createTools } from './core/tools.js';
-import { createExactHandler, makeAppRoute, isValidAppPath } from './adapters/dsh/static.js';
+import { createExactHandler, createPrefixNodeHandler, makeAppRoute, isValidAppPath } from './adapters/dsh/static.js';
 import { createRpcHandler } from './adapters/dsh/rpc.js';
 
 export const name = 'novel-studio';
@@ -103,12 +103,19 @@ function bootstrapPointer() {
   }
 }
 
-/** JSON Schema -> defineTool 需要的扁平参数表。 */
-function toParameters(schema = {}) {
+/** JSON Schema -> defineTool 需要的扁平参数表。
+ * 只放行宿主明确接受的键（响应式照催更姬的用法），
+ * 嵌套 items / additionalProperties 一律丢弃：宿主的 defineTool 一旦校验失败会抛错，
+ * 而 apply 抛错会让整包 effect 被回收（表现为所有路由 404）。 */
+const PARAM_KEYS = ['type', 'enum', 'description', 'required', 'default'];
+export function toParameters(schema = {}) {
   const required = new Set(Array.isArray(schema.required) ? schema.required : []);
   const out = {};
   for (const [key, value] of Object.entries(schema.properties || {})) {
-    const item = { ...value };
+    const item = {};
+    for (const field of PARAM_KEYS) {
+      if (value && value[field] !== undefined) item[field] = value[field];
+    }
     if (required.has(key)) item.required = true;
     out[key] = item;
   }
@@ -135,6 +142,24 @@ function listAppFiles(root, limit = 600) {
   };
   walk(root, '', 0);
   return out;
+}
+
+/** 读一次构建产物：index.html 里引用的 `./assets/...` 逐个落盘核对。
+ * 面板的健康探针用它显示"当前服务的是哪一次构建、有没有缺文件"，白屏时能一眼定位。 */
+function inspectBuild(root) {
+  const indexFile = join(root, 'index.html');
+  try {
+    const text = readFileSync(indexFile, 'utf8');
+    const refs = [...new Set(Array.from(text.matchAll(/(?:src|href)="\.\/([^"?#]+)"/g), (m) => m[1]))];
+    return {
+      index: 'index.html',
+      at: Math.round(statSync(indexFile).mtimeMs),
+      files: refs.length,
+      missing: refs.filter((relative) => !existsSync(join(root, relative))),
+    };
+  } catch (error) {
+    return { index: 'index.html', at: null, files: 0, missing: [], error: String(error?.message || error) };
+  }
 }
 
 function readSkills() {
@@ -171,6 +196,9 @@ export async function apply(ctx, config = {}) {
   const library = libraryDir ? openLibrary(libraryDir) : null;
   const appRoot = String(read(config.appRoot) || '').trim() || APP_ROOT;
 
+  /* 工具（RPC 也要按名字拿到同一批实现，所以在注册路由之前就建好） */
+  const tools = library ? createTools(library) : [];
+
   if (library) {
     try {
       await library.init();
@@ -182,39 +210,83 @@ export async function apply(ctx, config = {}) {
 
   /* 静态资源 + RPC：给 iframe 里的界面用 */
   const registerRoute = ctx.connection?.fetch?.register;
+  /* webServer 服务：可选依赖，用 ctx.get 取（cordis 的 get 不抛，缺了返回 undefined），
+     这样 headless/SDK 组合少了这个服务也不会让整包 apply 消失。 */
+  const webServer = (typeof ctx.get === 'function' ? ctx.get('webServer') : undefined) || ctx.webServer;
+  let routeMode = 'none';
+  let exact = 0;
+  const skipped = [];
   if (typeof registerRoute === 'function') {
-    /* 宿主契约（读 dsh-client-connection 源码核实）：
-     * 1) fetchRoutes 是"精确路径"Map，不支持通配符——path: '.../*' 永远匹配不到；
-     * 2) 命中路由时 requestBodyMode 返回 route.requestBody；未声明即 undefined，
-     *    于是退到 streaming 分支给 GET 也挂上 body → Request 构造抛错 → 浏览器收到 400。
-     * 所以：逐文件注册，且每个 GET/HEAD 路由都必须显式声明 requestBody: 'buffered'。 */
-    const appFiles = listAppFiles(appRoot);
-    const exactTargets = new Set(['index.html', 'native-shim.js', ...appFiles]);
-    let exact = 0;
-    const skipped = [];
-    for (const relative of exactTargets) {
-      const path = APP_PREFIX + relative;
+    /* 首选 webServer 前缀路由：路由表与文件内容解耦。
+     * 逐文件精确注册的代价是"文件名集合冻结在启动那一刻"，而 index.html 每次都是现读磁盘的，
+     * 于是重建 assets/app 后它立刻指向新的哈希资源 —— 那些路径没注册 → 404 → 面板白屏，
+     * 点「重新载入」也没用（2026-11 真实事故）。前缀路由按请求实时读盘，重建后无需重启。 */
+    const prefixPath = APP_PREFIX.replace(/\/+$/, '');
+    const canPrefix = !!webServer && typeof webServer.register === 'function';
+    const gateReady = typeof ctx.connection?.requestRejection === 'function';
+    if (canPrefix && !gateReady) ctx.logger?.warn?.('[novel-studio] 宿主没有 connection.requestRejection：静态前缀路由不做鉴权闸门');
+    if (canPrefix) {
       try {
-        if (!isValidAppPath(path)) throw new Error('路径段不合法');
-        registerRoute.call(ctx.connection.fetch, makeAppRoute({
-          path,
-          handler: createExactHandler({ root: appRoot, relative, shimSrc: './native-shim.js', shimPath: SHIM_PATH }),
-        }));
-        exact += 1;
+        const register = () => webServer.register({
+          kind: 'prefix',
+          path: prefixPath,
+          handler: createPrefixNodeHandler({
+            root: appRoot,
+            prefix: APP_PREFIX,
+            shimSrc: './native-shim.js',
+            shimPath: SHIM_PATH,
+            /* 与精确路由内部 admit() 同源：返回 401/403 就照抄，undefined 才放行。 */
+            gate: gateReady ? (request) => ctx.connection.requestRejection(request) : null,
+            log: ctx.logger,
+          }),
+        });
+        /* register 返回 disposer，交给 effect 收集，插件卸载时自动摘掉路由。 */
+        if (typeof ctx.effect === 'function') ctx.effect(register, 'novel-studio: static prefix route');
+        else register();
+        routeMode = 'prefix';
+        ctx.logger?.info?.('[novel-studio] 静态产物走前缀路由 ' + prefixPath + '（重建 assets/app 无需重启）');
       } catch (error) {
-        skipped.push(relative + ' → ' + (error?.message || error));
+        ctx.logger?.warn?.('[novel-studio] 前缀路由注册失败，回落逐文件精确路由：' + (error?.message || error));
       }
     }
-    ctx.logger?.info?.('[novel-studio] 静态路由已注册 ' + exact + ' 条，跳过 ' + skipped.length + ' 条（构建产物 ' + appFiles.length + ' 个文件）');
-    for (const line of skipped.slice(0, 5)) ctx.logger?.warn?.('[novel-studio] 跳过静态路由 ' + line);
-    if (exact === 0) ctx.logger?.warn?.('[novel-studio] 没有任何静态路由注册成功，界面将无法加载：' + appRoot);
+    if (routeMode !== 'prefix') {
+      /* 兜底：宿主没有 webServer。契约（读 dsh-client-connection 源码核实）：
+       * 1) fetchRoutes 是"精确路径"Map，不支持通配符——path: '.../*' 永远匹配不到；
+       * 2) 命中路由时 requestBodyMode 返回 route.requestBody；未声明即 undefined，
+       *    于是退到 streaming 分支给 GET 也挂上 body → Request 构造抛错 → 浏览器收到 400。
+       * 所以：逐文件注册，且每个 GET/HEAD 路由都必须显式声明 requestBody: 'buffered'。 */
+      const appFiles = listAppFiles(appRoot);
+      const exactTargets = new Set(['index.html', 'native-shim.js', ...appFiles]);
+      for (const relative of exactTargets) {
+        const path = APP_PREFIX + relative;
+        try {
+          if (!isValidAppPath(path)) throw new Error('路径段不合法');
+          registerRoute.call(ctx.connection.fetch, makeAppRoute({
+            path,
+            handler: createExactHandler({ root: appRoot, relative, shimSrc: './native-shim.js', shimPath: SHIM_PATH }),
+          }));
+          exact += 1;
+        } catch (error) {
+          skipped.push(relative + ' → ' + (error?.message || error));
+        }
+      }
+      routeMode = 'exact';
+      ctx.logger?.info?.('[novel-studio] 静态路由已逐文件注册 ' + exact + ' 条，跳过 ' + skipped.length + ' 条（构建产物 ' + appFiles.length + ' 个文件）');
+      for (const line of skipped.slice(0, 5)) ctx.logger?.warn?.('[novel-studio] 跳过静态路由 ' + line);
+      if (exact === 0) ctx.logger?.warn?.('[novel-studio] 没有任何静态路由注册成功，界面将无法加载：' + appRoot);
+    }
     if (library) {
       try {
         registerRoute.call(ctx.connection.fetch, {
           path: RPC_PATH,
           methods: ['POST'],
           requestBody: 'buffered',
-          fetch: createRpcHandler({ library, version: VERSION, prefix: RPC_PATH }),
+          fetch: createRpcHandler({
+            library,
+            version: VERSION,
+            prefix: RPC_PATH,
+            tools: Object.fromEntries(tools.map((tool) => [tool.name, tool])),
+          }),
         });
         ctx.logger?.info?.('[novel-studio] RPC 路由已注册 ' + RPC_PATH);
       } catch (error) {
@@ -237,8 +309,11 @@ export async function apply(ctx, config = {}) {
           const body = {
             ok: true,
             version: VERSION,
+            /* prefix = 重建产物无需重启；exact = 文件名集合冻结在启动那一刻，需重启才能换产物。 */
+            routeMode,
             staticRoutes: exact,
             skipped: skipped.length,
+            build: inspectBuild(appRoot),
             rpc: library ? RPC_PATH : null,
             tools: tools.map((tool) => tool.name),
             skills: readSkills().map((skill) => skill.name),
@@ -255,21 +330,27 @@ export async function apply(ctx, config = {}) {
     ctx.logger?.warn?.('[novel-studio] 宿主未提供 connection.fetch.register，界面与 RPC 不可用');
   }
 
-  /* 工具 */
-  const tools = library ? createTools(library) : [];
+  /* 工具注册 */
+  const failedTools = [];
   for (const tool of tools) {
-    ctx.tools.register(defineTool({
+    try {
+      ctx.tools.register(defineTool({
       name: tool.name,
       description: tool.description,
       parameters: toParameters(tool.parameters),
       output: { schema: { type: 'string' }, render: (_args, value) => [{ type: 'text', text: value }] },
-      execute: async (args, exec) => {
-        exec?.signal?.throwIfAborted?.();
-        const result = await tool.execute(args || {}, exec || {});
-        return JSON.stringify(result);
-      },
-    }));
+        execute: async (args, exec) => {
+          exec?.signal?.throwIfAborted?.();
+          const result = await tool.execute(args || {}, exec || {});
+          return JSON.stringify(result);
+        },
+      }));
+    } catch (error) {
+      failedTools.push(tool.name + ' → ' + (error?.message || error));
+      ctx.logger?.warn?.('[novel-studio] 工具注册失败 ' + tool.name + '：' + (error?.message || error));
+    }
   }
+  if (failedTools.length) ctx.logger?.warn?.('[novel-studio] 共 ' + failedTools.length + ' 个工具未注册');
   if (!library) {
     ctx.logger?.warn?.('[novel-studio] 未指定作品库：请设置 libraryDir 或让小说工坊写入 ' + pointerPath());
   }
@@ -277,19 +358,29 @@ export async function apply(ctx, config = {}) {
   /* 技能 */
   if (ctx.skills?.register) {
     for (const skill of readSkills()) {
-      ctx.skills.register({ name: skill.name, description: skill.description, source: 'novel-studio', resourceBase: skill.resourceBase, content: skill.content });
+      try {
+        ctx.skills.register({ name: skill.name, description: skill.description, source: 'novel-studio', resourceBase: skill.resourceBase, content: skill.content });
+      } catch (error) {
+        ctx.logger?.warn?.('[novel-studio] 技能注册失败 ' + skill.name + '：' + (error?.message || error));
+      }
     }
   }
 
   /* 稳定提示词段（可关闭：ctx.config.enabled === false 时不注入） */
-  ctx.on('system-prompt/assemble', async (assembly, context, next) => {
+  try {
+    ctx.on('system-prompt/assemble', async (assembly, context, next) => {
     const result = await next();
     if (!context?.agent?.id) return result;
     return {
       ...result,
-      sections: [...(result.sections || []).filter((entry) => entry.name !== PERSONA_NAME), { name: PERSONA_NAME, text: PERSONA, interpolate: false }],
-    };
-  });
+        sections: [...(result.sections || []).filter((entry) => entry.name !== PERSONA_NAME), { name: PERSONA_NAME, text: PERSONA, interpolate: false }],
+      };
+    });
+  } catch (error) {
+    ctx.logger?.warn?.('[novel-studio] 提示词钩子注册失败：' + (error?.message || error));
+  }
+
+  ctx.logger?.info?.('[novel-studio] 装载完成：' + (tools.length - failedTools.length) + ' 个工具 / ' + readSkills().length + ' 个技能 / v' + VERSION);
 }
 
 export const maintenance = {

@@ -1,0 +1,415 @@
+{
+  "reference": "B · 编排工作台",
+  "viewport": [
+    1440,
+    900
+  ],
+  "geometry": {
+    ".ow-left": {
+      "x": 28,
+      "y": 108,
+      "width": 220,
+      "height": 762
+    },
+    ".ow-main": {
+      "x": 264,
+      "y": 108,
+      "width": 814,
+      "height": 762
+    },
+    ".ow-right": {
+      "x": 1094,
+      "y": 108,
+      "width": 318,
+      "height": 762
+    },
+    ".outline-topbar": {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 84
+    },
+    ".draft-create": {
+      "x": 481.5150146484375,
+      "y": 796.3900146484375,
+      "width": 380.969970703125,
+      "height": 55.6099853515625
+    },
+    ".draft-zoom": {
+      "x": 869.15625,
+      "y": 818,
+      "width": 187.84375,
+      "height": 34
+    }
+  },
+  "differences": [
+    "画布按真实容器层级显示，采用 C 的容器与嵌套；参考 B 为平铺情节。",
+    "主区统计、关系标签及人物顺序来自实际数据和当前层级。",
+    "创建栏向左移 17.5px，以消除参考稿与缩放控件的交叠。",
+    "跨层提示独立占行；画布底部保留 78px / 122px 工具安全区。"
+  ],
+  "checks": [
+    {
+      "name": ".ow-left",
+      "pass": true,
+      "actual": {
+        "x": 28,
+        "y": 108,
+        "width": 220,
+        "height": 762
+      },
+      "expected": {
+        "x": 28,
+        "y": 108,
+        "width": 220,
+        "height": 762
+      }
+    },
+    {
+      "name": ".ow-main",
+      "pass": true,
+      "actual": {
+        "x": 264,
+        "y": 108,
+        "width": 814,
+        "height": 762
+      },
+      "expected": {
+        "x": 264,
+        "y": 108,
+        "width": 814,
+        "height": 762
+      }
+    },
+    {
+      "name": ".ow-right",
+      "pass": true,
+      "actual": {
+        "x": 1094,
+        "y": 108,
+        "width": 318,
+        "height": 762
+      },
+      "expected": {
+        "x": 1094,
+        "y": 108,
+        "width": 318,
+        "height": 762
+      }
+    },
+    {
+      "name": ".outline-topbar",
+      "pass": true,
+      "actual": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 84
+      },
+      "expected": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 84
+      }
+    }
+  ],
+  "referenceTypography": {
+    ".brand": {
+      "font": "Inter, \"Microsoft YaHei\", sans-serif",
+      "size": "19px",
+      "weight": "800",
+      "lineHeight": "normal",
+      "x": 40,
+      "y": 29.5,
+      "height": 25
+    },
+    ".brand small": {
+      "font": "Inter, \"Microsoft YaHei\", sans-serif",
+      "size": "9px",
+      "weight": "800",
+      "lineHeight": "normal",
+      "x": 128,
+      "y": 36,
+      "height": 12
+    },
+    ".b-heading h1": {
+      "font": "\"Noto Serif SC\", \"Songti SC\", serif",
+      "size": "24px",
+      "weight": "500",
+      "lineHeight": "36px",
+      "x": 290,
+      "y": 155,
+      "height": 36
+    },
+    ".tree-heading": {
+      "font": "Inter, \"Microsoft YaHei\", sans-serif",
+      "size": "13px",
+      "weight": "400",
+      "lineHeight": "normal",
+      "x": 51,
+      "y": 132,
+      "height": 17
+    },
+    ".tree-search": {
+      "font": "Inter, \"Microsoft YaHei\", sans-serif",
+      "size": "11px",
+      "weight": "400",
+      "lineHeight": "normal",
+      "x": 51,
+      "y": 169,
+      "height": 37
+    },
+    ".tree-group strong": {
+      "font": "Inter, \"Microsoft YaHei\", sans-serif",
+      "size": "12px",
+      "weight": "500",
+      "lineHeight": "normal",
+      "x": 51,
+      "y": 267,
+      "height": 16
+    },
+    ".tree-item": {
+      "font": "Inter, \"Microsoft YaHei\", sans-serif",
+      "size": "11px",
+      "weight": "400",
+      "lineHeight": "normal",
+      "x": 42,
+      "y": 293,
+      "height": 35
+    },
+    ".b-detail h2": {
+      "font": "\"Noto Serif SC\", \"Songti SC\", serif",
+      "size": "24px",
+      "weight": "500",
+      "lineHeight": "37.2px",
+      "x": 1120,
+      "y": 220,
+      "height": 37.1875
+    },
+    ".detail-content p": {
+      "font": "Inter, \"Microsoft YaHei\", sans-serif",
+      "size": "13px",
+      "weight": "400",
+      "lineHeight": "25.35px",
+      "x": 1120,
+      "y": 353.6875,
+      "height": 50.6875
+    },
+    ".relation-row": {
+      "font": "Inter, \"Microsoft YaHei\", sans-serif",
+      "size": "12px",
+      "weight": "400",
+      "lineHeight": "normal",
+      "x": 1120,
+      "y": 521.0625,
+      "height": 59
+    },
+    ".relation-row>div": {
+      "font": "Inter, \"Microsoft YaHei\", sans-serif",
+      "size": "12px",
+      "weight": "400",
+      "lineHeight": "normal",
+      "x": 1157,
+      "y": 533.0625,
+      "height": 35
+    },
+    ".relation-text": {
+      "font": "Inter, \"Microsoft YaHei\", sans-serif",
+      "size": "11px",
+      "weight": "400",
+      "lineHeight": "normal",
+      "x": 1120,
+      "y": 636.0625,
+      "height": 15
+    },
+    ".relation-text>span": {
+      "font": "Inter, \"Microsoft YaHei\", sans-serif",
+      "size": "11px",
+      "weight": "400",
+      "lineHeight": "normal",
+      "x": 1150,
+      "y": 636.0625,
+      "height": 15
+    }
+  },
+  "referenceGeometry": {
+    ".b-tree": {
+      "x": 28,
+      "y": 108,
+      "width": 220,
+      "height": 762
+    },
+    ".b-main": {
+      "x": 264,
+      "y": 108,
+      "width": 814,
+      "height": 762
+    },
+    ".b-detail": {
+      "x": 1094,
+      "y": 108,
+      "width": 318,
+      "height": 762
+    },
+    ".topbar": {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 84
+    },
+    ".creation": {
+      "x": 499.0150146484375,
+      "y": 796.3900146484375,
+      "width": 380.969970703125,
+      "height": 55.6099853515625
+    },
+    ".zoom": {
+      "x": 869.15625,
+      "y": 818,
+      "width": 187.84375,
+      "height": 34
+    }
+  },
+  "referenceCard": {
+    "x": 581,
+    "y": 467,
+    "width": 216,
+    "height": 149
+  },
+  "actualTypography": {
+    ".brand": {
+      "font": "Inter, \"Microsoft YaHei\", sans-serif",
+      "size": "19px",
+      "weight": "800",
+      "lineHeight": "normal",
+      "x": 40,
+      "y": 29.5,
+      "height": 25
+    },
+    ".brand small": {
+      "font": "Inter, \"Microsoft YaHei\", sans-serif",
+      "size": "9px",
+      "weight": "800",
+      "lineHeight": "normal",
+      "x": 128,
+      "y": 36,
+      "height": 12
+    },
+    ".draft-canvas-head h1": {
+      "font": "\"Noto Serif SC\", \"Songti SC\", serif",
+      "size": "24px",
+      "weight": "500",
+      "lineHeight": "36px",
+      "x": 290,
+      "y": 155,
+      "height": 36
+    },
+    ".tree-heading": {
+      "font": "Inter, \"Microsoft YaHei\", sans-serif",
+      "size": "13px",
+      "weight": "400",
+      "lineHeight": "normal",
+      "x": 51,
+      "y": 132,
+      "height": 17
+    },
+    ".tree-search": {
+      "font": "Inter, \"Microsoft YaHei\", sans-serif",
+      "size": "11px",
+      "weight": "400",
+      "lineHeight": "normal",
+      "x": 51,
+      "y": 169,
+      "height": 37
+    },
+    ".tree-container": {
+      "font": "Inter, \"Microsoft YaHei\", sans-serif",
+      "size": "12px",
+      "weight": "500",
+      "lineHeight": "normal",
+      "x": 42,
+      "y": 267,
+      "height": 16
+    },
+    ".tree-item:not(.tree-container)": {
+      "font": "Inter, \"Microsoft YaHei\", sans-serif",
+      "size": "11px",
+      "weight": "400",
+      "lineHeight": "normal",
+      "x": 42,
+      "y": 293,
+      "height": 35
+    },
+    ".tree-name": {
+      "font": "Inter, \"Microsoft YaHei\", sans-serif",
+      "size": "12px",
+      "weight": "500",
+      "lineHeight": "normal",
+      "x": 70,
+      "y": 267,
+      "height": 16
+    },
+    ".draft-detail h2": {
+      "font": "\"Noto Serif SC\", serif",
+      "size": "24px",
+      "weight": "500",
+      "lineHeight": "37.2px",
+      "x": 1120,
+      "y": 220,
+      "height": 37.1875
+    },
+    ".detail-content p": {
+      "font": "Inter, \"Microsoft YaHei\", sans-serif",
+      "size": "13px",
+      "weight": "400",
+      "lineHeight": "25.35px",
+      "x": 1120,
+      "y": 353.6875,
+      "height": 50.6875
+    },
+    ".relation-row": {
+      "font": "Inter, \"Microsoft YaHei\", sans-serif",
+      "size": "12px",
+      "weight": "400",
+      "lineHeight": "normal",
+      "x": 1120,
+      "y": 521.0625,
+      "height": 59
+    },
+    ".relation-row>div": {
+      "font": "Inter, \"Microsoft YaHei\", sans-serif",
+      "size": "12px",
+      "weight": "400",
+      "lineHeight": "normal",
+      "x": 1157,
+      "y": 533.0625,
+      "height": 35
+    },
+    ".relation-text": {
+      "font": "Inter, \"Microsoft YaHei\", sans-serif",
+      "size": "11px",
+      "weight": "400",
+      "lineHeight": "normal",
+      "x": 1120,
+      "y": 636.0625,
+      "height": 15
+    },
+    ".relation-text>span": {
+      "font": "Inter, \"Microsoft YaHei\", sans-serif",
+      "size": "11px",
+      "weight": "400",
+      "lineHeight": "normal",
+      "x": 1150,
+      "y": 636.0625,
+      "height": 15
+    }
+  },
+  "actualCard": {
+    "x": 332,
+    "y": 297,
+    "width": 216,
+    "height": 149
+  },
+  "consoleErrors": []
+}

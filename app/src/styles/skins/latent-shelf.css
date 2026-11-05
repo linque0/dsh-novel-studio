@@ -1,0 +1,239 @@
+/* 书架 · 流动封面（隐现）
+ * 设计稿 docs/前端美化/书架-流动封面-20261103/index.html（样式 9-111 行）整段移植，
+ * 只把选择器收进 .latent-shelf 命名空间：尺寸、色值、时序一律照原稿；
+ * 唯一偏差是横排书名（.ls-glyph-title.is-wide）的几何，见该规则的注释。
+ * 书架页固定暗色（设计稿常量），宿主令牌只在与顶栏/正文交接处引用，且都带设计稿回退。 */
+
+.latent-shelf {
+  --ls-ink: #fff;
+  --ls-ink-dim: rgb(255 255 255 / .6);
+  --ls-glass: rgb(255 255 255 / .09);
+  --ls-glass-strong: rgb(255 255 255 / .16);
+  --ls-line: rgb(255 255 255 / .16);
+  --ls-dur-focus: 520ms;
+  --ls-ease: cubic-bezier(.22, .61, .36, 1);
+  --ls-sans: Inter, "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  --ls-serif: var(--nsx-serif, "Noto Serif SC", "Source Han Serif SC", "Songti SC", serif);
+  --ls-card-w: 212px;
+  --ls-step: 248px;
+  --ls-name: 44px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: #05060a;
+  color: var(--ls-ink);
+  font-family: var(--ls-sans);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+.latent-shelf, .latent-shelf * { box-sizing: border-box; }
+.latent-shelf button { font: inherit; color: inherit; cursor: pointer; }
+.latent-shelf input { user-select: text; }
+
+/* ---- 背景：像素层（有序抖动）+ 流体层（域扭曲网格渐变），同一支 WebGL 片元着色器 ---- */
+.latent-shelf .ls-backdrop-wrap { position: absolute; inset: 0; overflow: hidden; background: #05060a; pointer-events: none; }
+.latent-shelf .ls-backdrop { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.latent-shelf .ls-layer { position: absolute; inset: 0; pointer-events: none; }
+.latent-shelf .ls-layer.dots { opacity: .03; mix-blend-mode: overlay; background-image: radial-gradient(circle, rgb(255 255 255 / .95) .45px, transparent .8px); background-size: 2px 2px; }
+.latent-shelf .ls-layer.vignette { background: radial-gradient(130% 96% at 50% 38%, transparent 40%, rgb(3 4 7 / .3) 100%), linear-gradient(180deg, rgb(3 4 7 / .26) 0%, rgb(3 4 7 / 0) 30%, rgb(3 4 7 / .14) 64%, rgb(3 4 7 / .38) 100%); }
+.latent-shelf .ls-layer.grain { opacity: .05; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E"); }
+
+/* ---- 顶栏：设计稿里没有底板，胶囊导航本身由 language.css 提供，这里只把外层牌面擦掉。
+ * 选择器带 html body[data-skin] 是为了压过 language.css 的同名玻璃底（0,3,2）。 ---- */
+html body[data-skin='dsh'] .latent-shelf :deep(.app-topbar),
+.latent-shelf :deep(.app-topbar) {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+/* 设计稿顶栏只有品牌 + 胶囊导航 + 搜索：新建入口由右下 .ls-round ＋ 承担，
+   顶栏那枚「＋新书上架」留在书架上会与胶囊搜索挤成一片。 */
+/* 宿主层对同名控件写了同样权重的 display:inline-flex 且打包顺序在后，重复一次类名把权重压过去。 */
+html body[data-skin='dsh'] .latent-shelf.latent-shelf :deep(.app-topbar-create),
+.latent-shelf.latent-shelf :deep(.app-topbar-create) { display: none; }
+.latent-shelf .ls-search { width: 100%; min-width: 0; border: 0; background: transparent; color: var(--nsx-ink-1, #fff); font: inherit; font-size: 13px; outline: none; }
+.latent-shelf .ls-search::placeholder { color: rgb(255 255 255 / .5); }
+
+/* ---- 计数胶囊（设计稿 .filter） ---- */
+.latent-shelf .ls-filter-wrap { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); z-index: 15; display: flex; }
+.latent-shelf .ls-count { appearance: none; padding: 9px 18px; border-radius: 999px; background: rgb(8 9 12 / .5); border: 1px solid var(--ls-line); -webkit-backdrop-filter: blur(22px); backdrop-filter: blur(22px); font-size: 12.5px; font-weight: 600; letter-spacing: .04em; color: rgb(255 255 255 / .86); transition: background 220ms ease, color 220ms ease; }
+.latent-shelf .ls-count:hover { background: rgb(8 9 12 / .68); color: var(--ls-ink); }
+
+/* ---- 舞台与卡位行 ---- */
+.latent-shelf .ls-stage { position: relative; z-index: 10; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; align-items: center; padding: 72px 0 0; }
+.latent-shelf .ls-row { position: relative; flex: none; width: 100%; height: 356px; }
+
+.latent-shelf .ls-card { position: absolute; top: 50%; left: 50%; display: block; width: var(--ls-card-w); margin-left: calc(var(--ls-card-w) / -2); padding: 0; border: 0; background: none; text-align: left; transform-origin: center center; transition: transform var(--ls-dur-focus) var(--ls-ease), opacity 420ms ease, filter 420ms ease; will-change: transform; }
+
+/* 液态玻璃：不做图片，玻璃本身就是画面 */
+.latent-shelf .ls-plate { position: relative; display: block; padding: 9px; border-radius: 20px; background: linear-gradient(145deg, rgb(255 255 255 / .16), rgb(255 255 255 / .04) 44%, rgb(255 255 255 / .12)); border: 1px solid rgb(255 255 255 / .26); -webkit-backdrop-filter: blur(9px) saturate(1.8) brightness(1.04); backdrop-filter: blur(9px) saturate(1.8) brightness(1.04); box-shadow: 0 26px 60px rgb(0 0 0 / .5), inset 0 1px 0 rgb(255 255 255 / .55), inset 0 -20px 46px rgb(0 0 0 / .3); transition: box-shadow var(--ls-dur-focus) var(--ls-ease), border-color 300ms ease, background 300ms ease; }
+.latent-shelf .ls-plate::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(118deg, rgb(255 255 255 / .4) 0%, rgb(255 255 255 / 0) 26%, rgb(255 255 255 / 0) 64%, rgb(255 255 255 / .2) 100%); mix-blend-mode: screen; opacity: .9; }
+.latent-shelf .ls-plate::after { content: ''; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .1), inset 0 0 40px rgb(255 255 255 / .08); }
+
+.latent-shelf .ls-glass { position: relative; display: block; aspect-ratio: 2 / 3; border-radius: 14px; overflow: hidden; background: linear-gradient(160deg, rgb(255 255 255 / .1), rgb(255 255 255 / .02)); box-shadow: inset 0 1px 0 rgb(255 255 255 / .4), inset 0 -30px 60px rgb(0 0 0 / .22); }
+/* v8.1：画面 0 → 压暗/柔光 1 → 文字 2；顺序反了书名会发灰。 */
+.latent-shelf .ls-cover-art { position: absolute; inset: 0; z-index: 0; display: block; width: 100%; height: 100%; filter: contrast(1.05) saturate(1.2) brightness(1.34); }
+.latent-shelf .ls-glass::before { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: radial-gradient(130% 80% at 50% -14%, rgb(255 255 255 / .4), transparent 62%); }
+.latent-shelf .ls-glass::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(270deg, rgb(0 0 0 / .52) 0%, rgb(0 0 0 / .2) 26%, rgb(0 0 0 / .02) 46%, transparent 60%), linear-gradient(196deg, rgb(255 255 255 / .2) 0%, rgb(255 255 255 / .06) 30%, rgb(0 0 0 / .04) 64%, rgb(0 0 0 / .34) 100%), linear-gradient(268deg, rgb(0 0 0 / .56) 0%, rgb(0 0 0 / .12) 38%, transparent 62%), radial-gradient(120% 60% at 50% 108%, rgb(0 0 0 / .3), transparent 62%); }
+/* 没有 WebGL 时封面只剩布面渐变，色序与 paletteOf 同源（由组件写进 --flat）。 */
+.latent-shelf .ls-card.is-flat .ls-cover-art { display: none; }
+.latent-shelf .ls-card.is-flat .ls-glass { background-image: var(--flat); }
+
+.latent-shelf .ls-glyph-top { position: absolute; z-index: 2; left: 16px; right: 16px; top: 14px; display: flex; justify-content: space-between; gap: 10px; font-size: 8px; letter-spacing: .26em; text-transform: uppercase; color: rgb(255 255 255 / .8); text-shadow: 0 1px 8px rgb(0 0 0 / .5); }
+/* 题材/状态各自可截断：长题材名不会顶到右端的状态上去（两块都在一条 8px 的行里）。 */
+.latent-shelf .ls-glyph-top > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.latent-shelf .ls-glyph-rule { position: absolute; z-index: 2; left: 16px; right: 16px; top: 31px; height: 1px; background: linear-gradient(90deg, rgb(255 255 255 / .55), rgb(255 255 255 / .04)); }
+
+/* 书名：竖排宋体 + 渐变字面 + 压印阴影，追求「排过版」的高级感 */
+.latent-shelf .ls-glyph-title { position: absolute; z-index: 2; right: 17px; top: 46px; bottom: 52px; writing-mode: vertical-rl; text-orientation: upright; font-family: var(--ls-serif); font-size: 27px; font-weight: 700; letter-spacing: .2em; line-height: 1; color: #fff; text-shadow: 0 0 1px rgb(255 255 255 / .95), 0 0 8px rgb(255 255 255 / .28), 0 1px 2px rgb(0 0 0 / .9), 0 6px 18px rgb(0 0 0 / .7), 0 18px 44px rgb(0 0 0 / .5); overflow: hidden; }
+/* 横排书名让开左侧竖排拉丁列：16(边距) + 7.5(列宽) + 8.5(气口) = 32。
+   原稿 left:16 与 .ls-glyph-latin 共用同一条左边线，含拉丁字母的书名（如「画布验证书A」）会整段压在
+   拉丁上，拉丁只能从笔画缝隙与两行之间透出来 —— 书架上一眼就是「糊了一块」。
+   bottom 从 auto 收到 52：书名框与脚注行（≥900 时 253）之间留出硬边界，长书名宁可整段裁掉也不压朱记。 */
+.latent-shelf .ls-glyph-title.is-wide { left: 32px; right: 16px; top: 46px; bottom: 52px; writing-mode: horizontal-tb; font-size: 26px; line-height: 1.3; letter-spacing: .05em; text-wrap: balance; }
+
+/* 左侧竖排拉丁小字，和书名形成对位 */
+.latent-shelf .ls-colophon-char { flex: none; font-family: var(--ls-serif); font-size: 10px; font-weight: 700; letter-spacing: .1em; color: #ff9384; text-shadow: 0 1px 6px rgb(0 0 0 / .5); }
+/* line-height:1 把竖排列宽锁定为字号本身（否则随字体度量在 9~10px 之间浮动），上面横排书名的让位量才
+   算得准；竖排的逐字步进由字形前进量决定，不受这条影响。 */
+.latent-shelf .ls-glyph-latin { position: absolute; z-index: 2; left: 16px; top: 52px; writing-mode: vertical-rl; line-height: 1; font-size: 7.5px; letter-spacing: .36em; text-transform: uppercase; color: rgb(255 255 255 / .85); text-shadow: 0 1px 6px rgb(0 0 0 / .5); }
+
+.latent-shelf .ls-glyph-foot { position: absolute; z-index: 2; left: 16px; right: 16px; bottom: 15px; display: flex; align-items: center; gap: 10px; }
+.latent-shelf .ls-glyph-foot .ls-rule { flex: 1; height: 1px; background: linear-gradient(90deg, rgb(255 255 255 / .5), rgb(255 255 255 / .06)); }
+.latent-shelf .ls-glyph-author { font-size: 10px; letter-spacing: .2em; color: rgb(255 255 255 / .96); text-shadow: 0 1px 8px rgb(0 0 0 / .55); white-space: nowrap; }
+.latent-shelf .ls-colophon { flex: none; width: 3px; height: 20px; background: #c0483a; box-shadow: 0 0 10px rgb(192 72 58 / .55); }
+
+.latent-shelf .ls-card h3 { margin: 10px 2px 2px; font-size: 14px; font-weight: 700; letter-spacing: -.01em; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: rgb(255 255 255 / .92); text-shadow: 0 2px 12px rgb(0 0 0 / .5); }
+.latent-shelf .ls-card p { margin: 0 2px; font-size: 11.5px; color: var(--ls-ink-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.latent-shelf .ls-card.is-focus { transform: translate3d(var(--x, 0), -50%, 0) scale(1); z-index: 3; }
+.latent-shelf .ls-card.is-near { transform: translate3d(var(--x, 0), -50%, 0) scale(.85); opacity: .78; }
+.latent-shelf .ls-card.is-far { transform: translate3d(var(--x, 0), -50%, 0) scale(.79); opacity: .42; }
+.latent-shelf .ls-card.is-out { transform: translate3d(var(--x, 0), -50%, 0) scale(.75); opacity: 0; pointer-events: none; }
+.latent-shelf .ls-card.is-focus .ls-plate { border-color: rgb(255 255 255 / .4); background: linear-gradient(145deg, rgb(255 255 255 / .22), rgb(255 255 255 / .06) 46%, rgb(255 255 255 / .16)); box-shadow: 0 34px 78px rgb(0 0 0 / .58), 0 0 90px color-mix(in srgb, var(--accent, transparent) 34%, transparent), inset 0 1px 0 rgb(255 255 255 / .7), inset 0 -20px 46px rgb(0 0 0 / .26); }
+.latent-shelf .ls-card:not(.is-focus):hover { opacity: .96; }
+
+/* ---- 聚焦区：书名 / meta / 双按钮 ---- */
+.latent-shelf .ls-focus { margin-top: 18px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 0 24px; }
+.latent-shelf .ls-title { margin: 0; font-family: var(--ls-serif); font-size: var(--ls-name); font-weight: 600; line-height: 1.12; letter-spacing: .02em; text-wrap: balance; color: #fff; text-shadow: 0 2px 6px rgb(0 0 0 / .45), 0 16px 44px rgb(0 0 0 / .55); transition: opacity 260ms ease, transform 260ms var(--ls-ease); }
+.latent-shelf .ls-meta { display: flex; align-items: center; gap: 12px; font-size: 13px; letter-spacing: .06em; color: var(--ls-ink-dim); transition: opacity 260ms ease; }
+.latent-shelf .ls-meta b { color: rgb(255 255 255 / .92); font-weight: 700; }
+.latent-shelf .ls-meta i { font-style: normal; opacity: .4; }
+.latent-shelf .ls-actions { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
+.latent-shelf .ls-primary { appearance: none; border: 0; border-radius: 999px; padding: 12px 28px; background: #fff; color: #17181c; font-size: 13.5px; font-weight: 700; letter-spacing: .04em; box-shadow: 0 18px 44px rgb(0 0 0 / .45); transition: transform 260ms var(--ls-ease), box-shadow 260ms ease; }
+.latent-shelf .ls-primary:hover { transform: translateY(-2px); box-shadow: 0 22px 52px rgb(0 0 0 / .55); }
+.latent-shelf .ls-primary[aria-disabled='true'] { opacity: .6; cursor: progress; transform: none; }
+.latent-shelf .ls-ghost { appearance: none; border: 1px solid rgb(255 255 255 / .28); border-radius: 999px; padding: 11px 22px; background: rgb(255 255 255 / .1); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); font-size: 13px; font-weight: 600; letter-spacing: .04em; transition: background 220ms ease; }
+.latent-shelf .ls-ghost:hover { background: var(--ls-glass-strong); }
+
+/* ---- 接续 dock ---- */
+.latent-shelf .ls-dock { position: absolute; left: 50%; bottom: 32px; transform: translateX(-50%); z-index: 20; width: 360px; display: flex; flex-direction: column; gap: 8px; padding: 14px 22px 15px; border-radius: 24px; background: rgb(8 9 12 / .46); border: 1px solid var(--ls-line); -webkit-backdrop-filter: blur(26px) saturate(1.4); backdrop-filter: blur(26px) saturate(1.4); }
+.latent-shelf .ls-dock-line { display: flex; align-items: center; gap: 14px; font-size: 12px; letter-spacing: .04em; color: var(--ls-ink-dim); }
+.latent-shelf .ls-dock-line span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.latent-shelf .ls-dock-line span:first-child { color: var(--ls-ink); font-weight: 600; }
+.latent-shelf .ls-dock-line span:last-child { margin-left: auto; flex: none; font-variant-numeric: tabular-nums; }
+.latent-shelf .ls-track { position: relative; height: 3px; border-radius: 999px; background: rgb(255 255 255 / .2); overflow: hidden; }
+.latent-shelf .ls-track i { position: absolute; inset: 0 auto 0 0; display: block; border-radius: 999px; background: #fff; transition: width 480ms var(--ls-ease); }
+.latent-shelf .ls-dock-right { position: absolute; right: 40px; bottom: 32px; z-index: 20; display: flex; gap: 10px; }
+.latent-shelf .ls-round { appearance: none; flex: none; width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--ls-line); background: rgb(255 255 255 / .1); -webkit-backdrop-filter: blur(24px) saturate(1.5); backdrop-filter: blur(24px) saturate(1.5); color: var(--ls-ink); font-size: 15px; transition: background 220ms ease, transform 220ms var(--ls-ease); }
+.latent-shelf .ls-round:hover { background: var(--ls-glass-strong); transform: translateY(-1px); }
+.latent-shelf .ls-round[aria-disabled='true'] { opacity: .45; cursor: default; }
+.latent-shelf .ls-round[aria-disabled='true']:hover { background: rgb(255 255 255 / .1); transform: none; }
+
+/* ---- 空态与骨架屏 ---- */
+.latent-shelf .ls-empty { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 0 24px 48px; text-align: center; }
+.latent-shelf .ls-empty-mark { font-family: var(--ls-serif); font-size: 34px; color: rgb(255 255 255 / .5); }
+.latent-shelf .ls-empty h2 { margin: 0; font-family: var(--ls-serif); font-size: 24px; font-weight: 600; color: var(--ls-ink); }
+.latent-shelf .ls-empty p { margin: 0; font-size: 13px; letter-spacing: .04em; color: rgb(255 255 255 / .72); }
+.latent-shelf .ls-empty-action { appearance: none; margin-top: 8px; border: 0; border-radius: 999px; padding: 11px 24px; background: #fff; color: #17181c; font-size: 13px; font-weight: 700; letter-spacing: .04em; box-shadow: 0 18px 44px rgb(0 0 0 / .45); }
+.latent-shelf .ls-skeletons { display: flex; align-items: center; justify-content: center; gap: 24px; height: 100%; }
+.latent-shelf .ls-skeleton { display: block; width: var(--ls-card-w); height: calc(var(--ls-card-w) * 1.5); border-radius: 20px; border: 1px solid rgb(255 255 255 / .12); background: linear-gradient(145deg, rgb(255 255 255 / .1), rgb(255 255 255 / .03) 46%, rgb(255 255 255 / .07)); animation: ls-breathe 1.8s ease-in-out infinite; }
+@keyframes ls-breathe { 0%, 100% { opacity: .55; } 50% { opacity: .9; } }
+
+.latent-shelf :is(.ls-card, .ls-count, .ls-primary, .ls-ghost, .ls-round, .ls-empty-action):focus-visible { outline: 2px solid rgb(255 255 255 / .82); outline-offset: 3px; }
+
+/* ---- 三档断点：卡宽 / 步进 / 书名与设计稿一致（步进同时写在组件里驱动 --x） ---- */
+@media (min-width: 900px) {
+  .latent-shelf { --ls-card-w: 212px; --ls-step: 248px; --ls-name: 44px; }
+  .latent-shelf .ls-stage { padding-top: 72px; }
+  .latent-shelf .ls-row { height: 356px; }
+  /* 竖排书名只许一列：27px 下六字 = 6×(27+5.4)≈194px，原 bottom:52 只剩 190px 可用，
+     末字会被挤进左边第二列（读序错乱）。bottom 收到 42 给出 200px。
+     padding-left:8px 抵消 vertical-rl 尾字在块向多报的 6px 溢出（实测所有档位都有，
+     字形并未出框），使 scrollWidth == clientWidth；列仍贴右缘，观感不变。 */
+  .latent-shelf .ls-glyph-title:not(.is-wide) { font-size: 27px; white-space: nowrap; padding-left: 8px; bottom: 42px; }
+  /* 六字长书名另起小档：27px 的六字几乎把 200px 的列顶满，退到 22px 后内容 158.4px，
+     书名整体落在脚注线（253px）之上，一眼能分出「书名更长」而不去挤朱记与作者。 */
+  .latent-shelf .ls-glyph-title.is-tall { font-size: 22px; }
+  /* 横排长书名档：26px 下 144px 行宽只排 5 字，9 字以上降到 22px（6 字/行），六行仍在 236 的框底之内。 */
+  .latent-shelf .ls-glyph-title.is-wide.is-long { font-size: 22px; }
+}
+@media (min-width: 560px) and (max-width: 899px) {
+  .latent-shelf { --ls-card-w: 168px; --ls-step: 196px; --ls-name: 32px; }
+  .latent-shelf .ls-stage { padding-top: 48px; }
+  /* 行高必须装得下整张卡（168 卡实高约 288）：原先 282 让卡顶溢出到 45px，
+     正好撞上筛选药丸的底边（18+33=51）。行高补到 296、药丸再上移 6px，留 7px 气口。 */
+  .latent-shelf .ls-row { height: 304px; }
+  .latent-shelf .ls-filter-wrap { top: 8px; }
+  .latent-shelf .ls-focus { margin-top: 14px; gap: 10px; }
+  /* 168px 卡（玻璃 148×222）书名只有 124px 高：27px 的「雾港纪年」= 4×32.4≈130px 就超了，
+     vertical-rl 自动折成两列，读成「年雾 / 港纪」。降到 22px（4 字 105.6 / 5 字 132），nowrap 禁止折列。
+     bottom 由 12 收到 40：脚注顶在 187px，框底停在 182px 才真的让开朱记行（原 12 让框底压到 210px）。 */
+  .latent-shelf .ls-glyph-title:not(.is-wide) { font-size: 22px; white-space: nowrap; padding-left: 8px; bottom: 40px; }
+  /* 六字 22px 要 158.4px，超过 136px 的单列容量，另开 18px 小档：内容 129.6px，
+     框底同样停在 182px，与脚注顶 187px 留 5px。 */
+  .latent-shelf .ls-glyph-title.is-tall { font-size: 18px; }
+  /* 横排书名在本档原来继承 26px：168 卡的行宽只有 100px（3 字/行），11 字书名要 4 行、被 bottom 边界
+     裁掉 2px（实测）。与本档竖排书名同步降到 22px，长档再降到 18px（5 字/行，五行仍在 170 的框底内）。 */
+  .latent-shelf .ls-glyph-title.is-wide { font-size: 22px; }
+  .latent-shelf .ls-glyph-title.is-wide.is-long { font-size: 18px; }
+}
+@media (max-width: 559px) {
+  .latent-shelf { --ls-card-w: 128px; --ls-step: 150px; --ls-name: 24px; }
+  .latent-shelf .ls-stage { padding: 40px 0 108px; }
+  /* 128 卡实高约 228：原 216 行高让卡顶溢到 34px，与药丸底（8+31=39）相撞。
+     行高补到 236、药丸上移到 2px，卡顶落在 44，气口 9px。 */
+  .latent-shelf .ls-row { height: 236px; }
+  .latent-shelf .ls-filter-wrap { top: 2px; }
+  .latent-shelf .ls-count { padding: 7px 14px; font-size: 11.5px; }
+  .latent-shelf .ls-focus { margin-top: 10px; gap: 8px; }
+  .latent-shelf .ls-meta { flex-wrap: wrap; justify-content: center; gap: 6px 8px; font-size: 11.5px; }
+  .latent-shelf .ls-actions { gap: 8px; }
+  .latent-shelf .ls-primary { padding: 10px 20px; font-size: 12.5px; }
+  .latent-shelf .ls-ghost { padding: 9px 16px; font-size: 12px; }
+  /* 紧凑档 dock 折成一行：只留接续章 + 章数，轨道与「上次打开/题材」收掉。 */
+  .latent-shelf .ls-dock { left: 12px; right: 12px; bottom: 14px; width: auto; transform: none; padding: 10px 16px; border-radius: 18px; }
+  .latent-shelf .ls-dock .ls-track { display: none; }
+  .latent-shelf .ls-dock-line:last-child { display: none; }
+  .latent-shelf .ls-dock-line { gap: 10px; font-size: 11.5px; }
+  .latent-shelf .ls-dock-right { right: 12px; bottom: 68px; }
+  /* 128 宽的玻璃只有 110×165，照 27px 竖排会把末字切掉：紧凑档把封面字整体缩一档。 */
+  .latent-shelf .ls-glyph-top { left: 11px; right: 11px; top: 9px; font-size: 6.5px; letter-spacing: .18em; }
+  .latent-shelf .ls-glyph-rule { left: 11px; right: 11px; top: 23px; }
+  .latent-shelf .ls-glyph-latin { left: 11px; top: 34px; font-size: 6px; letter-spacing: .26em; }
+  .latent-shelf .ls-glyph-title { right: 11px; top: 32px; bottom: 18px; font-size: 16px; letter-spacing: .12em; }
+  /* 16px 下六字 = 6×17.92≈108px > 原来的 96px，同样会折列：nowrap + bottom 28 给到 102px，
+     框底停在 134px，脚注顶在 139px（原 bottom 18 让框底压到 144px）。 */
+  .latent-shelf .ls-glyph-title:not(.is-wide) { white-space: nowrap; padding-left: 8px; bottom: 28px; }
+  /* 六字 16px 要 107.5px，超出 102px 的单列容量：小档降到 14px，六字 94.1px 仍在同一列。 */
+  .latent-shelf .ls-glyph-title.is-tall { font-size: 14px; }
+  /* 紧凑档玻璃只有 108×162：书名让开拉丁列（11+6+9=26），框底停在 132（脚注顶 139）。 */
+  .latent-shelf .ls-glyph-title.is-wide { left: 26px; right: 11px; top: 32px; bottom: 30px; font-size: 14px; }
+  /* 长书名档：14px 下 4 字/行，9 字以上降到 12px（5 字/行，六行仍在 132 之内）。 */
+  .latent-shelf .ls-glyph-title.is-wide.is-long { font-size: 12px; }
+  .latent-shelf .ls-glyph-foot { left: 11px; right: 11px; bottom: 9px; gap: 6px; }
+  .latent-shelf .ls-glyph-author { font-size: 7.5px; letter-spacing: .12em; }
+  .latent-shelf .ls-colophon { height: 14px; }
+  .latent-shelf .ls-colophon-char { font-size: 8px; }
+  .latent-shelf .ls-empty { padding-bottom: 96px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .latent-shelf { --ls-dur-focus: 0ms; }
+  .latent-shelf :is(.ls-card, .ls-plate, .ls-primary, .ls-ghost, .ls-round, .ls-count, .ls-title, .ls-meta, .ls-track i) { transition: none; }
+  .latent-shelf .ls-skeleton { animation: none; }
+}

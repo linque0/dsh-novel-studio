@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "project": "小说工坊 · 设定",
+  "brief": "以连续编写、档案查阅和关系探索比较设定工作区；统一作品内容和品牌外壳。",
+  "round": "01",
+  "nativeViewport": "1440x900",
+  "candidates": [
+    {
+      "id": "a",
+      "name": "A · 设定书房",
+      "concept": "让连续编写拥有一张安静的纸面",
+      "typography": "Noto Serif SC 标题，Microsoft YaHei 界面与正文；阅读区13–14px、1.95–2.05行高。",
+      "palette": [
+        "#292432",
+        "#b7d9d0",
+        "#f2eee6"
+      ],
+      "traits": [
+        "宽正文与页边留白",
+        "关联资料按需展开"
+      ],
+      "source": "a-study.html",
+      "interactive": true
+    },
+    {
+      "id": "b",
+      "name": "B · 世界档案",
+      "concept": "在资料之间往返时始终保留查阅上下文",
+      "typography": "Noto Serif SC 标题，Microsoft YaHei 界面与正文；阅读区13–14px、1.95–2.05行高。",
+      "palette": [
+        "#292432",
+        "#b7d9d0",
+        "#f2eee6"
+      ],
+      "traits": [
+        "分类、列表与详情三栏",
+        "关联先于长篇子设定"
+      ],
+      "source": "b-archive.html",
+      "interactive": true
+    },
+    {
+      "id": "c",
+      "name": "C · 关系观测台",
+      "concept": "从一项设定看见世界中的联系",
+      "typography": "Noto Serif SC 标题，Microsoft YaHei 界面与正文；阅读区13–14px、1.95–2.05行高。",
+      "palette": [
+        "#292432",
+        "#b7d9d0",
+        "#f2eee6"
+      ],
+      "traits": [
+        "局部图谱与详情联动",
+        "节点编排和关系跳转"
+      ],
+      "source": "c-observatory.html",
+      "interactive": true
+    }
+  ],
+  "serve": {
+    "cwd": "F:\\deepseek workplace\\dsh-novel-studio\\docs\\前端美化\\设定-三版探索-20261105",
+    "command": "python -m http.server 57890 --bind 127.0.0.1",
+    "url": "http://127.0.0.1:57890/style-explorer.html"
+  }
+}

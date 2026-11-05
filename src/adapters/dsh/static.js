@@ -124,3 +124,95 @@ export function createExactHandler({ root, relative, shimSrc = './native-shim.js
     return respondFile({ root, relative, request, shimSrc, shimPath });
   };
 }
+
+/**
+ * 前缀路由的 node:http 处理器：把整个目录挂在一个前缀下，**每次请求现读磁盘**。
+ *
+ * 为什么要它：宿主的 fetch 路由表是"pathname → 路由"的精确 Map，插件在 apply 时按文件名
+ * 逐条注册；而 index.html 每次都是从磁盘现读的 —— 于是重建产物后 index.html 立刻指向新的
+ * 哈希资源，那些文件名在启动时并不存在，路由表里没有 → 404 → 面板白屏，点「重新载入」也没用。
+ * 前缀路由把"路由表"与"文件内容"解耦，重建后无需重启进程。
+ *
+ * webServer 前缀路由按最长前缀匹配（宿主 dsh-host-webserver 的 match()），比 connection 的
+ * '/api' 共享前缀更长，所以 /api/novelstudio/app/** 会落到这里。
+ *
+ * @param root - 产物根目录（绝对路径）。
+ * @param prefix - URL 前缀，带不带结尾斜杠都行。
+ * @param shimSrc - index.html 里注入的桥脚本相对地址。
+ * @param shimPath - native-shim.js 的真实文件位置。
+ * @param gate - 鉴权闸门：(request) => 403|401|undefined，同步或异步均可。
+ * @param log - 宿主 logger（可选）。
+ */
+export function createPrefixNodeHandler({ root, prefix = '/api/novelstudio/app/', shimSrc = null, shimPath = null, gate = null, log = null } = {}) {
+  const bare = String(prefix || '/').replace(/\/+$/, '');
+  const relativeOf = (pathname) => {
+    if (pathname === bare) return '';
+    if (pathname.startsWith(bare + '/')) return pathname.slice(bare.length + 1);
+    return null;
+  };
+
+  return async function handle(req, res) {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      res.writeHead(405, { allow: 'GET, HEAD' });
+      res.end();
+      return;
+    }
+    let relative = '';
+    try {
+      const pathname = new URL(req.url || '/', 'http://novelstudio.invalid').pathname;
+      const tail = relativeOf(pathname);
+      if (tail === null) {
+        res.writeHead(404);
+        res.end();
+        return;
+      }
+      relative = decodeURIComponent(tail);
+    } catch {
+      res.writeHead(400);
+      res.end();
+      return;
+    }
+
+    /* 只搬闸门真正要看的头，不整包透传（node 的头里可能有数组值，构造 Headers 会抛）。 */
+    const headers = new Headers();
+    const raw = req.headers || {};
+    for (const name of ['host', 'cookie', 'if-none-match']) {
+      if (typeof raw[name] === 'string') headers.set(name, raw[name]);
+    }
+    const url = 'http://' + (typeof raw.host === 'string' ? raw.host : '127.0.0.1') + (req.url || '/');
+
+    if (typeof gate === 'function') {
+      let rejection;
+      try {
+        rejection = await gate(new Request(url, { method: req.method, headers }));
+      } catch (error) {
+        /* 闸门自己炸掉不该把面板打死：它与 RPC 的鉴权同源，异常时记日志放行静态资源。 */
+        log?.warn?.('[novel-studio] 静态鉴权闸门异常：' + (error?.message || error));
+      }
+      if (rejection === 401 || rejection === 403) {
+        res.writeHead(rejection);
+        res.end(rejection === 401 ? 'unauthorized' : 'forbidden');
+        return;
+      }
+    }
+
+    try {
+      const response = await respondFile({
+        root,
+        relative: relative || 'index.html',
+        request: new Request(url, { method: req.method, headers }),
+        shimSrc,
+        shimPath,
+      });
+      const outHeaders = {};
+      response.headers.forEach((value, name) => { outHeaders[name] = value; });
+      const body = response.body === null ? null : Buffer.from(await response.arrayBuffer());
+      res.writeHead(response.status, outHeaders);
+      res.end(body && req.method !== 'HEAD' ? body : undefined);
+    } catch (error) {
+      log?.warn?.('[novel-studio] 静态产物读取失败 ' + relative + '：' + (error?.message || error));
+      if (!res.headersSent) res.writeHead(500);
+      res.end();
+    }
+  };
+}

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "mimosa-hook-status/v1",
+  "recordedAt": "2026-11-02T14:34:55.241Z",
+  "sessionId": "sess_f8ba15e7-49be-4de1-a5bc-e86eb4391e17",
+  "event": "PostToolUse",
+  "toolName": "Edit",
+  "file": ".tmp/asar-extract.mjs",
+  "outcome": "clear",
+  "coverage": "complete",
+  "findingCount": 0,
+  "durationMs": 5,
+  "hostState": "hook_complete",
+  "reportHint": ".mimosa/reports/"
+}

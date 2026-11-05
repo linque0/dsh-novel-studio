@@ -1,0 +1,26 @@
+{
+  "verifiedAt": "2026-11-05T15:35:33.751030+08:00",
+  "browser": {
+    "passed": 107,
+    "failed": 0,
+    "viewports": [
+      1440,
+      1280,
+      760,
+      380
+    ]
+  },
+  "model": {
+    "passed": 7,
+    "failed": 0
+  },
+  "comparison": {
+    "variants": 3,
+    "interactive": true,
+    "embeddedPersistence": "session",
+    "standalonePersistence": "localStorage, distinct per variant"
+  },
+  "codeReview": "Two reproducible defects fixed and re-reviewed; no important remaining findings.",
+  "visualReview": "Original findings corrected and confirmed; no pending items.",
+  "productionChanged": false
+}

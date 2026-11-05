@@ -1,0 +1,46 @@
+{
+  "tool": "built-in image_gen",
+  "generated": "2026-10-18",
+  "assets": [
+    {
+      "id": "event",
+      "type": "event card",
+      "prompt": "Create ONE production-ready bitmap surface asset for a sophisticated Chinese novelist's outline canvas UI, an editorial stationery system. LANDSCAPE 3:2 format. Perfectly flat front-facing orthographic surface, full bleed to all four edges, NO external scene, NO table, NO perspective, NO text, letters, numbers, logos, icons or watermarks. Almost entirely empty and very low-contrast so live HTML dark text can overlay the central 85 percent. Fine tactile material visible at close range but restrained at UI scale; soft upper-left lighting. Not a complete UI screenshot. No outside shadow, no thick frame. Premium Japanese/Swiss editorial restraint. Cool pearl-white cotton cardstock, tiny natural fibers, a subtle mist-blue tint only along the extreme top edge. Micro embossed fine border inset 12px. Immaculate quiet writing area. A tiny blind-embossed four-point geometric detail at the upper right corner, low contrast. All white/blue-gray, no dark elements."
+    },
+    {
+      "id": "note",
+      "type": "sticky note",
+      "prompt": "Create ONE production-ready bitmap surface asset for a sophisticated Chinese novelist's outline canvas UI, an editorial stationery system. LANDSCAPE 3:2 format. Perfectly flat front-facing orthographic surface, full bleed to all four edges, NO external scene, NO table, NO perspective, NO text, letters, numbers, logos, icons or watermarks. Almost entirely empty and very low-contrast so live HTML dark text can overlay the central 85 percent. Fine tactile material visible at close range but restrained at UI scale; soft upper-left lighting. Not a complete UI screenshot. No outside shadow, no thick frame. Premium Japanese/Swiss editorial restraint. Very pale wheat-yellow paper with fine irregular fibers, a small realistic folded-up lower-right corner confined to the last 9 percent of width, pale cream underside, delicate crease shadow. Very slight warm gradient. The paper fills the whole image, no outside background. Clean empty light yellow writing area."
+    },
+    {
+      "id": "cite",
+      "type": "quotation card",
+      "prompt": "Create ONE production-ready bitmap surface asset for a sophisticated Chinese novelist's outline canvas UI, an editorial stationery system. LANDSCAPE 3:2 format. Perfectly flat front-facing orthographic surface, full bleed to all four edges, NO external scene, NO table, NO perspective, NO text, letters, numbers, logos, icons or watermarks. Almost entirely empty and very low-contrast so live HTML dark text can overlay the central 85 percent. Fine tactile material visible at close range but restrained at UI scale; soft upper-left lighting. Not a complete UI screenshot. No outside shadow, no thick frame. Premium Japanese/Swiss editorial restraint. Warm porcelain-white archival paper. Three subtly offset page layers visible only along the bottom 10px and right 8px, with refined gray micro-shadows. Very faint large blind-embossed opening quotation mark shape in the upper-right corner, almost invisible. Empty bright center."
+    },
+    {
+      "id": "anchor",
+      "type": "chapter bookmark",
+      "prompt": "Create ONE production-ready bitmap surface asset for a sophisticated Chinese novelist's outline canvas UI, an editorial stationery system. LANDSCAPE 3:2 format. Perfectly flat front-facing orthographic surface, full bleed to all four edges, NO external scene, NO table, NO perspective, NO text, letters, numbers, logos, icons or watermarks. Almost entirely empty and very low-contrast so live HTML dark text can overlay the central 85 percent. Fine tactile material visible at close range but restrained at UI scale; soft upper-left lighting. Not a complete UI screenshot. No outside shadow, no thick frame. Premium Japanese/Swiss editorial restraint. Ivory laid paper, very subtle vertical grain, a narrow pale muted terracotta cloth bookmark tab entering from the top edge at far right, only 8 percent wide and 22 percent tall, with a precise dovetail notch at its bottom. Everything else blank ivory paper. No markings."
+    },
+    {
+      "id": "volume",
+      "type": "volume index",
+      "prompt": "Create ONE production-ready bitmap surface asset for a sophisticated Chinese novelist's outline canvas UI, an editorial stationery system. LANDSCAPE 3:2 format. Perfectly flat front-facing orthographic surface, full bleed to all four edges, NO external scene, NO table, NO perspective, NO text, letters, numbers, logos, icons or watermarks. Almost entirely empty and very low-contrast so live HTML dark text can overlay the central 85 percent. Fine tactile material visible at close range but restrained at UI scale; soft upper-left lighting. Not a complete UI screenshot. No outside shadow, no thick frame. Premium Japanese/Swiss editorial restraint. Deep desaturated forest-teal bookbinding linen, fine realistic tightly woven threads, flat lit, a narrow pressed vertical seam 7 percent from left edge, a very fine muted antique brass fillet along that seam. Empty uniform dark teal center, calm rich tactile material. No lettering or patterns."
+    },
+    {
+      "id": "event-diamond",
+      "type": "event diamond",
+      "prompt": "Use case: productivity-visual. Asset type: production UI paper texture for a DIAMOND-shaped story event node in an elegant Chinese novel-writing flowchart. Generate ONE flat, front-facing, full-bleed rectangular texture sheet, landscape 3:2. This image will be clipped into a diamond by live SVG, so DO NOT draw a diamond, a card outline, border, frame, folded corner, or any object silhouette inside the image. Material: very pale warm ivory pressed cotton rag paper, microscopic short cellulose fibers and subtle soft embossing, like premium uncoated archival stationery. Almost uniform luminance, low contrast; delicate tactile grain discernible at close range, clean enough for dark HTML text over the entire central area. Extremely restrained soft top-left illumination, no vignette. Color family #f6f1e4, complementary to cool white cotton paper and a quiet sage-green writing canvas. No text, numbers, letters, icons, logos, watermark, gold flecks, patterns, external scene, perspective, shadows, or tabletop. Entire bitmap must be filled with paper texture to every edge, no transparency."
+    },
+    {
+      "id": "event-para",
+      "type": "event para",
+      "prompt": "Use case: productivity-visual. Asset type: production UI material bitmap for an elegant Chinese novel-writing flowchart. Generate ONE flat, front-facing, full-bleed rectangular paper texture sheet, landscape 3:2. Live SVG will clip this bitmap to the node shape, so DO NOT draw any shape silhouette, border, frame, object outline, folded corner, page edge, or inset rectangle. Very low contrast, almost uniform luminance. Fine tactile detail readable close up, but leave the entire central area clear and quiet for live dark HTML text. Restrained soft top-left illumination. No text, letters, numbers, icons, logo, watermark, glitter, pattern, shadow, scene, tabletop, or perspective. Entire image filled to all edges with paper, no transparency. This sheet is intended for a PARALLELOGRAM event node. Material: pale mist-blue handmade mulberry paper with delicate, short, non-repeating horizontal fibers, matte uncoated surface, elegant archival stationery. Very pale blue-gray color family #edf3f5, gentle coolness, near-white, no dark fibers or stripes."
+    },
+    {
+      "id": "event-ellipse",
+      "type": "event ellipse",
+      "prompt": "Use case: productivity-visual. Asset type: production UI material bitmap for an elegant Chinese novel-writing flowchart. Generate ONE flat, front-facing, full-bleed rectangular paper texture sheet, landscape 3:2. Live SVG will clip this bitmap to the node shape, so DO NOT draw any shape silhouette, border, frame, object outline, folded corner, page edge, or inset rectangle. Very low contrast, almost uniform luminance. Fine tactile detail readable close up, but leave the entire central area clear and quiet for live dark HTML text. Restrained soft top-left illumination. No text, letters, numbers, icons, logo, watermark, glitter, pattern, shadow, scene, tabletop, or perspective. Entire image filled to all edges with paper, no transparency. This sheet is intended for an ELLIPTICAL event node. Material: pale celadon smooth cotton paper with very fine natural soft fibers and a softly pressed satin-matte finish, premium uncoated stationery, no woven pattern. Very pale sage-celadon color family #edf2e9, near-white, subtle warm-green undertone, clean and calm."
+    }
+  ]
+}

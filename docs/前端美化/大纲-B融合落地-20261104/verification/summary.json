@@ -1,0 +1,32 @@
+{
+  "verifiedAt": "2026-11-05T14:36:18.882904+08:00",
+  "build": "pass",
+  "layout": {
+    "passed": 6,
+    "failed": 0
+  },
+  "outlineBrowser": {
+    "passed": 103,
+    "failed": 0,
+    "scenes": 6
+  },
+  "frontend": {
+    "passed": 434,
+    "failed": 0,
+    "scenes": 22
+  },
+  "pluginContract": "passed with mock host; two host peer dependencies unavailable locally",
+  "originalDraftSHA256": {
+    "a-panorama.html": "f1607cef8e7c1a30affa4aaf3fb974f45543aa00374a1e30207bfdcc12bee163",
+    "b-workbench.html": "adb4504ef7826802084d7c9c3c46141d7fbba6aeab8d9790bfba61fb48f93c7b",
+    "c-volumes.html": "e263b3f817e6fa0f07e5957a5773b47f6c349bb44be57adcd1afc947f25f00ae",
+    "content.json": "e02cfa07420619afe48eee70fa39a970261880cc96ac4740ebeb9cc530bb729a"
+  },
+  "runtime": "production plugin build in isolated Chrome / IndexedDB with DSH host token harness; main window and PanelHost",
+  "limitations": [
+    "No manual validation inside a live DSH client in this session.",
+    "Production background is animated; fixed original backdrop used only for visual comparison.",
+    "Canvas content positions and scoped totals vary with real containers; full-page diff is not a pixel-equality score."
+  ],
+  "codeReview": "Three issues corrected and re-reviewed; native input regression tests pass."
+}

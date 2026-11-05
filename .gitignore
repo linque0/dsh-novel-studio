@@ -8,6 +8,15 @@ build/
 *.tsbuildinfo
 .turbo/
 
+# 本地复现台的探针与截图
+# .tmp/novel-studio-scratch/ 是桌面版仓库 novel-studio 的验证临时产物（fixture/断言现场/诊断脚本）的寄存处
+# —— 由 novel-studio 迁入，避免占用桌面仓库空间；它随 .tmp/ 一并忽略
+.tmp/
+.tmp-*/
+
+# 前端工程的依赖（目录联接或本地安装，不进库）
+app/node_modules/
+
 # logs
 *.log
 npm-debug.log*

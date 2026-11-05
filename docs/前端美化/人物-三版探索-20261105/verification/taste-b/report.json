@@ -1,0 +1,2155 @@
+{
+ "url": "http://127.0.0.1:57910/b-cast.html?static",
+ "at": "2026-11-05T13:02:49.683Z",
+ "allow": [
+  "glass",
+  "shadow"
+ ],
+ "viewports": [
+  {
+   "width": 1440,
+   "height": 900,
+   "load": "load",
+   "screens": 1,
+   "filled": [
+    0.81
+   ],
+   "motion": {
+    "elements": 0,
+    "css": 0,
+    "transitions": 0,
+    "scripted": 0,
+    "videos": 0,
+    "playingVideos": 0
+   },
+   "metrics": {
+    "viewport": {
+     "w": 1440,
+     "h": 900
+    },
+    "page": {
+     "height": 900,
+     "screens": 1,
+     "words": 225,
+     "img": 0,
+     "video": 0,
+     "canvas": 1,
+     "svg": 41,
+     "sections": 4,
+     "horizontalOverflow": 0,
+     "overflowCulprits": [],
+     "uiFragments": 0,
+     "uiAbuse": false,
+     "realPictures": 1,
+     "videoCount": 0,
+     "uiPictures": 0,
+     "pictureSamples": [],
+     "blendText": 0,
+     "sideScrollers": 0,
+     "brokenImages": [],
+     "emoji": [],
+     "videosNoPoster": 0
+    },
+    "hero": {
+     "text": "众生有相",
+     "words": 1,
+     "chars": 4,
+     "lines": 1,
+     "size": 30,
+     "vw": 2.1,
+     "font": "Noto Serif SC",
+     "weight": 500,
+     "tracking": 0.03,
+     "leading": 1.5,
+     "top": 159,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "h1": {
+     "text": "众生有相",
+     "words": 1,
+     "lines": 1,
+     "size": 30,
+     "font": "Noto Serif SC"
+    },
+    "headings": [
+     {
+      "text": "众生有相",
+      "words": 1,
+      "chars": 4,
+      "lines": 1,
+      "size": 30,
+      "vw": 2.1,
+      "font": "Noto Serif SC",
+      "weight": 500,
+      "tracking": 0.025,
+      "leading": 1.5,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.09,
+      "top": 159,
+      "tag": "h1",
+      "kind": "heading"
+     },
+     {
+      "text": "林照",
+      "words": 1,
+      "chars": 2,
+      "lines": 1,
+      "size": 29,
+      "vw": 2,
+      "font": "Noto Serif SC",
+      "weight": 500,
+      "tracking": 0.07,
+      "leading": 1.35,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "right",
+      "widthRatio": 0.17,
+      "top": 227,
+      "tag": "h2",
+      "kind": "heading"
+     },
+     {
+      "text": "林",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 31,
+      "vw": 2.2,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "right",
+      "widthRatio": 0.04,
+      "top": 230,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "林",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 58,
+      "vw": 4,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0.08,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.24,
+      "top": 296,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "沈",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 58,
+      "vw": 4,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0.08,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "center",
+      "widthRatio": 0.24,
+      "top": 296,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "闻",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 58,
+      "vw": 4,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0.08,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.24,
+      "top": 576,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "顾",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 58,
+      "vw": 4,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0.08,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "center",
+      "widthRatio": 0.24,
+      "top": 576,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "唐",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 58,
+      "vw": 4,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0.08,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.24,
+      "top": 856,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "陆",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 58,
+      "vw": 4,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0.08,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "center",
+      "widthRatio": 0.24,
+      "top": 856,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "白",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 58,
+      "vw": 4,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0.08,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.24,
+      "top": 1158,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "季",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 58,
+      "vw": 4,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0.08,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "center",
+      "widthRatio": 0.24,
+      "top": 1158,
+      "tag": "span",
+      "kind": "heading"
+     }
+    ],
+    "headingSummary": {
+     "count": 11,
+     "maxLines": 1,
+     "over2Lines": 0,
+     "statements": 0,
+     "centered": 0,
+     "medianWords": 1,
+     "mixedFontHeadings": 0
+    },
+    "type": {
+     "families": [
+      {
+       "family": "Microsoft YaHei",
+       "share": 0.94,
+       "mono": false
+      },
+      {
+       "family": "Noto Serif SC",
+       "share": 0.06,
+       "mono": false
+      }
+     ],
+     "familyCount": 2,
+     "sizes": [
+      11,
+      12,
+      13,
+      14,
+      17,
+      19,
+      23,
+      29,
+      30,
+      31,
+      58
+     ],
+     "sizeCount": 11,
+     "notLoaded": [
+      "Microsoft YaHei"
+     ],
+     "body": {
+      "font": "Microsoft YaHei",
+      "size": 14,
+      "leading": 1.9,
+      "weight": 400,
+      "tracking": 0,
+      "contrast": null
+     },
+     "measureChars": 44,
+     "max": {
+      "size": 58,
+      "vw": 4,
+      "font": "Noto Serif SC",
+      "text": "林"
+     },
+     "monoShare": 0,
+     "monoProseShare": 0,
+     "monoFamilies": [],
+     "monoSamples": [],
+     "microLabels": 0,
+     "microLabelShare": 0,
+     "microSamples": [],
+     "upperShare": 0.01,
+     "centerShare": 0.07,
+     "smallText": 8
+    },
+    "eyebrows": [
+     {
+      "text": "长夜将明 人物",
+      "above": "众生有相",
+      "upper": false,
+      "tracked": false,
+      "mono": false,
+      "pill": false,
+      "size": 11,
+      "top": 132
+     },
+     {
+      "text": "主角",
+      "above": "林照",
+      "upper": false,
+      "tracked": false,
+      "mono": false,
+      "pill": false,
+      "size": 11,
+      "top": 202
+     },
+     {
+      "text": "8 位人物",
+      "above": "林",
+      "upper": false,
+      "tracked": false,
+      "mono": false,
+      "pill": false,
+      "size": 11,
+      "top": 254
+     },
+     {
+      "text": "人物卡册",
+      "above": "沈",
+      "upper": false,
+      "tracked": false,
+      "mono": false,
+      "pill": false,
+      "size": 11,
+      "top": 254
+     }
+    ],
+    "numbered": [
+     {
+      "text": "08",
+      "size": 14,
+      "top": 177
+     },
+     {
+      "text": "01",
+      "size": 11,
+      "top": 438
+     },
+     {
+      "text": "02",
+      "size": 11,
+      "top": 839
+     },
+     {
+      "text": "03",
+      "size": 11,
+      "top": 1108
+     },
+     {
+      "text": "04",
+      "size": 11,
+      "top": 1511
+     }
+    ],
+    "color": {
+     "bodyBg": "#292333",
+     "bodyBgHsl": {
+      "h": 263,
+      "s": 0.19,
+      "l": 0.17
+     },
+     "dark": true,
+     "sectionBgs": [
+      {
+       "color": "#30283b",
+       "top": 0,
+       "hsl": {
+        "h": 265,
+        "s": 0.19,
+        "l": 0.19
+       }
+      }
+     ],
+     "textColors": [
+      {
+       "color": "#b1a4bd",
+       "share": 0.3
+      },
+      {
+       "color": "#e2d9e8",
+       "share": 0.2
+      },
+      {
+       "color": "#d3c6dd",
+       "share": 0.16
+      },
+      {
+       "color": "#f4eef7",
+       "share": 0.07
+      },
+      {
+       "color": "#ded3e6",
+       "share": 0.07
+      }
+     ],
+     "button": {
+      "bg": "#fbf8fc",
+      "hsl": {
+       "h": 285,
+       "s": 0.4,
+       "l": 0.98
+      },
+      "fg": "#302839"
+     },
+     "lowContrast": []
+    },
+    "buttons": {
+     "count": 3,
+     "inHero": 3,
+     "radius": "pill",
+     "height": 34,
+     "withShadow": 0,
+     "withGradient": 0,
+     "mono": 0,
+     "upper": 0,
+     "heroLabels": [
+      "人物",
+      "新建人物",
+      "编辑档案"
+     ]
+    },
+    "surfaces": {
+     "shadowStatic": 0,
+     "shadowOverlay": 0,
+     "shadowSamples": [],
+     "gradients": 0,
+     "scrims": 0,
+     "gradientSamples": [],
+     "gradientText": 0,
+     "hairlines": 23,
+     "hairlineSamples": [
+      "header.module-head 770px",
+      "div.cast-art 340px",
+      "div.cast-card-foot 310px",
+      "div.cast-art 340px",
+      "div.cast-card-foot 310px"
+     ],
+     "outlinedBoxes": 11,
+     "dashed": 0,
+     "blurred": 4,
+     "roundedBoxes": 11,
+     "boxRadius": 12,
+     "squareMedia": 2,
+     "roundedMedia": 0,
+     "mediaRadius": 0,
+     "textShadow": 0,
+     "cardRows": [
+      {
+       "count": 8,
+       "iconTopped": true,
+       "rounded": true,
+       "top": 294
+      },
+      {
+       "count": 3,
+       "iconTopped": true,
+       "rounded": false,
+       "top": 811
+      }
+     ]
+    },
+    "heroMedia": [
+     {
+      "type": "bg-image",
+      "ratio": 1
+     },
+     {
+      "type": "canvas",
+      "ratio": 1
+     }
+    ],
+    "nav": {
+     "links": 1,
+     "fixed": false,
+     "height": 84,
+     "floatingPill": false,
+     "blur": false
+    },
+    "fontsLoaded": [
+     "noto serif sc"
+    ]
+   },
+   "layout": {
+    "viewport": {
+     "w": 1440,
+     "h": 900
+    },
+    "pageH": 900,
+    "margins": {
+     "left": 45,
+     "right": 53
+    },
+    "sections": [],
+    "gaps": [],
+    "h1s": [
+     {
+      "text": "众生有相",
+      "size": 30,
+      "top": 159,
+      "firstScreen": true
+     }
+    ],
+    "edgeText": [],
+    "edges": [
+     {
+      "x": 311,
+      "n": 2
+     },
+     {
+      "x": 679,
+      "n": 2
+     },
+     {
+      "x": 1077,
+      "n": 2
+     },
+     {
+      "x": 75,
+      "n": 1
+     },
+     {
+      "x": 293,
+      "n": 1
+     },
+     {
+      "x": 1145,
+      "n": 1
+     }
+    ],
+    "leftBlocks": 9,
+    "bodySize": 14,
+    "stage": true,
+    "explains": false,
+    "slivers": [],
+    "voidShare": 0,
+    "voidBox": null
+   },
+   "app": {
+    "viewport": {
+     "w": 1440,
+     "h": 900
+    },
+    "dark": true,
+    "ground": "#292333",
+    "sidebar": null,
+    "topbar": {
+     "h": 84
+    },
+    "canvas": {
+     "left": 45,
+     "right": 53
+    },
+    "hero": {
+     "text": "众生有相",
+     "words": 1,
+     "chars": 4,
+     "lines": 1,
+     "size": 30,
+     "vw": 2.1,
+     "font": "Noto Serif SC",
+     "weight": 500,
+     "tracking": 0.03,
+     "leading": 1.5,
+     "top": 159,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "charts": 0,
+    "layout": {
+     "panels": 3,
+     "firstScreen": 3,
+     "ragged": [],
+     "voids": []
+    },
+    "tiles": 0,
+    "panels": {
+     "count": 14,
+     "radii": [
+      [
+       12,
+       8
+      ],
+      [
+       20,
+       3
+      ],
+      [
+       0,
+       3
+      ]
+     ],
+     "heavyBorders": 14,
+     "borderSamples": [
+      "#ffffff on #292333 (15.19:1)",
+      "#ffffff on #292333 (15.19:1)",
+      "#b4cab8 on #292333 (8.74:1)"
+     ],
+     "heavyShadows": 0,
+     "softShadows": 0,
+     "shadowSamples": [],
+     "glass": 3
+    },
+    "chips": {
+     "count": 0,
+     "hues": 0,
+     "samples": []
+    },
+    "numbers": {
+     "cells": 0,
+     "leftAligned": 0,
+     "figures": 5,
+     "tabularShare": 0,
+     "kpiMax": 14
+    },
+    "rows": null,
+    "chartHues": 0,
+    "placeholders": [],
+    "type": {
+     "under13": 0.59,
+     "tiny": 0,
+     "tinySamples": [],
+     "sizes": [
+      11,
+      12,
+      13,
+      14,
+      19,
+      23,
+      29,
+      30
+     ]
+    },
+    "title": {
+     "text": "众生有相",
+     "size": 30,
+     "top": 159
+    },
+    "colourShare": 0
+   },
+   "consoleErrors": []
+  },
+  {
+   "width": 760,
+   "height": 475,
+   "load": "load",
+   "screens": 1,
+   "filled": [
+    0.65
+   ],
+   "motion": {
+    "elements": 0,
+    "css": 0,
+    "transitions": 0,
+    "scripted": 0,
+    "videos": 0,
+    "playingVideos": 0
+   },
+   "metrics": {
+    "viewport": {
+     "w": 760,
+     "h": 475
+    },
+    "page": {
+     "height": 475,
+     "screens": 1,
+     "words": 121,
+     "img": 0,
+     "video": 0,
+     "canvas": 1,
+     "svg": 41,
+     "sections": 4,
+     "horizontalOverflow": 0,
+     "overflowCulprits": [],
+     "uiFragments": 0,
+     "uiAbuse": false,
+     "realPictures": 1,
+     "videoCount": 0,
+     "uiPictures": 0,
+     "pictureSamples": [],
+     "blendText": 0,
+     "sideScrollers": 0,
+     "brokenImages": [],
+     "emoji": [],
+     "videosNoPoster": 0
+    },
+    "hero": {
+     "text": "众生有相",
+     "words": 1,
+     "chars": 4,
+     "lines": 1,
+     "size": 30,
+     "vw": 3.9,
+     "font": "Noto Serif SC",
+     "weight": 500,
+     "tracking": 0.03,
+     "leading": 1.5,
+     "top": 216,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "h1": {
+     "text": "众生有相",
+     "words": 1,
+     "lines": 1,
+     "size": 30,
+     "font": "Noto Serif SC"
+    },
+    "headings": [
+     {
+      "text": "众生有相",
+      "words": 1,
+      "chars": 4,
+      "lines": 1,
+      "size": 30,
+      "vw": 3.9,
+      "font": "Noto Serif SC",
+      "weight": 500,
+      "tracking": 0.025,
+      "leading": 1.5,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.16,
+      "top": 216,
+      "tag": "h1",
+      "kind": "heading"
+     },
+     {
+      "text": "林",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 58,
+      "vw": 7.6,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0.08,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.26,
+      "top": 341,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "沈",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 58,
+      "vw": 7.6,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0.08,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "center",
+      "widthRatio": 0.26,
+      "top": 341,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "闻",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 58,
+      "vw": 7.6,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0.08,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "right",
+      "widthRatio": 0.26,
+      "top": 341,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "顾",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 58,
+      "vw": 7.6,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0.08,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.26,
+      "top": 678,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "唐",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 58,
+      "vw": 7.6,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0.08,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "center",
+      "widthRatio": 0.26,
+      "top": 678,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "陆",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 58,
+      "vw": 7.6,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0.08,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "right",
+      "widthRatio": 0.26,
+      "top": 678,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "白",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 58,
+      "vw": 7.6,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0.08,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.26,
+      "top": 1015,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "季",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 58,
+      "vw": 7.6,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0.08,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "center",
+      "widthRatio": 0.26,
+      "top": 1015,
+      "tag": "span",
+      "kind": "heading"
+     }
+    ],
+    "headingSummary": {
+     "count": 9,
+     "maxLines": 1,
+     "over2Lines": 0,
+     "statements": 0,
+     "centered": 0,
+     "medianWords": 1,
+     "mixedFontHeadings": 0
+    },
+    "type": {
+     "families": [
+      {
+       "family": "Microsoft YaHei",
+       "share": 0.92,
+       "mono": false
+      },
+      {
+       "family": "Noto Serif SC",
+       "share": 0.08,
+       "mono": false
+      }
+     ],
+     "familyCount": 2,
+     "sizes": [
+      11,
+      12,
+      14,
+      18,
+      23,
+      30,
+      58
+     ],
+     "sizeCount": 7,
+     "notLoaded": [
+      "Microsoft YaHei"
+     ],
+     "body": null,
+     "measureChars": null,
+     "max": {
+      "size": 58,
+      "vw": 7.6,
+      "font": "Noto Serif SC",
+      "text": "林"
+     },
+     "monoShare": 0,
+     "monoProseShare": 0,
+     "monoFamilies": [],
+     "monoSamples": [],
+     "microLabels": 0,
+     "microLabelShare": 0,
+     "microSamples": [],
+     "upperShare": 0,
+     "centerShare": 0.06,
+     "smallText": 7
+    },
+    "eyebrows": [
+     {
+      "text": "长夜将明 人物",
+      "above": "众生有相",
+      "upper": false,
+      "tracked": false,
+      "mono": false,
+      "pill": false,
+      "size": 11,
+      "top": 189
+     },
+     {
+      "text": "8 位人物",
+      "above": "林",
+      "upper": false,
+      "tracked": false,
+      "mono": false,
+      "pill": false,
+      "size": 11,
+      "top": 299
+     },
+     {
+      "text": "人物卡册",
+      "above": "闻",
+      "upper": false,
+      "tracked": false,
+      "mono": false,
+      "pill": false,
+      "size": 11,
+      "top": 299
+     }
+    ],
+    "numbered": [
+     {
+      "text": "08",
+      "size": 14,
+      "top": 234
+     }
+    ],
+    "color": {
+     "bodyBg": "#292333",
+     "bodyBgHsl": {
+      "h": 263,
+      "s": 0.19,
+      "l": 0.17
+     },
+     "dark": true,
+     "sectionBgs": [
+      {
+       "color": "#30283b",
+       "top": 0,
+       "hsl": {
+        "h": 265,
+        "s": 0.19,
+        "l": 0.19
+       }
+      }
+     ],
+     "textColors": [
+      {
+       "color": "#b1a4bd",
+       "share": 0.41
+      },
+      {
+       "color": "#d3c6dd",
+       "share": 0.34
+      },
+      {
+       "color": "#f4eef7",
+       "share": 0.08
+      },
+      {
+       "color": "#d9cde3",
+       "share": 0.05
+      },
+      {
+       "color": "#c4d8c7",
+       "share": 0.04
+      }
+     ],
+     "button": null,
+     "lowContrast": []
+    },
+    "buttons": {
+     "count": 0,
+     "inHero": 0,
+     "withShadow": 0,
+     "withGradient": 0,
+     "mono": 0,
+     "upper": 0,
+     "heroLabels": []
+    },
+    "surfaces": {
+     "shadowStatic": 0,
+     "shadowOverlay": 0,
+     "shadowSamples": [],
+     "gradients": 0,
+     "scrims": 0,
+     "gradientSamples": [],
+     "gradientText": 0,
+     "hairlines": 2,
+     "hairlineSamples": [
+      "header.module-head 718px",
+      "footer.pane-foot 718px"
+     ],
+     "outlinedBoxes": 9,
+     "dashed": 0,
+     "blurred": 2,
+     "roundedBoxes": 9,
+     "boxRadius": 12,
+     "squareMedia": 2,
+     "roundedMedia": 0,
+     "mediaRadius": 0,
+     "textShadow": 0,
+     "cardRows": [
+      {
+       "count": 8,
+       "iconTopped": true,
+       "rounded": true,
+       "top": 339
+      }
+     ]
+    },
+    "heroMedia": [
+     {
+      "type": "bg-image",
+      "ratio": 1
+     },
+     {
+      "type": "canvas",
+      "ratio": 1
+     }
+    ],
+    "nav": {
+     "links": 1,
+     "fixed": false,
+     "height": 84,
+     "floatingPill": false,
+     "blur": false
+    },
+    "fontsLoaded": [
+     "noto serif sc"
+    ]
+   },
+   "layout": {
+    "viewport": {
+     "w": 760,
+     "h": 475
+    },
+    "pageH": 475,
+    "margins": {
+     "left": 25,
+     "right": 25
+    },
+    "sections": [],
+    "gaps": [],
+    "h1s": [
+     {
+      "text": "众生有相",
+      "size": 30,
+      "top": 216,
+      "firstScreen": true
+     }
+    ],
+    "edgeText": [],
+    "edges": [
+     {
+      "x": 47,
+      "n": 1
+     }
+    ],
+    "leftBlocks": 1,
+    "bodySize": 16,
+    "stage": true,
+    "explains": false,
+    "slivers": [],
+    "voidShare": 0,
+    "voidBox": null
+   },
+   "app": {
+    "viewport": {
+     "w": 760,
+     "h": 475
+    },
+    "dark": true,
+    "ground": "#292333",
+    "sidebar": null,
+    "topbar": {
+     "h": 84
+    },
+    "canvas": {
+     "left": 25,
+     "right": 25
+    },
+    "hero": {
+     "text": "众生有相",
+     "words": 1,
+     "chars": 4,
+     "lines": 1,
+     "size": 30,
+     "vw": 3.9,
+     "font": "Noto Serif SC",
+     "weight": 500,
+     "tracking": 0.03,
+     "leading": 1.5,
+     "top": 216,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "charts": 0,
+    "layout": {
+     "panels": 1,
+     "firstScreen": 1,
+     "ragged": [],
+     "voids": []
+    },
+    "tiles": 0,
+    "panels": {
+     "count": 9,
+     "radii": [
+      [
+       12,
+       8
+      ],
+      [
+       18,
+       1
+      ]
+     ],
+     "heavyBorders": 9,
+     "borderSamples": [
+      "#ffffff on #292333 (15.19:1)",
+      "#b4cab8 on #292333 (8.74:1)",
+      "#ffffff on #292333 (15.19:1)"
+     ],
+     "heavyShadows": 0,
+     "softShadows": 0,
+     "shadowSamples": [],
+     "glass": 1
+    },
+    "chips": {
+     "count": 0,
+     "hues": 0,
+     "samples": []
+    },
+    "numbers": {
+     "cells": 0,
+     "leftAligned": 0,
+     "figures": 1,
+     "tabularShare": 0,
+     "kpiMax": 14
+    },
+    "rows": null,
+    "chartHues": 0,
+    "placeholders": [],
+    "type": {
+     "under13": 0.61,
+     "tiny": 0,
+     "tinySamples": [],
+     "sizes": [
+      11,
+      12,
+      13,
+      14,
+      18,
+      23,
+      30,
+      36
+     ]
+    },
+    "title": {
+     "text": "众生有相",
+     "size": 30,
+     "top": 216
+    },
+    "colourShare": 0
+   },
+   "consoleErrors": []
+  },
+  {
+   "width": 380,
+   "height": 238,
+   "load": "load",
+   "screens": 1,
+   "filled": [
+    0.48
+   ],
+   "motion": {
+    "elements": 0,
+    "css": 0,
+    "transitions": 0,
+    "scripted": 0,
+    "videos": 0,
+    "playingVideos": 0
+   },
+   "metrics": {
+    "viewport": {
+     "w": 380,
+     "h": 238
+    },
+    "page": {
+     "height": 238,
+     "screens": 1,
+     "words": 121,
+     "img": 0,
+     "video": 0,
+     "canvas": 1,
+     "svg": 41,
+     "sections": 4,
+     "horizontalOverflow": 0,
+     "overflowCulprits": [],
+     "uiFragments": 0,
+     "uiAbuse": false,
+     "realPictures": 1,
+     "videoCount": 0,
+     "uiPictures": 0,
+     "pictureSamples": [],
+     "blendText": 0,
+     "sideScrollers": 0,
+     "brokenImages": [],
+     "emoji": [],
+     "videosNoPoster": 0
+    },
+    "hero": {
+     "text": "众生有相",
+     "words": 1,
+     "chars": 4,
+     "lines": 1,
+     "size": 27,
+     "vw": 7.1,
+     "font": "Noto Serif SC",
+     "weight": 500,
+     "tracking": 0.03,
+     "leading": 1.5,
+     "top": 203,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "h1": {
+     "text": "众生有相",
+     "words": 1,
+     "lines": 1,
+     "size": 27,
+     "font": "Noto Serif SC"
+    },
+    "headings": [
+     {
+      "text": "众生有相",
+      "words": 1,
+      "chars": 4,
+      "lines": 1,
+      "size": 27,
+      "vw": 7.1,
+      "font": "Noto Serif SC",
+      "weight": 500,
+      "tracking": 0.025,
+      "leading": 1.5,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.29,
+      "top": 203,
+      "tag": "h1",
+      "kind": "heading"
+     },
+     {
+      "text": "林",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 54,
+      "vw": 14.2,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0.08,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.38,
+      "top": 316,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "沈",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 54,
+      "vw": 14.2,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0.08,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "right",
+      "widthRatio": 0.38,
+      "top": 316,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "林照",
+      "words": 1,
+      "chars": 2,
+      "lines": 1,
+      "size": 22,
+      "vw": 5.8,
+      "font": "Noto Serif SC",
+      "weight": 500,
+      "tracking": 0.035,
+      "leading": 1.5,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.12,
+      "top": 432,
+      "tag": "h3",
+      "kind": "heading"
+     },
+     {
+      "text": "沈砚",
+      "words": 1,
+      "chars": 2,
+      "lines": 1,
+      "size": 22,
+      "vw": 5.8,
+      "font": "Noto Serif SC",
+      "weight": 500,
+      "tracking": 0.035,
+      "leading": 1.5,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "right",
+      "widthRatio": 0.12,
+      "top": 432,
+      "tag": "h3",
+      "kind": "heading"
+     },
+     {
+      "text": "闻",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 54,
+      "vw": 14.2,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0.08,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.38,
+      "top": 655,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "顾",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 54,
+      "vw": 14.2,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0.08,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "right",
+      "widthRatio": 0.38,
+      "top": 655,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "闻舟",
+      "words": 1,
+      "chars": 2,
+      "lines": 1,
+      "size": 22,
+      "vw": 5.8,
+      "font": "Noto Serif SC",
+      "weight": 500,
+      "tracking": 0.035,
+      "leading": 1.5,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.12,
+      "top": 771,
+      "tag": "h3",
+      "kind": "heading"
+     },
+     {
+      "text": "顾清晏",
+      "words": 1,
+      "chars": 3,
+      "lines": 1,
+      "size": 22,
+      "vw": 5.8,
+      "font": "Noto Serif SC",
+      "weight": 500,
+      "tracking": 0.035,
+      "leading": 1.5,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "right",
+      "widthRatio": 0.18,
+      "top": 771,
+      "tag": "h3",
+      "kind": "heading"
+     },
+     {
+      "text": "唐",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 54,
+      "vw": 14.2,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0.08,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.38,
+      "top": 994,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "陆",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 54,
+      "vw": 14.2,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0.08,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "right",
+      "widthRatio": 0.38,
+      "top": 994,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "唐见微",
+      "words": 1,
+      "chars": 3,
+      "lines": 1,
+      "size": 22,
+      "vw": 5.8,
+      "font": "Noto Serif SC",
+      "weight": 500,
+      "tracking": 0.035,
+      "leading": 1.5,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.18,
+      "top": 1110,
+      "tag": "h3",
+      "kind": "heading"
+     },
+     {
+      "text": "陆沉",
+      "words": 1,
+      "chars": 2,
+      "lines": 1,
+      "size": 22,
+      "vw": 5.8,
+      "font": "Noto Serif SC",
+      "weight": 500,
+      "tracking": 0.035,
+      "leading": 1.5,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "right",
+      "widthRatio": 0.12,
+      "top": 1110,
+      "tag": "h3",
+      "kind": "heading"
+     },
+     {
+      "text": "白",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 54,
+      "vw": 14.2,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0.08,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.38,
+      "top": 1334,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "季",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 54,
+      "vw": 14.2,
+      "font": "Noto Serif SC",
+      "weight": 400,
+      "tracking": 0.08,
+      "leading": 1,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "right",
+      "widthRatio": 0.38,
+      "top": 1334,
+      "tag": "span",
+      "kind": "heading"
+     },
+     {
+      "text": "白露",
+      "words": 1,
+      "chars": 2,
+      "lines": 1,
+      "size": 22,
+      "vw": 5.8,
+      "font": "Noto Serif SC",
+      "weight": 500,
+      "tracking": 0.035,
+      "leading": 1.5,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.12,
+      "top": 1450,
+      "tag": "h3",
+      "kind": "heading"
+     },
+     {
+      "text": "季回声",
+      "words": 1,
+      "chars": 3,
+      "lines": 1,
+      "size": 22,
+      "vw": 5.8,
+      "font": "Noto Serif SC",
+      "weight": 500,
+      "tracking": 0.035,
+      "leading": 1.5,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "right",
+      "widthRatio": 0.18,
+      "top": 1450,
+      "tag": "h3",
+      "kind": "heading"
+     }
+    ],
+    "headingSummary": {
+     "count": 17,
+     "maxLines": 1,
+     "over2Lines": 0,
+     "statements": 0,
+     "centered": 0,
+     "medianWords": 1,
+     "mixedFontHeadings": 0
+    },
+    "type": {
+     "families": [
+      {
+       "family": "Microsoft YaHei",
+       "share": 0.92,
+       "mono": false
+      },
+      {
+       "family": "Noto Serif SC",
+       "share": 0.08,
+       "mono": false
+      }
+     ],
+     "familyCount": 2,
+     "sizes": [
+      11,
+      12,
+      14,
+      17,
+      22,
+      27,
+      54
+     ],
+     "sizeCount": 7,
+     "notLoaded": [
+      "Microsoft YaHei"
+     ],
+     "body": null,
+     "measureChars": null,
+     "max": {
+      "size": 54,
+      "vw": 14.2,
+      "font": "Noto Serif SC",
+      "text": "林"
+     },
+     "monoShare": 0,
+     "monoProseShare": 0,
+     "monoFamilies": [],
+     "monoSamples": [],
+     "microLabels": 0,
+     "microLabelShare": 0,
+     "microSamples": [],
+     "upperShare": 0,
+     "centerShare": 0.06,
+     "smallText": 7
+    },
+    "eyebrows": [
+     {
+      "text": "长夜将明 人物",
+      "above": "众生有相",
+      "upper": false,
+      "tracked": false,
+      "mono": false,
+      "pill": false,
+      "size": 11,
+      "top": 179
+     },
+     {
+      "text": "8 位人物",
+      "above": "林",
+      "upper": false,
+      "tracked": false,
+      "mono": false,
+      "pill": false,
+      "size": 11,
+      "top": 281
+     },
+     {
+      "text": "人物卡册",
+      "above": "沈",
+      "upper": false,
+      "tracked": false,
+      "mono": false,
+      "pill": false,
+      "size": 11,
+      "top": 281
+     }
+    ],
+    "numbered": [
+     {
+      "text": "08",
+      "size": 14,
+      "top": 217
+     }
+    ],
+    "color": {
+     "bodyBg": "#292333",
+     "bodyBgHsl": {
+      "h": 263,
+      "s": 0.19,
+      "l": 0.17
+     },
+     "dark": true,
+     "sectionBgs": [
+      {
+       "color": "#30283b",
+       "top": 0,
+       "hsl": {
+        "h": 265,
+        "s": 0.19,
+        "l": 0.19
+       }
+      }
+     ],
+     "textColors": [
+      {
+       "color": "#b1a4bd",
+       "share": 0.41
+      },
+      {
+       "color": "#d3c6dd",
+       "share": 0.34
+      },
+      {
+       "color": "#f4eef7",
+       "share": 0.08
+      },
+      {
+       "color": "#d9cde3",
+       "share": 0.05
+      },
+      {
+       "color": "#c4d8c7",
+       "share": 0.04
+      }
+     ],
+     "button": null,
+     "lowContrast": []
+    },
+    "buttons": {
+     "count": 1,
+     "inHero": 0,
+     "radius": "pill",
+     "height": 30,
+     "withShadow": 0,
+     "withGradient": 0,
+     "mono": 0,
+     "upper": 0,
+     "heroLabels": []
+    },
+    "surfaces": {
+     "shadowStatic": 0,
+     "shadowOverlay": 0,
+     "shadowSamples": [],
+     "gradients": 0,
+     "scrims": 0,
+     "gradientSamples": [],
+     "gradientText": 0,
+     "hairlines": 2,
+     "hairlineSamples": [
+      "header.module-head 354px",
+      "footer.pane-foot 354px"
+     ],
+     "outlinedBoxes": 8,
+     "dashed": 0,
+     "blurred": 2,
+     "roundedBoxes": 8,
+     "boxRadius": 9,
+     "squareMedia": 2,
+     "roundedMedia": 0,
+     "mediaRadius": 0,
+     "textShadow": 0,
+     "cardRows": [
+      {
+       "count": 8,
+       "iconTopped": true,
+       "rounded": true,
+       "top": 314
+      }
+     ]
+    },
+    "heroMedia": [
+     {
+      "type": "bg-image",
+      "ratio": 1
+     },
+     {
+      "type": "canvas",
+      "ratio": 1
+     }
+    ],
+    "nav": {
+     "links": 1,
+     "fixed": false,
+     "height": 76,
+     "floatingPill": false,
+     "blur": false
+    },
+    "fontsLoaded": [
+     "noto serif sc"
+    ]
+   },
+   "layout": {
+    "viewport": {
+     "w": 380,
+     "h": 238
+    },
+    "pageH": 238,
+    "margins": {
+     "left": 17,
+     "right": 17
+    },
+    "sections": [],
+    "gaps": [],
+    "h1s": [
+     {
+      "text": "众生有相",
+      "size": 27,
+      "top": 203,
+      "firstScreen": true
+     }
+    ],
+    "edgeText": [],
+    "edges": [
+     {
+      "x": 33,
+      "n": 1
+     }
+    ],
+    "leftBlocks": 1,
+    "bodySize": 16,
+    "stage": true,
+    "explains": false,
+    "slivers": [],
+    "voidShare": 0,
+    "voidBox": null
+   },
+   "app": {
+    "viewport": {
+     "w": 380,
+     "h": 238
+    },
+    "dark": true,
+    "ground": "#292333",
+    "sidebar": null,
+    "topbar": {
+     "h": 76
+    },
+    "canvas": {
+     "left": 17,
+     "right": 17
+    },
+    "hero": {
+     "text": "众生有相",
+     "words": 1,
+     "chars": 4,
+     "lines": 1,
+     "size": 27,
+     "vw": 7.1,
+     "font": "Noto Serif SC",
+     "weight": 500,
+     "tracking": 0.03,
+     "leading": 1.5,
+     "top": 203,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "charts": 0,
+    "layout": {
+     "panels": 8,
+     "firstScreen": 0,
+     "ragged": [],
+     "voids": []
+    },
+    "tiles": 0,
+    "panels": {
+     "count": 8,
+     "radii": [
+      [
+       9,
+       8
+      ]
+     ],
+     "heavyBorders": 8,
+     "borderSamples": [
+      "#b4cab8 on #292333 (8.74:1)",
+      "#ffffff on #292333 (15.19:1)",
+      "#ffffff on #292333 (15.19:1)"
+     ],
+     "heavyShadows": 0,
+     "softShadows": 0,
+     "shadowSamples": [],
+     "glass": 0
+    },
+    "chips": {
+     "count": 0,
+     "hues": 0,
+     "samples": []
+    },
+    "numbers": {
+     "cells": 0,
+     "leftAligned": 0,
+     "figures": 1,
+     "tabularShare": 0,
+     "kpiMax": 14
+    },
+    "rows": null,
+    "chartHues": 0,
+    "placeholders": [],
+    "type": {
+     "under13": 0.61,
+     "tiny": 0,
+     "tinySamples": [],
+     "sizes": [
+      11,
+      12,
+      13,
+      14,
+      17,
+      22,
+      27,
+      31
+     ]
+    },
+    "title": {
+     "text": "众生有相",
+     "size": 27,
+     "top": 203
+    },
+    "colourShare": 0
+   },
+   "consoleErrors": []
+  }
+ ],
+ "findings": [
+  {
+   "level": "WARN",
+   "id": "font-fallback",
+   "width": 1440,
+   "message": "Typeface(s) declared but not loaded, so a fallback is rendering: Microsoft YaHei",
+   "fix": "Fix the font URL / family name, or the screenshots you are judging are not the design.",
+   "alsoAt": [
+    760,
+    380
+   ]
+  },
+  {
+   "level": "WARN",
+   "id": "heavy-borders",
+   "width": 1440,
+   "message": "14 panel borders are dark against their ground: #ffffff on #292333 (15.19:1) | #ffffff on #292333 (15.19:1) | #b4cab8 on #292333 (8.74:1)",
+   "fix": "A panel border is a whisper: about 1.1–1.3:1 against its ground on a light screen (#e5e7eb–#ededed on white), and about 1.2–1.5:1 on a dark one (#1a1a1a on #000, #2e2e2e on #111). Darker lines turn the screen into a grid of boxes; keep the stronger line for controls.",
+   "alsoAt": [
+    760,
+    380
+   ]
+  },
+  {
+   "level": "WARN",
+   "id": "tiny-text",
+   "width": 1440,
+   "message": "59% of the text is under 13px.",
+   "fix": "Data and labels read at 13–14px; keep 11–12px for sublines and axis ticks.",
+   "alsoAt": [
+    760,
+    380
+   ]
+  }
+ ],
+ "images": [
+  {
+   "viewport": "desktop",
+   "width": 1440,
+   "fold": "F:\\deepseek workplace\\dsh-novel-studio\\docs\\前端美化\\人物-三版探索-20261105\\verification\\taste-b\\desktop-fold.jpg",
+   "pages": [
+    "F:\\deepseek workplace\\dsh-novel-studio\\docs\\前端美化\\人物-三版探索-20261105\\verification\\taste-b\\desktop-page-01.jpg"
+   ],
+   "film": []
+  },
+  {
+   "viewport": "tablet",
+   "width": 760,
+   "fold": "F:\\deepseek workplace\\dsh-novel-studio\\docs\\前端美化\\人物-三版探索-20261105\\verification\\taste-b\\tablet-fold.jpg",
+   "pages": [
+    "F:\\deepseek workplace\\dsh-novel-studio\\docs\\前端美化\\人物-三版探索-20261105\\verification\\taste-b\\tablet-page-01.jpg"
+   ],
+   "film": []
+  },
+  {
+   "viewport": "mobile",
+   "width": 380,
+   "fold": "F:\\deepseek workplace\\dsh-novel-studio\\docs\\前端美化\\人物-三版探索-20261105\\verification\\taste-b\\mobile-fold.jpg",
+   "pages": [
+    "F:\\deepseek workplace\\dsh-novel-studio\\docs\\前端美化\\人物-三版探索-20261105\\verification\\taste-b\\mobile-page-01.jpg"
+   ],
+   "film": []
+  }
+ ]
+}

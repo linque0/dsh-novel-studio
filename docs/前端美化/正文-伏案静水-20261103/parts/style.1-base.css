@@ -1,0 +1,200 @@
+/* style.1-base.css — 设计令牌 / 全局 / 背景层 / 材质总表 / 顶栏 / 细轨 / 层级
+   拼装顺序 1 → 2 → 3：令牌只在本文件声明，2 号与 3 号一律 var() 引用。 */
+
+/* ==== 1. 设计令牌 ==== */
+:root{
+  --st-bg:#07080b;
+  --st-paper:#0f1115;
+  --st-ink:#f4efe6;
+  --st-ink-2:#d9d2c6;
+  --st-ink-3:#9a948a;
+  --st-line:rgb(255 255 255/.14);
+  --st-glass-strong:rgb(255 255 255/.16);
+  --st-red:#c0483a;
+  --st-red-soft:#ff9384;
+  --st-serif:"Noto Serif SC","Source Han Serif SC","Songti SC","SimSun",serif;
+  --st-sans:Inter,"Noto Sans SC","Microsoft YaHei",system-ui,sans-serif;
+  --st-ease:cubic-bezier(.22,.61,.36,1);
+  --st-dur:320ms;
+  --st-radius:22px;
+  --st-radius-sm:12px;
+  --st-elev:0 26px 60px rgb(0 0 0/.5), inset 0 1px 0 rgb(255 255 255/.5);
+
+  /* 语义别名：全部由上面的原始令牌派生，2/3 号优先用这一层 */
+  --st-glass:rgb(255 255 255/.08);
+  --st-glass-soft:rgb(255 255 255/.045);
+  --st-glass-veil:rgb(255 255 255/.02);
+  --st-glass-fill:linear-gradient(145deg, rgb(255 255 255/.14), rgb(255 255 255/.045) 46%, rgb(255 255 255/.10));
+  --st-sheen:linear-gradient(118deg, rgb(255 255 255/.4), rgb(255 255 255/0) 26%, rgb(255 255 255/0) 64%, rgb(255 255 255/.2));
+  --st-glass-edge:1px solid rgb(255 255 255/.18);
+  --st-line-soft:rgb(255 255 255/.09);
+  --st-ink-dim:rgb(244 239 230/.62);
+  --st-scrim:rgb(3 4 7/.62);
+  --st-blur:18px;
+  --st-sat:1.5;
+  --st-z-bg:0;
+  --st-z-body:1;
+  --st-z-topbar:40;
+  --st-z-scrim:45;
+  --st-z-drawer:46;
+  --st-z-pop:50;
+}
+
+/* ==== 2. 全局 ==== */
+*{box-sizing:border-box}
+*{scrollbar-width:thin;scrollbar-color:rgb(255 255 255/.18) transparent}
+html,body{margin:0;height:100%}
+body{
+  background:var(--st-bg);
+  color:var(--st-ink);
+  font-family:var(--st-sans);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  overflow:hidden;
+}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
+#app{position:relative;display:flex;flex-direction:column;height:100%;overflow:hidden}
+::selection{background:rgb(192 72 58/.35)}
+:focus-visible{outline:2px solid rgb(255 255 255/.82);outline-offset:3px}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgb(255 255 255/.18);border-radius:8px}
+::-webkit-scrollbar-thumb:hover{background:rgb(255 255 255/.3)}
+::-webkit-scrollbar-corner{background:transparent}
+
+/* ==== 3. 背景层 ==== */
+.st-backdrop-wrap{
+  position:absolute;inset:0;z-index:0;
+  overflow:hidden;pointer-events:none;
+  background:var(--st-bg);
+}
+canvas.st-backdrop{position:absolute;inset:0;display:block;width:100%;height:100%}
+.st-layer{position:absolute;inset:0;pointer-events:none}
+.st-layer.dots{
+  opacity:.03;mix-blend-mode:overlay;
+  background-image:radial-gradient(circle, rgb(255 255 255/.95) .45px, transparent .8px);
+  background-size:2px 2px;
+}
+.st-layer.vignette{
+  background:
+    radial-gradient(130% 96% at 50% 38%, transparent 40%, rgb(3 4 7/.3) 100%),
+    linear-gradient(180deg, rgb(3 4 7/.26) 0%, rgb(3 4 7/0) 30%, rgb(3 4 7/.14) 64%, rgb(3 4 7/.38) 100%);
+}
+.st-layer.grain{
+  opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+}
+
+/* 无 WebGL 兜底 */
+html[data-bg-fallback='1'] #app{background:radial-gradient(120% 90% at 30% 8%, #131822 0%, #0a0c11 52%, #07080b 100%)}
+
+/* ==== 4. 材质总表（玻璃只在这里定义，2/3 号不再写玻璃底） ==== */
+.app-topnav,
+.st-pill,
+.rail,
+.side-panel,
+.rp-panel,
+.st-pop,
+.st-drawer,
+.focus-chip{
+  position:relative;
+  background:linear-gradient(145deg, rgb(255 255 255/.14), rgb(255 255 255/.045) 46%, rgb(255 255 255/.10));
+  border:1px solid rgb(255 255 255/.18);
+  backdrop-filter:blur(18px) saturate(1.5);
+  -webkit-backdrop-filter:blur(18px) saturate(1.5);
+  box-shadow:var(--st-elev);
+}
+.app-topnav::after,
+.st-pill::after,
+.rail::after,
+.side-panel::after,
+.rp-panel::after,
+.st-pop::after,
+.st-drawer::after,
+.focus-chip::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  pointer-events:none;
+  opacity:.55;
+  mix-blend-mode:screen;
+  background:linear-gradient(118deg, rgb(255 255 255/.4), rgb(255 255 255/0) 26%, rgb(255 255 255/0) 64%, rgb(255 255 255/.2));
+}
+.app-topbar{background:none}
+
+/* ==== 5. 顶栏 ==== */
+.app-topbar{
+  position:relative;
+  z-index:40;
+  flex:none;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:0 16px;
+  height:64px;
+}
+@media (min-width:900px){.app-topbar{height:64px}}
+@media (min-width:561px) and (max-width:899px){.app-topbar{height:52px}}
+@media (max-width:560px){.app-topbar{height:44px}}
+.app-topbar-brand{display:flex;align-items:center;gap:10px;border:0;background:none;padding:0 4px}
+.brand-name{font-size:19px;font-weight:800;letter-spacing:-.01em}
+.brand-latin{font-size:9px;font-weight:700;letter-spacing:.34em;opacity:.5}
+.app-topnav{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:2px;
+  padding:6px;
+  border-radius:999px;
+}
+.app-topnav-item{
+  border:0;background:none;color:var(--st-ink-2);
+  font-size:13px;font-weight:600;letter-spacing:.02em;
+  padding:8px 18px;border-radius:999px;
+  transition:background 180ms ease, color 180ms ease;
+}
+.app-topnav-item:hover{color:var(--st-ink);background:rgb(255 255 255/.08)}
+.app-topnav-item.is-active{background:#fff;color:#17181c}
+.app-topbar-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+.app-topbar-save{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;letter-spacing:.02em;color:var(--st-ink-3);
+  font-variant-numeric:tabular-nums;
+}
+.save-dot{width:6px;height:6px;border-radius:50%;background:rgb(255 255 255/.4)}
+[data-save-state='saving'] .save-dot{background:var(--st-red);animation:st-pulse 1.2s ease-in-out infinite}
+[data-save-state='dirty'] .save-dot{background:var(--st-red)}
+[data-save-state='saving'] .save-text{color:var(--st-ink-2)}
+@keyframes st-pulse{
+  0%,100%{opacity:1;box-shadow:0 0 0 0 rgb(192 72 58/.5)}
+  50%{opacity:.5;box-shadow:0 0 0 5px rgb(192 72 58/0)}
+}
+.st-pill{
+  height:34px;
+  display:inline-flex;align-items:center;gap:6px;
+  padding:0 14px;border-radius:999px;
+  font-size:12.5px;letter-spacing:.02em;
+  transition:background 180ms ease, transform 180ms var(--st-ease);
+}
+.st-pill:hover{transform:translateY(-1px)}
+.st-pill.st-icon{padding:0 12px;font-size:15px;letter-spacing:0}
+
+/* ==== 6. 细轨总表 ==== */
+.rail{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;
+  width:20px;flex:none;padding:12px 0;border-radius:999px;
+  writing-mode:vertical-lr;
+  font-size:11px;letter-spacing:.38em;
+  color:var(--st-ink-3);
+  transition:color 180ms ease, background 180ms ease;
+}
+.rail:hover{color:var(--st-ink)}
+
+/* ==== 7. 层级：背景 0 < 正文 1 < 顶栏 40 < 遮罩 45 < 抽屉 46 < 浮层 50 ==== */
+.wb-body{position:relative;z-index:1}
+.st-scrim{position:fixed;inset:0;z-index:45}
+.st-drawer{z-index:46}
+.st-pop{z-index:50}

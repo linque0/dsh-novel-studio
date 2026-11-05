@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>一致度对比 · 书架母本 vs 正文稿</title>
+<link rel="icon" href="data:,">
+<style>
+  html,body{margin:0;height:100%;background:#05060a;color:#fff;font-family:Inter,"Noto Sans SC","Microsoft YaHei",system-ui,sans-serif;overflow:hidden}
+  .wrap{display:flex;height:100%;gap:16px;padding:16px}
+  .col{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+  .cap{display:flex;align-items:baseline;gap:10px;font-size:12px;letter-spacing:.04em;color:rgb(255 255 255/.6);padding:0 4px}
+  .cap b{color:#fff;font-size:13px;font-weight:700;letter-spacing:.02em}
+  .cap i{font-style:normal;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:rgb(255 255 255/.4)}
+  .frame{position:relative;flex:1;min-height:0;border:1px solid rgb(255 255 255/.14);border-radius:16px;overflow:hidden;background:#07080b;box-shadow:0 24px 60px rgb(0 0 0/.5)}
+  iframe{display:block;width:1280px;height:1620px;border:0;zoom:.5;transform-origin:0 0}
+  .note{font-size:11px;color:rgb(255 255 255/.42);padding:0 4px;letter-spacing:.02em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="col">
+    <div class="cap"><b>书架 · 流动封面</b><i>mother draft</i><span>液态玻璃卡位 · 竖排宋体书名 · 朱记 · 浮动胶囊顶栏</span></div>
+    <div class="frame"><iframe src="../书架-流动封面-20261103/index.html?module=shelf" title="书架母本"></iframe></div>
+    <div class="note">同一支手要能在这里看出来：玻璃的三层光、宋体标题与拉丁小字的对位、#c0483a 只作点睛。</div>
+  </div>
+  <div class="col">
+    <div class="cap"><b>正文 · 伏案</b><i>this draft</i><span>浮起玻璃三栏 · 宋体稿纸 · 静水背景 · 打字涟漪</span></div>
+    <div class="frame"><iframe src="./index.html" title="正文稿"></iframe></div>
+    <div class="note">正文稿换了背景与动效（为写作新设计），但材质、字阶、朱记三件事与母本同一套。</div>
+  </div>
+</div>
+</body>
+</html>

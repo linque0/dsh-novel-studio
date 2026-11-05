@@ -1,0 +1,830 @@
+{
+  "at": "2026-11-05T06:34:41.848Z",
+  "results": [
+    {
+      "name": "outline-1440 模式与画布空间",
+      "pass": true,
+      "evidence": {
+        "mode": "docked",
+        "canvas": 814,
+        "expanded": [
+          "g1",
+          "g2",
+          "g3"
+        ],
+        "left": 220,
+        "right": 318,
+        "drawer": true,
+        "overflow": false
+      }
+    },
+    {
+      "name": "outline-1440 只默认展开根容器",
+      "pass": true,
+      "evidence": [
+        "g1",
+        "g2",
+        "g3"
+      ]
+    },
+    {
+      "name": "outline-1440 真实选中详情",
+      "pass": true,
+      "evidence": {
+        "mode": "docked",
+        "canvas": 814,
+        "expanded": [
+          "g1",
+          "g2",
+          "g3"
+        ],
+        "left": 220,
+        "right": 318,
+        "drawer": true,
+        "overflow": false
+      }
+    },
+    {
+      "name": "outline-1440 两侧真实拖宽并保存",
+      "pass": true,
+      "evidence": {
+        "left": 295,
+        "right": 358,
+        "other": 252,
+        "canvas": 699,
+        "camera": "translate(60px, 40px) scale(1)",
+        "savedLeft": 295,
+        "savedRight": 358
+      }
+    },
+    {
+      "name": "outline-1440 调宽不动相机",
+      "pass": true,
+      "evidence": {
+        "camera": "translate(60px, 40px) scale(1)",
+        "after": "translate(60px, 40px) scale(1)"
+      }
+    },
+    {
+      "name": "outline-1440 键盘调宽与双击复位",
+      "pass": true,
+      "evidence": {
+        "left": 285,
+        "right": 318
+      }
+    },
+    {
+      "name": "outline-1440 左栏收放不动相机",
+      "pass": true,
+      "evidence": {
+        "rail": true,
+        "width": 0,
+        "camera": "translate(60px, 40px) scale(1)"
+      }
+    },
+    {
+      "name": "outline-1440 右栏关闭保留选择",
+      "pass": true,
+      "evidence": {
+        "selected": "e3",
+        "rail": true
+      }
+    },
+    {
+      "name": "outline-1440 普通选择不强开详情",
+      "pass": true
+    },
+    {
+      "name": "outline-1440 恢复详情跟随最新节点",
+      "pass": true
+    },
+    {
+      "name": "outline-1440 重载持久化偏好",
+      "pass": true
+    },
+    {
+      "name": "outline-1440 按实际容器宽度切抽屉",
+      "pass": true
+    },
+    {
+      "name": "outline-1440 回到宽屏恢复记忆尺寸",
+      "pass": true,
+      "evidence": {
+        "mode": "docked",
+        "prefs": [
+          285,
+          318
+        ]
+      }
+    },
+    {
+      "name": "outline-1440 三层嵌套移动、撤销、循环防护与关系保留",
+      "pass": true,
+      "evidence": {
+        "rejectSelf": false,
+        "rejectDesc": false,
+        "moved": true,
+        "parent": "g12",
+        "undone": "g1",
+        "redone": "g12",
+        "before": 5,
+        "after": 5
+      }
+    },
+    {
+      "name": "outline-1440 文本与画布切换不丢内容",
+      "pass": true,
+      "evidence": {
+        "kept": true,
+        "html": "停摆的钟在凌晨三点响起。林照认出守灯人的笔迹，却选择隐瞒。\n她把那页纸留了下来。"
+      }
+    },
+    {
+      "name": "outline-1440 创建工具与缩放无交叠",
+      "pass": true
+    },
+    {
+      "name": "outline-1440 跨层提示位于画布之外",
+      "pass": true
+    },
+    {
+      "name": "outline-1440 画布预留底部工具安全区",
+      "pass": true
+    },
+    {
+      "name": "真实节点拖入子容器",
+      "pass": true
+    },
+    {
+      "name": "真实拖动一次撤销恢复层级",
+      "pass": true
+    },
+    {
+      "name": "真实迷你卡拖出容器",
+      "pass": true
+    },
+    {
+      "name": "拖出后撤销恢复嵌套",
+      "pass": true
+    },
+    {
+      "name": "工具栏可真实新增模块",
+      "pass": true,
+      "evidence": "3766e519-781e-4ac8-9ff3-0105dd178f33"
+    },
+    {
+      "name": "右侧详情编辑接入节点",
+      "pass": true
+    },
+    {
+      "name": "调宽保留原位编辑焦点且不提前提交",
+      "pass": true
+    },
+    {
+      "name": "详情原位摘要与状态实际落盘",
+      "pass": true,
+      "evidence": {
+        "title": "临时验收便签",
+        "text": "她在黎明前读完了信。",
+        "status": "done",
+        "inMemory": "她在黎明前读完了信。"
+      }
+    },
+    {
+      "name": "实际点击另一卡片提交原节点标题且不串写",
+      "pass": true
+    },
+    {
+      "name": "实际点击另一卡片提交原节点摘要",
+      "pass": true
+    },
+    {
+      "name": "删除选中模块后显示空态",
+      "pass": true
+    },
+    {
+      "name": "文本视图侧栏添加菜单有效",
+      "pass": true
+    },
+    {
+      "name": "实际刷新恢复独立尺寸及两侧收放偏好",
+      "pass": true,
+      "evidence": {
+        "left": 285,
+        "right": 361,
+        "leftOpen": false,
+        "rightOpen": false,
+        "rails": true
+      }
+    },
+    {
+      "name": "outline-1280 模式与画布空间",
+      "pass": true,
+      "evidence": {
+        "mode": "docked",
+        "canvas": 654,
+        "expanded": [
+          "g1",
+          "g2",
+          "g3"
+        ],
+        "left": 220,
+        "right": 318,
+        "drawer": true,
+        "overflow": false
+      }
+    },
+    {
+      "name": "outline-1280 只默认展开根容器",
+      "pass": true,
+      "evidence": [
+        "g1",
+        "g2",
+        "g3"
+      ]
+    },
+    {
+      "name": "outline-1280 真实选中详情",
+      "pass": true,
+      "evidence": {
+        "mode": "docked",
+        "canvas": 654,
+        "expanded": [
+          "g1",
+          "g2",
+          "g3"
+        ],
+        "left": 220,
+        "right": 318,
+        "drawer": true,
+        "overflow": false
+      }
+    },
+    {
+      "name": "outline-1280 两侧真实拖宽并保存",
+      "pass": true,
+      "evidence": {
+        "left": 295,
+        "right": 358,
+        "other": 252,
+        "canvas": 539,
+        "camera": "translate(60px, 40px) scale(1)",
+        "savedLeft": 295,
+        "savedRight": 358
+      }
+    },
+    {
+      "name": "outline-1280 调宽不动相机",
+      "pass": true,
+      "evidence": {
+        "camera": "translate(60px, 40px) scale(1)",
+        "after": "translate(60px, 40px) scale(1)"
+      }
+    },
+    {
+      "name": "outline-1280 键盘调宽与双击复位",
+      "pass": true,
+      "evidence": {
+        "left": 285,
+        "right": 318
+      }
+    },
+    {
+      "name": "outline-1280 左栏收放不动相机",
+      "pass": true,
+      "evidence": {
+        "rail": true,
+        "width": 0,
+        "camera": "translate(60px, 40px) scale(1)"
+      }
+    },
+    {
+      "name": "outline-1280 右栏关闭保留选择",
+      "pass": true,
+      "evidence": {
+        "selected": "e3",
+        "rail": true
+      }
+    },
+    {
+      "name": "outline-1280 普通选择不强开详情",
+      "pass": true
+    },
+    {
+      "name": "outline-1280 恢复详情跟随最新节点",
+      "pass": true
+    },
+    {
+      "name": "outline-1280 重载持久化偏好",
+      "pass": true
+    },
+    {
+      "name": "outline-1280 按实际容器宽度切抽屉",
+      "pass": true
+    },
+    {
+      "name": "outline-1280 回到宽屏恢复记忆尺寸",
+      "pass": true,
+      "evidence": {
+        "mode": "docked",
+        "prefs": [
+          285,
+          318
+        ]
+      }
+    },
+    {
+      "name": "outline-1280 三层嵌套移动、撤销、循环防护与关系保留",
+      "pass": true,
+      "evidence": {
+        "rejectSelf": false,
+        "rejectDesc": false,
+        "moved": true,
+        "parent": "g12",
+        "undone": "g1",
+        "redone": "g12",
+        "before": 5,
+        "after": 5
+      }
+    },
+    {
+      "name": "outline-1280 文本与画布切换不丢内容",
+      "pass": true,
+      "evidence": {
+        "kept": true,
+        "html": "停摆的钟在凌晨三点响起。林照认出守灯人的笔迹，却选择隐瞒。\n她把那页纸留了下来。"
+      }
+    },
+    {
+      "name": "outline-1280 创建工具与缩放无交叠",
+      "pass": true
+    },
+    {
+      "name": "outline-1280 跨层提示位于画布之外",
+      "pass": true
+    },
+    {
+      "name": "outline-1280 画布预留底部工具安全区",
+      "pass": true
+    },
+    {
+      "name": "outline-760 模式与画布空间",
+      "pass": true,
+      "evidence": {
+        "mode": "drawer",
+        "canvas": 720,
+        "expanded": [
+          "g1",
+          "g2",
+          "g3"
+        ],
+        "left": 0,
+        "right": 0,
+        "drawer": true,
+        "overflow": false
+      }
+    },
+    {
+      "name": "outline-760 只默认展开根容器",
+      "pass": true,
+      "evidence": [
+        "g1",
+        "g2",
+        "g3"
+      ]
+    },
+    {
+      "name": "outline-760 真实选中详情",
+      "pass": true,
+      "evidence": {
+        "mode": "drawer",
+        "canvas": 720,
+        "expanded": [
+          "g1",
+          "g2",
+          "g3"
+        ],
+        "left": 0,
+        "right": 0,
+        "drawer": true,
+        "overflow": false
+      }
+    },
+    {
+      "name": "outline-760 窄屏结构抽屉",
+      "pass": true,
+      "evidence": {
+        "left": 260,
+        "right": 0,
+        "dialog": "dialog"
+      }
+    },
+    {
+      "name": "outline-760 窄屏单侧详情",
+      "pass": true,
+      "evidence": {
+        "left": 0,
+        "right": 320,
+        "overflow": false
+      }
+    },
+    {
+      "name": "outline-760 抽屉键盘焦点留在当前面板",
+      "pass": true
+    },
+    {
+      "name": "outline-760 Escape 关闭不改桌面偏好",
+      "pass": true
+    },
+    {
+      "name": "outline-760 三层嵌套移动、撤销、循环防护与关系保留",
+      "pass": true,
+      "evidence": {
+        "rejectSelf": false,
+        "rejectDesc": false,
+        "moved": true,
+        "parent": "g12",
+        "undone": "g1",
+        "redone": "g12",
+        "before": 5,
+        "after": 5
+      }
+    },
+    {
+      "name": "outline-760 文本与画布切换不丢内容",
+      "pass": true,
+      "evidence": {
+        "kept": true,
+        "html": "停摆的钟在凌晨三点响起。林照认出守灯人的笔迹，却选择隐瞒。\n她把那页纸留了下来。"
+      }
+    },
+    {
+      "name": "outline-760 创建工具与缩放无交叠",
+      "pass": true
+    },
+    {
+      "name": "outline-760 跨层提示位于画布之外",
+      "pass": true
+    },
+    {
+      "name": "outline-760 画布预留底部工具安全区",
+      "pass": true
+    },
+    {
+      "name": "outline-380 模式与画布空间",
+      "pass": true,
+      "evidence": {
+        "mode": "drawer",
+        "canvas": 356,
+        "expanded": [
+          "g1",
+          "g2",
+          "g3"
+        ],
+        "left": 0,
+        "right": 0,
+        "drawer": true,
+        "overflow": false
+      }
+    },
+    {
+      "name": "outline-380 只默认展开根容器",
+      "pass": true,
+      "evidence": [
+        "g1",
+        "g2",
+        "g3"
+      ]
+    },
+    {
+      "name": "outline-380 真实选中详情",
+      "pass": true,
+      "evidence": {
+        "mode": "drawer",
+        "canvas": 356,
+        "expanded": [
+          "g1",
+          "g2",
+          "g3"
+        ],
+        "left": 0,
+        "right": 0,
+        "drawer": true,
+        "overflow": false
+      }
+    },
+    {
+      "name": "outline-380 窄屏结构抽屉",
+      "pass": true,
+      "evidence": {
+        "left": 260,
+        "right": 0,
+        "dialog": "dialog"
+      }
+    },
+    {
+      "name": "outline-380 窄屏单侧详情",
+      "pass": true,
+      "evidence": {
+        "left": 0,
+        "right": 320,
+        "overflow": false
+      }
+    },
+    {
+      "name": "outline-380 抽屉键盘焦点留在当前面板",
+      "pass": true
+    },
+    {
+      "name": "outline-380 Escape 关闭不改桌面偏好",
+      "pass": true
+    },
+    {
+      "name": "outline-380 三层嵌套移动、撤销、循环防护与关系保留",
+      "pass": true,
+      "evidence": {
+        "rejectSelf": false,
+        "rejectDesc": false,
+        "moved": true,
+        "parent": "g12",
+        "undone": "g1",
+        "redone": "g12",
+        "before": 5,
+        "after": 5
+      }
+    },
+    {
+      "name": "outline-380 文本与画布切换不丢内容",
+      "pass": true,
+      "evidence": {
+        "kept": true,
+        "html": "停摆的钟在凌晨三点响起。林照认出守灯人的笔迹，却选择隐瞒。\n她把那页纸留了下来。"
+      }
+    },
+    {
+      "name": "outline-380 创建工具与缩放无交叠",
+      "pass": true
+    },
+    {
+      "name": "outline-380 跨层提示位于画布之外",
+      "pass": true
+    },
+    {
+      "name": "outline-380 画布预留底部工具安全区",
+      "pass": true
+    },
+    {
+      "name": "panel-outline-760 模式与画布空间",
+      "pass": true,
+      "evidence": {
+        "mode": "drawer",
+        "canvas": 720,
+        "expanded": [
+          "g1",
+          "g2",
+          "g3"
+        ],
+        "left": 0,
+        "right": 0,
+        "drawer": true,
+        "overflow": false
+      }
+    },
+    {
+      "name": "panel-outline-760 只默认展开根容器",
+      "pass": true,
+      "evidence": [
+        "g1",
+        "g2",
+        "g3"
+      ]
+    },
+    {
+      "name": "panel-outline-760 真实选中详情",
+      "pass": true,
+      "evidence": {
+        "mode": "drawer",
+        "canvas": 720,
+        "expanded": [
+          "g1",
+          "g2",
+          "g3"
+        ],
+        "left": 0,
+        "right": 0,
+        "drawer": true,
+        "overflow": false
+      }
+    },
+    {
+      "name": "panel-outline-760 窄屏结构抽屉",
+      "pass": true,
+      "evidence": {
+        "left": 260,
+        "right": 0,
+        "dialog": "dialog"
+      }
+    },
+    {
+      "name": "panel-outline-760 窄屏单侧详情",
+      "pass": true,
+      "evidence": {
+        "left": 0,
+        "right": 320,
+        "overflow": false
+      }
+    },
+    {
+      "name": "panel-outline-760 抽屉键盘焦点留在当前面板",
+      "pass": true
+    },
+    {
+      "name": "panel-outline-760 Escape 关闭不改桌面偏好",
+      "pass": true
+    },
+    {
+      "name": "panel-outline-760 三层嵌套移动、撤销、循环防护与关系保留",
+      "pass": true,
+      "evidence": {
+        "rejectSelf": false,
+        "rejectDesc": false,
+        "moved": true,
+        "parent": "g12",
+        "undone": "g1",
+        "redone": "g12",
+        "before": 5,
+        "after": 5
+      }
+    },
+    {
+      "name": "panel-outline-760 文本与画布切换不丢内容",
+      "pass": true,
+      "evidence": {
+        "kept": true,
+        "html": "停摆的钟在凌晨三点响起。林照认出守灯人的笔迹，却选择隐瞒。\n她把那页纸留了下来。"
+      }
+    },
+    {
+      "name": "panel-outline-760 创建工具与缩放无交叠",
+      "pass": true
+    },
+    {
+      "name": "panel-outline-760 跨层提示位于画布之外",
+      "pass": true
+    },
+    {
+      "name": "panel-outline-760 画布预留底部工具安全区",
+      "pass": true
+    },
+    {
+      "name": "panel-outline-1440 模式与画布空间",
+      "pass": true,
+      "evidence": {
+        "mode": "docked",
+        "canvas": 814,
+        "expanded": [
+          "g1",
+          "g2",
+          "g3"
+        ],
+        "left": 220,
+        "right": 318,
+        "drawer": true,
+        "overflow": false
+      }
+    },
+    {
+      "name": "panel-outline-1440 只默认展开根容器",
+      "pass": true,
+      "evidence": [
+        "g1",
+        "g2",
+        "g3"
+      ]
+    },
+    {
+      "name": "panel-outline-1440 真实选中详情",
+      "pass": true,
+      "evidence": {
+        "mode": "docked",
+        "canvas": 814,
+        "expanded": [
+          "g1",
+          "g2",
+          "g3"
+        ],
+        "left": 220,
+        "right": 318,
+        "drawer": true,
+        "overflow": false
+      }
+    },
+    {
+      "name": "panel-outline-1440 两侧真实拖宽并保存",
+      "pass": true,
+      "evidence": {
+        "left": 295,
+        "right": 358,
+        "other": 252,
+        "canvas": 699,
+        "camera": "translate(60px, 40px) scale(1)",
+        "savedLeft": 295,
+        "savedRight": 358
+      }
+    },
+    {
+      "name": "panel-outline-1440 调宽不动相机",
+      "pass": true,
+      "evidence": {
+        "camera": "translate(60px, 40px) scale(1)",
+        "after": "translate(60px, 40px) scale(1)"
+      }
+    },
+    {
+      "name": "panel-outline-1440 键盘调宽与双击复位",
+      "pass": true,
+      "evidence": {
+        "left": 285,
+        "right": 318
+      }
+    },
+    {
+      "name": "panel-outline-1440 左栏收放不动相机",
+      "pass": true,
+      "evidence": {
+        "rail": true,
+        "width": 0,
+        "camera": "translate(60px, 40px) scale(1)"
+      }
+    },
+    {
+      "name": "panel-outline-1440 右栏关闭保留选择",
+      "pass": true,
+      "evidence": {
+        "selected": "e3",
+        "rail": true
+      }
+    },
+    {
+      "name": "panel-outline-1440 普通选择不强开详情",
+      "pass": true
+    },
+    {
+      "name": "panel-outline-1440 恢复详情跟随最新节点",
+      "pass": true
+    },
+    {
+      "name": "panel-outline-1440 重载持久化偏好",
+      "pass": true
+    },
+    {
+      "name": "panel-outline-1440 按实际容器宽度切抽屉",
+      "pass": true
+    },
+    {
+      "name": "panel-outline-1440 回到宽屏恢复记忆尺寸",
+      "pass": true,
+      "evidence": {
+        "mode": "docked",
+        "prefs": [
+          285,
+          318
+        ]
+      }
+    },
+    {
+      "name": "panel-outline-1440 三层嵌套移动、撤销、循环防护与关系保留",
+      "pass": true,
+      "evidence": {
+        "rejectSelf": false,
+        "rejectDesc": false,
+        "moved": true,
+        "parent": "g12",
+        "undone": "g1",
+        "redone": "g12",
+        "before": 5,
+        "after": 5
+      }
+    },
+    {
+      "name": "panel-outline-1440 文本与画布切换不丢内容",
+      "pass": true,
+      "evidence": {
+        "kept": true,
+        "html": "停摆的钟在凌晨三点响起。林照认出守灯人的笔迹，却选择隐瞒。\n她把那页纸留了下来。"
+      }
+    },
+    {
+      "name": "panel-outline-1440 创建工具与缩放无交叠",
+      "pass": true
+    },
+    {
+      "name": "panel-outline-1440 跨层提示位于画布之外",
+      "pass": true
+    },
+    {
+      "name": "panel-outline-1440 画布预留底部工具安全区",
+      "pass": true
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "capturedAt": "2026-11-03T07:28:15.689Z",
+  "gpu": {
+    "backend": "gpu",
+    "renderer": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "avgFrameMs": 5.55,
+    "scale": 1.5,
+    "pixels": [
+      1600,
+      1000
+    ],
+    "shaderLog": "",
+    "noise": "paper-mesh+dither",
+    "time": 1.281
+  },
+  "cpuFallback": {
+    "backend": "cpu",
+    "avgFrameMs": 0,
+    "scale": 1,
+    "pixels": [
+      640,
+      400
+    ],
+    "noise": "bayer",
+    "time": 1.269
+  },
+  "page": "file:///F:/deepseek%20workplace/novel-studio/docs/%E5%89%8D%E7%AB%AF%E7%BE%8E%E5%8C%96/%E4%B9%A6%E6%9E%B6-%E6%B5%81%E5%8A%A8%E5%B0%81%E9%9D%A2-20261103/index.html",
+  "states": [
+    "01-shelf.png",
+    "02-focus-claret.png",
+    "03-tab-series.png",
+    "04-search.png",
+    "05-wide-1920.png",
+    "07-pixel0.png",
+    "08-pixel1.png",
+    "09-cpu-fallback.png",
+    "10-module.png"
+  ],
+  "blueNoise": "paper-mesh+dither",
+  "frames": [
+    "静息",
+    "换书·1",
+    "换书·1",
+    "换书·1",
+    "换书·2",
+    "换书·2",
+    "换书·2"
+  ],
+  "visibleCards": 5,
+  "consoleErrors": [],
+  "reducedMotion": {
+    "scene": 3,
+    "card": "0s",
+    "motion": true
+  },
+  "overflow": {
+    "scrollWidth": 1440,
+    "innerWidth": 1440
+  }
+}

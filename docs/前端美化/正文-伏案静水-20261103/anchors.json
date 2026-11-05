@@ -1,0 +1,420 @@
+{
+  "contract": "设计稿锚点契约：capture.mjs 逐项断言 querySelector 命中；index.html 必须全部满足。scene 指该锚点必须存在的场景（?scene=）。",
+  "total": 69,
+  "anchors": [
+    {
+      "id": "topbar.brand",
+      "selector": ".app-topbar .app-topbar-brand",
+      "scene": "writing",
+      "note": "品牌/返回书架"
+    },
+    {
+      "id": "nav.shelf",
+      "selector": ".app-topnav-item[data-nav=shelf]",
+      "scene": "writing",
+      "note": "导航：书架"
+    },
+    {
+      "id": "nav.chapters",
+      "selector": ".app-topnav-item[data-nav=chapters]",
+      "scene": "writing",
+      "note": "导航：正文（当前）"
+    },
+    {
+      "id": "nav.outline",
+      "selector": ".app-topnav-item[data-nav=outline]",
+      "scene": "writing",
+      "note": "导航：大纲"
+    },
+    {
+      "id": "nav.lore",
+      "selector": ".app-topnav-item[data-nav=lore]",
+      "scene": "writing",
+      "note": "导航：设定"
+    },
+    {
+      "id": "nav.characters",
+      "selector": ".app-topnav-item[data-nav=characters]",
+      "scene": "writing",
+      "note": "导航：人物"
+    },
+    {
+      "id": "nav.snippets",
+      "selector": ".app-topnav-item[data-nav=snippets]",
+      "scene": "writing",
+      "note": "导航：灵感"
+    },
+    {
+      "id": "nav.settings",
+      "selector": ".app-topnav-item[data-nav=settings]",
+      "scene": "writing",
+      "note": "导航：设置"
+    },
+    {
+      "id": "topbar.save",
+      "selector": ".app-topbar-save",
+      "scene": "writing",
+      "note": "保存点三态"
+    },
+    {
+      "id": "topbar.search",
+      "selector": "[data-anchor=topbar-search]",
+      "scene": "writing",
+      "note": "搜索胶囊"
+    },
+    {
+      "id": "topbar.more",
+      "selector": "[data-anchor=topbar-more]",
+      "scene": "writing",
+      "note": "⋯ 菜单入口"
+    },
+    {
+      "id": "tree",
+      "selector": ".side-panel[data-anchor=tree]",
+      "scene": "writing",
+      "note": "章节栏容器"
+    },
+    {
+      "id": "tree.volume",
+      "selector": "[data-anchor=tree-volume]",
+      "scene": "writing",
+      "note": "卷行"
+    },
+    {
+      "id": "tree.chapter",
+      "selector": "[data-anchor=tree-chapter]",
+      "scene": "writing",
+      "note": "章节行"
+    },
+    {
+      "id": "tree.current",
+      "selector": "[data-anchor=tree-current]",
+      "scene": "writing",
+      "note": "当前章朱记竖条"
+    },
+    {
+      "id": "tree.count",
+      "selector": "[data-anchor=tree-count]",
+      "scene": "writing",
+      "note": "章节字数"
+    },
+    {
+      "id": "tree.new",
+      "selector": "[data-anchor=tree-new]",
+      "scene": "writing",
+      "note": "新建章"
+    },
+    {
+      "id": "tree.newVolume",
+      "selector": "[data-anchor=tree-new-volume]",
+      "scene": "writing",
+      "note": "新建卷"
+    },
+    {
+      "id": "tree.menu",
+      "selector": "[data-anchor=tree-menu]",
+      "scene": "writing",
+      "note": "章节行更多（重命名/删除）"
+    },
+    {
+      "id": "tree.collapse",
+      "selector": "[data-anchor=dir-collapse]",
+      "scene": "writing",
+      "note": "收起章节栏"
+    },
+    {
+      "id": "tree.rail",
+      "selector": "[data-anchor=dir-rail]",
+      "scene": "writing",
+      "note": "收起后竖排细轨"
+    },
+    {
+      "id": "ed.title",
+      "selector": "[data-anchor=ed-title]",
+      "scene": "writing",
+      "note": "眉标章节名"
+    },
+    {
+      "id": "ed.goal",
+      "selector": "[data-anchor=ed-goal]",
+      "scene": "writing",
+      "note": "字数目标"
+    },
+    {
+      "id": "toolbar",
+      "selector": ".editor-toolbar",
+      "scene": "writing",
+      "note": "工具栏（高 34）"
+    },
+    {
+      "id": "paper",
+      "selector": ".rich-host .rich-inner .tiptap",
+      "scene": "writing",
+      "note": "正文可编辑区（≤36em）"
+    },
+    {
+      "id": "tb.undo",
+      "selector": "[data-act=undo]",
+      "scene": "writing",
+      "note": "撤销"
+    },
+    {
+      "id": "tb.redo",
+      "selector": "[data-act=redo]",
+      "scene": "writing",
+      "note": "重做"
+    },
+    {
+      "id": "tb.bold",
+      "selector": "[data-act=bold]",
+      "scene": "writing",
+      "note": "加粗"
+    },
+    {
+      "id": "tb.italic",
+      "selector": "[data-act=italic]",
+      "scene": "writing",
+      "note": "斜体"
+    },
+    {
+      "id": "tb.underline",
+      "selector": "[data-act=underline]",
+      "scene": "writing",
+      "note": "下划线"
+    },
+    {
+      "id": "tb.strike",
+      "selector": "[data-act=strike]",
+      "scene": "writing",
+      "note": "删除线"
+    },
+    {
+      "id": "tb.paragraph",
+      "selector": "[data-act=paragraph]",
+      "scene": "writing",
+      "note": "正文"
+    },
+    {
+      "id": "tb.h1",
+      "selector": "[data-act=h1]",
+      "scene": "writing",
+      "note": "标题一"
+    },
+    {
+      "id": "tb.h2",
+      "selector": "[data-act=h2]",
+      "scene": "writing",
+      "note": "标题二"
+    },
+    {
+      "id": "tb.h3",
+      "selector": "[data-act=h3]",
+      "scene": "writing",
+      "note": "标题三"
+    },
+    {
+      "id": "tb.size",
+      "selector": "[data-act=font-size]",
+      "scene": "writing",
+      "note": "字号"
+    },
+    {
+      "id": "tb.color",
+      "selector": "[data-act=color]",
+      "scene": "writing",
+      "note": "字体颜色"
+    },
+    {
+      "id": "tb.highlight",
+      "selector": "[data-act=highlight]",
+      "scene": "writing",
+      "note": "底色"
+    },
+    {
+      "id": "tb.link",
+      "selector": "[data-act=link]",
+      "scene": "writing",
+      "note": "超链接"
+    },
+    {
+      "id": "tb.more",
+      "selector": "[data-act=more-formats]",
+      "scene": "writing",
+      "note": "更多格式 ⌄"
+    },
+    {
+      "id": "tb.bookmark",
+      "selector": "[data-act=bookmark]",
+      "scene": "writing",
+      "note": "章节书签"
+    },
+    {
+      "id": "tb.send",
+      "selector": "[data-act=send]",
+      "scene": "writing",
+      "note": "发送给 DSH"
+    },
+    {
+      "id": "notes.list",
+      "selector": "[data-anchor=notes-list]",
+      "scene": "notes",
+      "note": "批注列表"
+    },
+    {
+      "id": "notes.input",
+      "selector": "[data-anchor=notes-input]",
+      "scene": "notes",
+      "note": "批注输入"
+    },
+    {
+      "id": "notes.quick",
+      "selector": "[data-anchor=notes-quick]",
+      "scene": "notes",
+      "note": "本章要点速记"
+    },
+    {
+      "id": "notes.asset",
+      "selector": "[data-anchor=notes-asset]",
+      "scene": "notes",
+      "note": "素材条目"
+    },
+    {
+      "id": "notes.upload",
+      "selector": "[data-anchor=notes-upload]",
+      "scene": "notes",
+      "note": "素材上传"
+    },
+    {
+      "id": "notes.collapse",
+      "selector": "[data-anchor=notes-collapse]",
+      "scene": "notes",
+      "note": "收起批注栏"
+    },
+    {
+      "id": "notes.rail",
+      "selector": "[data-anchor=notes-rail]",
+      "scene": "writing",
+      "note": "批注栏收起后的右缘细轨"
+    },
+    {
+      "id": "menu.split",
+      "selector": "[data-menu=split]",
+      "scene": "menu",
+      "note": "⋯：拆出独立窗口"
+    },
+    {
+      "id": "menu.bookmark",
+      "selector": "[data-menu=bookmark]",
+      "scene": "menu",
+      "note": "⋯：章节书签"
+    },
+    {
+      "id": "menu.dir",
+      "selector": "[data-menu=dir]",
+      "scene": "menu",
+      "note": "⋯：收起目录栏"
+    },
+    {
+      "id": "menu.focus",
+      "selector": "[data-menu=focus]",
+      "scene": "menu",
+      "note": "⋯：沉浸写作"
+    },
+    {
+      "id": "menu.read",
+      "selector": "[data-menu=read]",
+      "scene": "menu",
+      "note": "⋯：阅读模式"
+    },
+    {
+      "id": "menu.settings",
+      "selector": "[data-menu=settings]",
+      "scene": "menu",
+      "note": "⋯：设置"
+    },
+    {
+      "id": "fmt.left",
+      "selector": "[data-fmt=left]",
+      "scene": "formats",
+      "note": "左对齐"
+    },
+    {
+      "id": "fmt.center",
+      "selector": "[data-fmt=center]",
+      "scene": "formats",
+      "note": "居中"
+    },
+    {
+      "id": "fmt.right",
+      "selector": "[data-fmt=right]",
+      "scene": "formats",
+      "note": "右对齐"
+    },
+    {
+      "id": "fmt.justify",
+      "selector": "[data-fmt=justify]",
+      "scene": "formats",
+      "note": "两端对齐"
+    },
+    {
+      "id": "fmt.ul",
+      "selector": "[data-fmt=ul]",
+      "scene": "formats",
+      "note": "无序列表"
+    },
+    {
+      "id": "fmt.ol",
+      "selector": "[data-fmt=ol]",
+      "scene": "formats",
+      "note": "有序列表"
+    },
+    {
+      "id": "fmt.quote",
+      "selector": "[data-fmt=quote]",
+      "scene": "formats",
+      "note": "引用"
+    },
+    {
+      "id": "fmt.clear",
+      "selector": "[data-fmt=clear]",
+      "scene": "formats",
+      "note": "清除格式"
+    },
+    {
+      "id": "ctx.menu",
+      "selector": "[data-anchor=ctx-menu]",
+      "scene": "ctx",
+      "note": "编辑器右键菜单"
+    },
+    {
+      "id": "search.panel",
+      "selector": "[data-anchor=search-panel]",
+      "scene": "search",
+      "note": "全局搜索面板"
+    },
+    {
+      "id": "search.input",
+      "selector": "[data-anchor=search-input]",
+      "scene": "search",
+      "note": "搜索输入"
+    },
+    {
+      "id": "history.panel",
+      "selector": "[data-anchor=history-panel]",
+      "scene": "history",
+      "note": "章节历史面板"
+    },
+    {
+      "id": "history.row",
+      "selector": "[data-anchor=history-row]",
+      "scene": "history",
+      "note": "历史版本行"
+    },
+    {
+      "id": "history.restore",
+      "selector": "[data-anchor=history-restore]",
+      "scene": "history",
+      "note": "恢复该版本"
+    }
+  ]
+}

@@ -1,0 +1,466 @@
+/* ==========================================================================
+   style.3-modes.css · 工具栏 / 浮层 / 抽屉 / 模式 / 响应式收尾
+   被 1→2→3 顺序拼进同一 style 容器；令牌由 1 号声明，本文件只 var() 使用。
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. 工具栏（高度固定 34px，会被量）
+   -------------------------------------------------------------------------- */
+.editor-toolbar{
+  flex:none;
+  width:min(36em,100% - 96px);
+  margin:0 auto 10px;
+  height:34px;
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  gap:2px;
+  padding:0 8px;
+  border-radius:12px;
+  overflow:hidden;
+  background:rgb(255 255 255/.06);
+  border:1px solid rgb(255 255 255/.12);
+  backdrop-filter:blur(14px) saturate(1.4);
+}
+
+.tb{
+  height:26px;
+  min-width:26px;
+  padding:0 7px;
+  border-radius:8px;
+  font-size:12.5px;
+  line-height:1;
+  color:var(--st-ink-2);
+  white-space:nowrap;
+  transition:background 160ms ease,color 160ms ease;
+}
+.tb:hover{
+  background:rgb(255 255 255/.1);
+  color:#fff;
+}
+.tb.on{
+  background:rgb(255 255 255/.16);
+  color:#fff;
+}
+.tb-sep{
+  width:1px;
+  height:16px;
+  margin:0 4px;
+  background:rgb(255 255 255/.12);
+  flex:none;
+}
+.tb b,.tb i,.tb u,.tb s{font-size:12.5px}
+
+/* --------------------------------------------------------------------------
+   2. 浮层 / 面板 / 遮罩
+   -------------------------------------------------------------------------- */
+.st-pop{
+  position:absolute;
+  z-index:50;
+  padding:6px;
+  border-radius:16px;
+  display:none;
+  min-width:180px;
+  transform-origin:top right;
+  animation:st-pop-in 200ms var(--st-ease) both;
+}
+@keyframes st-pop-in{
+  from{opacity:0;transform:translateY(-6px) scale(.98)}
+  to{opacity:1;transform:none}
+}
+.st-pop button{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  width:100%;
+  height:32px;
+  padding:0 10px;
+  border-radius:10px;
+  font-size:13px;
+  color:var(--st-ink-2);
+  text-align:left;
+}
+.st-pop button:hover{
+  background:rgb(255 255 255/.1);
+  color:#fff;
+}
+.st-pop .st-pop-sep{
+  height:1px;
+  margin:4px 6px;
+  background:rgb(255 255 255/.1);
+}
+
+#pop-menu{
+  top:calc(var(--st-topbar,64px) + 4px);
+  right:16px;
+  width:220px;
+}
+#pop-formats{
+  position:absolute;
+  right:max(16px,calc(50% - 18em));
+  top:auto;
+  width:200px;
+}
+#pop-ctx{
+  left:50%;
+  top:30%;
+  transform:translateX(-50%);
+  width:210px;
+}
+
+.st-sheet{
+  position:absolute;
+  left:50%;
+  top:14%;
+  transform:translateX(-50%);
+  width:min(520px,calc(100% - 32px));
+  z-index:50;
+  padding:14px;
+  border-radius:18px;
+  display:none;
+}
+
+#pop-search input{
+  width:100%;
+  height:34px;
+  border-radius:10px;
+  border:1px solid rgb(255 255 255/.14);
+  background:rgb(255 255 255/.05);
+  color:var(--st-ink);
+  font:inherit;
+  font-size:13px;
+  padding:0 12px;
+  outline:none;
+}
+.sr-list{
+  margin-top:10px;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.sr-item{
+  padding:9px 10px;
+  border-radius:10px;
+  font-size:12.5px;
+  color:var(--st-ink-2);
+}
+.sr-item:hover{background:rgb(255 255 255/.08)}
+.sr-item b{
+  display:block;
+  font-size:12.5px;
+  color:var(--st-ink);
+  margin-bottom:2px;
+}
+mark{
+  background:rgb(192 72 58/.32);
+  color:#fff;
+  border-radius:3px;
+  padding:0 1px;
+}
+
+.hi-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px;
+  border-radius:10px;
+  font-size:12.5px;
+  color:var(--st-ink-2);
+}
+.hi-row:hover{background:rgb(255 255 255/.08)}
+.hi-time{
+  flex:none;
+  font-variant-numeric:tabular-nums;
+  color:var(--st-ink-3);
+  font-size:11px;
+  width:88px;
+}
+.hi-diff{
+  flex:1;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.hi-words{
+  flex:none;
+  font-size:11px;
+  color:var(--st-ink-3);
+  font-variant-numeric:tabular-nums;
+}
+.hi-restore{
+  flex:none;
+  height:26px;
+  padding:0 10px;
+  border-radius:8px;
+  font-size:12px;
+  background:rgb(255 255 255/.1);
+  color:#fff;
+}
+
+.st-scrim{
+  position:absolute;
+  inset:0;
+  z-index:45;
+  background:rgb(3 4 7/.5);
+  backdrop-filter:blur(2px);
+  display:none;
+  animation:st-fade 200ms ease both;
+}
+@keyframes st-fade{
+  from{opacity:0}
+  to{opacity:1}
+}
+
+/* --------------------------------------------------------------------------
+   3. 场景可见性（data-scene 驱动）
+   -------------------------------------------------------------------------- */
+#app[data-scene='menu'] #pop-menu,
+#app[data-scene='formats'] #pop-formats,
+#app[data-scene='ctx'] #pop-ctx,
+#app[data-scene='search'] #pop-search,
+#app[data-scene='history'] #pop-history{display:block}
+
+#app[data-scene='search'] .st-scrim,
+#app[data-scene='history'] .st-scrim{display:block}
+
+/* --------------------------------------------------------------------------
+   4. 抽屉
+   -------------------------------------------------------------------------- */
+.st-drawer{
+  position:absolute;
+  top:0;
+  bottom:0;
+  z-index:46;
+  width:280px;
+  display:flex;
+  flex-direction:column;
+  overflow:auto;
+  padding:16px;
+  transition:transform 380ms var(--st-ease);
+  border-radius:0 22px 22px 0;
+}
+#drawer-dir{
+  left:0;
+  transform:translateX(-104%);
+}
+#drawer-notes{
+  right:0;
+  border-radius:22px 0 0 22px;
+  transform:translateX(104%);
+}
+#app.is-drawer-dir #drawer-dir{transform:none}
+#app.is-drawer-notes #drawer-notes{transform:none}
+
+.st-drawer{display:none}
+#app.is-drawer-dir #drawer-dir,
+#app.is-drawer-notes #drawer-notes{display:flex}
+
+/* --------------------------------------------------------------------------
+   5. 模式（focus / read）
+   -------------------------------------------------------------------------- */
+#app[data-mode='focus'] :is(.side-panel,.rp-panel,.rp-rail,.dir-rail,.editor-toolbar){display:none}
+#app[data-mode='read'] :is(.rp-panel,.rp-rail,.editor-toolbar){display:none}
+
+#app[data-mode='focus'] .ed-head,
+#app[data-mode='focus'] .paper,
+#app[data-mode='read'] .ed-head,
+#app[data-mode='read'] .paper{width:min(42em,100% - 64px)}
+
+.focus-chip{
+  position:absolute;
+  left:16px;
+  bottom:16px;
+  z-index:41;
+  width:32px;
+  height:32px;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  writing-mode:vertical-lr;
+  font-size:10px;
+  letter-spacing:.3em;
+  color:var(--st-ink-2);
+}
+#app[data-mode='focus'] .focus-chip{display:flex}
+
+/* --------------------------------------------------------------------------
+   6. 响应式收尾
+   -------------------------------------------------------------------------- */
+/* topbar 三档高度，供 #pop-menu 的 --st-topbar 回落值使用 */
+@media (min-width:900px){
+  #app{--st-topbar:64px}
+}
+@media (min-width:561px) and (max-width:899px){
+  #app{--st-topbar:52px}
+}
+@media (max-width:560px){
+  #app{--st-topbar:44px}
+}
+
+@media (max-width:560px){
+  .editor-toolbar{width:100%}
+  /* 窄栏收按钮：保留 撤销/重做/粗/斜/下划线/正文/更多格式/发送 */
+  .editor-toolbar :is([data-act=h1],[data-act=h2],[data-act=h3],[data-act=font-size],[data-act=color],[data-act=highlight],[data-act=link],[data-act=bookmark]){display:none}
+}
+
+@media (max-width:560px){
+  .app-topnav{
+    position:static;
+    left:auto;
+    transform:none;
+    order:-1;
+    flex:1;
+    justify-content:flex-start;
+    overflow:auto;
+    scrollbar-width:none;
+  }
+  .app-topnav::-webkit-scrollbar{display:none}
+  .app-topnav-item{padding:8px 12px}
+  .app-topbar-actions .st-pill[data-anchor='topbar-search']{display:none}
+  .app-topbar{gap:8px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:1ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:1ms!important;
+  }
+}
+
+.is-hidden{display:none!important}
+.st-pop[hidden]{display:none}
+
+/* ==========================================================================
+   第 2 轮修正（追加在文件末尾 = 层叠最后，只覆盖、不改上文）
+   取证：1440×900 / 380×900 真 Chrome 截图
+   ========================================================================== */
+
+/* --- D1 · 竖排细轨：面板展开时不再出现第四条列 ----------------------------- */
+.dir-rail,
+.rp-rail{display:none}
+#app.is-dir-collapsed .dir-rail{display:flex}
+#app.is-notes-collapsed .rp-rail{display:flex}
+@media (max-width:560px){
+  .dir-rail{display:flex}
+}
+@media (max-width:899px){
+  .rp-rail{display:flex}
+}
+
+/* --- D2 · 工具栏溢出：隐藏 5 枚次要按钮，收紧内边距，末项「发给 DSH」完整 ---- */
+.editor-toolbar :is([data-act=font-size],[data-act=color],[data-act=highlight],[data-act=link],[data-act=bookmark]){display:none}
+.tb{padding:0 6px}
+.tb-sep{margin:0 3px}
+
+/* --- D3 · 沉浸模式徽记：竖排圆点糊字 → 横向小胶囊 ---------------------------- */
+#app[data-mode='focus'] .focus-chip{
+  display:flex;
+  width:auto;
+  height:28px;
+  padding:0 12px;
+  border-radius:999px;
+  writing-mode:horizontal-tb;
+  letter-spacing:.06em;
+  font-size:11px;
+  left:16px;
+  bottom:16px;
+}
+
+/* --- D4 · 380 窄屏顶栏：导航不竖排、不压品牌，保存只留圆点 --------------------- */
+@media (max-width:560px){
+  .app-topbar{
+    gap:8px;
+    padding:0 10px;
+  }
+  .brand-latin{display:none}
+  .brand-name{
+    font-size:16px;
+    white-space:nowrap;
+  }
+  .app-topnav{
+    position:static;
+    left:auto;
+    transform:none;
+    order:0;
+    flex:1;
+    min-width:0;
+    display:flex;
+    gap:2px;
+    padding:4px;
+    overflow-x:auto;
+    justify-content:flex-start;
+    scrollbar-width:none;
+  }
+  .app-topnav::-webkit-scrollbar{display:none}
+  .app-topnav-item{
+    flex:none;
+    white-space:nowrap;
+    padding:7px 12px;
+    font-size:12.5px;
+  }
+  .app-topbar-actions{
+    margin-left:0;
+    flex:none;
+    gap:6px;
+  }
+  .app-topbar-save .save-text{display:none}
+}
+
+/* --- D5 · 380 细轨竖排字不再被切头 ------------------------------------------ */
+@media (max-width:560px){
+  .rail{
+    letter-spacing:.18em;
+    font-size:10px;
+  }
+}
+
+/* ==========================================================================
+   第 3 轮修正（继续追加在末尾；上文一行未动）
+   取证：1440×900 / 380×900 真 Chrome 截图 06-writing-380 / 12-history
+   ========================================================================== */
+
+/* --- D6 · 380 工具栏：硬裁剪 → 可横滑 + 右缘淡出（不隐藏任何 [data-act]） ---- */
+@media (max-width:560px){
+  .editor-toolbar{
+    overflow-x:auto;
+    overflow-y:hidden;
+    scrollbar-width:none;
+    -webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 24px),transparent 100%);
+    mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 24px),transparent 100%);
+  }
+  .editor-toolbar::-webkit-scrollbar{display:none}
+  .editor-toolbar .tb,
+  .editor-toolbar .tb-sep{flex:none}
+}
+
+/* --- D8 · 章节历史行：.st-pop button{width:100%} 波及行内按钮，恢复被撑满 ----- */
+.st-pop .hi-row{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+.st-pop .hi-restore,
+.st-pop .hi-row button{
+  width:auto;
+  flex:none;
+  padding:0 10px;
+}
+.st-pop .hi-diff{
+  flex:1 1 auto;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--st-ink-2);
+}
+.st-pop .hi-time{
+  flex:none;
+  width:88px;
+}
+.st-pop .hi-words{
+  flex:none;
+  margin-left:auto;
+}

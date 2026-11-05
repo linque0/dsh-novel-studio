@@ -1,0 +1,119 @@
+<div id="app" data-scene="writing" data-mode="" data-bg="ink">
+  <div class="st-backdrop-wrap"><canvas class="st-backdrop" id="st-bg"></canvas><div class="st-layer dots"></div><div class="st-layer vignette"></div><div class="st-layer grain"></div></div>
+
+  <header class="app-topbar">
+    <button class="app-topbar-brand" type="button" data-anchor="brand"><span class="brand-name">小说工坊</span><small class="brand-latin">LATENT</small></button>
+    <nav class="app-topnav" aria-label="功能模块">
+      <button class="app-topnav-item" type="button" data-nav="shelf">书架</button>
+      <button class="app-topnav-item is-active" type="button" data-nav="chapters">正文</button>
+      <button class="app-topnav-item" type="button" data-nav="outline">大纲</button>
+      <button class="app-topnav-item" type="button" data-nav="lore">设定</button>
+      <button class="app-topnav-item" type="button" data-nav="characters">人物</button>
+      <button class="app-topnav-item" type="button" data-nav="snippets">灵感</button>
+      <button class="app-topnav-item" type="button" data-nav="settings">设置</button>
+    </nav>
+    <div class="app-topbar-actions">
+      <span class="app-topbar-save" data-save-state="saved" data-anchor="save"><span class="save-dot"></span><span class="save-text">已保存 19:04:12</span></span>
+      <button class="st-pill" type="button" data-anchor="topbar-search"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>搜索</span></button>
+      <button class="st-pill st-icon" type="button" data-anchor="topbar-more" aria-label="更多">⋯</button>
+    </div>
+  </header>
+
+  <div class="wb-body">
+    <aside class="side-panel" data-anchor="tree" aria-label="卷与章">
+      <div class="sp-head"><span class="sp-title">卷与章</span><span class="sp-meta"></span><button class="sp-collapse" type="button" data-anchor="dir-collapse" aria-label="收起章节栏">‹</button></div>
+      <div class="sp-list" id="tree-list"></div>
+      <div class="sp-foot"><button type="button" data-anchor="tree-new">＋ 新建章</button><button type="button" data-anchor="tree-new-volume">新建卷</button></div>
+    </aside>
+    <button class="rail dir-rail" type="button" data-anchor="dir-rail">章节</button>
+
+    <main class="center-pane">
+      <div class="ed-head">
+        <h1 class="ed-title" data-anchor="ed-title"></h1>
+        <div class="ed-latin"></div>
+        <div class="ed-rule"></div>
+        <div class="ed-goal" data-anchor="ed-goal"><span class="goal-track"><i></i></span><span class="goal-text"></span></div>
+      </div>
+      <div class="editor-toolbar" role="toolbar" aria-label="格式工具栏">
+        <button class="tb" type="button" data-act="undo" title="撤销">↶</button>
+        <button class="tb" type="button" data-act="redo" title="重做">↷</button>
+        <span class="tb-sep"></span>
+        <button class="tb" type="button" data-act="bold" title="加粗"><b>B</b></button>
+        <button class="tb" type="button" data-act="italic" title="斜体"><i>I</i></button>
+        <button class="tb" type="button" data-act="underline" title="下划线"><u>U</u></button>
+        <button class="tb" type="button" data-act="strike" title="删除线"><s>S</s></button>
+        <span class="tb-sep"></span>
+        <button class="tb" type="button" data-act="paragraph" title="正文">正文</button>
+        <button class="tb" type="button" data-act="h1" title="标题一">H1</button>
+        <button class="tb" type="button" data-act="h2" title="标题二">H2</button>
+        <button class="tb" type="button" data-act="h3" title="标题三">H3</button>
+        <span class="tb-sep"></span>
+        <button class="tb" type="button" data-act="font-size" title="字号">字号</button>
+        <button class="tb" type="button" data-act="color" title="字体颜色">A</button>
+        <button class="tb" type="button" data-act="highlight" title="底色">底色</button>
+        <button class="tb" type="button" data-act="link" title="超链接">链</button>
+        <button class="tb" type="button" data-act="more-formats" title="更多格式">更多格式 ⌄</button>
+        <button class="tb" type="button" data-act="bookmark" title="章节书签">书签</button>
+        <button class="tb" type="button" data-act="send" title="发送给 DSH">发给 DSH</button>
+      </div>
+      <div class="paper st-paper" id="paper"><div class="rich-host"><div class="rich-inner"><div class="tiptap" id="tiptap" contenteditable="true" spellcheck="false"></div></div></div></div>
+    </main>
+
+    <aside class="rp-panel" id="rp-panel" aria-label="批注与资料">
+      <div class="rp-head"><span class="rp-title">批注与资料</span><button type="button" data-anchor="notes-collapse" aria-label="收起批注栏">›</button></div>
+      <div class="rp-scroll">
+        <section class="rp-group"><div class="rp-group-title">本章批注</div><div id="notes-list" data-anchor="notes-list"></div></section>
+        <textarea class="rp-input" id="notes-input" data-anchor="notes-input" placeholder="批注内容…"></textarea>
+        <section class="rp-group"><div class="rp-group-title">本章要点</div><div class="rp-quick" data-anchor="notes-quick"></div></section>
+        <section class="rp-group"><div class="rp-group-title">素材</div><ul class="rp-assets" id="asset-list"></ul><button class="rp-upload" type="button" data-anchor="notes-upload">＋ 上传</button></section>
+      </div>
+    </aside>
+    <button class="rail rp-rail" type="button" data-anchor="notes-rail">批注栏</button>
+
+    <div class="st-pop" id="pop-menu">
+      <button type="button" data-menu="split">拆出独立窗口</button>
+      <button type="button" data-menu="bookmark">章节书签 · 第三章</button>
+      <button type="button" data-menu="dir">收起目录栏</button>
+      <div class="st-pop-sep"></div>
+      <button type="button" data-menu="focus">沉浸写作</button>
+      <button type="button" data-menu="read">阅读模式</button>
+      <div class="st-pop-sep"></div>
+      <button type="button" data-menu="settings">设置</button>
+    </div>
+    <div class="st-pop" id="pop-formats">
+      <button type="button" data-fmt="left">左对齐</button>
+      <button type="button" data-fmt="center">居中</button>
+      <button type="button" data-fmt="right">右对齐</button>
+      <button type="button" data-fmt="justify">两端对齐</button>
+      <div class="st-pop-sep"></div>
+      <button type="button" data-fmt="ul">无序列表</button>
+      <button type="button" data-fmt="ol">有序列表</button>
+      <div class="st-pop-sep"></div>
+      <button type="button" data-fmt="quote">引用</button>
+      <button type="button" data-fmt="clear">清除格式</button>
+    </div>
+    <div class="st-pop" id="pop-ctx" data-anchor="ctx-menu">
+      <button type="button">剪切</button><button type="button">复制</button><button type="button">粘贴</button>
+      <div class="st-pop-sep"></div>
+      <button type="button">加粗</button><button type="button">斜体</button>
+      <div class="st-pop-sep"></div>
+      <button type="button">插入双链</button><button type="button">查词</button><button type="button">发送给 DSH</button>
+    </div>
+    <div class="st-pop st-sheet" id="pop-search" data-anchor="search-panel">
+      <input type="search" id="search-input" data-anchor="search-input" placeholder="搜索章名、正文、批注…" aria-label="搜索">
+      <div class="sr-list">
+        <div class="sr-item"><b>第三章 · 咸水里的钟</b>潮水退到<mark>第三级盐阶</mark>的时候，钟声才从水底浮上来。</div>
+        <div class="sr-item"><b>第二章 · 灯船</b>他把<mark>盐阶</mark>上的灯一盏盏挪进船篷。</div>
+        <div class="sr-item"><b>批注 · 第二章</b>「盐阶」这个意象第二次出现，可以再压一层。</div>
+      </div>
+    </div>
+    <div class="st-pop st-sheet" id="pop-history" data-anchor="history-panel">
+      <div class="rp-group-title">章节历史</div>
+      <div id="hi-list"></div>
+    </div>
+    <div class="st-drawer" id="drawer-dir"><div class="rp-group-title">章节</div><div id="drawer-tree"></div></div>
+    <div class="st-drawer" id="drawer-notes"><div class="rp-group-title">批注</div><div id="drawer-notes-list"></div></div>
+    <div class="st-scrim" id="scrim"></div>
+    <div class="focus-chip" id="focus-chip">ESC 退出沉浸</div>
+  </div>
+</div>

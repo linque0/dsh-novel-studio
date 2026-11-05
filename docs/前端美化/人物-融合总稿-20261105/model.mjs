@@ -1,0 +1,27 @@
+export const clone=value=>JSON.parse(JSON.stringify(value))
+export const parts=value=>[...new Set(String(value||'').split(/[\/、,，\n]/).map(x=>x.trim()).filter(Boolean))]
+const uid=()=>globalThis.crypto?.randomUUID?.()||'p'+Date.now().toString(36)+Math.random().toString(36).slice(2)
+
+export function createStore(seed,{storage=null,key='characters-prototype'}={}){
+  const defaults=()=>({selected:seed.characters[0]?.id||null,query:'',role:'',tag:'',screen:'main',left:0,right:0,leftClosed:false,rightClosed:false,positions:{},scroll:{},scope:'local'})
+  const state={data:clone(seed),prefs:defaults(),drafts:{},pendingNew:{},error:'',undo:[]}
+  try{const saved=JSON.parse(storage?.getItem(key)||'null');if(saved?.version===1&&Array.isArray(saved.data?.characters)&&Array.isArray(saved.data?.relations)&&Array.isArray(saved.data?.loreLinks)&&Array.isArray(saved.data?.lore)){state.data=saved.data;state.prefs={...defaults(),...saved.prefs};state.drafts=saved.drafts||{};state.pendingNew=saved.pendingNew||{}}}catch{state.error='无法读取上次保存的内容，当前仍可编辑。'}
+  if(!state.data.characters.some(c=>c.id===state.prefs.selected))state.prefs.selected=state.data.characters[0]?.id||null
+  function persist(){try{storage?.setItem(key,JSON.stringify({version:1,data:state.data,prefs:state.prefs,drafts:state.drafts,pendingNew:state.pendingNew}));state.error='';return true}catch{state.error='保存失败，内容仍保留在当前页面。请释放存储空间后重试。';return false}}
+  const character=id=>state.data.characters.find(x=>x.id===id)
+  function snapshot(){state.undo.push(clone({data:state.data,prefs:state.prefs,drafts:state.drafts,pendingNew:state.pendingNew}));if(state.undo.length>20)state.undo.shift()}
+  function select(id){state.prefs.selected=character(id)?id:null;persist()}
+  function draft(id){if(!character(id))return null;return state.drafts[id]||(state.drafts[id]=clone(character(id)))}
+  function cancel(id){delete state.drafts[id];if(Object.hasOwn(state.pendingNew,id)){const previous=state.pendingNew[id];state.data.characters=state.data.characters.filter(x=>x.id!==id);state.data.relations=state.data.relations.filter(x=>x.fromId!==id&&x.toId!==id);state.data.loreLinks=state.data.loreLinks.filter(x=>x.characterId!==id);delete state.prefs.positions[id];delete state.pendingNew[id];if(state.prefs.selected===id)state.prefs.selected=character(previous)?previous:state.data.characters[0]?.id||null}persist()}
+  function commit(id){const d=state.drafts[id],index=state.data.characters.findIndex(x=>x.id===id);if(!d||index<0)return false;const previous=state.data.characters[index],isNew=Object.hasOwn(state.pendingNew,id),previousSelection=state.pendingNew[id];state.data.characters[index]={...clone(d),id,updatedAt:new Date().toISOString()};delete state.drafts[id];delete state.pendingNew[id];if(persist())return true;state.data.characters[index]=previous;state.drafts[id]=d;if(isNew)state.pendingNew[id]=previousSelection;return false}
+  function filter({query=state.prefs.query,role=state.prefs.role,tag=state.prefs.tag}={}){const q=String(query||'').trim().toLocaleLowerCase();return state.data.characters.filter(c=>(!q||[c.name,c.aliases,c.role,...(c.tags||[])].join(' ').toLocaleLowerCase().includes(q))&&(!role||parts(c.role).includes(role))&&(!tag||(c.tags||[]).includes(tag)))}
+  function add(){snapshot();const id=uid();state.pendingNew[id]=state.prefs.selected;state.data.characters.push({id,name:'',aliases:'',role:'配角',tags:[],fields:{外貌:'',性格:''},content:'',avatarAssetId:null,createdAt:new Date().toISOString()});state.prefs.selected=id;persist();return id}
+  function remove(id){if(!character(id))return;snapshot();state.data.characters=state.data.characters.filter(x=>x.id!==id);state.data.relations=state.data.relations.filter(x=>x.fromId!==id&&x.toId!==id);state.data.loreLinks=state.data.loreLinks.filter(x=>x.characterId!==id);delete state.prefs.positions[id];delete state.drafts[id];if(state.prefs.selected===id)state.prefs.selected=state.data.characters[0]?.id||null;persist()}
+  function undo(){const previous=state.undo.pop();if(!previous)return false;Object.assign(state,previous);persist();return true}
+  function relate(fromId,toId,label){label=String(label||'').trim();if(!label||fromId===toId||!character(fromId)||!character(toId)||state.data.relations.some(r=>r.label===label&&((r.fromId===fromId&&r.toId===toId)||(r.fromId===toId&&r.toId===fromId))))return false;snapshot();const id=uid();state.data.relations.push({id,fromId,toId,label,color:'',style:''});persist();return id}
+  function editRelation(id,label){const r=state.data.relations.find(r=>r.id===id);label=String(label||'').trim();if(!r||!label)return false;if(state.data.relations.some(x=>x.id!==id&&x.label===label&&((x.fromId===r.fromId&&x.toId===r.toId)||(x.fromId===r.toId&&x.toId===r.fromId))))return false;snapshot();r.label=label;persist();return true}
+  function removeRelation(id){snapshot();state.data.relations=state.data.relations.filter(x=>x.id!==id);persist()}
+  function graph(id,scope='local'){if(scope==='all')return state.data.characters;const ids=new Set([id]);for(const r of state.data.relations){if(r.fromId===id)ids.add(r.toId);if(r.toId===id)ids.add(r.fromId)}return state.data.characters.filter(x=>ids.has(x.id))}
+  function reset(){state.data=clone(seed);state.prefs=defaults();state.drafts={};state.pendingNew={};state.undo=[];persist()}
+  return{state,character,filter,select,draft,cancel,commit,persist,add,remove,undo,relate,editRelation,removeRelation,graph,reset}
+}

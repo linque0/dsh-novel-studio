@@ -1,0 +1,173 @@
+{
+  "capturedAt": "2026-11-03T11:33:26.769Z",
+  "page": "file:///F:/deepseek%20workplace/dsh-novel-studio/docs/%E5%89%8D%E7%AB%AF%E7%BE%8E%E5%8C%96/%E6%AD%A3%E6%96%87-%E4%BC%8F%E6%A1%88%E9%9D%99%E6%B0%B4-20261103/index.html",
+  "states": [
+    "01-ink.png",
+    "02-lamp.png",
+    "03-ridge.png",
+    "04-writing-1280.png",
+    "05-writing-760.png",
+    "06-writing-380.png",
+    "07-notes.png",
+    "08-focus.png",
+    "09-read.png",
+    "10-menu.png",
+    "11-formats.png",
+    "12-history.png",
+    "13-gpu-off.png"
+  ],
+  "frames": [
+    "motion-01.jpg",
+    "motion-02.jpg",
+    "motion-03.jpg",
+    "motion-04.jpg",
+    "motion-05.jpg",
+    "motion-06.jpg",
+    "motion-07.jpg"
+  ],
+  "backend": "gpu",
+  "pixels": [
+    1600,
+    1000
+  ],
+  "consoleErrors": [],
+  "reduceMotion": {
+    "timeA": 0,
+    "timeB": 0,
+    "frozen": true
+  },
+  "measures": [
+    {
+      "w": 1440,
+      "topbarH": 64,
+      "sideW": 252,
+      "paperW": 448,
+      "paperEm": 25.6,
+      "toolbarH": 34,
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "lightBlocks": 0,
+      "contrast": {
+        "body": 16.5,
+        "label": 12.58,
+        "caption": 6.28
+      }
+    },
+    {
+      "w": 1280,
+      "topbarH": 64,
+      "sideW": 252,
+      "paperW": 448,
+      "paperEm": 25.6,
+      "toolbarH": 34,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "lightBlocks": 0,
+      "contrast": {
+        "body": 16.5,
+        "label": 12.58,
+        "caption": 6.28
+      }
+    },
+    {
+      "w": 760,
+      "topbarH": 52,
+      "sideW": 168,
+      "paperW": 340,
+      "paperEm": 19.43,
+      "toolbarH": 34,
+      "scrollWidth": 760,
+      "clientWidth": 760,
+      "lightBlocks": 0,
+      "contrast": {
+        "body": 16.5,
+        "label": 12.58,
+        "caption": 6.28
+      }
+    },
+    {
+      "w": 380,
+      "topbarH": 44,
+      "sideW": 0,
+      "paperW": 228,
+      "paperEm": 13.03,
+      "toolbarH": 34,
+      "scrollWidth": 380,
+      "clientWidth": 380,
+      "lightBlocks": 0,
+      "contrast": {
+        "body": 16.5,
+        "label": 12.58,
+        "caption": 6.28
+      }
+    }
+  ],
+  "ripple": {
+    "ampAfter120": 0.0293,
+    "ampAfter1600": 0
+  },
+  "anchors": {
+    "total": 69,
+    "missing": [],
+    "byScene": {
+      "writing": {
+        "total": 43,
+        "found": 43,
+        "missing": []
+      },
+      "notes": {
+        "total": 6,
+        "found": 6,
+        "missing": []
+      },
+      "menu": {
+        "total": 6,
+        "found": 6,
+        "missing": []
+      },
+      "formats": {
+        "total": 8,
+        "found": 8,
+        "missing": []
+      },
+      "history": {
+        "total": 3,
+        "found": 3,
+        "missing": []
+      },
+      "ctx": {
+        "total": 1,
+        "found": 1,
+        "missing": []
+      },
+      "search": {
+        "total": 2,
+        "found": 2,
+        "missing": []
+      }
+    }
+  },
+  "counts": {
+    "chapters": 12,
+    "notes": 4,
+    "history": 3
+  },
+  "shaderLog": "",
+  "languageCompare": "screenshots/00-language-compare.png",
+  "pngScales": {
+    "01-ink.png": 1,
+    "02-lamp.png": 1,
+    "03-ridge.png": 1,
+    "04-writing-1280.png": 1,
+    "05-writing-760.png": 1,
+    "06-writing-380.png": 1,
+    "07-notes.png": 1,
+    "08-focus.png": 1,
+    "09-read.png": 1,
+    "10-menu.png": 1,
+    "11-formats.png": 1,
+    "12-history.png": 1,
+    "13-gpu-off.png": 1,
+    "00-language-compare.png": 1
+  }
+}

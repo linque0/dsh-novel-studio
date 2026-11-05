@@ -1,0 +1,3104 @@
+/* latent-studio.css — 正文 · 伏案静水
+ * 设计稿：docs/前端美化/正文-伏案静水-20261103/parts/style.{1,2,3}-*.css（1→2→3 拼接，令牌只在 1 号声明）
+ * 本文件把三份设计样式收进 .latent-studio 命名空间（挂在 Workbench.vue 的 .workbench-shell 上），
+ * 并映射到宿主真实类名；压宿主层时用 html body[data-skin='dsh'] 前缀提权（与 latent-shelf.css 同一做法）。
+ * !important 只出现在「去纸纹」与「reduced-motion」两类。
+ *
+ * 类名对照（设计 → 宿主）
+ *   .app-topbar / .brand-name / .brand-latin    → .app-topbar / .app-topbar-brand-text / .app-topbar-brand-text small
+ *   .app-topnav / .app-topnav-item              → .app-topnav / .app-topnav-item
+ *   .app-topbar-actions / .save-dot             → .app-topbar-actions / .app-topbar-save-dot
+ *   .st-pill                                    → .app-topbar-more / .app-topbar-save
+ *   .side-panel / .sp-head / .sp-list / .sp-foot → .side-panel / .side-head / .side-list / .side-foot
+ *   .sp-row / .sp-name / .sp-count              → .n-tree-node / .n-tree-node-content__text / .chapter-count
+ *   .sp-current-bar（选中红条）                  → .n-tree-node--selected .n-tree-node-content::before
+ *   .rp-panel / .rp-head / .rp-title / .note     → .right-panel / .rp-head / .rp-title / .note-item
+ *   .ed-head / .ed-title                        → .editor-head / .editor-head .title-input
+ *   .editor-toolbar / .tb / .tb-sep             → 同名
+ *   .paper / .rich-inner / .tiptap              → .rich-host / .rich-inner / .tiptap
+ *   .ed-goal / .goal-track / .goal-text         → .editor-head .ed-goal / .goal-track / .goal-text
+ *   .rail（20px 竖排细轨）                       → .ol-side-rail / .rp-rail
+ *   .st-drawer / .st-scrim                      → .ns-notes-drawer / .ns-notes-scrim
+ *   #app[data-mode=focus|read]                  → .workbench-shell.is-focus | .is-reading
+ *
+ * 尺寸口径（verify 会量，0.5px 即失败）：顶栏 64/52/44、工具栏 34、正文列 ≤36em、正文 17.5px。
+ */
+
+/* ==== 1. 令牌（设计 1 号文件 §1）+ 外壳地面 ==== */
+.latent-studio,
+html body[data-skin='dsh'] .latent-studio {
+  --ls-bg: #07080b;
+  --ls-paper: #0f1115;
+  --ls-ink: #f4efe6;
+  --ls-ink-2: #d9d2c6;
+  --ls-ink-3: #9a948a;
+  --ls-line: rgb(255 255 255 / .14);
+  --ls-red: #c0483a;
+  --ls-red-soft: #ff9384;
+  --ls-serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", serif;
+  --ls-sans: Inter, "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  --ls-ease: cubic-bezier(.22, .61, .36, 1);
+  --ls-dur: 320ms;
+  --ls-radius: 22px;
+  --ls-radius-sm: 12px;
+  --ls-glass-bg: rgb(11 13 18 / .66);
+  --ls-glass-fill: linear-gradient(145deg, rgb(255 255 255 / .14), rgb(255 255 255 / .045) 46%, rgb(255 255 255 / .10));
+  --ls-sheen: linear-gradient(118deg, rgb(255 255 255 / .4), rgb(255 255 255 / 0) 26%, rgb(255 255 255 / 0) 64%, rgb(255 255 255 / .2));
+  --ls-edge: 1px solid rgb(255 255 255 / .18);
+  --ls-elev: 0 26px 60px rgb(0 0 0 / .5), inset 0 1px 0 rgb(255 255 255 / .5);
+  /* 正文 17.5px 是 36em 的 em 基准：列宽直接用 px 算，不随祖先字号漂移。 */
+  --ls-fs: 17.5px;
+  --ls-col: calc(var(--ls-fs) * 36);
+  --ls-col-wide: calc(var(--ls-fs) * 42);
+  --ls-gutter: 96px;
+  position: relative;
+  isolation: isolate;
+  background-color: var(--ls-bg);
+  color: var(--ls-ink);
+  font-family: var(--ls-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.latent-studio *,
+.latent-studio *::before,
+.latent-studio *::after {
+  box-sizing: border-box;
+}
+.latent-studio ::selection,
+html body[data-skin='dsh'] .latent-studio ::selection {
+  background: rgb(192 72 58 / .35);
+}
+
+/* ==== 2. 背景层（设计 1 号 §3）：像素点 / 暗角 / 颗粒，全部本地生成，无外链 ==== */
+.latent-studio::before,
+html body[data-skin='dsh'] .latent-studio::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(130% 96% at 50% 38%, transparent 40%, rgb(3 4 7 / .3) 100%),
+    radial-gradient(circle, rgb(255 255 255 / .03) .45px, transparent .8px) 0 0 / 2px 2px,
+    linear-gradient(180deg, rgb(3 4 7 / .26) 0%, rgb(3 4 7 / 0) 30%, rgb(3 4 7 / .14) 64%, rgb(3 4 7 / .38) 100%),
+    radial-gradient(120% 90% at 30% 0%, #141922 0%, #0a0c11 52%, #07080b 100%);
+}
+.latent-studio::after,
+html body[data-skin='dsh'] .latent-studio::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+}
+.latent-studio > .app-topbar-shell,
+html body[data-skin='dsh'] .latent-studio > .app-topbar-shell {
+  position: relative;
+  z-index: 40;
+  flex: none;
+  min-width: 0;
+}
+
+/* ==== 3. 顶栏（设计稿：品牌 + 绝对居中的六项胶囊导航 + 右簇）====
+ * 量值照设计稿：height 84 / padding 0 40px / gap 16 / position relative；导航胶囊 left:50% +
+ * translateX(-50%)、gap 4、padding 6、1px rgba(255,255,255,.16)、rgba(255,255,255,.1)、blur(24)；
+ * 右簇 = ✓已保存 12px + 搜索 / 设置 / 锁定三枚 40 圆。高度四档 84 · 72 · 56 · 44。
+ *
+ * 这里是模块层镜像：真正压住 language.css 胶囊外壳 (0,4,2) 的是 dsh.css 里带 [data-ns-host]
+ * 的那一组 (0,5,3)，两处数值必须一致，否则「正文」页会和其他页长得不一样。 */
+.latent-studio .app-topbar,
+html body[data-skin='dsh'] .latent-studio .app-topbar {
+  box-sizing: border-box;
+  position: relative;
+  z-index: 40;
+  flex: none;
+  display: flex;
+  align-items: center;
+  height: var(--nsx-topbar-h, 84px);
+  min-height: var(--nsx-topbar-h, 84px);
+  margin: 0;
+  padding: 0 40px;
+  gap: 16px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ls-ink);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+@media (min-width: 900px) and (max-width: 1099px) {
+  .latent-studio .app-topbar,
+  html body[data-skin='dsh'] .latent-studio .app-topbar { padding: 0 28px; gap: 14px; }
+}
+@media (min-width: 560px) and (max-width: 899px) {
+  .latent-studio .app-topbar,
+  html body[data-skin='dsh'] .latent-studio .app-topbar { padding: 0 18px; gap: 12px; }
+}
+@media (max-width: 559px) {
+  .latent-studio .app-topbar,
+  html body[data-skin='dsh'] .latent-studio .app-topbar { height: var(--nsx-topbar-h, 44px); min-height: var(--nsx-topbar-h, 44px); padding: 0 14px; gap: 10px; }
+}
+
+/* 品牌：19px/800 主名 + 10px「LATENT」小字；「坊」字标与皮肤小字退场。 */
+.latent-studio .app-topbar .app-topbar-brand,
+html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-brand {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ls-ink);
+  cursor: pointer;
+}
+.latent-studio .app-topbar .app-topbar-brand-text,
+html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-brand-text {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--ls-sans);
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -.01em;
+  color: var(--ls-ink);
+}
+.latent-studio .app-topbar .app-topbar-brand-text small,
+html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-brand-text small {
+  display: inline-block;
+  margin: 0;
+  font-family: var(--ls-sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .18em;
+  opacity: .7;
+  color: var(--ls-ink-3);
+}
+.latent-studio .app-topbar .app-topbar-mark,
+html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-mark {
+  display: none;
+}
+
+/* 导航胶囊：绝对居中，宽度跟着内容走，放不下时自己横向滚动。 */
+.latent-studio .app-topbar .app-topnav,
+html body[data-skin='dsh'] .latent-studio .app-topbar .app-topnav {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  flex: none;
+  height: auto;
+  max-width: calc(100% - 380px);
+  margin: 0;
+  padding: 6px;
+  gap: 4px;
+  border: 1px solid rgb(255 255 255 / .16);
+  border-radius: 999px;
+  background: rgb(255 255 255 / .1);
+  box-shadow: none;
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.latent-studio .app-topbar .app-topnav::-webkit-scrollbar,
+html body[data-skin='dsh'] .latent-studio .app-topbar .app-topnav::-webkit-scrollbar {
+  display: none;
+}
+.latent-studio .app-topbar .app-topnav-item,
+html body[data-skin='dsh'] .latent-studio .app-topbar .app-topnav-item {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--ls-ink-2);
+  font-family: var(--ls-sans);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+.latent-studio .app-topbar .app-topnav-item:is(:hover, :focus-visible),
+html body[data-skin='dsh'] .latent-studio .app-topbar .app-topnav-item:is(:hover, :focus-visible) {
+  color: var(--ls-ink);
+  background-color: rgb(255 255 255 / .08);
+}
+.latent-studio .app-topbar .app-topnav-item.active,
+html body[data-skin='dsh'] .latent-studio .app-topbar .app-topnav-item.active {
+  background-color: #fff;
+  color: #17181c;
+  font-weight: 600;
+}
+.latent-studio .app-topbar .app-topnav-item.active::after,
+html body[data-skin='dsh'] .latent-studio .app-topbar .app-topnav-item.active::after {
+  content: none;
+  display: none;
+}
+
+/* 右簇：已保存 + 搜索圆钮 + 设置圆钮 + 锁定圆钮。 */
+.latent-studio .app-topbar .app-topbar-cluster,
+html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-cluster {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  min-width: 0;
+}
+.latent-studio .app-topbar .app-topbar-save,
+html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  width: auto;
+  height: auto;
+  padding: 0;
+  font-family: var(--ls-sans);
+  font-size: 12px;
+  letter-spacing: .02em;
+  color: var(--ls-ink-3);
+  white-space: nowrap;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+.latent-studio .app-topbar .app-topbar-save-icon,
+html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-save-icon {
+  display: block;
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+.latent-studio .app-topbar .app-topbar-save[data-save-state='saving'],
+html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-save[data-save-state='saving'] {
+  color: var(--ls-red);
+}
+.latent-studio .app-topbar .app-topbar-save[data-save-state='dirty'],
+html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-save[data-save-state='dirty'] {
+  color: var(--ls-red);
+}
+.latent-studio .app-topbar .app-topbar-round,
+html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-round {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / .16);
+  border-radius: 50%;
+  background: rgb(255 255 255 / .08);
+  color: var(--ls-ink);
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+.latent-studio .app-topbar .app-topbar-round:is(:hover, :focus-visible),
+html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-round:is(:hover, :focus-visible) {
+  background: rgb(255 255 255 / .16);
+  border-color: rgb(255 255 255 / .3);
+}
+.latent-studio .app-topbar .app-topbar-round .app-topbar-ico,
+html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-round .app-topbar-ico {
+  display: block;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.latent-studio .app-topbar .app-topbar-pin svg,
+html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-pin svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.latent-studio .app-topbar .app-topbar-pin[aria-pressed='true'],
+html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-pin[aria-pressed='true'] {
+  background: rgb(255 255 255 / .16);
+  border-color: rgb(255 255 255 / .3);
+}
+
+/* 搜索槽位：默认收在圆钮下方，圆钮或槽内控件拿到焦点时展开。 */
+.latent-studio .app-topbar .app-topbar-search-wrap,
+html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+.latent-studio .app-topbar .app-topbar-search,
+html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-search {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 268px;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid rgb(255 255 255 / .16);
+  border-radius: 999px;
+  background: rgb(16 18 24 / .92);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+  box-shadow: 0 12px 32px rgb(0 0 0 / .45);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+.latent-studio .app-topbar .app-topbar-search-wrap.is-open .app-topbar-search,
+html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-search-wrap.is-open .app-topbar-search,
+.latent-studio .app-topbar .app-topbar-search-wrap:focus-within .app-topbar-search,
+html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-search-wrap:focus-within .app-topbar-search {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+}
+
+@media (min-width: 560px) and (max-width: 899px) {
+  .latent-studio .app-topbar .app-topnav,
+  html body[data-skin='dsh'] .latent-studio .app-topbar .app-topnav { max-width: calc(100% - 296px); padding: 4px; gap: 2px; }
+  .latent-studio .app-topbar .app-topnav-item,
+  html body[data-skin='dsh'] .latent-studio .app-topbar .app-topnav-item { height: 32px; padding: 0 12px; font-size: 12.5px; }
+  .latent-studio .app-topbar .app-topbar-cluster,
+  html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-cluster { gap: 8px; }
+  .latent-studio .app-topbar .app-topbar-round,
+  html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-round { width: 34px; height: 34px; }
+  .latent-studio .app-topbar .app-topbar-save-text,
+  html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-save-text { display: none; }
+}
+
+/* ==== 4. 三栏骨架（设计 2 号 §1） ==== */
+.latent-studio .wb-body,
+html body[data-skin='dsh'] .latent-studio .wb-body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  gap: 16px;
+  padding: 4px 16px 16px;
+  background: transparent;
+}
+
+/* ==== 5. 材质总表（设计 1 号 §4）：玻璃只在这一处定义 ==== */
+.latent-studio :is(.side-panel, .right-panel),
+html body[data-skin='dsh'] .latent-studio :is(.side-panel, .right-panel) {
+  position: relative;
+  border: var(--ls-edge);
+  border-radius: var(--ls-radius);
+  background-color: var(--ls-glass-bg);
+  background-image: var(--ls-glass-fill);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  backdrop-filter: blur(18px) saturate(1.5);
+  box-shadow: var(--ls-elev);
+  color: var(--ls-ink);
+}
+.latent-studio :is(.side-panel, .right-panel)::after,
+html body[data-skin='dsh'] .latent-studio :is(.side-panel, .right-panel)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: .55;
+  mix-blend-mode: screen;
+  background: var(--ls-sheen);
+}
+
+/* 5.1 章节栏外框（宽度由宿主行内 style 给，断点里用 max-width 收，不抢拖拽） */
+.latent-studio .side-panel,
+html body[data-skin='dsh'] .latent-studio .side-panel {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  border-right: var(--ls-edge);
+}
+
+/* 5.2 设计稿 .center-pane 只是布局容器，章头与工具栏直接露出背板。
+ * 不能把侧栏的玻璃/高光放在这里，否则 ::after 会覆盖整列的标题和稿纸。 */
+.latent-studio .center-pane,
+html body[data-skin='dsh'] .latent-studio .center-pane,
+html body[data-skin='dsh'] .panel-host .center-pane {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+/* 宿主把玻璃铺在多个嵌套容器上（dsh.css §5.2），写作区只有稿纸自身的墨色材质。 */
+.latent-studio .editor-wrap,
+html body[data-skin='dsh'] .latent-studio .editor-wrap {
+  background: transparent;
+  background-image: none;
+  border: 0;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+/* 去纸纹：宿主 paper-texture 的竖纹叠层与米色纸面（唯一允许 !important 的地方）。 */
+.latent-studio :is(.center-pane.paper-texture, .rich-host.paper-texture, .rich-host)::before,
+html body[data-skin='dsh'] .latent-studio :is(.center-pane.paper-texture, .rich-host.paper-texture, .rich-host)::before {
+  display: none !important;
+  content: none !important;
+}
+
+/* 5.3 批注栏外框 */
+.latent-studio .right-panel,
+html body[data-skin='dsh'] .latent-studio .right-panel {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 280px;
+  padding: 0 14px 14px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border-left: var(--ls-edge);
+}
+
+/* ==== 6. 章节栏内部（设计 2 号 §2） ==== */
+.latent-studio .side-panel .side-head,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 14px 14px 10px;
+  border: 0;
+  background: transparent;
+}
+.latent-studio .side-panel .side-head .n-button,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-head .n-button {
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  color: var(--ls-ink-2);
+  background-color: rgb(255 255 255 / .06);
+  transition: background-color 160ms ease, color 160ms ease;
+}
+.latent-studio .side-panel .side-head .n-button:hover,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-head .n-button:hover {
+  background-color: rgb(255 255 255 / .12);
+  color: #fff;
+}
+.latent-studio .side-panel .side-list,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 2px 8px 10px;
+  overscroll-behavior: contain;
+}
+.latent-studio .side-panel .n-tree .n-tree-node,
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree .n-tree-node {
+  min-height: 34px;
+  margin: 0;
+  border-radius: var(--ls-radius-sm);
+  background: transparent;
+  box-shadow: none;
+  transition: background-color 180ms ease;
+}
+.latent-studio .side-panel .n-tree .n-tree-node:hover,
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree .n-tree-node:hover {
+  background-color: rgb(255 255 255 / .07);
+}
+.latent-studio .side-panel .n-tree .n-tree-node.n-tree-node--selected,
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree .n-tree-node.n-tree-node--selected {
+  background-color: rgb(255 255 255 / .1);
+}
+.latent-studio .side-panel .n-tree .n-tree-node-content,
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree .n-tree-node-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 6px 8px;
+  border-radius: var(--ls-radius-sm);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ls-ink-2);
+}
+.latent-studio .side-panel .n-tree .n-tree-node--selected .n-tree-node-content,
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree .n-tree-node--selected .n-tree-node-content {
+  color: #fff;
+}
+.latent-studio .side-panel .n-tree .n-tree-node-content__text,
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree .n-tree-node-content__text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.latent-studio .side-panel .n-tree .chapter-count,
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree .chapter-count {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--ls-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+/* 卷 / 章分档（设计 .sp-vol 11px·.18em vs .sp-name 13.5px·600）：data-kind 由 ChapterTree 补，
+ * 落在节点容器或直接落在文本节点都能命中，属性到位即生效。 */
+.latent-studio .side-panel :is([data-kind='volume'] .n-tree-node-content__text, [data-kind='volume'].n-tree-node-content__text),
+html body[data-skin='dsh'] .latent-studio .side-panel :is([data-kind='volume'] .n-tree-node-content__text, [data-kind='volume'].n-tree-node-content__text) {
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: .18em;
+  color: var(--ls-ink-3);
+}
+.latent-studio .side-panel :is([data-kind='chapter'] .n-tree-node-content__text, [data-kind='chapter'].n-tree-node-content__text),
+html body[data-skin='dsh'] .latent-studio .side-panel :is([data-kind='chapter'] .n-tree-node-content__text, [data-kind='chapter'].n-tree-node-content__text) {
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--ls-ink-2);
+}
+/* 当前章：左缘 3px 红条（设计 .sp-current-bar，宿主无此元素，用伪元素长出来） */
+.latent-studio .side-panel .n-tree .n-tree-node--selected .n-tree-node-content::before,
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree .n-tree-node--selected .n-tree-node-content::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 20px;
+  border-radius: 2px;
+  transform: translateY(-50%);
+  background: var(--ls-red);
+  box-shadow: 0 0 10px rgb(192 72 58 / .55);
+}
+.latent-studio .side-panel .side-foot,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-foot {
+  flex: none;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 10px 12px;
+  border-top: 1px solid rgb(255 255 255 / .08);
+  background: transparent;
+}
+.latent-studio .side-panel .side-collapse,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-collapse {
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 0;
+  font-size: 12px;
+  color: var(--ls-ink-2);
+  background-color: rgb(255 255 255 / .06);
+  transition: background-color 160ms ease, color 160ms ease;
+}
+.latent-studio .side-panel .side-collapse:hover,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-collapse:hover {
+  background-color: rgb(255 255 255 / .12);
+  color: #fff;
+}
+
+/* ==== 7. 批注栏内部（设计 2 号 §3） ==== */
+.latent-studio .right-panel .rp-head,
+html body[data-skin='dsh'] .latent-studio .right-panel .rp-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: 0 -14px;
+  padding: 14px 14px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.latent-studio .right-panel .rp-cap,
+html body[data-skin='dsh'] .latent-studio .right-panel .rp-cap {
+  font-size: 10.5px;
+  letter-spacing: .26em;
+  color: var(--ls-ink-3);
+}
+.latent-studio .right-panel :is(.rp-cap, .rp-fold, .rp-title),
+html body[data-skin='dsh'] .latent-studio .right-panel :is(.rp-cap, .rp-fold, .rp-title) {
+  color: var(--ls-ink-3);
+}
+.latent-studio .right-panel .rp-fold,
+html body[data-skin='dsh'] .latent-studio .right-panel .rp-fold {
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 8px;
+  font-size: 12px;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+.latent-studio .right-panel .rp-fold:hover,
+html body[data-skin='dsh'] .latent-studio .right-panel .rp-fold:hover {
+  background-color: rgb(255 255 255 / .1);
+  color: var(--ls-ink);
+}
+.latent-studio .right-panel .rp-section,
+html body[data-skin='dsh'] .latent-studio .right-panel .rp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+.latent-studio .right-panel .rp-title,
+html body[data-skin='dsh'] .latent-studio .right-panel .rp-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ls-ink);
+}
+.latent-studio .right-panel .note-item,
+html body[data-skin='dsh'] .latent-studio .right-panel .note-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: var(--ls-radius-sm);
+  border-left: 2px solid var(--note-color, var(--ls-red));
+  background-color: rgb(255 255 255 / .05);
+  transition: background-color 180ms ease;
+}
+.latent-studio .right-panel .note-item:hover,
+html body[data-skin='dsh'] .latent-studio .right-panel .note-item:hover {
+  background-color: rgb(255 255 255 / .08);
+}
+.latent-studio .right-panel .note-item.active,
+html body[data-skin='dsh'] .latent-studio .right-panel .note-item.active {
+  background-color: rgb(255 255 255 / .1);
+}
+.latent-studio .right-panel .note-quote,
+html body[data-skin='dsh'] .latent-studio .right-panel .note-quote {
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--ls-red-soft);
+}
+.latent-studio .right-panel .note-body,
+html body[data-skin='dsh'] .latent-studio .right-panel .note-body {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ls-ink-2);
+}
+.latent-studio .right-panel .note-time,
+html body[data-skin='dsh'] .latent-studio .right-panel .note-time {
+  font-size: 11px;
+  color: var(--ls-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.latent-studio .right-panel :is(.rp-textarea, .rp-input),
+html body[data-skin='dsh'] .latent-studio .right-panel :is(.rp-textarea, .rp-input) {
+  width: 100%;
+  min-height: 72px;
+  resize: vertical;
+  padding: 10px 12px;
+  border: 1px solid rgb(255 255 255 / .12);
+  border-radius: var(--ls-radius-sm);
+  background-color: rgb(255 255 255 / .04);
+  color: var(--ls-ink);
+  font-family: var(--ls-sans);
+  font-size: 13px;
+  line-height: 1.7;
+  outline: none;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+.latent-studio .right-panel :is(.rp-textarea, .rp-input):focus,
+html body[data-skin='dsh'] .latent-studio .right-panel :is(.rp-textarea, .rp-input):focus {
+  border-color: rgb(255 255 255 / .3);
+}
+.latent-studio .right-panel .side-item,
+html body[data-skin='dsh'] .latent-studio .right-panel .side-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  color: var(--ls-ink-2);
+  border-bottom: 1px solid rgb(255 255 255 / .07);
+  transition: background-color 160ms ease;
+}
+.latent-studio .right-panel .side-item:hover,
+html body[data-skin='dsh'] .latent-studio .right-panel .side-item:hover {
+  background-color: rgb(255 255 255 / .06);
+}
+
+/* ==== 8. 编辑区（设计 2 号 §4 + 3 号 §1） ==== */
+/* 8.1 章头（设计 .ed-head） */
+.latent-studio .editor-head,
+html body[data-skin='dsh'] .latent-studio .editor-head,
+html body[data-skin='dsh'] .editor-head {
+  flex: none;
+  width: var(--ls-page-w);
+  margin: 6px auto 0;
+  padding: 0 0 12px;
+  gap: 10px;
+  border: 0;
+  background: transparent;
+}
+.latent-studio .editor-head .title-input,
+html body[data-skin='dsh'] .latent-studio .editor-head .title-input,
+html body[data-skin='dsh'] .editor-head .title-input {
+  display: block;
+  width: 100%;
+  /* !important：拆窗里宿主 --editor-font 仍可能作用于 input，标题必须钉死宋体 */
+  font-family: var(--ls-serif) !important;
+  padding: 0;
+  border: 0;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  line-height: 1.3;
+  color: var(--ls-ink);
+}
+.latent-studio .editor-head .title-input::placeholder,
+html body[data-skin='dsh'] .latent-studio .editor-head .title-input::placeholder,
+html body[data-skin='dsh'] .editor-head .title-input::placeholder {
+  color: var(--ls-ink-3);
+}
+
+/* 8.2 工具栏：高度固定 34px（会被量），横向一条不再换行 */
+.latent-studio .editor-toolbar,
+html body[data-skin='dsh'] .latent-studio .editor-toolbar,
+html body[data-skin='dsh'] .editor-toolbar {
+  flex: none;
+  box-sizing: border-box;
+  width: var(--ls-page-w);
+  /* 34px 由宿主 dsh.css §5.4 的 height/min/max 三连钉死，这里不重复声明，也不靠提权改高度 */
+  margin: 0 auto 10px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / .12);
+  border-radius: var(--ls-radius-sm);
+  background-color: rgb(255 255 255 / .06);
+  background-image: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+}
+.latent-studio .editor-toolbar .tb,
+html body[data-skin='dsh'] .latent-studio .editor-toolbar .tb,
+html body[data-skin='dsh'] .editor-toolbar .tb {
+  flex: none;
+  height: 26px;
+  min-width: 26px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 8px;
+  font-family: var(--ls-sans);
+  font-size: 12.5px;
+  line-height: 1;
+  color: var(--ls-ink-2);
+  background-color: transparent;
+  white-space: nowrap;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+.latent-studio .editor-toolbar .tb:hover,
+html body[data-skin='dsh'] .latent-studio .editor-toolbar .tb:hover,
+html body[data-skin='dsh'] .editor-toolbar .tb:hover {
+  background-color: rgb(255 255 255 / .1);
+  color: #fff;
+}
+.latent-studio .editor-toolbar .tb.on,
+html body[data-skin='dsh'] .latent-studio .editor-toolbar .tb.on,
+html body[data-skin='dsh'] .editor-toolbar .tb.on {
+  background-color: rgb(255 255 255 / .16);
+  color: #fff;
+  font-weight: 600;
+}
+.latent-studio .editor-toolbar .tb :is(b, i, u, s),
+html body[data-skin='dsh'] .latent-studio .editor-toolbar .tb :is(b, i, u, s),
+html body[data-skin='dsh'] .editor-toolbar .tb :is(b, i, u, s) {
+  font-size: 12.5px;
+}
+.latent-studio .editor-toolbar .tb-sep,
+html body[data-skin='dsh'] .latent-studio .editor-toolbar .tb-sep,
+html body[data-skin='dsh'] .editor-toolbar .tb-sep {
+  display: block;
+  flex: none;
+  width: 1px;
+  height: 16px;
+  margin: 0 4px;
+  border: 0;
+  background: rgb(255 255 255 / .12);
+}
+.latent-studio .editor-toolbar :is(.n-select, .n-base-selection),
+html body[data-skin='dsh'] .latent-studio .editor-toolbar :is(.n-select, .n-base-selection),
+html body[data-skin='dsh'] .editor-toolbar :is(.n-select, .n-base-selection) {
+  flex: none;
+  font-size: 12px;
+}
+/* 8.2.1 工具栏右端槽 #bar-end → .editor-bar-status（宿主 dsh.css §5.4 已给 gap/margin-left/flex，
+ * 这里补它缺的 display；本组整组 flex:none 不再收缩——窄宽下由工具栏自身横滑（§16.2 overflow-x）消化，
+ * 状态选择与「历史」不许被压成 0 宽，「发给 DSH」也不再挤死前一项） */
+.latent-studio .editor-toolbar .editor-bar-status,
+html body[data-skin='dsh'] .latent-studio .editor-toolbar .editor-bar-status,
+html body[data-skin='dsh'] .editor-toolbar .editor-bar-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex: none;
+}
+.latent-studio .editor-toolbar .editor-bar-status :is(.n-select, .n-base-selection, .n-button),
+html body[data-skin='dsh'] .latent-studio .editor-toolbar .editor-bar-status :is(.n-select, .n-base-selection, .n-button),
+html body[data-skin='dsh'] .editor-toolbar .editor-bar-status :is(.n-select, .n-base-selection, .n-button) {
+  flex: none;
+  min-width: 0;
+}
+/* 状态选择是窄宽下唯一还能报出写作阶段的元素：给足落地宽度，宁可让工具栏横滑也不把它压没 */
+.latent-studio .editor-toolbar .editor-bar-status :is(.n-select, .n-base-selection),
+html body[data-skin='dsh'] .latent-studio .editor-toolbar .editor-bar-status :is(.n-select, .n-base-selection),
+html body[data-skin='dsh'] .editor-toolbar .editor-bar-status :is(.n-select, .n-base-selection) {
+  min-width: 84px;
+}
+/* 更多格式由 Naive UI teleport 到 body，不能依赖 .latent-studio 祖先。 */
+html body[data-skin='dsh'] .tb-more-chapter {
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid rgb(255 255 255 / .14);
+}
+html body[data-skin='dsh'] .tb-more-chapter .editor-bar-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+html body[data-skin='dsh'] .tb-more-chapter .n-select {
+  flex: 1;
+  min-width: 100px;
+}
+
+/* 8.3 稿纸（设计 .paper）：深墨底 + 半透明渐变叠层，宽度经 .rich-host 收到 36em 以内
+ * 稿纸让到 46%：流动底要能透上来，但单靠半透明墨底挡不住背板高光，所以再加一层 26px 磨砂把字和底隔开。
+ * 对比度按最坏情况（背板推到纯白）合成：52% #232324 → 46% #0f1115 → 30% rgb(24 27 33) 得 rgb(65,67,70)，
+ * L=0.060；正文 #f4efe6 的 L=0.866；(0.866+0.05)/(0.060+0.05)=8.69:1，远高于 4.5:1。 */
+.latent-studio .rich-host,
+html body[data-skin='dsh'] .latent-studio .rich-host,
+html body[data-skin='dsh'] .latent-studio .rich-host.paper-texture.writing-paper-surface,
+html body[data-skin='dsh'] .rich-host,
+html body[data-skin='dsh'] .rich-host.paper-texture.writing-paper-surface {
+  flex: 1;
+  min-height: 0;
+  box-sizing: border-box;
+  width: var(--ls-page-w);
+  margin: 0 auto 12px;
+  padding: 56px 64px;
+  border: 0;
+  border-radius: 24px;
+  background-color: color-mix(in srgb, var(--ls-paper) 46%, transparent) !important;
+  background-image: linear-gradient(150deg, rgb(24 27 33 / .30), rgb(12 14 18 / .42)) !important;
+  background-size: auto !important;
+  background-repeat: no-repeat !important;
+  background-blend-mode: normal !important;
+  -webkit-backdrop-filter: blur(26px) saturate(1.15);
+  backdrop-filter: blur(26px) saturate(1.15);
+  box-shadow: 0 30px 70px rgb(0 0 0 / .55), inset 0 1px 0 rgb(255 255 255 / .16);
+  color: var(--ls-ink);
+  overflow: auto;
+  overscroll-behavior: contain;
+  transition: opacity 120ms ease;
+}
+.latent-studio .rich-host .ed-read-col,
+html body[data-skin='dsh'] .latent-studio .rich-host .ed-read-col,
+html body[data-skin='dsh'] .rich-host .ed-read-col {
+  max-width: none;
+  margin: 0;
+}
+.latent-studio .rich-host .rich-inner,
+html body[data-skin='dsh'] .latent-studio .rich-host .rich-inner,
+html body[data-skin='dsh'] .rich-host .rich-inner {
+  max-width: 100%;
+}
+
+/* 8.4 正文排版：宋体 17.5px / 1.95 / .01em / 首行缩进 2em / 段距 0 */
+.latent-studio .rich-host .rich-inner .tiptap,
+.latent-studio .rich-host .tiptap,
+html body[data-skin='dsh'] .latent-studio .rich-host .rich-inner .tiptap,
+html body[data-skin='dsh'] .rich-host .rich-inner .tiptap,
+html body[data-skin='dsh'] .rich-host .tiptap {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  min-height: 40vh;
+  outline: none;
+  font-family: var(--ls-serif);
+  font-size: var(--ls-fs);
+  line-height: 1.95;
+  letter-spacing: .01em;
+  color: var(--ls-ink);
+  text-align: justify;
+  text-justify: inter-ideograph;
+}
+/* 8.4.1 正文硬钉宋体：设计稿正文是宋体，插件版不受 --editor-font 影响（工作台与拆窗同一套字） */
+html body[data-skin='dsh'] .latent-studio .rich-host .rich-inner .tiptap,
+.latent-studio .rich-host .rich-inner .tiptap,
+html body[data-skin='dsh'] .rich-host .rich-inner .tiptap {
+  font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", SimSun, serif !important;
+}
+.latent-studio .rich-host .tiptap p,
+html body[data-skin='dsh'] .latent-studio .rich-host .tiptap p,
+html body[data-skin='dsh'] .rich-host .tiptap p {
+  margin: 0;
+  text-indent: 2em;
+}
+.latent-studio .rich-host .tiptap p + p,
+html body[data-skin='dsh'] .latent-studio .rich-host .tiptap p + p,
+html body[data-skin='dsh'] .rich-host .tiptap p + p {
+  margin-top: 0;
+}
+.latent-studio .rich-host .tiptap :is(h1, h2, h3),
+html body[data-skin='dsh'] .latent-studio .rich-host .tiptap :is(h1, h2, h3),
+html body[data-skin='dsh'] .rich-host .tiptap :is(h1, h2, h3) {
+  margin: 1.2em 0 .6em;
+  text-indent: 0;
+  font-family: var(--ls-serif);
+  line-height: 1.4;
+  color: var(--ls-ink);
+}
+.latent-studio .rich-host .tiptap :is(ul, ol, blockquote, pre, table),
+html body[data-skin='dsh'] .latent-studio .rich-host .tiptap :is(ul, ol, blockquote, pre, table),
+html body[data-skin='dsh'] .rich-host .tiptap :is(ul, ol, blockquote, pre, table) {
+  text-indent: 0;
+}
+.latent-studio .rich-host .tiptap blockquote,
+html body[data-skin='dsh'] .latent-studio .rich-host .tiptap blockquote,
+html body[data-skin='dsh'] .rich-host .tiptap blockquote {
+  margin: 0 0 .4em;
+  padding-left: 14px;
+  border-left: 2px solid var(--ls-red);
+  color: var(--ls-ink-2);
+}
+.latent-studio .rich-host .tiptap a,
+html body[data-skin='dsh'] .latent-studio .rich-host .tiptap a,
+html body[data-skin='dsh'] .rich-host .tiptap a {
+  color: var(--ls-red-soft);
+  text-decoration-color: rgb(255 147 132 / .5);
+}
+.latent-studio .rich-host .tiptap mark,
+html body[data-skin='dsh'] .latent-studio .rich-host .tiptap mark,
+html body[data-skin='dsh'] .rich-host .tiptap mark {
+  border-radius: 3px;
+  color: #17181c;
+}
+.latent-studio .rich-host .tiptap p.is-editor-empty:first-child::before,
+html body[data-skin='dsh'] .latent-studio .rich-host .tiptap p.is-editor-empty:first-child::before,
+html body[data-skin='dsh'] .rich-host .tiptap p.is-editor-empty:first-child::before {
+  content: '落笔于此……';
+  float: left;
+  height: 0;
+  text-indent: 0;
+  color: var(--ls-ink-3);
+  pointer-events: none;
+}
+
+/* 8.5 章头内的字数目标行（设计 .ed-goal / .goal-track / .goal-track i，取值同 2 号 §383-406） */
+.latent-studio .editor-head .ed-goal,
+html body[data-skin='dsh'] .latent-studio .editor-head .ed-goal,
+html body[data-skin='dsh'] .editor-head .ed-goal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--ls-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.latent-studio .editor-head .ed-goal .goal-track,
+html body[data-skin='dsh'] .latent-studio .editor-head .ed-goal .goal-track,
+html body[data-skin='dsh'] .editor-head .ed-goal .goal-track {
+  flex: 1 1 auto;
+  height: 2px;
+  border-radius: 999px;
+  background-color: rgb(255 255 255 / .16);
+  overflow: hidden;
+}
+.latent-studio .editor-head .ed-goal .goal-track i,
+html body[data-skin='dsh'] .latent-studio .editor-head .ed-goal .goal-track i,
+html body[data-skin='dsh'] .editor-head .ed-goal .goal-track i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background-color: #fff;
+  transition: width 480ms var(--ls-ease);
+}
+.latent-studio .editor-head .ed-goal .goal-text,
+html body[data-skin='dsh'] .latent-studio .editor-head .ed-goal .goal-text,
+html body[data-skin='dsh'] .editor-head .ed-goal .goal-text {
+  flex: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-variant-numeric: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.latent-studio .editor-head .ed-goal .goal-text:hover,
+html body[data-skin='dsh'] .latent-studio .editor-head .ed-goal .goal-text:hover,
+html body[data-skin='dsh'] .editor-head .ed-goal .goal-text:hover {
+  color: var(--ls-ink);
+}
+
+.latent-studio .side-resizer,
+html body[data-skin='dsh'] .latent-studio .side-resizer {
+  width: 5px;
+  flex: none;
+  margin-left: -3px;
+  cursor: col-resize;
+  z-index: 6;
+  background: transparent;
+  transition: background-color .15s;
+}
+.latent-studio .side-resizer:hover,
+html body[data-skin='dsh'] .latent-studio .side-resizer:hover {
+  background-color: rgb(192 72 58 / .45);
+}
+.latent-studio .ns-notes-drawer,
+html body[data-skin='dsh'] .latent-studio .ns-notes-drawer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  z-index: 46;
+  width: 280px;
+  padding: 0 14px 14px;
+  border: var(--ls-edge);
+  border-radius: 22px 0 0 22px;
+  background-color: rgb(11 13 18 / .82);
+  background-image: var(--ls-glass-fill);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  backdrop-filter: blur(18px) saturate(1.5);
+  box-shadow: var(--ls-elev);
+  overflow: auto;
+  transition: transform 380ms var(--ls-ease);
+}
+.latent-studio .ns-notes-scrim,
+html body[data-skin='dsh'] .latent-studio .ns-notes-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 45;
+  border: 0;
+  padding: 0;
+  background: rgb(3 4 7 / .62);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+/* ==== 10. 沉浸 / 阅读（设计 3 号 §5，用宿主已有的 .is-focus / .is-reading） ==== */
+html body[data-skin='dsh'] .latent-studio.is-focus :is(.side-panel, .right-panel, .ol-side-rail, .rp-rail, .side-resizer, .editor-toolbar, .editor-head, .editor-foot),
+.latent-studio.is-focus :is(.side-panel, .right-panel, .ol-side-rail, .rp-rail, .side-resizer, .editor-toolbar, .editor-head, .editor-foot) {
+  display: none;
+}
+html body[data-skin='dsh'] .latent-studio.is-reading :is(.right-panel, .rp-rail, .editor-toolbar),
+.latent-studio.is-reading :is(.right-panel, .rp-rail, .editor-toolbar) {
+  display: none;
+}
+html body[data-skin='dsh'] .latent-studio.is-focus .rich-host,
+html body[data-skin='dsh'] .latent-studio.is-reading .rich-host,
+.latent-studio.is-focus .rich-host,
+.latent-studio.is-reading .rich-host {
+  width: min(var(--ls-col-wide), calc(100% - 64px));
+  margin-inline: auto;
+}
+.latent-studio.is-focus :is(.editor-toolbar, .editor-head),
+.latent-studio.is-reading :is(.editor-toolbar, .editor-head) {
+  width: min(var(--ls-col-wide), calc(100% - 64px));
+}
+.latent-studio.is-focus .center-pane,
+.latent-studio.is-reading .center-pane {
+  background-color: transparent;
+  background-image: none;
+  border-color: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.latent-studio.is-focus .center-pane::after,
+.latent-studio.is-reading .center-pane::after {
+  content: none;
+}
+
+/* ==== 11. 断点（设计 2 号 §6 / 3 号 §6） ==== */
+/* 1180 以下章节栏 168 由宿主行内样式 min(sideWidth,168) 给，本皮肤不碰宽度（拖拽范围 180–480 保持有效） */
+/* 899 以下批注栏整体退场，稿纸内边距收一档 */
+@media (max-width: 899px) {
+  .latent-studio .rich-host,
+  html body[data-skin='dsh'] .latent-studio .rich-host,
+  html body[data-skin='dsh'] .latent-studio .rich-host.paper-texture.writing-paper-surface {
+    padding: 40px 36px;
+  }
+}
+/* 常驻批注栏（280px 列）的门槛抬到 1180：1180 以下改覆盖式抽屉、脱流，正文列落回两栏（章节栏 + 稿纸）。
+ * 不用 display:none —— 那样 900–1179 会成死区：宿主 openNotesDrawer 在 ≥900 强制 rightPanelOpen=true
+ * （Workbench.vue:141），收起后 v-if 不再渲染 .rp-rail；改成脱流浮层后仍可读、可用面板自带 .rp-fold 收起，
+ * 收起后 .rp-rail（L850 起）即出现，批注入口在 900–1179 始终成立。 */
+@media (max-width: 1179px) {
+  .latent-studio .right-panel,
+  html body[data-skin='dsh'] .latent-studio .right-panel {
+    position: absolute;
+    inset: 0 0 0 auto;
+    width: 280px;
+    max-width: 86vw;
+    z-index: 46;
+    border-radius: 22px 0 0 22px;
+    background-color: rgb(11 13 18 / .92);
+  }
+  .latent-studio .rp-rail,
+  html body[data-skin='dsh'] .latent-studio .rp-rail {
+    display: flex;
+  }
+}
+/* 560 以下：章节栏改覆盖式抽屉（可见性由宿主 dirVisible / .ol-side-rail 管，本皮肤只管几何与材质）、
+ * 稿纸满宽、工具栏横滑 + 右缘淡出（不裁字） */
+@media (max-width: 560px) {
+  .latent-studio .side-panel,
+  html body[data-skin='dsh'] .latent-studio .side-panel {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 280px;
+    max-width: 86vw;
+    z-index: 30;
+    border-radius: 0 22px 22px 0;
+    background-color: rgb(11 13 18 / .88);
+  }
+  .latent-studio :is(.editor-head, .editor-toolbar, .editor-foot),
+  html body[data-skin='dsh'] .latent-studio :is(.editor-head, .editor-toolbar, .editor-foot) {
+    width: 100%;
+  }
+  .latent-studio .editor-toolbar,
+  html body[data-skin='dsh'] .latent-studio .editor-toolbar {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    padding: 0 6px;
+    -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 24px), transparent 100%);
+    mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 24px), transparent 100%);
+  }
+  .latent-studio .editor-toolbar::-webkit-scrollbar,
+  html body[data-skin='dsh'] .latent-studio .editor-toolbar::-webkit-scrollbar {
+    display: none;
+  }
+  .latent-studio .editor-toolbar :is(.tb, .tb-sep),
+  html body[data-skin='dsh'] .latent-studio .editor-toolbar :is(.tb, .tb-sep) {
+    flex: none;
+  }
+  /* 窄栏的按钮去留同样交给模板（搬进「更多格式」弹层）；本皮肤只在 §41 保证正文/H1-H3 可见，
+   * 不再按 [data-act=…] 全局隐藏，避免连弹层里的同名控件一起藏掉。 */
+  .latent-studio .rich-host,
+  html body[data-skin='dsh'] .latent-studio .rich-host,
+  html body[data-skin='dsh'] .latent-studio .rich-host.paper-texture.writing-paper-surface {
+    width: 100%;
+    padding: 24px;
+    border-radius: 18px;
+  }
+  .latent-studio :is(.center-pane, .right-panel),
+  html body[data-skin='dsh'] .latent-studio :is(.center-pane, .right-panel) {
+    border-radius: 18px;
+  }
+  .latent-studio .wb-body,
+  html body[data-skin='dsh'] .latent-studio .wb-body {
+    gap: 10px;
+    padding: 2px 10px 10px;
+  }
+}
+
+/* ==== 12. 动效降级（设计 3 号 §6 收尾） ==== */
+@media (prefers-reduced-motion: reduce) {
+  .latent-studio *,
+  .latent-studio *::before,
+  .latent-studio *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==== 13（追加修正）· ≤560 章节栏改「覆盖式抽屉」：已有 display:none 保留不删，靠本块后置覆盖 ==== */
+@media (max-width: 560px) {
+  .latent-studio .side-panel,
+  html body[data-skin='dsh'] .latent-studio .side-panel {
+    display: flex;
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 280px;
+    max-width: 86vw;
+    z-index: 30;
+    border-radius: 0 22px 22px 0;
+  }
+}
+
+/* ==== 14（追加修正）· 卷行 / 章行分档：data-kind 落在 __text 内的 span 本体，直接命中（非 :has()、非后代方向） ==== */
+.latent-studio [data-kind='volume'],
+.latent-studio .n-tree-node-content__text > [data-kind='volume'],
+html body[data-skin='dsh'] .latent-studio [data-kind='volume'] {
+  font-size: 11px;
+  letter-spacing: .18em;
+  color: var(--st-ink-3, var(--ls-ink-3));
+  font-weight: 500;
+}
+.latent-studio [data-kind='chapter'],
+.latent-studio .n-tree-node-content__text > [data-kind='chapter'],
+html body[data-skin='dsh'] .latent-studio [data-kind='chapter'] {
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--st-ink-2, var(--ls-ink-2));
+}
+
+/* ==== 15（追加修正）· 背景层：.st-backdrop-wrap 是 .workbench-shell 的第一个子项，
+ * 无 CSS 约束时 canvas 按属性尺寸（flow.js 写入的设备像素）参与流式布局，把顶栏与三栏整体挤出视口。
+ * 这里把它脱流并钉满壳层；层级 = 背景 0 < 内容 1 < 顶栏 40。
+ * 设计 1 号 §3：.st-layer 三层（dots / vignette / grain）同样脱流。 ==== */
+.latent-studio > .st-backdrop-wrap,
+html body[data-skin='dsh'] .latent-studio > .st-backdrop-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background-color: var(--ls-bg);
+}
+.latent-studio > .st-backdrop-wrap > canvas.st-backdrop,
+html body[data-skin='dsh'] .latent-studio > .st-backdrop-wrap > canvas.st-backdrop {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.latent-studio > .st-backdrop-wrap > .st-layer,
+html body[data-skin='dsh'] .latent-studio > .st-backdrop-wrap > .st-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.latent-studio > .st-backdrop-wrap > .st-layer.dots,
+html body[data-skin='dsh'] .latent-studio > .st-backdrop-wrap > .st-layer.dots {
+  opacity: .03;
+  mix-blend-mode: overlay;
+  background-image: radial-gradient(circle, rgb(255 255 255 / .95) .45px, transparent .8px);
+  background-size: 2px 2px;
+}
+.latent-studio > .st-backdrop-wrap > .st-layer.vignette,
+html body[data-skin='dsh'] .latent-studio > .st-backdrop-wrap > .st-layer.vignette {
+  background:
+    radial-gradient(130% 96% at 50% 38%, transparent 40%, rgb(3 4 7 / .3) 100%),
+    linear-gradient(180deg, rgb(3 4 7 / .26) 0%, rgb(3 4 7 / 0) 30%, rgb(3 4 7 / .14) 64%, rgb(3 4 7 / .38) 100%);
+}
+.latent-studio > .st-backdrop-wrap > .st-layer.grain,
+html body[data-skin='dsh'] .latent-studio > .st-backdrop-wrap > .st-layer.grain {
+  opacity: .05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+}
+/* 内容层压在背景之上：.wb-body 已带 position:relative + z-index:1（见 §4），此处只做兜底声明；
+ * 拆窗面板的 .panel-body 是同一角色，玻璃规则按同一层级叠，两处必须一起兜住。 */
+.latent-studio > .wb-body,
+.latent-studio > .panel-body,
+html body[data-skin='dsh'] .latent-studio > .wb-body,
+html body[data-skin='dsh'] .latent-studio > .panel-body {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+}
+/* 设计 1 号 §3 的「无 WebGL 兜底底」已删：它读的是壳层的 data-bg-fallback，而 Workbench 只往
+ * documentElement 写 bgFallback；如今编译期就把 GPU→CPU 兜在同一个 canvas 上，壳层再铺不透明底反而会盖掉画布。 */
+
+/* ==== 16（追加修正）· 695×835 挤压适配
+ * 只追加、不改上文：--ls-col（36em）与工具栏 34px 契约原样；无新增 !important。
+ * 布局顺序：外侧留白（--ls-gutter）→ 稿纸内边距（--ls-pad-x/y）都随视口收缩，窄档把宽度还给正文。 ==== */
+
+/* 16.1 留白与内边距改 clamp：同属性后置声明，覆盖 §1 的 --ls-gutter:96px 与 §11 的 40px 36px / 24px */
+.latent-studio,
+html body[data-skin='dsh'] .latent-studio {
+  --ls-gutter: clamp(12px, 3vw, 96px);
+  --ls-pad-x: clamp(18px, 4.4vw, 64px);
+  --ls-pad-y: clamp(20px, 3.2vw, 56px);
+}
+.latent-studio .rich-host,
+html body[data-skin='dsh'] .latent-studio .rich-host,
+html body[data-skin='dsh'] .latent-studio .rich-host.paper-texture.writing-paper-surface {
+  padding: var(--ls-pad-y) var(--ls-pad-x);
+}
+
+/* 16.2 工具栏：任何宽度都单行横滑 + 右缘淡出（不折行、不裁字；高度仍由宿主 dsh.css 的 34px 三连钉住） */
+.latent-studio .editor-toolbar,
+html body[data-skin='dsh'] .latent-studio .editor-toolbar {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 24px), transparent 100%);
+  mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 24px), transparent 100%);
+}
+.latent-studio .editor-toolbar::-webkit-scrollbar,
+html body[data-skin='dsh'] .latent-studio .editor-toolbar::-webkit-scrollbar {
+  display: none;
+}
+.latent-studio .editor-toolbar :is(.tb, .tb-sep),
+html body[data-skin='dsh'] .latent-studio .editor-toolbar :is(.tb, .tb-sep) {
+  flex: none;
+}
+/* 次要按钮（字号/颜色/底色/链接/书签/纸面）不放主行这件事由模板负责——
+ * 这里曾经用 [data-act=…] 全局隐藏，会把「更多格式」弹层里的同名控件一起藏掉，已撤除。 */
+
+/* 16.3 章节行：标题收省略号、字数不换行（.chapter-count 来自 ChapterTree.vue:101 renderSuffix） */
+.latent-studio .side-panel .n-tree .n-tree-node-content,
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree .n-tree-node-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.latent-studio .side-panel .n-tree .n-tree-node-content__text,
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree .n-tree-node-content__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.latent-studio .side-panel .n-tree .chapter-count,
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree .chapter-count {
+  flex: none;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 16.4 章节栏顶条：压成单行可横滑的密集工具条（容器 .side-head 见 ChapterTree.vue:245） */
+.latent-studio .side-panel .side-head,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-head {
+  flex-wrap: nowrap;
+  gap: 4px;
+  padding: 10px 12px 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 20px), transparent 100%);
+  mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 20px), transparent 100%);
+}
+.latent-studio .side-panel .side-head::-webkit-scrollbar,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-head::-webkit-scrollbar {
+  display: none;
+}
+.latent-studio .side-panel .side-head .n-button,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-head .n-button {
+  flex: none;
+  white-space: nowrap;
+  height: 26px;
+  padding: 0 6px;
+}
+/* 「删除」起重红：宿主把 color:#c2564a 写在按钮根节点的内联 style 上，内联优先级高于一切选择器，
+ * 因此把颜色落到内容层（内联只作用于根节点），无需 !important。
+ * 内联字符串在 Chrome 里会序列化成 rgb(194, 86, 74)，故不用 [style*=c2564a]，改用「本排里唯一带内联 style 的按钮」+ 末位兜底。 */
+.latent-studio .side-panel .side-head .n-button[style] :is(.n-button__content, span),
+html body[data-skin='dsh'] .latent-studio .side-panel .side-head .n-button[style] :is(.n-button__content, span),
+.latent-studio .side-panel .side-head > .n-button:last-of-type :is(.n-button__content, span),
+html body[data-skin='dsh'] .latent-studio .side-panel .side-head > .n-button:last-of-type :is(.n-button__content, span) {
+  color: #c0483a;
+}
+
+/* 16.5 ≤899 批注栏按「抽屉类」判可见性（宿主统一走 .ns-notes-drawer，
+ * 不再用脆弱的行内 style 字符串匹配）：常驻列隐藏、抽屉态覆盖式浮出。 */
+@media (max-width: 1179px) {
+  .latent-studio .right-panel.ns-notes-drawer,
+  html body[data-skin='dsh'] .latent-studio .right-panel.ns-notes-drawer {
+    display: flex;
+    position: absolute;
+    inset: 0 0 0 auto;
+    width: 280px;
+    max-width: 86vw;
+    z-index: 46;
+    border-radius: 22px 0 0 22px;
+    background-color: rgb(11 13 18 / .92);
+  }
+}
+/* 抽屉浮出后仍让位给沉浸/阅读（权重与上条同，靠位置在后胜出） */
+.latent-studio.is-focus .right-panel.ns-notes-drawer,
+.latent-studio.is-reading .right-panel.ns-notes-drawer,
+html body[data-skin='dsh'] .latent-studio.is-focus .right-panel.ns-notes-drawer,
+html body[data-skin='dsh'] .latent-studio.is-reading .right-panel.ns-notes-drawer {
+  display: none;
+}
+
+/* ==== 17（追加修正）· 章节栏顶条：第一个按钮必须完整可见
+ * 左右内边距各 12px、行首不做任何左缘淡出（mask 只在右缘），按钮不再被负边距或居中溢出带走。 ==== */
+.latent-studio .side-panel .side-head,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-head {
+  justify-content: flex-start;
+  direction: ltr;
+  margin-left: 0;
+  margin-right: 0;
+  padding: 10px 12px 8px;
+  padding-left: 12px;
+  padding-right: 12px;
+  scroll-padding-left: 12px;
+  scroll-snap-type: x proximity;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 20px), transparent 100%);
+  mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 20px), transparent 100%);
+}
+.latent-studio .side-panel .side-head::-webkit-scrollbar,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-head::-webkit-scrollbar {
+  display: none;
+}
+.latent-studio .side-panel .side-head > *,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-head > * {
+  flex: none;
+  margin-left: 0;
+  margin-right: 0;
+  scroll-snap-align: start;
+}
+.latent-studio .side-panel .side-head .n-button,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-head .n-button {
+  min-width: 26px;
+  padding: 0 6px;
+  font-size: 11.5px;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+
+/* ==== 20 · 窄档（≤559，44px）顶栏构图：作品名 + 当前模块名 + ⋯
+ * 导航胶囊与右簇（已保存 / 搜索 / 设置 / 锁定）全部收进 ⋯：模块在「模块」区、
+ * 锁定在「顶栏」区，动作等价项由宿主注入的 actions 提供。 ==== */
+@media (max-width: 559px) {
+  .latent-studio .app-topbar .app-topnav,
+  html body[data-skin='dsh'] .latent-studio .app-topbar .app-topnav {
+    display: none;
+  }
+  .latent-studio .app-topbar .app-topbar-brand-text,
+  html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-brand-text {
+    display: none;
+  }
+  .latent-studio .app-topbar .app-topbar-narrow-title,
+  html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-narrow-title {
+    display: block;
+    max-width: 8em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--ls-sans);
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--ls-ink);
+  }
+  .latent-studio .app-topbar .app-topbar-current,
+  html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-current {
+    display: block;
+    flex: none;
+    margin-left: auto;
+    color: var(--ls-ink-2);
+    font-family: var(--ls-sans);
+    font-size: 12.5px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .latent-studio .app-topbar :is(.app-topbar-cluster, .app-topbar-actions),
+  html body[data-skin='dsh'] .latent-studio .app-topbar :is(.app-topbar-cluster, .app-topbar-actions) {
+    display: none;
+  }
+  .latent-studio .app-topbar .app-topbar-more-wrap,
+  html body[data-skin='dsh'] .latent-studio .app-topbar .app-topbar-more-wrap {
+    display: flex;
+    flex: none;
+  }
+}
+/* ==== 21（追加修正）· 吃满空间：≤1179 去掉栏间 gap 与左右外距，稿纸不再让出留白
+ * ≥1180 才把 --ls-col 上限从 36em 抬到 46em；同时把内边距抬到 ≥5em，
+ * 使 46em−2×5em=36em —— 被量的 .tiptap 仍 ≤36em，36em 契约不破。 ==== */
+@media (max-width: 1179px) {
+  .latent-studio,
+  html body[data-skin='dsh'] .latent-studio {
+    --ls-gutter: 0px;
+    --ls-pad-x: clamp(12px, 1.6vw, 22px);
+  }
+  .latent-studio .wb-body,
+  html body[data-skin='dsh'] .latent-studio .wb-body {
+    gap: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+@media (min-width: 1180px) {
+  .latent-studio,
+  html body[data-skin='dsh'] .latent-studio {
+    --ls-col: calc(var(--ls-fs) * 46);
+  }
+}
+/* 稿纸变宽后，内边距按「稿纸实宽 − 36em」精确补足：稿纸 ≤36em 时不加，
+ * 超出多少补一半，于是正文列无论多宽都恰好 ≤36em（不靠猜的 5em 定值，
+ * 避免 1180–1460 这段因为固定内边距反而把正文列压窄）。 */
+.latent-studio .rich-host,
+html body[data-skin='dsh'] .latent-studio .rich-host,
+html body[data-skin='dsh'] .latent-studio .rich-host.paper-texture.writing-paper-surface {
+  --ls-paper-w: min(var(--ls-col), calc(100% - var(--ls-gutter)));
+  padding-left: max(var(--ls-pad-x), calc((var(--ls-paper-w) - min(calc(var(--ls-fs) * 36), var(--ls-paper-w))) / 2));
+  padding-right: max(var(--ls-pad-x), calc((var(--ls-paper-w) - min(calc(var(--ls-fs) * 36), var(--ls-paper-w))) / 2));
+}
+
+/* ==== 22（追加修正）· 章节行：名字优先，放不下就悬停滚动播放
+ * 位移说明：名字节点自身就是裁剪盒，transform 平移会把裁剪一起搬走、露不出尾巴，
+ * 所以用 text-indent 让内容在固定裁剪窗里滑动（不精确但能跑通，7s 一个来回）。 ==== */
+.latent-studio .side-panel .side-list,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-list {
+  padding: 2px 4px;
+}
+.latent-studio .side-panel .n-tree .n-tree-node-content,
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree .n-tree-node-content {
+  padding: 2px 4px;
+}
+.latent-studio .side-panel .n-tree .n-tree-node-content__text,
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree .n-tree-node-content__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: clip;
+}
+.latent-studio .side-panel .n-tree .chapter-count,
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree .chapter-count {
+  flex: none;
+  margin-left: 8px;
+}
+.latent-studio .side-panel :is([data-kind='volume'] .n-tree-node-content__text, [data-kind='volume'].n-tree-node-content__text),
+html body[data-skin='dsh'] .latent-studio .side-panel :is([data-kind='volume'] .n-tree-node-content__text, [data-kind='volume'].n-tree-node-content__text) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@keyframes st-marquee {
+  0%, 8% { text-indent: 0; transform: translateX(0); }
+  46%, 54% { text-indent: calc(-1 * max(24px, 30%)); transform: translateX(calc(-1 * max(18px, 22%))); }
+  92%, 100% { text-indent: 0; transform: translateX(0); }
+}
+.latent-studio .side-panel .n-tree .n-tree-node-content:hover :is([data-kind='chapter'].n-tree-node-content__text, [data-kind='chapter'] .n-tree-node-content__text),
+.latent-studio .side-panel .n-tree .n-tree-node-content[data-kind='chapter']:hover .n-tree-node-content__text,
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree .n-tree-node-content:hover :is([data-kind='chapter'].n-tree-node-content__text, [data-kind='chapter'] .n-tree-node-content__text),
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree .n-tree-node-content[data-kind='chapter']:hover .n-tree-node-content__text {
+  animation: st-marquee 7s linear infinite;
+}
+
+/* ==== 23（追加修正）· 收起键统一：.side-fold（章节栏，另一路新加）与 .rp-fold 同一套视觉 ==== */
+.latent-studio .side-panel .side-head,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-head {
+  position: relative;
+  padding-right: 26px;
+  -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 6px), transparent 100%);
+  mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 6px), transparent 100%);
+}
+.latent-studio .side-panel .side-fold,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-fold,
+.latent-studio .right-panel .rp-fold,
+html body[data-skin='dsh'] .latent-studio .right-panel .rp-fold {
+  position: absolute;
+  top: 8px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background-color: transparent;
+  color: var(--ls-ink-3);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease;
+}
+.latent-studio .side-panel .side-fold:hover,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-fold:hover,
+.latent-studio .right-panel .rp-fold:hover,
+html body[data-skin='dsh'] .latent-studio .right-panel .rp-fold:hover {
+  background-color: rgb(255 255 255 / .1);
+  border-color: rgb(255 255 255 / .12);
+  color: var(--ls-ink);
+}
+.latent-studio .right-panel .rp-fold,
+html body[data-skin='dsh'] .latent-studio .right-panel .rp-fold {
+  position: static;
+  margin-left: auto;
+  flex: none;
+}
+.latent-studio .side-panel .side-foot,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-foot {
+  display: none;
+}
+
+/* ==== 24 · 动效降级补齐：滚动播放与位移在 reduced-motion 下不跑 ==== */
+@media (prefers-reduced-motion: reduce) {
+  .latent-studio .side-panel .n-tree .n-tree-node-content:hover :is([data-kind='chapter'].n-tree-node-content__text, [data-kind='chapter'] .n-tree-node-content__text),
+  .latent-studio .side-panel .n-tree .n-tree-node-content[data-kind='chapter']:hover .n-tree-node-content__text {
+    animation: none;
+    text-indent: 0;
+    transform: none;
+  }
+}
+
+/* ==== 25（追加修正）· 收起键固定贴右：绝对定位，不进那排按钮的横滑队列
+ * .side-head > *{margin-left:0} 会吃掉 margin-left:auto，所以只能用 position:absolute。 ==== */
+.latent-studio .side-panel .side-head,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-head {
+  position: relative;
+  padding-right: 34px;
+}
+.latent-studio .side-panel .side-head > .side-fold,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-head > .side-fold {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  margin: 0;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background-color: transparent;
+  color: var(--ls-ink-3);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease;
+}
+.latent-studio .side-panel .side-head > .side-fold:hover,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-head > .side-fold:hover {
+  background-color: rgb(255 255 255 / .1);
+  border-color: rgb(255 255 255 / .12);
+  color: var(--ls-ink);
+}
+
+/* ==== 26（追加修正）· 给细轨让出一条车道：gutter 归零后右侧 20px rail 会压在稿纸上
+ * （右缘 4px 余量 + 20px 本体 = 24px）。用 .wb-body 的内边距让开，rail 仍保持脱流，
+ * 不回流里、不再吃 gap。 ==== */
+@media (max-width: 1179px) {
+  .latent-studio .wb-body,
+  html body[data-skin='dsh'] .latent-studio .wb-body {
+    padding-right: 24px;
+  }
+}
+@media (max-width: 560px) {
+  .latent-studio .wb-body,
+  html body[data-skin='dsh'] .latent-studio .wb-body {
+    padding-left: 24px;
+  }
+}
+
+/* ==== 27（追加修正）· 稿纸 44em 上界真正生效
+ * 1000 档量到稿纸 630 = 36em，原因：--ls-col 只在 §21 的 ≥1180 分支改成 46em，
+ * 1000 档仍吃 §1 的默认 36em。这里把两个分支都改成 44em（770px），并把 ≥1180 的
+ * --ls-gutter 也归零，使「稿纸宽 = min(44em, center)」这个口径成立。 ==== */
+@media (max-width: 1179px) {
+  .latent-studio,
+  html body[data-skin='dsh'] .latent-studio {
+    --ls-col: calc(var(--ls-fs) * 44);
+  }
+}
+@media (min-width: 1180px) {
+  .latent-studio,
+  html body[data-skin='dsh'] .latent-studio {
+    --ls-col: calc(var(--ls-fs) * 44);
+    --ls-gutter: 0px;
+  }
+}
+/* 精确内边距的上界同步换成 44em（重声明覆盖 §21 的 36em 版；稿纸上限即 44em，
+ * 该项恒为 0，等价于直接用 --ls-pad-x，但保留公式以便将来上限再变时自动居中）。 */
+.latent-studio .rich-host,
+html body[data-skin='dsh'] .latent-studio .rich-host,
+html body[data-skin='dsh'] .latent-studio .rich-host.paper-texture.writing-paper-surface {
+  --ls-paper-w: min(var(--ls-col), calc(100% - var(--ls-gutter)));
+  padding-left: max(var(--ls-pad-x), calc((var(--ls-paper-w) - min(calc(var(--ls-fs) * 44), var(--ls-paper-w))) / 2));
+  padding-right: max(var(--ls-pad-x), calc((var(--ls-paper-w) - min(calc(var(--ls-fs) * 44), var(--ls-paper-w))) / 2));
+}
+
+/* ==== 28（追加修正）· 章节行左对齐：吃掉 NTree 缩进与列表内边距留下的空带 ==== */
+.latent-studio .side-panel .side-list,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-list {
+  padding-left: 0;
+  padding-right: 0;
+}
+.latent-studio .side-panel .n-tree .n-tree-node-indent,
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree .n-tree-node-indent {
+  display: none;
+}
+.latent-studio .side-panel .n-tree .n-tree-node-content,
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree .n-tree-node-content {
+  padding-left: 2px;
+  padding-right: 2px;
+  gap: 4px;
+}
+.latent-studio .side-panel .n-tree .n-tree-node-switcher,
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree .n-tree-node-switcher {
+  margin-left: 0;
+}
+
+/* ==== 29（追加修正）· 滚动播放改由 .is-marquee 驱动（另一路给溢出节点加类）
+ * :hover 那条保留（悬停即播不冲突）：两条同属 animation 属性、选择器不同源，
+ * 同一元素同时命中时后者按位置覆盖，动画参数完全一致，不会互相打断；
+ * 未加类的短名字既不命中 hover 也命中不了本块，静止不动。 ==== */
+.latent-studio .side-panel .n-tree :is([data-kind='chapter'].is-marquee, .is-marquee[data-kind='chapter'] .n-tree-node-content__text, .is-marquee [data-kind='chapter'].n-tree-node-content__text, .is-marquee [data-kind='chapter'] .n-tree-node-content__text),
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree :is([data-kind='chapter'].is-marquee, .is-marquee[data-kind='chapter'] .n-tree-node-content__text, .is-marquee [data-kind='chapter'].n-tree-node-content__text, .is-marquee [data-kind='chapter'] .n-tree-node-content__text) {
+  animation: st-marquee 7s linear infinite;
+}
+
+/* ==== 30（追加修正）· 写作顶部版式：.ed-latin / .ed-rule / .ed-goal
+ * 头部 block 布局必须无条件成立：宿主 Electron 可能是 Chromium 104，不认 :has()，
+ * 若把显示交给 :has，标题/眉标/朱记/目标行会退回 flex 横排。下面带 :has 的那对选择器
+ * 只作为同值声明保留（兼容旧引用），不再是唯一生效条件。 ==== */
+.latent-studio .editor-head,
+html body[data-skin='dsh'] .latent-studio .editor-head,
+html body[data-skin='dsh'] .editor-head {
+  display: block;
+  padding: 0 0 12px;
+}
+.latent-studio .editor-head:has(:is(.ed-latin, .ed-rule, .ed-goal)),
+html body[data-skin='dsh'] .latent-studio .editor-head:has(:is(.ed-latin, .ed-rule, .ed-goal)),
+html body[data-skin='dsh'] .editor-head:has(:is(.ed-latin, .ed-rule, .ed-goal)) {
+  display: block;
+  padding: 0 0 12px;
+}
+.latent-studio .editor-head .ed-latin,
+html body[data-skin='dsh'] .latent-studio .editor-head .ed-latin,
+html body[data-skin='dsh'] .editor-head .ed-latin {
+  margin-top: 6px;
+  font-size: 9px;
+  letter-spacing: .32em;
+  text-transform: uppercase;
+  color: var(--ls-ink-3);
+}
+.latent-studio .editor-head .ed-rule,
+html body[data-skin='dsh'] .latent-studio .editor-head .ed-rule,
+html body[data-skin='dsh'] .editor-head .ed-rule {
+  width: 42px;
+  height: 1px;
+  margin: 10px 0 12px;
+  background-color: var(--ls-red);
+}
+
+/* ==== 31 · reduced-motion 补齐：.is-marquee 驱动的滚动播放同样停掉 ==== */
+@media (prefers-reduced-motion: reduce) {
+  .latent-studio .side-panel .n-tree :is([data-kind='chapter'].is-marquee, .is-marquee[data-kind='chapter'] .n-tree-node-content__text, .is-marquee [data-kind='chapter'].n-tree-node-content__text, .is-marquee [data-kind='chapter'] .n-tree-node-content__text) {
+    animation: none;
+    text-indent: 0;
+    transform: none;
+  }
+}
+
+/* ==== 32（追加修正）· 章节名左缘再压：还差 27px，逐项减到 ≤12
+ * 27 ≈ 1（栏自身 1px 描边）+ 24（naive 叶子节点仍占位的 .n-tree-node-switcher）+ 2（.n-tree-node-content padding-left）。
+ * 处置：switcher 收到 10px（你给的 12px 加 1px 描边正好 13，达标不了；10+1=11 才稳），
+ * 节点层 padding/margin 与 gap 归零，content 的 2px 只作用在名字与字数之间。朱记竖条仍在 content 的 left:0，未挪。 ==== */
+.latent-studio .side-panel .side-list .n-tree-node-switcher,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-list .n-tree-node-switcher {
+  width: 10px;
+  min-width: 10px;
+  max-width: 10px;
+  flex: none;
+  padding: 0;
+  margin: 0;
+  justify-content: flex-start;
+}
+.latent-studio .side-panel .side-list :is(.n-tree-node, .n-tree-node-wrapper),
+html body[data-skin='dsh'] .latent-studio .side-panel .side-list :is(.n-tree-node, .n-tree-node-wrapper) {
+  padding-left: 0;
+  margin-left: 0;
+  gap: 0;
+}
+.latent-studio .side-panel .side-list .n-tree-node-content,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-list .n-tree-node-content {
+  padding-left: 0;
+  margin-left: 0;
+  gap: 2px;
+}
+.latent-studio .side-panel .side-list .n-tree-node-content__text,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-list .n-tree-node-content__text {
+  gap: 2px;
+}
+/* ==== 33（追加修正）· 章节名压到「45 字」上：把三层都锁成「块级 + 裁剪 + 不定位」
+ * 重叠只可能发生在「文本不是被裁剪的 flex 子项」时（内层 [data-kind] 若是 inline/absolute 就会溢出过去）。
+ * 这里强制 content 是 flex、文本是 flex:1 1 auto + min-width:0 + overflow:hidden 的块级子项、
+ * 内层 [data-kind='chapter'] 也是 block + max-width:100% + 裁剪 + position:static，
+ * 字数（.chapter-count 及其 .n-tree-node-content__suffix 容器）flex:none + margin-left:auto。 ==== */
+.latent-studio .side-panel .n-tree .n-tree-node-content,
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree .n-tree-node-content {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 6px;
+  overflow: hidden;
+}
+.latent-studio .side-panel .n-tree .n-tree-node-content__text,
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree .n-tree-node-content__text {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.latent-studio .side-panel .n-tree .n-tree-node-content__text > [data-kind='chapter'],
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree .n-tree-node-content__text > [data-kind='chapter'] {
+  display: block;
+  position: static;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: clip;
+}
+.latent-studio .side-panel .n-tree .n-tree-node-content__suffix,
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree .n-tree-node-content__suffix {
+  display: flex;
+  align-items: center;
+  flex: none;
+  margin-left: auto;
+}
+.latent-studio .side-panel .n-tree .chapter-count,
+html body[data-skin='dsh'] .latent-studio .side-panel .n-tree .chapter-count {
+  flex: none;
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+/* ==== 34（追加修正）· 收起键不压「删除」：右内边距 34→44，并给删除键让 30px
+ * 34px 生效对象确认是 .side-head（§25 的 .side-panel .side-head），不是滚动容器本身；
+ * 但 fold 在 right:6px、宽 22px（占 6–28px 车道），删除在滚到最右时仍可能擦到，故再让 30px。 ==== */
+.latent-studio .side-panel .side-head,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-head {
+  padding-right: 44px;
+}
+.latent-studio .side-panel .side-head > .n-button[style],
+html body[data-skin='dsh'] .latent-studio .side-panel .side-head > .n-button[style] {
+  margin-right: 30px;
+}
+
+/* ==== 35（追加修正）· 章节栏改「覆盖式抽屉」：任何宽度都浮在正文之上，不再占列宽
+ * 用户要求：章节栏与批注栏一致，弹出时盖在正文上，把列宽还给稿纸。 ==== */
+.latent-studio .side-panel,
+html body[data-skin='dsh'] .latent-studio .side-panel {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 280px;
+  max-width: 86vw;
+  z-index: 30;
+  border-radius: 0 22px 22px 0;
+  border-left: 0;
+  border-right: 1px solid rgb(255 255 255 / .18);
+  background-color: rgb(11 13 18 / .94);
+  box-shadow: 0 30px 70px rgb(0 0 0 / .6);
+}
+
+/* ==== 36（追加修正）· 稿纸回到设计稿「一块暗牌」：56×64 内边距、无描边、两层投影
+ * 注意 background-image 的数值已就地改在 §8.3（那条带 !important，追加的非 important 声明压不过它），
+ * 本条只补 border / radius / shadow / padding / margin。
+ * padding 用字面值：本条选择器与 §21/§27 的 em 公式同为 (0,5,2)，靠位置在后覆盖它们，
+ * 于是稿纸内边距恒为设计稿的 56×64（与改动前「恒为 clamp 值」的层级关系一致，只是值换成设计值）。 ==== */
+.latent-studio .rich-host,
+html body[data-skin='dsh'] .latent-studio .rich-host,
+html body[data-skin='dsh'] .latent-studio .rich-host.paper-texture.writing-paper-surface,
+html body[data-skin='dsh'] .rich-host,
+html body[data-skin='dsh'] .rich-host.paper-texture.writing-paper-surface {
+  border: 0;
+  border-radius: 24px;
+  box-shadow: 0 30px 70px rgb(0 0 0 / .55), inset 0 1px 0 rgb(255 255 255 / .16);
+  padding: 56px 64px;
+  margin: 0 auto 12px;
+}
+/* DSH 的视口是侧栏 iframe，695px 已经是一整块可用稿纸；不能沿用设计稿
+ * 三栏整页的 899px 断点，过早把 64px 留白减成 36px。只有正文真正变窄才收边。 */
+@media (max-width: 639px) {
+  .latent-studio .rich-host,
+  html body[data-skin='dsh'] .latent-studio .rich-host,
+  html body[data-skin='dsh'] .latent-studio .rich-host.paper-texture.writing-paper-surface,
+html body[data-skin='dsh'] .rich-host,
+html body[data-skin='dsh'] .rich-host.paper-texture.writing-paper-surface {
+    padding: 40px 36px;
+  }
+}
+@media (max-width: 449px) {
+  .latent-studio .rich-host,
+  html body[data-skin='dsh'] .latent-studio .rich-host,
+  html body[data-skin='dsh'] .latent-studio .rich-host.paper-texture.writing-paper-surface,
+html body[data-skin='dsh'] .rich-host,
+html body[data-skin='dsh'] .rich-host.paper-texture.writing-paper-surface {
+    padding: 24px;
+    border-radius: 18px;
+  }
+}
+
+/* ==== 37（追加修正）· 新建章 / 新建卷：底部两颗药丸（覆盖 §23 的 .side-foot{display:none}） ==== */
+.latent-studio .side-panel .side-foot,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-foot {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  border-top: 1px solid rgb(255 255 255 / .08);
+  background: transparent;
+}
+.latent-studio .side-panel .side-foot :is(.n-button, button),
+html body[data-skin='dsh'] .latent-studio .side-panel .side-foot :is(.n-button, button) {
+  flex: 1;
+  height: 30px;
+  border-radius: 999px;
+  background-color: rgb(255 255 255 / .07);
+  border: 1px solid rgb(255 255 255 / .12);
+  color: var(--ls-ink-2);
+  font-size: 12.5px;
+  letter-spacing: .02em;
+  box-shadow: 0 10px 26px rgb(0 0 0 / .35), inset 0 1px 0 rgb(255 255 255 / .10);
+  transition: background-color .16s ease, color .16s ease;
+}
+.latent-studio .side-panel .side-foot :is(.n-button, button):hover,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-foot :is(.n-button, button):hover {
+  background-color: rgb(255 255 255 / .14);
+  color: #fff;
+}
+.latent-studio .side-panel .side-foot .n-button__content,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-foot .n-button__content {
+  letter-spacing: inherit;
+}
+
+/* ==== 38（追加修正）· 浮层抽屉不许透字：材质总表的 145deg 玻璃要在这里被压过去
+ * 材质总表（§5）给 .side-panel 叠了 rgb(255 255 255/.14→.045→.10) 的渐变，§35 只改
+ * background-color 会被这层渐变盖住，等效仍很透。本条用同权重后置声明把 image 与 color 都换掉：
+ * 颜色 alpha 0.98（≥0.95）、渐变 0.72→0.96，再配 blur(20px) 兜底，抽屉里不再看见正文字。 ==== */
+.latent-studio .side-panel,
+html body[data-skin='dsh'] .latent-studio .side-panel {
+  background-image: linear-gradient(180deg, rgb(26 30 38 / .72), rgb(9 11 15 / .96));
+  background-color: rgb(9 11 15 / .98);
+  -webkit-backdrop-filter: blur(20px) saturate(1.15);
+  backdrop-filter: blur(20px) saturate(1.15);
+  border-right: 1px solid rgb(255 255 255 / .18);
+  box-shadow: 18px 0 60px rgb(0 0 0 / .55), inset -1px 0 0 rgb(255 255 255 / .06);
+}
+
+/* ==== 39（追加修正）· 底部两颗药丸并排铺满：flex-basis 0 + min-width 0 + 居中，避免被宿主的
+ * .n-button{display:inline-flex; min-width:...} 撑成「只占左半边、贴左挤在一起」。 ==== */
+.latent-studio .side-panel .side-foot,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-foot {
+  justify-content: stretch;
+  align-items: stretch;
+}
+.latent-studio .side-panel .side-foot :is(.n-button, button),
+html body[data-skin='dsh'] .latent-studio .side-panel .side-foot :is(.n-button, button) {
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto;
+  max-width: none;
+  justify-content: center;
+}
+
+/* ==== 40（追加修正）· 章节栏瘦头：⋯ 触发器 + 收起键，四颗行内按钮已由模板撤掉 ==== */
+.latent-studio .side-panel .side-head,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  padding-right: 34px;
+  position: relative;
+}
+.latent-studio .side-panel .side-more,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-more {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background-color: transparent;
+  color: var(--ls-ink-3);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color .16s ease, color .16s ease;
+}
+.latent-studio .side-panel .side-more:hover,
+html body[data-skin='dsh'] .latent-studio .side-panel .side-more:hover {
+  background-color: rgb(255 255 255 / .10);
+  color: var(--ls-ink);
+}
+
+/* ==== 41（追加修正）· 工具栏可见项对齐设计稿
+ * 设计：撤销 重做 │ B I U S │ 正文 H1 H2 H3 │ 更多格式 ⌄ 发送 DSH
+ * 「主行不放字号/颜色/底色/链接/书签/纸面」由模板负责搬进「更多格式」弹层；
+ * 本皮肤不再按 [data-act=…] 或 .n-select 全局隐藏，否则弹层里的同名控件会一起消失。
+ * 正文与 H1-H3 在所有宽度都保留。 ==== */
+/* 正文 / H1 / H2 / H3 全宽度可见：本条后置覆盖 §11 在 ≤560 对 h1/h2/h3 的 display:none */
+.latent-studio .editor-toolbar :is([data-act='paragraph'], [data-act='h1'], [data-act='h2'], [data-act='h3']),
+html body[data-skin='dsh'] .latent-studio .editor-toolbar :is([data-act='paragraph'], [data-act='h1'], [data-act='h2'], [data-act='h3']) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+/* 分组：模板自带的 .tb-sep 已在「重做后 / S 后 / H3 后 / 发送前」，这里只保证它在工具栏里可见且不被压扁 */
+.latent-studio .editor-toolbar > .tb-sep,
+html body[data-skin='dsh'] .latent-studio .editor-toolbar > .tb-sep {
+  display: block;
+  flex: none;
+  width: 1px;
+  height: 16px;
+  margin: 0 4px;
+  background-color: rgb(255 255 255 / .12);
+}
+
+/* ==== 42（追加修正）· 「更多格式」弹层 .tb-more 的面板样式
+ * 类名实锚：EditorToolbar.vue:140 的 <div class="tb-more">，全仓仅此一处。
+ * 该弹层由 naive-ui NPopover teleport 到 body 下的 v-binder-follower-container，
+ * 已不在 .latent-studio 子树里，所以除了带命名空间那一条，另写 html body[data-skin='dsh'] .tb-more
+ * 才够得着（仍只在本皮肤生效，不会外溢到别的宿主）。 ==== */
+.latent-studio .tb-more,
+html body[data-skin='dsh'] .tb-more {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  min-width: 186px;
+  padding: 8px;
+  border-radius: 14px;
+  background-color: rgb(12 14 18 / .96);
+  border: 1px solid rgb(255 255 255 / .14);
+  box-shadow: 0 24px 60px rgb(0 0 0 / .55), inset 0 1px 0 rgb(255 255 255 / .10);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(18px) saturate(1.2);
+}
+.latent-studio .tb-more .tb,
+html body[data-skin='dsh'] .tb-more .tb {
+  width: 100%;
+  height: 30px;
+  flex: none;
+  justify-content: flex-start;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: var(--ls-ink-2);
+}
+.latent-studio .tb-more .tb:hover,
+html body[data-skin='dsh'] .tb-more .tb:hover {
+  background-color: rgb(255 255 255 / .1);
+  color: #fff;
+}
+.latent-studio .tb-more .tb.on,
+html body[data-skin='dsh'] .tb-more .tb.on {
+  background-color: rgb(255 255 255 / .16);
+  color: #fff;
+}
+/* 纵向弹层里的分组线：由横向 1×16 改写成 1px 通栏 */
+.latent-studio .tb-more > .tb-sep,
+html body[data-skin='dsh'] .tb-more > .tb-sep {
+  display: block;
+  flex: none;
+  width: 100%;
+  height: 1px;
+  margin: 4px 0;
+  background-color: rgb(255 255 255 / .1);
+}
+.latent-studio .tb-more :is(.n-select, .n-color-picker),
+html body[data-skin='dsh'] .tb-more :is(.n-select, .n-color-picker) {
+  width: 100%;
+}
+/* 搬进弹层的纸面选择器同样铺满一行 */
+.latent-studio .tb-more .tb-paper-in-more,
+html body[data-skin='dsh'] .tb-more .tb-paper-in-more {
+  display: block;
+  width: 100%;
+}
+.latent-studio .tb-more .writing-paper-menu,
+html body[data-skin='dsh'] .tb-more .writing-paper-menu {
+  display: flex;
+  width: 100%;
+}
+.latent-studio .tb-more .paper-menu-trigger,
+html body[data-skin='dsh'] .tb-more .paper-menu-trigger {
+  width: 100%;
+  height: 30px;
+  justify-content: flex-start;
+  padding: 0 10px;
+  border-radius: 8px;
+}
+
+/* ==== 43（追加修正）· 「更多格式」弹层改用裸选择器
+ * 43 之前的写法带 html body[data-skin='dsh'] 前缀，而弹层被 naive-ui teleport 到 body 下，
+ * 真机 harness 的 html/body 上不一定同时有 data-skin，于是整块没命中、按钮退回 ~26px 行内宽，
+ * 中文逐字换行。.tb-more 全仓唯一（EditorToolbar.vue:140），裸选择器不会外溢。
+ * white-space:nowrap 是这条的关键：不加则中文仍逐字折行。 ==== */
+.tb-more {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  min-width: 200px;
+  padding: 8px;
+  border-radius: 14px;
+  background-color: rgb(12 14 18 / .97);
+  border: 1px solid rgb(255 255 255 / .14);
+  box-shadow: 0 24px 60px rgb(0 0 0 / .55), inset 0 1px 0 rgb(255 255 255 / .10);
+}
+.tb-more > * {
+  width: 100%;
+  min-width: 0;
+}
+.tb-more .tb {
+  width: 100%;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12.5px;
+  color: var(--ls-ink-2);
+}
+.tb-more .tb:hover {
+  background-color: rgb(255 255 255 / .10);
+  color: #fff;
+}
+.tb-more .tb.on {
+  background-color: rgb(255 255 255 / .16);
+  color: #fff;
+}
+.tb-more > .tb-sep {
+  display: block;
+  flex: none;
+  width: 100%;
+  height: 1px;
+  margin: 4px 0;
+  background-color: rgb(255 255 255 / .10);
+}
+.tb-more :is(.n-select, .n-color-picker, .n-base-selection) {
+  width: 100%;
+  min-width: 0;
+}
+.tb-more .n-base-selection {
+  background-color: rgb(255 255 255 / .06);
+}
+
+/* ==== 44（追加修正）· 稿纸滚动条收敛到 8px 细条
+ * EditorPane.vue 的 scoped 规则（.editor-wrap :deep(.rich-host::-webkit-scrollbar)，编译后是
+ * .editor-wrap[data-v] .rich-host::-webkit-scrollbar ≈ (0,3,1)）是桌面版共用的 10px + 自定义 thumb，
+ * 不许改；这里用 .editor-wrap 再叠 html body[data-skin='dsh'] 把同一伪元素抬到 (0,4,2)，稳定压过它。 ==== */
+.latent-studio .editor-wrap .rich-host::-webkit-scrollbar,
+html body[data-skin='dsh'] .latent-studio .editor-wrap .rich-host::-webkit-scrollbar,
+html body[data-skin='dsh'] .editor-wrap .rich-host::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.latent-studio .editor-wrap .rich-host::-webkit-scrollbar-track,
+html body[data-skin='dsh'] .latent-studio .editor-wrap .rich-host::-webkit-scrollbar-track,
+.latent-studio .editor-wrap .rich-host::-webkit-scrollbar-corner,
+html body[data-skin='dsh'] .latent-studio .editor-wrap .rich-host::-webkit-scrollbar-corner,
+html body[data-skin='dsh'] .editor-wrap .rich-host::-webkit-scrollbar-track,
+html body[data-skin='dsh'] .editor-wrap .rich-host::-webkit-scrollbar-corner {
+  background: transparent;
+}
+.latent-studio .editor-wrap .rich-host::-webkit-scrollbar-thumb,
+html body[data-skin='dsh'] .latent-studio .editor-wrap .rich-host::-webkit-scrollbar-thumb,
+html body[data-skin='dsh'] .editor-wrap .rich-host::-webkit-scrollbar-thumb {
+  min-height: 40px;
+  border: 0;
+  border-radius: 999px;
+  background-color: rgb(255 255 255 / .14);
+  background-clip: padding-box;
+}
+.latent-studio .editor-wrap .rich-host::-webkit-scrollbar-thumb:hover,
+html body[data-skin='dsh'] .latent-studio .editor-wrap .rich-host::-webkit-scrollbar-thumb:hover,
+html body[data-skin='dsh'] .editor-wrap .rich-host::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(255 255 255 / .24);
+}
+.latent-studio .editor-wrap .rich-host::-webkit-scrollbar-button,
+html body[data-skin='dsh'] .latent-studio .editor-wrap .rich-host::-webkit-scrollbar-button,
+html body[data-skin='dsh'] .editor-wrap .rich-host::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+
+
+/* ==== 34（2026-11 重做）· 角落胶囊 + 章目栏重构 ====
+ * 用户口径：两栏收起后不要"左右两个竖长条框"，改成左上 / 右上角的透明小胶囊，不占正文视觉空间；
+ * 章目栏内部按"书的目录页"重排：三层字号阶梯（caps 元信息 / 13px 正文行 / 朱记标记）、序号列 + 字数列、
+ * 当前章朱砂条、主次分明的底栏、滚动下缘渐隐，并加一条按标题过滤。
+ * 本节是后置声明，专门压过 §6 / §9 / §12 / §13 / §16.3 / §16.4 / §18 / §19 / §23 / §32 的旧口径；
+ * 类名（.ol-side-rail / .rp-rail / .side-head / .side-list / .side-foot / .chapter-count）一律不动，
+ * 验收脚本靠这些类名定位与点击。 ==== */
+
+/* 34.1 胶囊本体：脱流贴角、横向书写，常驻 66% 不透明度（hover / focus 满显） */
+.latent-studio :is(.ol-side-rail, .rp-rail),
+html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail) {
+  position: absolute;
+  top: 6px;
+  bottom: auto;
+  left: 10px;
+  right: auto;
+  width: auto;
+  height: 26px;
+  z-index: 30;
+  flex: none;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 0 10px 0 8px;
+  border: 1px solid rgb(255 255 255 / .1);
+  border-radius: 999px;
+  background-color: rgb(10 12 16 / .34);
+  background-image: none;
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+  backdrop-filter: blur(10px) saturate(1.2);
+  box-shadow: 0 8px 20px rgb(0 0 0 / .22);
+  color: var(--ls-ink-2);
+  cursor: pointer;
+  overflow: visible;
+  writing-mode: horizontal-tb;
+  font-family: var(--ls-sans);
+  font-size: 12px;
+  letter-spacing: .04em;
+  opacity: .66;
+  transition: opacity 180ms var(--ls-ease), background-color 180ms var(--ls-ease), border-color 180ms var(--ls-ease), transform 180ms var(--ls-ease);
+}
+.latent-studio .rp-rail,
+html body[data-skin='dsh'] .latent-studio .rp-rail {
+  left: auto;
+  right: 10px;
+}
+.latent-studio :is(.ol-side-rail, .rp-rail):hover,
+html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail):hover {
+  opacity: 1;
+  background-color: rgb(12 14 19 / .46);
+  border-color: rgb(255 255 255 / .18);
+  color: #fff;
+  transform: translateY(-1px);
+}
+.latent-studio :is(.ol-side-rail, .rp-rail):focus-visible,
+html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail):focus-visible {
+  opacity: 1;
+  outline: 2px solid rgb(255 255 255 / .7);
+  outline-offset: 2px;
+}
+/* 朱记字标：与封面「记」、当前章朱砂条同一枚红 */
+.latent-studio :is(.ol-side-rail, .rp-rail) .rail-mark,
+html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail) .rail-mark {
+  flex: none;
+  font-family: var(--ls-serif);
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+  color: var(--ls-red-soft);
+  transition: color 180ms var(--ls-ease);
+}
+.latent-studio :is(.ol-side-rail, .rp-rail):hover .rail-mark,
+html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail):hover .rail-mark {
+  color: #ffb0a4;
+}
+.latent-studio :is(.ol-side-rail, .rp-rail) :is(.rail-text, .rp-rail-text),
+html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail) :is(.rail-text, .rp-rail-text) {
+  flex: none;
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+  max-height: none;
+  max-width: none;
+  overflow: visible;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  user-select: none;
+}
+.latent-studio :is(.ol-side-rail, .rp-rail) .rail-count,
+html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail) .rail-count {
+  flex: none;
+  font-family: var(--ls-sans);
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0;
+  color: var(--ls-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 34.2 让位带：胶囊浮在正文顶部 26~30px 的窄带里，章头整体下移一档（窄档 gutter 归零也不会压章名） */
+.latent-studio[data-module='chapters'] .editor-head,
+html body[data-skin='dsh'] .latent-studio[data-module='chapters'] .editor-head {
+  margin-top: 34px;
+}
+@media (max-width: 560px) {
+  .latent-studio :is(.ol-side-rail, .rp-rail),
+  html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail) {
+    top: 4px;
+    left: 8px;
+    height: 24px;
+    padding: 0 9px 0 7px;
+    gap: 5px;
+  }
+  .latent-studio .rp-rail,
+  html body[data-skin='dsh'] .latent-studio .rp-rail {
+    left: auto;
+    right: 8px;
+  }
+  .latent-studio :is(.ol-side-rail, .rp-rail) :is(.rail-text, .rp-rail-text),
+  html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail) :is(.rail-text, .rp-rail-text) {
+    font-size: 11px;
+  }
+  .latent-studio[data-module='chapters'] .editor-head,
+  html body[data-skin='dsh'] .latent-studio[data-module='chapters'] .editor-head {
+    margin-top: 30px;
+  }
+}
+
+/* 34.3 报头：朱记字标 + caps 标题 + 统计 + 两枚 24×24 幽灵键（不再横滑、不再打右侧遮罩） */
+/* 34.3 顶条：一行 = 查找框 + ⋯ + 收起。
+ * 2026-11 二次调整：原「册 / 章 目 / N 章 · M 字」报头已删 —— 章数与字数每行都自带（右侧字数列），
+ * 标题也被收起态胶囊的字标取代，留着只是重复占高；省下的高度全给列表。 */
+.latent-studio .side-panel .ct-root .side-head,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .side-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 6px;
+  padding: 10px 10px 8px;
+  overflow: visible;
+  border: 0;
+  border-bottom: 1px solid rgb(255 255 255 / .06);
+  background: transparent;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+.latent-studio .ct-tools,
+html body[data-skin='dsh'] .latent-studio .ct-tools {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+.latent-studio .side-panel .ct-root .side-head .side-more,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .side-head .side-more {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background-color: transparent;
+  color: var(--ls-ink-3);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease;
+}
+.latent-studio .side-panel .ct-root .side-head .side-more:hover,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .side-head .side-more:hover {
+  background-color: rgb(255 255 255 / .08);
+  border-color: rgb(255 255 255 / .1);
+  color: var(--ls-ink);
+}
+/* 收起键回到流内（§23 曾把它绝对定位到右上角），与 .rp-fold 同尺寸：24×24 */
+.latent-studio .side-panel .ct-root .side-head .side-fold,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .side-head .side-fold,
+.latent-studio .right-panel .rp-fold,
+html body[data-skin='dsh'] .latent-studio .right-panel .rp-fold {
+  position: static;
+  top: auto;
+  right: auto;
+  margin-left: 0;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background-color: transparent;
+  color: var(--ls-ink-3);
+  cursor: pointer;
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease;
+}
+.latent-studio .side-panel .ct-root .side-head .side-fold:hover,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .side-head .side-fold:hover,
+.latent-studio .right-panel .rp-fold:hover,
+html body[data-skin='dsh'] .latent-studio .right-panel .rp-fold:hover {
+  background-color: rgb(255 255 255 / .08);
+  border-color: rgb(255 255 255 / .1);
+  color: var(--ls-ink);
+}
+.latent-studio .right-panel .rp-fold,
+html body[data-skin='dsh'] .latent-studio .right-panel .rp-fold {
+  margin-left: auto;
+}
+
+/* 34.4 过滤行 */
+.latent-studio .ct-search,
+html body[data-skin='dsh'] .latent-studio .ct-search {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  margin: 0;
+  padding: 0 8px;
+  border: 1px solid rgb(255 255 255 / .06);
+  border-radius: 9px;
+  background-color: rgb(255 255 255 / .04);
+  color: var(--ls-ink-3);
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease;
+}
+.latent-studio .ct-search:focus-within,
+html body[data-skin='dsh'] .latent-studio .ct-search:focus-within {
+  background-color: rgb(255 255 255 / .07);
+  border-color: rgb(255 255 255 / .14);
+  color: var(--ls-ink-2);
+}
+.latent-studio .ct-search input,
+html body[data-skin='dsh'] .latent-studio .ct-search input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ls-ink);
+  font-family: var(--ls-sans);
+  font-size: 12px;
+  letter-spacing: .02em;
+  outline: none;
+}
+.latent-studio .ct-search input::-webkit-search-cancel-button,
+html body[data-skin='dsh'] .latent-studio .ct-search input::-webkit-search-cancel-button {
+  display: none;
+}
+.latent-studio .ct-search input::placeholder,
+html body[data-skin='dsh'] .latent-studio .ct-search input::placeholder {
+  color: var(--ls-ink-3);
+}
+.latent-studio .ct-search button,
+html body[data-skin='dsh'] .latent-studio .ct-search button {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ls-ink-3);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+.latent-studio .ct-search button:hover,
+html body[data-skin='dsh'] .latent-studio .ct-search button:hover {
+  color: var(--ls-ink);
+}
+.latent-studio .ct-empty,
+html body[data-skin='dsh'] .latent-studio .ct-empty {
+  margin: 12px 4px;
+  font-size: 12.5px;
+  color: var(--ls-ink-3);
+  text-align: center;
+}
+
+/* 34.5 行：32px 高、圆角 10、hover 一档白洗、当前章朱砂条 + 暖底；序号列固定 18px 右对齐 */
+.latent-studio .side-panel .ct-root .side-list,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .side-list {
+  padding: 2px 8px 12px;
+}
+.latent-studio .side-panel .ct-root .n-tree .n-tree-node,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .n-tree .n-tree-node {
+  min-height: 32px;
+  margin: 1px 0;
+  border-radius: 10px;
+  background-color: transparent;
+  box-shadow: none;
+  transition: background-color 160ms ease;
+}
+.latent-studio .side-panel .ct-root .n-tree .n-tree-node:hover,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .n-tree .n-tree-node:hover {
+  background-color: rgb(255 255 255 / .05);
+}
+.latent-studio .side-panel .ct-root .n-tree .n-tree-node.n-tree-node--selected,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .n-tree .n-tree-node.n-tree-node--selected {
+  background-color: rgb(192 72 58 / .07);
+  box-shadow: inset 0 0 0 1px rgb(192 72 58 / .14);
+}
+.latent-studio .side-panel .ct-root .n-tree .n-tree-node-content,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .n-tree .n-tree-node-content {
+  min-height: 32px;
+  padding: 5px 8px 5px 6px;
+  gap: 7px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.latent-studio .side-panel .ct-root .n-tree .n-tree-node-content__text,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .n-tree .n-tree-node-content__text {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+.latent-studio .side-panel .ct-root .n-tree .ct-label,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .n-tree .ct-label {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  position: static;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: .01em;
+  color: var(--ls-ink-2);
+}
+.latent-studio .side-panel .ct-root .n-tree .n-tree-node--selected .ct-label,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .n-tree .n-tree-node--selected .ct-label {
+  color: #fff;
+}
+.latent-studio .side-panel .ct-root .n-tree .ct-vol,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .n-tree .ct-vol {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .22em;
+  color: var(--ls-ink-3);
+}
+.latent-studio .side-panel .ct-root .n-tree .chapter-count,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .n-tree .chapter-count {
+  flex: none;
+  margin-left: auto;
+  font-family: var(--ls-sans);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0;
+  color: var(--ls-ink-3);
+  font-variant-numeric: tabular-nums;
+  opacity: .5;
+  transition: opacity 160ms ease;
+}
+.latent-studio .side-panel .ct-root .n-tree .chapter-count[data-suffix='volume'],
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .n-tree .chapter-count[data-suffix='volume'] {
+  letter-spacing: .12em;
+}
+.latent-studio .side-panel .ct-root .n-tree .n-tree-node:hover .chapter-count,
+.latent-studio .side-panel .ct-root .n-tree .n-tree-node--selected .chapter-count,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .n-tree .n-tree-node:hover .chapter-count,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .n-tree .n-tree-node--selected .chapter-count {
+  opacity: 1;
+}
+.latent-studio .side-panel .ct-root .n-tree .n-tree-node--selected .n-tree-node-content::before,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .n-tree .n-tree-node--selected .n-tree-node-content::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  width: 2px;
+  height: 16px;
+  border-radius: 2px;
+  transform: translateY(-50%);
+  background: var(--ls-red);
+  box-shadow: 0 0 8px rgb(192 72 58 / .5);
+}
+
+/* 34.6 底栏：主钮（白底深字）+ 次钮（文字），上方一条 18px 渐隐把列表收进去 */
+.latent-studio .side-panel .ct-root .side-foot,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .side-foot {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-start;
+  padding: 12px;
+  border-top: 1px solid rgb(255 255 255 / .06);
+  background: transparent;
+}
+.latent-studio .side-panel .ct-root .side-foot::before,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .side-foot::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -19px;
+  height: 18px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgb(10 12 16 / 0), rgb(10 12 16 / .72));
+}
+.latent-studio .side-panel .ct-root .side-foot .sp-new,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .side-foot .sp-new {
+  flex: 1 1 auto;
+  height: 30px;
+  border: 0;
+  border-radius: 10px;
+  background-color: #f4efe6;
+  background-image: none;
+  color: #17181c;
+  font-family: var(--ls-sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  box-shadow: none;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+.latent-studio .side-panel .ct-root .side-foot .sp-new:hover,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .side-foot .sp-new:hover {
+  background-color: #fff;
+  color: #14161a;
+}
+.latent-studio .side-panel .ct-root .side-foot .sp-ghost,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .side-foot .sp-ghost {
+  flex: none;
+  height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background-color: transparent;
+  color: var(--ls-ink-3);
+  font-family: var(--ls-sans);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: .02em;
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+.latent-studio .side-panel .ct-root .side-foot .sp-ghost:hover,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .side-foot .sp-ghost:hover {
+  background-color: rgb(255 255 255 / .06);
+  color: var(--ls-ink);
+}
+
+/* 34.7 胶囊内的 span 一律横排：宿主脚本（dsh.css / language.css）与旧皮肤都还留着
+ * 「细轨竖排」那套声明（writing-mode:vertical-rl + max-width:100% + overflow:hidden），
+ * 一旦命中就会把文字竖着断成单字、胶囊塌成 30px。这里用 `span:not(.…)` 这种高权重形态统一清掉。 */
+.latent-studio :is(.ol-side-rail, .rp-rail) span:not(.rp-rail-caret),
+.latent-studio :is(.ol-side-rail, .rp-rail) :is(.rail-text, .rp-rail-text, .rail-count, .rail-mark),
+html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail) span:not(.rp-rail-caret),
+html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail) :is(.rail-text, .rp-rail-text, .rail-count, .rail-mark) {
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+  max-height: none;
+  max-width: none;
+  overflow: visible;
+  white-space: nowrap;
+}
+
+/* 34.8 ≤560：正文左右对称留白（原先把 padding-left 归零，章名会直接顶到视口左缘、首字被裁）。
+ * 顶条胶囊浮在留白之上，不占列宽，所以 10px 的对称边距不会被吃掉。 */
+@media (max-width: 560px) {
+  .latent-studio .wb-body,
+  html body[data-skin='dsh'] .latent-studio .wb-body {
+    padding-left: 10px;
+  }
+}
+
+/* 34.9 胶囊内文字的排版以本节为准：宿主 dsh.css 还留着旧细轨的
+ * `body[data-skin='dsh'] .workbench-shell .ol-side-rail .rail-text{font-size:11px;letter-spacing:3px}`（0,4,1），
+ * 会盖掉本节的字距设定，这里用同权重形态重述一遍。 */
+html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail) span:not(.rp-rail-caret),
+html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail) :is(.rail-text, .rp-rail-text, .rail-count, .rail-mark),
+.latent-studio :is(.ol-side-rail, .rp-rail) span:not(.rp-rail-caret),
+.latent-studio :is(.ol-side-rail, .rp-rail) :is(.rail-text, .rp-rail-text, .rail-count, .rail-mark) {
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+  max-height: none;
+  max-width: none;
+  overflow: visible;
+  white-space: nowrap;
+  letter-spacing: .04em;
+}
+
+/* 34.10 顶条里的查找框必须让位：基础规则里它是 `flex:none`（当年独占一行），
+ * 进顶条后不改成可收缩，会把右边的收起键顶出面板外（695 档实测 ⋯ 已在 217，收起键被裁）。 */
+.latent-studio .side-panel .ct-root .side-head .ct-search,
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .side-head .ct-search {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  height: 28px;
+}
+
+/* 34.11 正文左右留白统一（≤1179）——把"顶住边框"真正落到几何上。
+ * 旧布局为了抢正文宽度把 `--ls-gutter` 归零，再用 `.wb-body{padding-left:0/padding-right:24px}`
+ * 给早已不存在的竖细轨让车道；细轨改成脱流胶囊后，这两条只剩副作用：
+ * 稿纸一旦被面板宽度约束（而不是被 --ls-col 770px 约束），head / toolbar / paper 就一起贴到 x=2，
+ * 章名首字还会被视口裁掉（695/760 档实测）。
+ * 现在两侧对称留白，并给 `--ls-gutter` 一个可见下界，三块仍在同一条左线上。 */
+@media (max-width: 1179px) {
+  .latent-studio,
+  html body[data-skin='dsh'] .latent-studio {
+    --ls-gutter: 16px;
+  }
+  .latent-studio .wb-body,
+  html body[data-skin='dsh'] .latent-studio .wb-body {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+@media (max-width: 560px) {
+  .latent-studio,
+  html body[data-skin='dsh'] .latent-studio {
+    --ls-gutter: 12px;
+  }
+  .latent-studio .wb-body,
+  html body[data-skin='dsh'] .latent-studio .wb-body {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+
+/* ==== 34.14（2026-11 四改）· 竖列胶囊进页边 + 释放顶部让位带 + 呼吸微光 ====
+ * 口径：胶囊改竖列（去掉红字「章」「批」，只留竖排标签 + 章数），落进卡片左/右的页边里；
+ * 顶部那条 26~30px 的让位带随之取消，章头回到顶栏下沿；文字边缘加一层慢呼吸微光提示位置。 */
+
+/* 34.14.1 竖列几何：宽 24、竖排、贴页边（材质沿用 §34.1，不再重复声明） */
+.latent-studio :is(.ol-side-rail, .rp-rail),
+html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail) {
+  position: absolute;
+  top: 6px;
+  bottom: auto;
+  left: 10px;
+  right: auto;
+  width: 24px;
+  height: auto;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 9px 0 8px;
+  border-radius: 999px;
+  overflow: visible;
+  opacity: .72;
+}
+.latent-studio .rp-rail,
+html body[data-skin='dsh'] .latent-studio .rp-rail {
+  left: auto;
+  right: 10px;
+}
+.latent-studio :is(.ol-side-rail, .rp-rail):hover,
+html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail):hover {
+  opacity: 1;
+}
+
+/* 竖排标签：压过 §34.9 的 horizontal-tb（同权重、后置） */
+.latent-studio :is(.ol-side-rail, .rp-rail) span:not(.rp-rail-caret),
+.latent-studio :is(.ol-side-rail, .rp-rail) :is(.rail-text, .rp-rail-text, .rail-count),
+html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail) span:not(.rp-rail-caret),
+html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail) :is(.rail-text, .rp-rail-text, .rail-count) {
+  max-height: none;
+  max-width: none;
+  overflow: visible;
+  white-space: nowrap;
+}
+.latent-studio :is(.ol-side-rail, .rp-rail) span:is(.rail-text, .rp-rail-text),
+html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail) span:is(.rail-text, .rp-rail-text) {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: .16em;
+  color: var(--ls-ink-2);
+  animation: ls-capsule-breath 3.2s ease-in-out infinite;
+}
+.latent-studio :is(.ol-side-rail, .rp-rail) span.rail-count,
+html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail) span.rail-count {
+  writing-mode: horizontal-tb;
+  font-family: var(--ls-sans);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0;
+  color: var(--ls-ink-3);
+  font-variant-numeric: tabular-nums;
+  animation: ls-capsule-breath 3.2s ease-in-out infinite;
+  animation-delay: .8s;
+}
+/* 右侧错开相位，两枚胶囊不同步闪 */
+.latent-studio .rp-rail :is(.rp-rail-text, .rail-count),
+html body[data-skin='dsh'] .latent-studio .rp-rail :is(.rp-rail-text, .rail-count) {
+  animation-delay: .9s;
+}
+
+/* 34.14.2 呼吸微光：只亮字缘，不亮底 */
+@keyframes ls-capsule-breath {
+  0%, 100% { text-shadow: 0 0 0 rgb(255 255 255 / 0); }
+  50% { text-shadow: 0 0 6px rgb(255 255 255 / .55), 0 0 13px rgb(255 255 255 / .28); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .latent-studio :is(.ol-side-rail, .rp-rail) :is(.rail-text, .rp-rail-text, .rail-count),
+  html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail) :is(.rail-text, .rp-rail-text, .rail-count) {
+    animation: none;
+    text-shadow: none;
+  }
+}
+
+/* 34.14.3 释放顶部让位带：章头回到顶栏下沿（原 34 / 30px 全还给正文） */
+.latent-studio[data-module='chapters'] .editor-head,
+html body[data-skin='dsh'] .latent-studio[data-module='chapters'] .editor-head {
+  margin-top: 6px;
+}
+
+/* 34.14.4 ≤560：页边只有 25px，竖条压到 16px 贴边 */
+@media (max-width: 560px) {
+  .latent-studio :is(.ol-side-rail, .rp-rail),
+  html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail) {
+    top: 4px;
+    left: 3px;
+    width: 16px;
+    padding: 8px 0 7px;
+    gap: 4px;
+  }
+  .latent-studio .rp-rail,
+  html body[data-skin='dsh'] .latent-studio .rp-rail {
+    left: auto;
+    right: 3px;
+  }
+  .latent-studio :is(.ol-side-rail, .rp-rail) :is(.rail-text, .rp-rail-text),
+  html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail) :is(.rail-text, .rp-rail-text) {
+    font-size: 9.5px;
+    letter-spacing: .1em;
+  }
+  .latent-studio :is(.ol-side-rail, .rp-rail) .rail-count,
+  html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail) .rail-count {
+    font-size: 9px;
+  }
+  .latent-studio[data-module='chapters'] .editor-head,
+  html body[data-skin='dsh'] .latent-studio[data-module='chapters'] .editor-head {
+    margin-top: 6px;
+  }
+}
+
+/* 34.15 竖列胶囊的让位收口：胶囊落进页边后，正文整体按"胶囊宽 + 4px 气口"右移，
+ * 否则章名的首字会顶到胶囊上（实测 544 档章名墨迹起点 14px，而胶囊右缘 19px）。
+ * ≥561：胶囊 24 宽（10..34）→ 左右各加 12px 内距，正文左缘 38，正文列 517→493；
+ * ≤560：胶囊压到 14 宽（2..16）→ 左右各加 6px，正文左缘 20，正文列 306→294（守门线 280）。 */
+@media (min-width: 561px) {
+  .latent-studio .wb-body,
+  html body[data-skin='dsh'] .latent-studio .wb-body {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+}
+@media (max-width: 560px) {
+  .latent-studio :is(.ol-side-rail, .rp-rail),
+  html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail) {
+    left: 2px;
+    width: 14px;
+    padding: 7px 0 6px;
+  }
+  .latent-studio .rp-rail,
+  html body[data-skin='dsh'] .latent-studio .rp-rail {
+    left: auto;
+    right: 2px;
+  }
+  .latent-studio :is(.ol-side-rail, .rp-rail) :is(.rail-text, .rp-rail-text),
+  html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail) :is(.rail-text, .rp-rail-text) {
+    font-size: 9px;
+    letter-spacing: .06em;
+  }
+  .latent-studio :is(.ol-side-rail, .rp-rail) .rail-count,
+  html body[data-skin='dsh'] .latent-studio :is(.ol-side-rail, .rp-rail) .rail-count {
+    font-size: 8.5px;
+  }
+  .latent-studio .wb-body,
+  html body[data-skin='dsh'] .latent-studio .wb-body {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+}
+
+/* ==== 34.16（2026-11 五改）· 版心回归 44em：稿纸 = 版心 + 2×内边距 ====
+ * 之前 --ls-col(44em) 被当成"稿纸宽"用，.rich-host 的左右内边距又从稿纸里扣掉一遍，
+ * 于是 1280 档版心只有 658px（承诺 770）——窗口一半以上是空白。
+ * 现在：--ls-page-w = 版心 + 2×内边距（再受面板宽度约束），稿纸按它撑开，
+ * 章头 / 工具栏 / 稿纸三处共用同一条宽度与左线。内边距同时收一档（更接近 Word 那张纸的比例）。 */
+.latent-studio,
+html body[data-skin='dsh'] .latent-studio {
+  --ls-pad-x: clamp(16px, 3.2vw, 48px);
+  --ls-pad-y: clamp(16px, 2.4vw, 40px);
+  --ls-page-w: min(calc(var(--ls-col) + 2 * var(--ls-pad-x)), calc(100% - var(--ls-gutter)));
+}
+
+/* 右键菜单：皮肤下必须不透明（原来 --bg-panel 是半透明层，正文会从菜单底下透出来） */
+html body[data-skin='dsh'] :is(.ctx-menu, .ctx-sub) {
+  background-color: rgb(17 19 24 / .985);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  backdrop-filter: blur(18px) saturate(1.15);
+  border: 1px solid rgb(255 255 255 / .14);
+  border-radius: 10px;
+  box-shadow: 0 24px 60px rgb(0 0 0 / .62), inset 0 1px 0 rgb(255 255 255 / .06);
+}
+
+/* 34.17 稿纸内边距最终口径：§36 的 `padding: 56px 64px` 字面值在 §27 之后，把左右边距锁死成 64，
+ * --ls-pad-x 根本落不了地（1280 档版心因此只有 658px）。这里用同权重、更靠后的声明把它交还给令牌。 */
+.latent-studio .rich-host,
+html body[data-skin='dsh'] .latent-studio .rich-host,
+html body[data-skin='dsh'] .latent-studio .rich-host.paper-texture.writing-paper-surface,
+html body[data-skin='dsh'] .rich-host,
+html body[data-skin='dsh'] .rich-host.paper-texture.writing-paper-surface {
+  padding: var(--ls-pad-y) var(--ls-pad-x);
+}
+
+
+/* ==== 45 · 「更多格式」弹层：网格化 + 视口高度上限（2026-11 六改）
+ * 症状：小窗口里展开「更多格式」，弹层是一根 200px 宽、16 行 30px 的竖条（≈750px），
+ * 而 naive 的 .n-popover 在本仓零覆写、也没有任何 max-height —— 于是直接突破视口下沿。
+ * 两处一起改：① .tb-more 自己给出上限并在内部滚动；② 给 teleport 出去的那层容器兜一道底线。
+ * 去重已经在模板里完成（对齐/列表/引用/清除与右键菜单重合，已删），所以这里只需稳住少量条目。 ==== */
+.tb-more {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  align-items: stretch;
+  gap: 2px;
+  min-width: 196px;
+  max-width: min(288px, calc(100vw - 24px));
+  max-height: min(70vh, 420px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+/* 通栏项：分组线、章节状态栏、嵌入的二级触发器与纸面选择器 */
+.tb-more > .tb-sep,
+.tb-more > .tb-more-chapter,
+.tb-more > :is(.n-popover, .tb-paper-in-more) {
+  grid-column: 1 / -1;
+}
+/* grid 里子项默认 align-items:stretch 会把 .tb 拉成整行；按钮自身仍要能收缩到格宽 */
+.tb-more .tb {
+  width: 100%;
+  min-width: 0;
+  justify-content: center;
+}
+/* 弹层内可以正常换行：这里不是工具栏主行，不必强制单行省略（旧 §43 的 nowrap/ellipsis 只对主行有意义） */
+.tb-more .tb {
+  white-space: nowrap;
+  text-overflow: clip;
+}
+/* 二级选择器（字号 / 颜色 / 底色）：紧凑网格，避免再长出一条竖条 */
+.tb-pick-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+  min-width: 190px;
+}
+.tb-pick-list .tb,
+.tb-pick-swatches .tb {
+  width: 100%;
+  min-width: 0;
+  height: 26px;
+  padding: 0 8px;
+  justify-content: center;
+  border-radius: 7px;
+  font-size: 12.5px;
+  color: var(--ls-ink-2);
+  background-color: transparent;
+}
+.tb-pick-list .tb:hover,
+.tb-pick-swatches .tb:hover {
+  background-color: rgb(255 255 255 / .1);
+  color: #fff;
+}
+.tb-pick-list .tb.on {
+  background-color: rgb(255 255 255 / .16);
+  color: #fff;
+}
+.tb-pick-swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(26px, 1fr));
+  gap: 4px;
+  min-width: 176px;
+  max-width: min(264px, calc(100vw - 48px));
+}
+.tb-pick-swatches .tb-swatch {
+  height: 26px;
+  padding: 0;
+  border-radius: 7px;
+  border: 1px solid rgb(255 255 255 / .16);
+}
+.tb-pick-swatches .tb-swatch-clear {
+  grid-column: 1 / -1;
+  font-size: 11.5px;
+}
+.tb-pick-link {
+  display: flex;
+  gap: 6px;
+  width: min(300px, calc(100vw - 48px));
+}
+/* 兜底：naive 把弹层 teleport 到 body 下的 .v-binder-follower-content，外层高度不受 .tb-more 约束。
+ * :has() 只在本皮肤的内容根内生效，命不中就不参与，主修复（.tb-more 自己的 max-height）仍然有效。 */
+html body[data-skin='dsh'] .v-binder-follower-content:has(> .tb-more) {
+  max-height: calc(100vh - 16px);
+  max-height: calc(100dvh - 16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+

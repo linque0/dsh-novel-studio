@@ -1,0 +1,515 @@
+/* ============================================================
+   style.2-panels.css · 伏案静水 · 三栏内部 + 稿纸排版
+   拼接顺序 1 -> 2 -> 3：令牌由 1 号声明，本文件只 var() 消费
+   无外链/无导入、不声明根部令牌、不重复玻璃底/描边/阴影
+   ============================================================ */
+
+/* 0. 面板只补圆角，材质由材质总表给 */
+.side-panel,
+.rp-panel {
+  border-radius: var(--st-radius);
+}
+
+/* ---------------- 1. 三栏骨架 ---------------- */
+.wb-body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 16px;
+  padding: 4px 16px 16px;
+}
+
+.dir-rail {
+  order: -1;
+  align-self: stretch;
+}
+
+.rp-rail {
+  align-self: stretch;
+}
+
+/* ---------------- 2. 章节栏 ---------------- */
+.side-panel {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 252px;
+  overflow: hidden;
+}
+
+.sp-head {
+  flex: none;
+  padding: 14px 14px 10px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sp-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+
+.sp-meta {
+  font-size: 11px;
+  color: var(--st-ink-3);
+  letter-spacing: .02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.sp-collapse {
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--st-ink-3);
+  transition: background var(--st-dur) var(--st-ease), color var(--st-dur) var(--st-ease);
+}
+
+.sp-collapse:hover {
+  background: rgb(255 255 255 / .1);
+  color: var(--st-ink);
+}
+
+.sp-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 2px 8px 10px;
+  overscroll-behavior: contain;
+}
+
+.sp-vol {
+  font-size: 11px;
+  letter-spacing: .18em;
+  color: var(--st-ink-3);
+  padding: 12px 8px 6px;
+}
+
+.sp-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 6px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 180ms ease;
+}
+
+.sp-row:hover {
+  background: rgb(255 255 255 / .07);
+}
+
+.sp-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sp-count {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--st-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.sp-more {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  color: var(--st-ink-3);
+  opacity: 0;
+  font-size: 12px;
+  transition: opacity 160ms ease, background 160ms ease;
+}
+
+.sp-row:hover .sp-more {
+  opacity: 1;
+}
+
+.sp-more:hover {
+  background: rgb(255 255 255 / .12);
+  color: var(--st-ink);
+}
+
+.sp-row.is-current {
+  background: rgb(255 255 255 / .1);
+}
+
+.sp-row.is-current .sp-name {
+  color: #fff;
+}
+
+.sp-current-bar {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  border-radius: 2px;
+  background: var(--st-red);
+  box-shadow: 0 0 10px rgb(192 72 58 / .55);
+}
+
+.sp-foot {
+  flex: none;
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px;
+  border-top: 1px solid rgb(255 255 255 / .08);
+}
+
+.sp-foot button {
+  flex: 1;
+  height: 28px;
+  border-radius: 10px;
+  font-size: 12px;
+  color: var(--st-ink-2);
+  background: rgb(255 255 255 / .06);
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.sp-foot button:hover {
+  background: rgb(255 255 255 / .12);
+  color: #fff;
+}
+
+/* ---------------- 3. 批注栏 ---------------- */
+.rp-panel {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 280px;
+  overflow: hidden;
+}
+
+.rp-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 14px 10px;
+}
+
+.rp-title {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.rp-head button {
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  color: var(--st-ink-3);
+  font-size: 12px;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.rp-head button:hover {
+  background: rgb(255 255 255 / .1);
+  color: var(--st-ink);
+}
+
+.rp-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overscroll-behavior: contain;
+}
+
+.rp-group-title {
+  font-size: 10.5px;
+  letter-spacing: .26em;
+  color: var(--st-ink-3);
+  margin-bottom: 8px;
+}
+
+.note {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgb(255 255 255 / .05);
+  border-left: 2px solid var(--st-red);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: background 180ms ease;
+}
+
+.note:hover {
+  background: rgb(255 255 255 / .08);
+}
+
+.note-quote {
+  font-size: 11.5px;
+  color: var(--st-red-soft);
+  line-height: 1.6;
+}
+
+.note-text {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--st-ink-2);
+}
+
+.note-time {
+  font-size: 11px;
+  color: var(--st-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.rp-input {
+  width: 100%;
+  min-height: 72px;
+  resize: vertical;
+  border-radius: 12px;
+  border: 1px solid rgb(255 255 255 / .12);
+  background: rgb(255 255 255 / .04);
+  color: var(--st-ink);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.7;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.rp-input:focus {
+  border-color: rgb(255 255 255 / .3);
+}
+
+.rp-quick {
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--st-ink-2);
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgb(255 255 255 / .04);
+}
+
+.rp-asset {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgb(255 255 255 / .07);
+}
+
+.rp-asset-meta {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--st-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.rp-upload {
+  height: 28px;
+  border-radius: 10px;
+  font-size: 12px;
+  background: rgb(255 255 255 / .06);
+  color: var(--st-ink-2);
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.rp-upload:hover {
+  background: rgb(255 255 255 / .12);
+  color: #fff;
+}
+
+/* ---------------- 4. 编辑区与稿纸 ---------------- */
+.center-pane {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.rich-host {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ed-head {
+  flex: none;
+  width: min(36em, 100% - 96px);
+  margin: 6px auto 0;
+  padding-bottom: 12px;
+}
+
+.ed-title {
+  margin: 0;
+  font-family: var(--st-serif);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  line-height: 1.3;
+}
+
+.ed-latin {
+  margin-top: 6px;
+  font-size: 9px;
+  letter-spacing: .32em;
+  text-transform: uppercase;
+  color: var(--st-ink-3);
+}
+
+.ed-rule {
+  width: 42px;
+  height: 1px;
+  margin: 10px 0 12px;
+  background: var(--st-red);
+}
+
+.ed-goal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--st-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.goal-track {
+  flex: 1;
+  height: 2px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / .16);
+  overflow: hidden;
+}
+
+.goal-track i {
+  display: block;
+  height: 100%;
+  background: #fff;
+  border-radius: 999px;
+  transition: width 480ms var(--st-ease);
+}
+
+.paper {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  width: min(36em, 100% - 96px);
+  margin: 0 auto 12px;
+  border-radius: 24px;
+  background-color: var(--st-paper);
+  background-image: linear-gradient(150deg, rgb(24 27 33 / .55), rgb(12 14 18 / .72));
+  box-shadow: 0 30px 70px rgb(0 0 0 / .55), inset 0 1px 0 rgb(255 255 255 / .16);
+  padding: 56px 64px;
+  transition: opacity 120ms ease;
+  overscroll-behavior: contain;
+}
+
+.paper.is-swapping {
+  opacity: 0;
+}
+
+.rich-inner {
+  max-width: 100%;
+}
+
+.tiptap {
+  font-family: var(--st-serif);
+  font-size: 17.5px;
+  line-height: 1.95;
+  letter-spacing: .01em;
+  color: var(--st-ink);
+  outline: none;
+  min-height: 40vh;
+  text-align: justify;
+  text-justify: inter-ideograph;
+}
+
+.tiptap p {
+  margin: 0;
+  text-indent: 2em;
+}
+
+.tiptap p + p {
+  margin-top: 0;
+}
+
+.paper-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  font-size: 13px;
+  color: var(--st-ink-3);
+  font-family: var(--st-sans);
+  letter-spacing: .04em;
+}
+
+/* ---------------- 5. 滚动条细则 ---------------- */
+.sp-list::-webkit-scrollbar,
+.rp-scroll::-webkit-scrollbar,
+.paper::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.sp-list::-webkit-scrollbar-thumb,
+.rp-scroll::-webkit-scrollbar-thumb,
+.paper::-webkit-scrollbar-thumb {
+  background: rgb(255 255 255 / .14);
+  border-radius: 8px;
+}
+
+.sp-list::-webkit-scrollbar-track,
+.rp-scroll::-webkit-scrollbar-track,
+.paper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---------------- 6. 断点 ---------------- */
+@media (max-width: 1179px) {
+  .side-panel {
+    width: 168px;
+  }
+}
+
+@media (max-width: 899px) {
+  .rp-panel {
+    display: none;
+  }
+
+  .paper {
+    padding: 40px 36px;
+  }
+}
+
+@media (max-width: 560px) {
+  .side-panel {
+    display: none;
+  }
+
+  .ed-head,
+  .paper {
+    width: 100%;
+  }
+
+  .paper {
+    padding: 24px;
+    border-radius: 18px;
+  }
+}

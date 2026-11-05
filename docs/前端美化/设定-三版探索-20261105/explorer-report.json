@@ -1,0 +1,41 @@
+{
+  "sandbox": "allow-scripts allow-forms; session state within embedded previews",
+  "results": [
+    {
+      "variant": "A",
+      "title": "预览内交互检查",
+      "pending": "待保存",
+      "save": "已更新"
+    },
+    {
+      "variant": "B",
+      "title": "预览内交互检查",
+      "pending": "待保存",
+      "save": "已更新"
+    },
+    {
+      "variant": "C",
+      "title": "预览内交互检查",
+      "pending": "待保存",
+      "save": "已更新"
+    },
+    {
+      "variant": "A",
+      "title": "预览内交互检查",
+      "pending": "待保存",
+      "save": "已更新"
+    },
+    {
+      "variant": "B",
+      "title": "预览内交互检查",
+      "pending": "待保存",
+      "save": "已更新"
+    },
+    {
+      "variant": "C",
+      "title": "预览内交互检查",
+      "pending": "待保存",
+      "save": "已更新"
+    }
+  ]
+}
