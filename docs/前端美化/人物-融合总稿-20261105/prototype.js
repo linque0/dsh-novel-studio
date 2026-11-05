@@ -1285,7 +1285,7 @@
     neighbors.forEach((n, i) => {
       if (!map[n.id]) {
         const a = i / Math.max(1, neighbors.length) * Math.PI * 2 - Math.PI / 2;
-        map[n.id] = narrow ? { x: i === neighbors.length - 1 && neighbors.length % 2 ? 500 : i % 2 ? 645 : 355, y: 290 + Math.floor(i / 2) * 135 } : { x: 500 + Math.cos(a) * 300, y: 360 + Math.sin(a) * 220 };
+        map[n.id] = narrow ? { x: i === neighbors.length - 1 && neighbors.length % 2 ? 500 : i % 2 ? 645 : 355, y: 290 + Math.floor(i / 2) * 146 } : { x: 500 + Math.cos(a) * 300, y: 360 + Math.sin(a) * 220 };
       }
     });
   }
@@ -1311,8 +1311,8 @@
   function edgeMarkup(r, id) {
     const a = positionOf(r.fromId), b = positionOf(r.toId);
     if (!a || !b) return "";
-    const narrow = innerWidth < 560 && state.prefs.scope === "local", child = r.fromId === id ? b : a, mx = narrow ? child.x : (a.x + b.x) / 2, my = narrow ? child.y - 66 : (a.y + b.y) / 2, adjacent = r.fromId === id || r.toId === id, w = Math.max(65, r.label.length * (narrow ? 12 : 11) + 18);
-    return `<g data-edge="${esc(r.id)}" data-from="${esc(r.fromId)}" data-to="${esc(r.toId)}"><path class="edge-line ${adjacent ? "adjacent" : ""}" d="M${a.x},${a.y} L${b.x},${b.y}"/><rect class="edge-label-bg" x="${mx - w / 2}" y="${my - 11}" width="${w}" height="22" rx="7"/><text class="edge-label" x="${mx}" y="${my + 4}" text-anchor="middle" style="${narrow ? "font-size:13px" : ""}">${esc(r.label)}</text></g>`;
+    const narrow = innerWidth < 560 && state.prefs.scope === "local", child = r.fromId === id ? b : a, mx = narrow ? child.x : (a.x + b.x) / 2, my = narrow ? child.y - 73 : (a.y + b.y) / 2, adjacent = r.fromId === id || r.toId === id, w = Math.max(65, narrow ? Array.from(r.label).reduce((w2, ch) => w2 + (/[\u3400-\u9fff]/.test(ch) ? 16 : 9), 18) : r.label.length * 11 + 18);
+    return `<g data-edge="${esc(r.id)}" data-from="${esc(r.fromId)}" data-to="${esc(r.toId)}"><path class="edge-line ${adjacent ? "adjacent" : ""}" d="M${a.x},${a.y} L${b.x},${b.y}"/><rect class="edge-label-bg" x="${mx - w / 2}" y="${my - (narrow ? 13 : 11)}" width="${w}" height="${narrow ? 26 : 22}" rx="7"/><text class="edge-label" x="${mx}" y="${my + 4}" text-anchor="middle" style="${narrow ? "font-size:16px;fill:#f4eafa" : ""}">${esc(r.label)}</text></g>`;
   }
   function render() {
     runtime.view = initWorkspace(state.prefs);

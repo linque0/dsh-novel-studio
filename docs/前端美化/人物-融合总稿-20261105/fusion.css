@@ -13,3 +13,15 @@ body[data-view=profile] .context-section+.context-section{margin-top:23px;paddin
 .mobile-context-back{display:none}
 @media(max-width:1099px){.mobile-context-back{display:inline-flex}.module-head .segmented button{font-size:12px}.context-pane .compact-dossier .prose{font-size:15px}}
 @media(max-width:559px){.module-head .segmented button{font-size:11px;padding:6px 12px}.module-head .head-actions{justify-content:flex-start}.context-pane .compact-dossier .prose{font-size:14px}}
+
+/* Mobile refinement: relationship meaning is the second reading layer. */
+@media(max-width:559px){
+ .module-head{padding:15px 20px 14px;gap:7px}
+ .module-head h1{font-size:23px;line-height:1.4}
+ .module-head .segmented button{padding-top:5px;padding-bottom:5px}
+ .graph-node{padding:10px 10px 9px;min-height:99px}
+ .graph-node .portrait{width:26px;height:26px;font-size:18px}
+ .graph-node h3{margin-top:4px;line-height:1.3}
+ .graph-node small{margin-top:2px;line-height:1.4}
+ .edge-label-bg{fill:#46394f;stroke:#9b86a7;stroke-width:.7}
+}

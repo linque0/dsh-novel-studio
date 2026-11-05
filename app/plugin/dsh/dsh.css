@@ -1,3 +1,13 @@
+/* 2026-11-05 事故后重建说明（务必先读）
+ * 本文件在同日一次「子代理并发改写 + read(limit) 整体写回」事故中被截断（后段丢失），
+ * 随后由最后一次成功构建的 CSS 产物反推重建。恢复区的**原有注释已不可恢复**；
+ * 本次重建只做两件事，且已用「去空白/去注释后逐字节相同」证明规则未被改动：
+ *   1) 把各方面量（@font-face / 单声明规则）压回单行，恢复原有行数规模；
+ *   2) 按选择器归属插入模块分区注释（仅注释，不移动任何规则顺序）。
+ * 若要进一步还原注释原文，唯一可信来源是桌面仓库 novel-studio（已确认该仓库存在，
+ * 但与插件版已分叉，不可整体覆盖）。 */
+/* dsh.css = DSH 宿主皮肤的覆盖层（data-skin=dsh）。位于 themes.css 之后加载，
+ * 所以这里的同选择器规则会覆盖基础层。分区见文件内 ===== 注释。 */
 /* DSH 插件版皮肤（M0 变量层 + M1-C1 外壳与书架）。
  * 宿主令牌从 iframe 外部注入到文档根上的 --ns-*：--ns-bg / --ns-layer-1..3 / --ns-border-1..4 /
  * --ns-label-1..3 / --ns-caption / --ns-hover / --ns-active / --ns-success / --ns-warn / --ns-error /
@@ -9,6 +19,7 @@
 /* ===== 1. 变量层：themes.css 那套变量全量映射到宿主令牌 =====
  * 第二个选择器用于压过 .theme-xuan/.theme-parchment/.theme-night 在元素自身上的同名声明
  * （主题类声明在元素上，光靠 body 继承压不住）；html 前缀保证同样能压住挂在 body 上的主题类。 */
+/* ==================== 基础变量与全局 ==================== */
 html body[data-skin='dsh'],
 body[data-skin='dsh'] :is(.theme-xuan, .theme-parchment, .theme-night) {
   --bg: var(--ns-bg, #151517);
@@ -64,7 +75,7 @@ body[data-skin='dsh'] ::-webkit-scrollbar {
   width: var(--ns-scroll-width, 10px);
   height: var(--ns-scroll-width, 10px);
 }
-body[data-skin='dsh'] ::-webkit-scrollbar-track { background: transparent; }
+body[data-skin='dsh'] ::-webkit-scrollbar-track{background:transparent;}
 body[data-skin='dsh'] ::-webkit-scrollbar-thumb {
   background: var(--ns-scroll-thumb, rgba(255, 255, 255, 0.18));
   border: 2px solid transparent;
@@ -85,6 +96,7 @@ body[data-skin='dsh'] ::-webkit-scrollbar-thumb:hover {
  * 权重：language.css 排在 dsh.css 之后，它的胶囊外壳是 (0,4,2)，同权重时后写为胜。
  * 本段每条都再挂一个 [data-ns-host]，把整组抬到 (0,5,3) 才压得住——否则高度、间距、
  * 玻璃底板与圆角会被它整套盖回去。 */
+/* ==================== 书架 ==================== */
 body[data-skin='dsh'] .app-topbar-shell,
 body[data-skin='dsh'] .original-shelf .app-topbar-shell {
   --topbar-bg: var(--ns-layer-1, #232324);
@@ -97,12 +109,17 @@ body[data-skin='dsh'] .original-shelf .app-topbar-shell {
   min-width: 0;
 }
 
-html body[data-skin='dsh'][data-ns-host] { --nsx-topbar-h: 84px; }
-@media (min-width: 900px) and (max-width: 1099px) { html body[data-skin='dsh'][data-ns-host] { --nsx-topbar-h: 72px; } }
-@media (min-width: 560px) and (max-width: 899px) { html body[data-skin='dsh'][data-ns-host] { --nsx-topbar-h: 56px; } }
-@media (max-width: 559px) { html body[data-skin='dsh'][data-ns-host] { --nsx-topbar-h: 44px; } }
+/* ==================== 基础变量与全局 ==================== */
+html body[data-skin='dsh'][data-ns-host]{--nsx-topbar-h:84px;}
+@media (min-width: 900px) and (max-width: 1099px) {
+html body[data-skin='dsh'][data-ns-host]{--nsx-topbar-h:72px;} }
+@media (min-width: 560px) and (max-width: 899px) {
+html body[data-skin='dsh'][data-ns-host]{--nsx-topbar-h:56px;} }
+@media (max-width: 559px) {
+html body[data-skin='dsh'][data-ns-host]{--nsx-topbar-h:44px;} }
 
 /* 顶栏本身回到文档流：整宽、无外距、无底板，设计稿里它是背景上的一行。 */
+/* ==================== 书架 ==================== */
 html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) {
   box-sizing: border-box;
   display: flex;
@@ -124,6 +141,7 @@ html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .ori
 }
 
 /* 品牌：19px/800 主名 + 10px「LATENT」小字（.18em / 0.7）；「坊」字标与皮肤小字退场。 */
+/* ==================== 顶栏 ==================== */
 html body[data-skin='dsh'][data-ns-host] .app-topbar-shell .app-topbar .app-topbar-brand {
   display: flex;
   align-items: center;
@@ -152,9 +170,10 @@ html body[data-skin='dsh'][data-ns-host] .app-topbar-shell .app-topbar .app-topb
   opacity: 0.7;
   color: inherit;
 }
-html body[data-skin='dsh'][data-ns-host] .app-topbar-shell .app-topbar .app-topbar-mark { display: none; }
+html body[data-skin='dsh'][data-ns-host] .app-topbar-shell .app-topbar .app-topbar-mark{display:none;}
 
 /* 导航胶囊：绝对居中，宽度跟着内容走，放不下时自己横向滚动（两缘渐隐仍由 language.css 给）。 */
+/* ==================== 书架 ==================== */
 html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topnav {
   position: absolute;
   left: 50%;
@@ -178,7 +197,7 @@ html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .ori
   overflow-y: hidden;
   scrollbar-width: none;
 }
-html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topnav::-webkit-scrollbar { display: none; }
+html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topnav::-webkit-scrollbar{display:none;}
 html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topnav-item {
   position: relative;
   display: flex;
@@ -239,9 +258,9 @@ html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .ori
   height: 13px;
   flex: none;
 }
-html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-save[data-save-state='saving'] { color: var(--ns-warn, #f59e0b); }
-html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-save[data-save-state='dirty'] { color: var(--ns-warn, #f59e0b); }
-html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-save[data-save-state='error'] { color: var(--ns-error, #f25a5a); }
+html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-save[data-save-state='saving']{color:var(--ns-warn, #f59e0b);}
+html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-save[data-save-state='dirty']{color:var(--ns-warn, #f59e0b);}
+html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-save[data-save-state='error']{color:var(--ns-error, #f25a5a);}
 
 html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-round {
   display: inline-flex;
@@ -339,14 +358,14 @@ html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .ori
 }
 
 /* 「＋新书上架」不在设计稿的右簇里：书架的 ＋ 入口由书架自己的圆钮承担。 */
-html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-create { display: none; }
+html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-create{display:none;}
 /* 宿主注入的动作条在设计稿里没有位置：搜索 / 更多在 ⋯ 与设置圆钮里都有等价项。 */
-html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-actions .save-badge { display: none; }
+html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-actions .save-badge{display:none;}
 
 /* 900–1099（72px 档）：两侧留白收一档，胶囊给右簇让路。 */
 @media (min-width: 900px) and (max-width: 1099px) {
   html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) { padding: 0 28px; gap: 14px; }
-  html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topnav { max-width: calc(100% - 330px); }
+html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topnav{max-width:calc(100% - 330px);}
 }
 
 /* ===== 4. 中窄档（560–899，56px）：品牌 + 收窄胶囊 + 右簇（保存只留对勾） ===== */
@@ -354,11 +373,11 @@ html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .ori
   html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) { padding: 0 18px; gap: 12px; }
   html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topnav { max-width: calc(100% - 296px); padding: 4px; gap: 2px; }
   html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topnav-item { height: 32px; padding: 0 12px; font-size: 12.5px; }
-  html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-brand-text { font-size: 16px; }
-  html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-cluster { gap: 8px; }
+html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-brand-text{font-size:16px;}
+html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-cluster{gap:8px;}
   html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-round { width: 34px; height: 34px; }
   html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) :is(.app-topbar-round .app-topbar-ico, .app-topbar-pin svg) { width: 16px; height: 16px; }
-  html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-save-text { display: none; }
+html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-save-text{display:none;}
 }
 
 /* ===== 4b. 窄栏（≤559，44px）：作品名 + 当前模块名 + ⋯ =====
@@ -371,8 +390,9 @@ html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .ori
     flex-wrap: nowrap;
     overflow: hidden;
   }
-  html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topnav { display: none; }
-  html body[data-skin='dsh'][data-ns-host] .app-topbar-shell .app-topbar .app-topbar-brand-text { display: none; }
+html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topnav{display:none;}
+/* ==================== 顶栏 ==================== */
+html body[data-skin='dsh'][data-ns-host] .app-topbar-shell .app-topbar .app-topbar-brand-text{display:none;}
   html body[data-skin='dsh'][data-ns-host] .app-topbar-shell .app-topbar .app-topbar-narrow-title {
     display: block;
     max-width: 8em;
@@ -382,6 +402,7 @@ html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .ori
     font: 800 15px/1 Inter, 'Microsoft YaHei', system-ui, sans-serif;
     color: var(--nsx-ink-1, #f4efe6);
   }
+/* ==================== 书架 ==================== */
   html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-current {
     display: block;
     flex: none;
@@ -390,8 +411,8 @@ html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .ori
     font: 600 12.5px/1 Inter, 'Microsoft YaHei', system-ui, sans-serif;
     white-space: nowrap;
   }
-  html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-cluster { display: none; }
-  html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-actions { display: none; }
+html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-cluster{display:none;}
+html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-actions{display:none;}
   html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-more-wrap { display: flex; flex: none; }
   html body[data-skin='dsh'][data-ns-host] .app-topbar-shell :is(.app-topbar, .original-shelf .app-topbar) .app-topbar-more {
     display: flex;
@@ -421,9 +442,11 @@ body[data-skin='dsh'] .original-shelf :is(button, input, select):focus-visible {
 }
 
 /* 自动隐藏开关的吊舌（AutoHideTopbar）在插件版退场：锁定键已收进右簇（.app-topbar-pin）。 */
-body[data-skin='dsh'] .app-topbar-shell .wb-topbar-pin { display: none; }
+/* ==================== 顶栏 ==================== */
+body[data-skin='dsh'] .app-topbar-shell .wb-topbar-pin{display:none;}
 
 /* ⋯ 菜单（窄栏的导航出口）：弹层同样走宿主令牌，不留 naive 的浅色面板。 */
+/* ==================== 基础变量与全局 ==================== */
 body[data-skin='dsh'] .n-dropdown-menu {
   padding: 4px;
   border: 0.5px solid var(--ns-border-2, rgba(255, 255, 255, 0.12));
@@ -437,9 +460,9 @@ body[data-skin='dsh'] :is(.n-dropdown-option-body, .n-dropdown-option-body__labe
   color: var(--ns-label-2, #cfd3d6);
   font: 400 12px/1.4 'Microsoft YaHei', system-ui, sans-serif;
 }
-body[data-skin='dsh'] .n-dropdown-option-body { padding: 6px 10px; }
+body[data-skin='dsh'] .n-dropdown-option-body{padding:6px 10px;}
 body[data-skin='dsh'] .n-dropdown-option-body--disabled,
-body[data-skin='dsh'] .n-dropdown-option-body--disabled .n-dropdown-option-body__label { color: var(--ns-caption, #81858c); }
+body[data-skin='dsh'] .n-dropdown-option-body--disabled .n-dropdown-option-body__label{color:var(--ns-caption, #81858c);}
 body[data-skin='dsh'] .n-dropdown-option-body:hover {
   background-color: var(--ns-hover, rgba(255, 255, 255, 0.06));
   color: var(--ns-label-1, #f9fafb);
@@ -459,6 +482,7 @@ body[data-skin='dsh'] .workbench-shell .wb-body { background: var(--ns-bg, #1515
 
 /* 5.2 编辑区地面：玻璃叠在宿主暗底上，不再自己铺一层纯色；
  * background-image 必须保持 none（验收点），米色/纸纹/装订/框阴影一并撤掉。 */
+/* ==================== 正文编辑器 ==================== */
 body[data-skin='dsh'] .workbench-shell :is(.center-pane, .rich-host, .writing-paper-surface, .editor-wrap) {
   background: var(--nsx-glass-1, var(--ns-layer-1, #232324));
   background-image: none;
@@ -468,6 +492,7 @@ body[data-skin='dsh'] .workbench-shell :is(.center-pane, .rich-host, .writing-pa
   box-shadow: none;
   color: var(--ns-label-1, #f9fafb);
 }
+/* ==================== 基础变量与全局 ==================== */
 body[data-skin='dsh'] .workbench-shell :is(.center-pane.paper-texture, .rich-host.paper-texture)::before {
   display: none;
   content: none;
@@ -486,7 +511,7 @@ body[data-skin='dsh'] .rich-host .rich-inner .tiptap {
   line-height: 1.9;
   color: var(--ns-label-1, #f9fafb);
 }
-body[data-skin='dsh'] .workbench-shell .rich-host .tiptap p { margin: 0 0 1em; }
+body[data-skin='dsh'] .workbench-shell .rich-host .tiptap p{margin:0 0 1em;}
 body[data-skin='dsh'] .workbench-shell .rich-host .tiptap :is(h1, h2, h3) { color: var(--ns-label-1, #f9fafb); line-height: 1.5; }
 body[data-skin='dsh'] .workbench-shell .rich-host .tiptap blockquote {
   margin: 0 0 1em;
@@ -496,6 +521,7 @@ body[data-skin='dsh'] .workbench-shell .rich-host .tiptap blockquote {
 }
 
 /* 5.4 工具栏：34px 一条、图标按钮中性化、装饰分隔与渐变去掉 */
+/* ==================== 正文编辑器 ==================== */
 body[data-skin='dsh'] .workbench-shell .editor-toolbar,
 body[data-skin='dsh'] .editor-toolbar {
   box-sizing: border-box;
@@ -515,7 +541,7 @@ body[data-skin='dsh'] .editor-toolbar {
   box-shadow: none;
   scrollbar-width: none;
 }
-body[data-skin='dsh'] .editor-toolbar::-webkit-scrollbar { display: none; }
+body[data-skin='dsh'] .editor-toolbar::-webkit-scrollbar{display:none;}
 body[data-skin='dsh'] .editor-toolbar .tb {
   height: 26px;
   min-width: 24px;
@@ -532,10 +558,11 @@ body[data-skin='dsh'] .editor-toolbar .tb.on {
   color: var(--ns-label-1, #f9fafb);
   font-weight: 600;
 }
-body[data-skin='dsh'] .editor-toolbar .tb-sep { display: none; }
+body[data-skin='dsh'] .editor-toolbar .tb-sep{display:none;}
 body[data-skin='dsh'] .editor-toolbar .editor-bar-status { gap: 6px; margin-left: auto; flex: none; }
 
 /* 5.5 章节栏（左栏）：行 34px、圆角 12、选中 --ns-active */
+/* ==================== 基础变量与全局 ==================== */
 body[data-skin='dsh'] .workbench-shell .side-panel {
   background: var(--nsx-glass-2, var(--ns-layer-1, #232324));
   border: 0;
@@ -549,7 +576,7 @@ body[data-skin='dsh'] .workbench-shell .side-panel :is(.side-head, .side-foot) {
   border: 0;
   background: transparent;
 }
-body[data-skin='dsh'] .workbench-shell .side-panel .side-list { padding: 2px 4px 6px; }
+body[data-skin='dsh'] .workbench-shell .side-panel .side-list{padding:2px 4px 6px;}
 body[data-skin='dsh'] .workbench-shell .side-panel .n-tree .n-tree-node {
   min-height: 34px;
   margin: 1px 0;
@@ -563,15 +590,16 @@ body[data-skin='dsh'] .workbench-shell .side-panel .n-tree .n-tree-node-content 
   font-size: 13px;
   color: var(--ns-label-2, #cfd3d6);
 }
-body[data-skin='dsh'] .workbench-shell .side-panel .n-tree .n-tree-node:hover { background: var(--ns-hover, rgba(255, 255, 255, 0.06)); }
+body[data-skin='dsh'] .workbench-shell .side-panel .n-tree .n-tree-node:hover{background:var(--ns-hover, rgba(255, 255, 255, 0.06));}
 body[data-skin='dsh'] .workbench-shell .side-panel .n-tree .n-tree-node.n-tree-node--selected {
   background: var(--ns-active, rgba(255, 255, 255, 0.1));
   box-shadow: none;
 }
-body[data-skin='dsh'] .workbench-shell .side-panel .n-tree .n-tree-node.n-tree-node--selected .n-tree-node-content { color: var(--ns-label-1, #f9fafb); }
-body[data-skin='dsh'] .workbench-shell .side-panel .side-head .n-button { color: var(--ns-label-2, #cfd3d6); }
+body[data-skin='dsh'] .workbench-shell .side-panel .n-tree .n-tree-node.n-tree-node--selected .n-tree-node-content{color:var(--ns-label-1, #f9fafb);}
+body[data-skin='dsh'] .workbench-shell .side-panel .side-head .n-button{color:var(--ns-label-2, #cfd3d6);}
 
 /* 5.6 左缘细轨（章节栏收起后）：22px 竖排，无装饰边 */
+/* ==================== 大纲 ==================== */
 body[data-skin='dsh'] :is(.workbench-shell, .panel-host) .ol-side-rail {
   width: 22px;
   padding: 10px 0;
@@ -582,8 +610,9 @@ body[data-skin='dsh'] :is(.workbench-shell, .panel-host) .ol-side-rail {
 }
 body[data-skin='dsh'] :is(.workbench-shell, .panel-host) .ol-side-rail:hover { background: var(--ns-hover, rgba(255, 255, 255, 0.06)); color: var(--ns-label-1, #f9fafb); }
 body[data-skin='dsh'] .workbench-shell .ol-side-rail .rail-text { font-size: 11px; letter-spacing: 3px; }
+/* ==================== 基础变量与全局 ==================== */
 body[data-skin='dsh'] .workbench-shell .side-resizer { width: 4px; border: 0; background: transparent; }
-body[data-skin='dsh'] .workbench-shell .side-resizer:hover { background: var(--ns-border-2, rgba(255, 255, 255, 0.12)); }
+body[data-skin='dsh'] .workbench-shell .side-resizer:hover{background:var(--ns-border-2, rgba(255, 255, 255, 0.12));}
 
 /* 5.7 右资料栏：0.5px 边界、无装饰分割与阴影 */
 body[data-skin='dsh'] .workbench-shell .right-panel {
@@ -598,7 +627,7 @@ body[data-skin='dsh'] .workbench-shell .right-panel :is(.rp-head, .rp-tabs, .rp-
   background: transparent;
   box-shadow: none;
 }
-body[data-skin='dsh'] .workbench-shell .right-panel :is(.rp-title, .rp-cap) { color: var(--ns-label-1, #f9fafb); }
+body[data-skin='dsh'] .workbench-shell .right-panel :is(.rp-title, .rp-cap){color:var(--ns-label-1, #f9fafb);}
 body[data-skin='dsh'] .workbench-shell .right-panel .note-item {
   border: 0;
   border-bottom: 0.5px solid var(--ns-border-1, rgba(255, 255, 255, 0.06));
@@ -607,22 +636,24 @@ body[data-skin='dsh'] .workbench-shell .right-panel .note-item {
 }
 
 /* 5.8 字数目标底栏（Teleport 到 #app）：同色系细边界 */
+/* ==================== 正文编辑器 ==================== */
 body[data-skin='dsh'] .editor-foot {
   border-top: 0.5px solid var(--nsx-line, var(--ns-border-1, rgba(255, 255, 255, 0.06)));
   background: var(--nsx-glass-2, var(--ns-layer-1, #232324));
   color: var(--ns-label-3, #81858c);
   font-size: 11px;
 }
-body[data-skin='dsh'] .editor-foot .wg-track { background: var(--ns-border-1, rgba(255, 255, 255, 0.06)); }
-body[data-skin='dsh'] .editor-foot .wg-fill { background: var(--ns-accent, #7aaaff); }
+body[data-skin='dsh'] .editor-foot .wg-track{background:var(--ns-border-1, rgba(255, 255, 255, 0.06));}
+body[data-skin='dsh'] .editor-foot .wg-fill{background:var(--ns-accent, #7aaaff);}
 
 /* 5.9 窄栏（<560）：章节树默认收起后只留 22px 细轨；批注栏在此宽度不占正文 */
 @media (max-width: 559px) {
-  body[data-skin='dsh'] .workbench-shell .rich-host .rich-inner .tiptap { padding: 16px 14px 26vh; }
+/* ==================== 基础变量与全局 ==================== */
+body[data-skin='dsh'] .workbench-shell .rich-host .rich-inner .tiptap{padding:16px 14px 26vh;}
   /* 380 下右批注栏不占正文：入口是 ⋯「动作 → 批注」，打开后为覆盖式抽屉（宽 300，从右滑出，
      0.5px 左边界，遮罩 / × / Esc 都能关）；≥560 回到 5.7 的常驻三栏（宽 272）。 */
-  body[data-skin='dsh'] .workbench-shell .right-panel { display: none; }
-  body[data-skin='dsh'] .workbench-shell .rp-rail { display: none; }
+body[data-skin='dsh'] .workbench-shell .right-panel{display:none;}
+body[data-skin='dsh'] .workbench-shell .rp-rail{display:none;}
   body[data-skin='dsh'] .workbench-shell .right-panel.ns-notes-drawer {
     display: flex;
     flex-direction: column;
@@ -641,7 +672,7 @@ body[data-skin='dsh'] .editor-foot .wg-fill { background: var(--ns-accent, #7aaa
     box-shadow: none;
     animation: ns-notes-slide 0.18s ease-out;
   }
-  body[data-skin='dsh'] .workbench-shell .right-panel.ns-notes-drawer .rp-fold { display: none; }
+body[data-skin='dsh'] .workbench-shell .right-panel.ns-notes-drawer .rp-fold{display:none;}
   body[data-skin='dsh'] .workbench-shell .ns-notes-scrim {
     position: fixed;
     top: var(--ns-topbar-h, 36px);
@@ -676,11 +707,15 @@ body[data-skin='dsh'] .editor-foot .wg-fill { background: var(--ns-accent, #7aaa
     background: var(--ns-hover, rgba(255, 255, 255, 0.06));
     color: var(--ns-label-1, #f9fafb);
   }
-  body[data-skin='dsh'] .workbench-shell .editor-toolbar { padding: 0 4px; }
-  body[data-skin='dsh'] .workbench-shell .side-panel { border-right: 0; }
-  body[data-skin='dsh'] .workbench-shell .ol-side-rail { padding: 8px 0; }
+/* ==================== 正文编辑器 ==================== */
+body[data-skin='dsh'] .workbench-shell .editor-toolbar{padding:0 4px;}
+/* ==================== 基础变量与全局 ==================== */
+body[data-skin='dsh'] .workbench-shell .side-panel{border-right:0;}
+/* ==================== 大纲 ==================== */
+body[data-skin='dsh'] .workbench-shell .ol-side-rail{padding:8px 0;}
   /* 章标题：18 → 16，行高 1.35，最多两行（ChapterTitleField 会按 scrollHeight 写内联高度，
      所以用 max-height 兜住第 3 行）。 */
+/* ==================== 正文编辑器 ==================== */
   body[data-skin='dsh'] .workbench-shell .editor-head .title-input {
     font-size: 16px;
     line-height: 1.35;
@@ -690,14 +725,13 @@ body[data-skin='dsh'] .editor-foot .wg-fill { background: var(--ns-accent, #7aaa
 }
 
 /* 工具栏子项不参与收缩：窄栏里文字不许在按钮内部折行，超出部分横向滚动（.editor-toolbar 已有 overflow-x:auto）。 */
-body[data-skin='dsh'] .editor-toolbar > * { flex: none; }
-body[data-skin='dsh'] .editor-toolbar :is(.tb, button, .n-button, .n-select, .n-base-selection) { white-space: nowrap; }
+body[data-skin='dsh'] .editor-toolbar > *{flex:none;}
+body[data-skin='dsh'] .editor-toolbar :is(.tb, button, .n-button, .n-select, .n-base-selection){white-space:nowrap;}
 
 /* 详情弹窗（书架 → 详情）：正文分隔线原本是米色 #d4d2c4、按钮是深绿底 #284f48，都拉回中性。 */
-body[data-skin='dsh'] .os-detail-content { color: var(--ns-label-2, #cfd3d6); }
-body[data-skin='dsh'] .os-detail-content .os-detail-intro {
-  border-block: 1px solid var(--ns-border-1, rgba(255, 255, 255, 0.06));
-}
+/* ==================== 基础变量与全局 ==================== */
+body[data-skin='dsh'] .os-detail-content{color:var(--ns-label-2, #cfd3d6);}
+body[data-skin='dsh'] .os-detail-content .os-detail-intro{border-block:1px solid var(--ns-border-1, rgba(255, 255, 255, 0.06));}
 body[data-skin='dsh'] .os-modal-open {
   border: 0;
   border-radius: var(--ns-radius-sm, 8px);
@@ -705,15 +739,17 @@ body[data-skin='dsh'] .os-modal-open {
   color: var(--ns-bg, #151517);
   font-weight: 600;
 }
-body[data-skin='dsh'] .os-modal-open:hover { filter: brightness(1.08); }
+body[data-skin='dsh'] .os-modal-open:hover{filter:brightness(1.08);}
 
 /* 抽屉滑出（只在入场上播放一次；闭合靠 v-if 卸载，不做出场动画） */
 @keyframes ns-notes-slide {
+/* ==================== 其它组件 ==================== */
   from { transform: translateX(24px); opacity: 0.4; }
   to { transform: none; opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
-  body[data-skin='dsh'] .workbench-shell .right-panel.ns-notes-drawer { animation: none; }
+/* ==================== 基础变量与全局 ==================== */
+body[data-skin='dsh'] .workbench-shell .right-panel.ns-notes-drawer{animation:none;}
 }
 
 /* ===== 6. 人物页（M2a）=====
@@ -721,6 +757,7 @@ body[data-skin='dsh'] .os-modal-open:hover { filter: brightness(1.08); }
  * 头像 / 立绘容器改中性底 + 0.5px 描边（图片与首字兜底同一层，不加花纹）；
  * 字段表用 0.5px 分隔线；人物页按钮统一 28（tiny/small）/ 34（medium 及以上）高。
  * 统一挂 .workbench-shell 一层，压过 themes.css 的 .rp-* / .side-item 单类规则。 */
+/* ==================== 人物 ==================== */
 body[data-skin='dsh'] .workbench-shell .character-surface {
   background: var(--ns-bg, #151517);
   color: var(--ns-label-1, #f9fafb);
@@ -759,7 +796,7 @@ body[data-skin='dsh'] .workbench-shell .character-surface .character-initial {
 }
 
 /* 角色定位胶囊：中性描边，选中 --ns-active（与列表行一致） */
-body[data-skin='dsh'] .workbench-shell .character-surface .role-chips { gap: 6px; }
+body[data-skin='dsh'] .workbench-shell .character-surface .role-chips{gap:6px;}
 body[data-skin='dsh'] .workbench-shell .character-surface .role-chip {
   display: inline-flex;
   align-items: center;
@@ -793,9 +830,7 @@ body[data-skin='dsh'] .workbench-shell .character-surface :is(.rp-input, .rp-tex
   background: var(--nsx-glass-2, var(--ns-layer-2, #2c2c2e));
   color: var(--ns-label-1, #f9fafb);
 }
-body[data-skin='dsh'] .workbench-shell .character-surface :is(.rp-input, .rp-textarea):focus {
-  border-color: var(--ns-accent, #7aaaff);
-}
+body[data-skin='dsh'] .workbench-shell .character-surface :is(.rp-input, .rp-textarea):focus{border-color:var(--ns-accent, #7aaaff);}
 
 /* 字段表 / 关系表：行与行之间 0.5px 分隔线，区块标题用 caption 色 */
 body[data-skin='dsh'] .workbench-shell .character-surface .divider {
@@ -843,7 +878,7 @@ body[data-skin='dsh'] .workbench-shell[data-module='characters'] .side-panel .ch
   background: transparent;
   color: var(--ns-label-2, #cfd3d6);
 }
-body[data-skin='dsh'] .workbench-shell[data-module='characters'] .side-panel .side-list { padding: 2px 4px 6px; }
+body[data-skin='dsh'] .workbench-shell[data-module='characters'] .side-panel .side-list{padding:2px 4px 6px;}
 body[data-skin='dsh'] .workbench-shell[data-module='characters'] .side-panel .side-item {
   box-sizing: border-box;
   height: 34px;
@@ -855,9 +890,7 @@ body[data-skin='dsh'] .workbench-shell[data-module='characters'] .side-panel .si
   font-size: 13px;
   color: var(--ns-label-2, #cfd3d6);
 }
-body[data-skin='dsh'] .workbench-shell[data-module='characters'] .side-panel .side-item:hover {
-  background: var(--ns-hover, rgba(255, 255, 255, 0.06));
-}
+body[data-skin='dsh'] .workbench-shell[data-module='characters'] .side-panel .side-item:hover{background:var(--ns-hover, rgba(255, 255, 255, 0.06));}
 body[data-skin='dsh'] .workbench-shell[data-module='characters'] .side-panel .side-item.active {
   background: var(--ns-active, rgba(255, 255, 255, 0.1));
   color: var(--ns-label-1, #f9fafb);
@@ -871,11 +904,9 @@ body[data-skin='dsh'] .workbench-shell[data-module='characters'] .side-panel .si
     flex-direction: column;
     gap: 10px;
   }
-  body[data-skin='dsh'] .workbench-shell .character-surface .character-name-row,
+body[data-skin='dsh'] .workbench-shell .character-surface .character-name-row,
   body[data-skin='dsh'] .workbench-shell .character-surface .character-alias-row,
-  body[data-skin='dsh'] .workbench-shell .character-surface .field-row {
-    flex-wrap: wrap;
-  }
+  body[data-skin='dsh'] .workbench-shell .character-surface .field-row{flex-wrap:wrap;}
   body[data-skin='dsh'] .workbench-shell .character-surface .character-portrait .avatar-lg {
     width: 56px;
     height: 56px;
@@ -889,7 +920,10 @@ body[data-skin='dsh'] .workbench-shell[data-module='characters'] .side-panel .si
 
 /* 7.0 「恍然梦 · 模块助手」条：插件版没有恍然梦，整条不参与布局（MubuView/OutlineCenter 的
  * TaskLauncher 不像正文/人物页那样带 !nsPlugin，这里统一收掉）。 */
-body[data-skin='dsh'] .module-agent { display: none; }
+/* ==================== 基础变量与全局 ==================== */
+body[data-skin='dsh'] .module-agent{display:none;}
+
+/* ==================== 设定 ==================== */
 
 body[data-skin='dsh'] [data-module='lore'] .lore-workspace,
 body[data-skin='dsh'] [data-module='lore'] .lore-surface {
@@ -897,8 +931,8 @@ body[data-skin='dsh'] [data-module='lore'] .lore-surface {
   color: var(--ns-label-1, #f9fafb);
 }
 /* 380 下「设定」标题被挤压成两行：标题块不参与收缩、副标允许换行（内联样式只管字号，不管 flex）。 */
-body[data-skin='dsh'] [data-module='lore'] .module-heading { flex-wrap: wrap; }
-body[data-skin='dsh'] [data-module='lore'] .module-heading > :first-child { flex: none; }
+body[data-skin='dsh'] [data-module='lore'] .module-heading{flex-wrap:wrap;}
+body[data-skin='dsh'] [data-module='lore'] .module-heading > :first-child{flex:none;}
 
 /* 7.1 幕布工具栏：34px 一条、按钮 ghost 28、装饰分隔线去掉 */
 body[data-skin='dsh'] [data-module='lore'] .ob-toolbar {
@@ -918,7 +952,7 @@ body[data-skin='dsh'] [data-module='lore'] .ob-toolbar {
   box-shadow: none;
   scrollbar-width: none;
 }
-body[data-skin='dsh'] [data-module='lore'] .ob-toolbar::-webkit-scrollbar { display: none; }
+body[data-skin='dsh'] [data-module='lore'] .ob-toolbar::-webkit-scrollbar{display:none;}
 body[data-skin='dsh'] [data-module='lore'] .ob-toolbar .tb {
   display: inline-flex;
   align-items: center;
@@ -939,7 +973,7 @@ body[data-skin='dsh'] [data-module='lore'] .ob-toolbar .tb:hover {
   color: var(--ns-label-1, #f9fafb);
 }
 body[data-skin='dsh'] [data-module='lore'] .ob-toolbar .tb:disabled { opacity: 0.35; background: transparent; }
-body[data-skin='dsh'] [data-module='lore'] .ob-toolbar .tb-sep { display: none; }
+body[data-skin='dsh'] [data-module='lore'] .ob-toolbar .tb-sep{display:none;}
 body[data-skin='dsh'] [data-module='lore'] .ob-toolbar .ob-count {
   margin-left: auto;
   padding: 0 4px;
@@ -974,16 +1008,16 @@ body[data-skin='dsh'] [data-module='lore'] .ob-row {
   background: transparent;
   color: var(--ns-label-2, #cfd3d6);
 }
-body[data-skin='dsh'] [data-module='lore'] .ob-row:hover { background: var(--ns-hover, rgba(255, 255, 255, 0.06)); }
-body[data-skin='dsh'] [data-module='lore'] .ob-row.ns-row-on { background: var(--ns-active, rgba(255, 255, 255, 0.1)); }
-body[data-skin='dsh'] [data-module='lore'] .ob-row.ns-row-on .ob-text { color: var(--ns-label-1, #f9fafb); }
+body[data-skin='dsh'] [data-module='lore'] .ob-row:hover{background:var(--ns-hover, rgba(255, 255, 255, 0.06));}
+body[data-skin='dsh'] [data-module='lore'] .ob-row.ns-row-on{background:var(--ns-active, rgba(255, 255, 255, 0.1));}
+body[data-skin='dsh'] [data-module='lore'] .ob-row.ns-row-on .ob-text{color:var(--ns-label-1, #f9fafb);}
 /* 层级字号：集内一级=条目名，二级次之，三级以下降一档（设计稿 A 视图的层级读法） */
 body[data-skin='dsh'] [data-module='lore'] .ob-row[data-depth='0'] .ob-text {
   font-family: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', Georgia, serif;
   font-size: 16.5px;
   font-weight: 500;
 }
-body[data-skin='dsh'] [data-module='lore'] .ob-row[data-depth='1'] .ob-text { font-size: 14px; }
+body[data-skin='dsh'] [data-module='lore'] .ob-row[data-depth='1'] .ob-text{font-size:14px;}
 body[data-skin='dsh'] [data-module='lore'] .ob-row[data-depth='2'] .ob-text,
 body[data-skin='dsh'] [data-module='lore'] .ob-row[data-depth='3'] .ob-text,
 body[data-skin='dsh'] [data-module='lore'] .ob-row[data-depth='4'] .ob-text { font-size: 13px; opacity: .92; }
@@ -993,16 +1027,11 @@ body[data-skin='dsh'] [data-module='lore'] .lore-set-head {
   border-bottom: 0.5px solid var(--nsx-line, var(--ns-border-1, rgba(255, 255, 255, 0.06)));
   backdrop-filter: blur(12px);
 }
-body[data-skin='dsh'] [data-module='lore'] .lore-h1 { color: var(--ns-label-1, #f9fafb); }
-body[data-skin='dsh'] [data-module='lore'] .lore-crumbs { color: var(--ns-caption, #81858c); }
-body[data-skin='dsh'] [data-module='lore'] .lore-meta { color: var(--ns-label-3, #a3a7ad); }
-body[data-skin='dsh'] [data-module='lore'] .lore-head {
-  border-bottom: 0.5px solid var(--nsx-line, var(--ns-border-1, rgba(255, 255, 255, 0.06)));
-}
-
-body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-guide {
-  border-left: 1px solid var(--nsx-line, var(--ns-border-1, rgba(255, 255, 255, 0.06)));
-}
+body[data-skin='dsh'] [data-module='lore'] .lore-h1{color:var(--ns-label-1, #f9fafb);}
+body[data-skin='dsh'] [data-module='lore'] .lore-crumbs{color:var(--ns-caption, #81858c);}
+body[data-skin='dsh'] [data-module='lore'] .lore-meta{color:var(--ns-label-3, #a3a7ad);}
+body[data-skin='dsh'] [data-module='lore'] .lore-head{border-bottom:0.5px solid var(--nsx-line, var(--ns-border-1, rgba(255, 255, 255, 0.06)));}
+body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-guide{border-left:1px solid var(--nsx-line, var(--ns-border-1, rgba(255, 255, 255, 0.06)));}
 body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-text {
   min-height: 0;
   padding: 2px 4px;
@@ -1035,7 +1064,7 @@ body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-bullet::before {
   opacity: .85;
   transition: width .12s ease, height .12s ease, background .12s ease;
 }
-body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-bullet.has-children { border: 0; }
+body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-bullet.has-children{border:0;}
 body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-bullet.has-children::before {
   width: 7px;
   height: 7px;
@@ -1043,9 +1072,9 @@ body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-bullet.has-children::befo
   background: var(--ns-label-2, #cfd3d6);
   opacity: 1;
 }
-body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-bullet:hover::before { background: var(--ns-label-1, #f9fafb); }
+body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-bullet:hover::before{background:var(--ns-label-1, #f9fafb);}
 body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-bullet.folded { border: 0; background: transparent; }
-body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-bullet.folded::before { display: none; }
+body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-bullet.folded::before{display:none;}
 body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-bullet.folded::after {
   content: '▸';
   position: absolute;
@@ -1069,7 +1098,7 @@ body[data-skin='dsh'] [data-module='lore'] .ob-tag {
   font-size: 10px;
   line-height: 1;
 }
-body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-tags { margin-top: 0; }
+body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-tags{margin-top:0;}
 body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-ops { margin-top: 0; gap: 0; }
 
 body[data-skin=dsh] [data-module=lore] .ob-row .ob-op {
@@ -1096,9 +1125,8 @@ body[data-skin=dsh] [data-module=lore] .ob-relchip,body[data-skin=dsh] [data-mod
   font-size:11px;
 }
 
-body[data-skin=dsh] .workbench-shell[data-module=lore] .side-panel .side-list {
-  padding:2px 4px 6px;
-}
+/* ==================== 基础变量与全局 ==================== */
+body[data-skin=dsh] .workbench-shell[data-module=lore] .side-panel .side-list{padding:2px 4px 6px;}
 
 body[data-skin=dsh] .workbench-shell[data-module=lore] .side-panel .side-item {
   box-sizing:border-box;
@@ -1111,10 +1139,7 @@ body[data-skin=dsh] .workbench-shell[data-module=lore] .side-panel .side-item {
   font-size:13px;
   color:var(--ns-label-2, #cfd3d6);
 }
-
-body[data-skin=dsh] .workbench-shell[data-module=lore] .side-panel .side-item:hover {
-  background:var(--ns-hover, rgba(255, 255, 255, .06));
-}
+body[data-skin=dsh] .workbench-shell[data-module=lore] .side-panel .side-item:hover{background:var(--ns-hover, rgba(255, 255, 255, .06));}
 
 body[data-skin=dsh] .workbench-shell[data-module=lore] .side-panel .side-item.active {
   background:var(--ns-active, rgba(255, 255, 255, .1));
@@ -1122,9 +1147,10 @@ body[data-skin=dsh] .workbench-shell[data-module=lore] .side-panel .side-item.ac
   font-weight:600;
 }
 
-body[data-skin=dsh] .workbench-shell[data-module=lore] .side-panel :is(.ob-arrow,.side-empty) {
-  color:var(--ns-caption, #81858c);
-}
+/* ==================== 设定 ==================== */
+body[data-skin=dsh] .workbench-shell[data-module=lore] .side-panel :is(.ob-arrow,.side-empty){color:var(--ns-caption, #81858c);}
+
+/* ==================== 基础变量与全局 ==================== */
 
 body[data-skin=dsh] .workbench-shell[data-module=lore] .side-panel .side-search {
   padding:4px 0;
@@ -1156,6 +1182,8 @@ body[data-skin=dsh] .workbench-shell[data-module=lore] .side-panel .btn-ghost:ho
   color:var(--ns-label-1, #f9fafb);
 }
 
+/* ==================== 大纲 ==================== */
+
 body[data-skin=dsh] :is([data-module=lore],.om-wrap) .ob-ctx,body[data-skin=dsh] .om-wrap .oc-ctx {
   padding:4px;
   border:.5px solid var(--nsx-line, var(--ns-border-2, rgba(255, 255, 255, .12)));
@@ -1178,9 +1206,8 @@ body[data-skin=dsh] :is([data-module=lore],.om-wrap) .ob-ctx .ctx-item:hover,bod
   color:var(--ns-label-1, #f9fafb);
 }
 
-body[data-skin=dsh] [data-module=lore] .ob-ctx .ctx-item.disabled {
-  opacity:.4;
-}
+/* ==================== 设定 ==================== */
+body[data-skin=dsh] [data-module=lore] .ob-ctx .ctx-item.disabled{opacity:.4;}
 
 body[data-skin=dsh] [data-module=lore] .ob-ctx .ctx-item .hint {
   color:var(--ns-caption, #81858c);
@@ -1234,10 +1261,7 @@ body[data-skin=dsh] .ldt-page .ldt-crumb {
   color:var(--ns-label-3, #a3a7ad);
   font-size:12px;
 }
-
-body[data-skin=dsh] .ldt-page .ldt-crumb.cur {
-  color:var(--ns-label-1, #f9fafb);
-}
+body[data-skin=dsh] .ldt-page .ldt-crumb.cur{color:var(--ns-label-1, #f9fafb);}
 
 body[data-skin=dsh] .ldt-page .ldt-body {
   box-sizing:border-box;
@@ -1274,18 +1298,9 @@ body[data-skin=dsh] .ldt-page .ldt-kid {
   align-items:center;
   border-radius:var(--nsx-pill, 12px);
 }
-
-body[data-skin=dsh] .ldt-page .ldt-kid:hover {
-  background:var(--ns-hover, rgba(255, 255, 255, .06));
-}
-
-body[data-skin=dsh] .ldt-page .ldt-kid-dot {
-  background:var(--ns-border-3, rgba(255, 255, 255, .16));
-}
-
-body[data-skin=dsh] .ldt-page .ldt-kid-dot.has-children {
-  background:var(--ns-label-3, #a3a7ad);
-}
+body[data-skin=dsh] .ldt-page .ldt-kid:hover{background:var(--ns-hover, rgba(255, 255, 255, .06));}
+body[data-skin=dsh] .ldt-page .ldt-kid-dot{background:var(--ns-border-3, rgba(255, 255, 255, .16));}
+body[data-skin=dsh] .ldt-page .ldt-kid-dot.has-children{background:var(--ns-label-3, #a3a7ad);}
 
 body[data-skin=dsh] .ldt-page .n-button {
   height:28px;
@@ -1355,14 +1370,10 @@ body[data-skin=dsh] .lrp-panel .lrp-chip.on {
   color:var(--ns-label-1, #f9fafb);
   font-weight:600;
 }
+body[data-skin=dsh] .lrp-panel :is(.n-input,.n-base-selection){height:28px;}
+body[data-skin=dsh] .ldt-page{top:var(--ns-topbar-h, 36px);}
 
-body[data-skin=dsh] .lrp-panel :is(.n-input,.n-base-selection) {
-  height:28px;
-}
-
-body[data-skin=dsh] .ldt-page {
-  top:var(--ns-topbar-h, 36px);
-}
+/* ==================== 灵感 ==================== */
 
 body[data-skin=dsh] .workbench-shell[data-module=snippets] .snippet-surface {
   background:var(--ns-bg, #151517);
@@ -1390,14 +1401,8 @@ body[data-skin=dsh] .workbench-shell[data-module=snippets] .side-item {
   font-size:13px;
   color:var(--ns-label-2, #cfd3d6);
 }
-
-body[data-skin=dsh] .workbench-shell[data-module=snippets] .side-item:last-child {
-  border-bottom:0;
-}
-
-body[data-skin=dsh] .workbench-shell[data-module=snippets] .side-item:hover {
-  background:var(--ns-hover, rgba(255, 255, 255, .06));
-}
+body[data-skin=dsh] .workbench-shell[data-module=snippets] .side-item:last-child{border-bottom:0;}
+body[data-skin=dsh] .workbench-shell[data-module=snippets] .side-item:hover{background:var(--ns-hover, rgba(255, 255, 255, .06));}
 
 body[data-skin=dsh] .workbench-shell[data-module=snippets] .side-item.active {
   background:var(--ns-active, rgba(255, 255, 255, .1));
@@ -1408,10 +1413,7 @@ body[data-skin=dsh] .workbench-shell[data-module=snippets] .side-item .dim {
   color:var(--ns-caption, #81858c);
   font-size:11px;
 }
-
-body[data-skin=dsh] .workbench-shell[data-module=snippets] .side-head .n-input {
-  font-size:12px;
-}
+body[data-skin=dsh] .workbench-shell[data-module=snippets] .side-head .n-input{font-size:12px;}
 
 body[data-skin=dsh] .workbench-shell[data-module=snippets] .side-head .n-button,body[data-skin=dsh] .workbench-shell[data-module=snippets] .snippet-actions .n-button {
   height:28px;
@@ -1451,6 +1453,8 @@ body[data-skin=dsh] .workbench-shell[data-module=snippets] .empty-shelf p {
   font-size:12px;
 }
 
+/* ==================== 基础变量与全局 ==================== */
+
 body[data-skin=dsh] :is(.n-modal.n-card,.n-modal .n-card) {
   box-sizing:border-box;
   background:var(--nsx-glass-1, var(--ns-layer-1, #232324));
@@ -1474,10 +1478,7 @@ body[data-skin=dsh] .n-modal .n-card-header__main {
   font-size:16px;
   font-weight:600;
 }
-
-body[data-skin=dsh] .n-modal .n-card__content {
-  padding:12px 18px 18px;
-}
+body[data-skin=dsh] .n-modal .n-card__content{padding:12px 18px 18px;}
 
 body[data-skin=dsh] .n-modal .n-tabs-tab {
   height:34px;
@@ -1587,10 +1588,7 @@ body[data-skin=dsh] .sw-root .sw-sub {
   letter-spacing:.18em;
   color:var(--ns-caption, #81858c);
 }
-
-body[data-skin=dsh] .sw-root .sw-body {
-  background:transparent;
-}
+body[data-skin=dsh] .sw-root .sw-body{background:transparent;}
 
 body[data-skin=dsh] .sw-root .sw-nav {
   box-sizing:border-box;
@@ -1610,14 +1608,8 @@ body[data-skin=dsh] .sw-root .sw-nav-item {
   background:transparent;
   color:var(--ns-label-2, #cfd3d6);
 }
-
-body[data-skin=dsh] .sw-root .sw-nav-item:hover {
-  background:var(--ns-hover, rgba(255, 255, 255, .06));
-}
-
-body[data-skin=dsh] .sw-root .sw-nav-item.on {
-  background:var(--ns-active, rgba(255, 255, 255, .1));
-}
+body[data-skin=dsh] .sw-root .sw-nav-item:hover{background:var(--ns-hover, rgba(255, 255, 255, .06));}
+body[data-skin=dsh] .sw-root .sw-nav-item.on{background:var(--ns-active, rgba(255, 255, 255, .1));}
 
 body[data-skin=dsh] .sw-root .sw-nav-ico {
   width:22px;
@@ -1647,10 +1639,7 @@ body[data-skin=dsh] .sw-root .sw-nav-text i {
   line-height:14px;
   color:var(--ns-caption, #81858c);
 }
-
-body[data-skin=dsh] .sw-root .sw-nav-item.on .sw-nav-text b {
-  color:var(--ns-label-1, #f9fafb);
-}
+body[data-skin=dsh] .sw-root .sw-nav-item.on .sw-nav-text b{color:var(--ns-label-1, #f9fafb);}
 
 body[data-skin=dsh] .sw-root .sw-content {
   box-sizing:border-box;
@@ -1692,10 +1681,7 @@ body[data-skin=dsh] .sw-root .sw-row {
   padding:8px 12px;
   gap:12px;
 }
-
-body[data-skin=dsh] .sw-root :is(.sw-row+.sw-row,.sw-item+.sw-item) {
-  border-top:.5px solid var(--nsx-line, var(--ns-border-1, rgba(255, 255, 255, .06)));
-}
+body[data-skin=dsh] .sw-root :is(.sw-row+.sw-row,.sw-item+.sw-item){border-top:.5px solid var(--nsx-line, var(--ns-border-1, rgba(255, 255, 255, .06)));}
 
 body[data-skin=dsh] .sw-root .sw-row-main b {
   font-size:13px;
@@ -1713,26 +1699,11 @@ body[data-skin=dsh] .sw-root .sw-item {
   padding:8px 12px;
   color:var(--ns-label-2, #cfd3d6);
 }
-
-body[data-skin=dsh] .sw-root .sw-item:hover {
-  background:var(--ns-hover, rgba(255, 255, 255, .06));
-}
-
-body[data-skin=dsh] .sw-root .sw-item:hover .sw-row-main b {
-  color:var(--ns-label-1, #f9fafb);
-}
-
-body[data-skin=dsh] .sw-root .sw-item svg {
-  color:var(--ns-caption, #81858c);
-}
-
-body[data-skin=dsh] .sw-root .sw-item.is-danger,body[data-skin=dsh] .sw-root .sw-item.is-danger:hover,body[data-skin=dsh] .sw-root .sw-item.is-danger .sw-row-main b,body[data-skin=dsh] .sw-root .sw-item.is-danger:hover .sw-row-main b,body[data-skin=dsh] .sw-root .sw-item.is-danger svg {
-  color:var(--ns-error, #f25a5a);
-}
-
-body[data-skin=dsh] .sw-root .sw-item.is-danger:hover {
-  background:var(--ns-hover, rgba(255, 255, 255, .06));
-}
+body[data-skin=dsh] .sw-root .sw-item:hover{background:var(--ns-hover, rgba(255, 255, 255, .06));}
+body[data-skin=dsh] .sw-root .sw-item:hover .sw-row-main b{color:var(--ns-label-1, #f9fafb);}
+body[data-skin=dsh] .sw-root .sw-item svg{color:var(--ns-caption, #81858c);}
+body[data-skin=dsh] .sw-root .sw-item.is-danger,body[data-skin=dsh] .sw-root .sw-item.is-danger:hover,body[data-skin=dsh] .sw-root .sw-item.is-danger .sw-row-main b,body[data-skin=dsh] .sw-root .sw-item.is-danger:hover .sw-row-main b,body[data-skin=dsh] .sw-root .sw-item.is-danger svg{color:var(--ns-error, #f25a5a);}
+body[data-skin=dsh] .sw-root .sw-item.is-danger:hover{background:var(--ns-hover, rgba(255, 255, 255, .06));}
 
 body[data-skin=dsh] .sw-root :is(.n-input,.n-base-selection) {
   box-sizing:border-box;
@@ -1755,10 +1726,7 @@ body[data-skin=dsh] .sw-root .n-button {
   border-radius:8px;
   font-size:13px;
 }
-
-body[data-skin=dsh] .sw-root .chips {
-  gap:6px;
-}
+body[data-skin=dsh] .sw-root .chips{gap:6px;}
 
 body[data-skin=dsh] .sw-root .chip {
   box-sizing:border-box;
@@ -1797,19 +1765,13 @@ body[data-skin=dsh] .sw-root .sw-warn {
   color:var(--ns-warn, #f59e0b);
   font-size:11px;
 }
-
-body[data-skin=dsh] .sw-root .sw-warn.hot {
-  color:var(--ns-label-2, #cfd3d6);
-}
+body[data-skin=dsh] .sw-root .sw-warn.hot{color:var(--ns-label-2, #cfd3d6);}
 
 body[data-skin=dsh] .sw-root .sw-foot {
   font-size:10.5px;
   color:var(--ns-caption, #81858c);
 }
-
-html body[data-skin=dsh] .rg-main {
-  background:var(--ns-bg, #151517);
-}
+html body[data-skin=dsh] .rg-main{background:var(--ns-bg, #151517);}
 
 html body[data-skin=dsh] .rg-main .rg-canvas {
   box-sizing:border-box;
@@ -1819,10 +1781,7 @@ html body[data-skin=dsh] .rg-main .rg-canvas {
   border-radius:12px;
   box-shadow:none;
 }
-
-html body[data-skin=dsh] .rg-main .rg-edges {
-  filter:saturate(.55) brightness(.95);
-}
+html body[data-skin=dsh] .rg-main .rg-edges{filter:saturate(.55) brightness(.95);}
 
 html body[data-skin=dsh] .rg-main .rg-node {
   box-sizing:border-box;
@@ -1841,10 +1800,7 @@ html body[data-skin=dsh] .rg-main .rg-node.sel {
   border-color:var(--ns-accent, #7aaaff);
   box-shadow:0 0 0 1px var(--ns-accent, #7aaaff);
 }
-
-html body[data-skin=dsh] .rg-main .rg-node .rg-name {
-  color:var(--ns-label-1, #f9fafb);
-}
+html body[data-skin=dsh] .rg-main .rg-node .rg-name{color:var(--ns-label-1, #f9fafb);}
 
 html body[data-skin=dsh] .rg-main .rg-node .rg-avatar {
   border:.5px solid var(--ns-border-1, rgba(255, 255, 255, .06));
@@ -1949,15 +1905,14 @@ html body[data-skin=dsh] .rg-main .rg-open-person {
   font-size:12px;
 }
 
+/* ==================== 大纲 ==================== */
+
 html body[data-skin=dsh] .rg-main .oc-quick {
   border:.5px solid var(--ns-border-2, rgba(255, 255, 255, .12));
   border-radius:12px;
   background:var(--ns-layer-1, #232324);
 }
-
-html body[data-skin=dsh] .rg-main .oc-quick .big {
-  color:var(--ns-label-1, #f9fafb);
-}
+html body[data-skin=dsh] .rg-main .oc-quick .big{color:var(--ns-label-1, #f9fafb);}
 
 html body[data-skin=dsh] .rg-main .oc-quick p {
   color:var(--ns-caption, #81858c);
@@ -1972,6 +1927,8 @@ html body[data-skin=dsh] .rg-main .oc-quick-btns button {
   background:transparent;
   color:var(--ns-label-2, #cfd3d6);
 }
+
+/* ==================== 基础变量与全局 ==================== */
 
 html body[data-skin=dsh] .lg-wrap .lg-canvas {
   box-sizing:border-box;
@@ -1991,6 +1948,8 @@ html body[data-skin=dsh] .lg-wrap .lg-toolbar {
   background:transparent;
 }
 
+/* ==================== 大纲 ==================== */
+
 html body[data-skin=dsh] .lg-wrap .lg-toolbar .oc-count {
   color:var(--ns-caption, #81858c);
   font-size:11px;
@@ -2008,19 +1967,15 @@ html body[data-skin=dsh] .lg-wrap .lg-toolbar .om-btn {
   font-size:12px;
   line-height:1;
 }
-
-html body[data-skin=dsh] .lg-wrap .lg-toolbar :is(.om-btn.text,.om-btn) {
-  padding:0 8px;
-}
+html body[data-skin=dsh] .lg-wrap .lg-toolbar :is(.om-btn.text,.om-btn){padding:0 8px;}
 
 html body[data-skin=dsh] .lg-wrap .lg-toolbar .om-btn:hover {
   background:var(--ns-hover, rgba(255, 255, 255, .06));
   color:var(--ns-label-1, #f9fafb);
 }
 
-html body[data-skin=dsh] .lg-wrap .lg-edges {
-  filter:saturate(.55) brightness(.95);
-}
+/* ==================== 基础变量与全局 ==================== */
+html body[data-skin=dsh] .lg-wrap .lg-edges{filter:saturate(.55) brightness(.95);}
 
 html body[data-skin=dsh] .lg-wrap .lg-node {
   box-sizing:border-box;
@@ -2039,10 +1994,7 @@ html body[data-skin=dsh] .lg-wrap .lg-node.center {
   background:var(--ns-layer-2, #2c2c2e);
   color:var(--ns-label-1, #f9fafb);
 }
-
-html body[data-skin=dsh] .lg-wrap .lg-node .lg-title {
-  color:inherit;
-}
+html body[data-skin=dsh] .lg-wrap .lg-node .lg-title{color:inherit;}
 
 html body[data-skin=dsh] .lg-wrap .lg-node .lg-badge {
   border-radius:6px;
@@ -2063,10 +2015,7 @@ html body[data-skin=dsh] .lg-wrap .lg-empty {
   color:var(--ns-caption, #81858c);
   font-size:11px;
 }
-
-body[data-skin=dsh] .sw-root .writing-paper-options {
-  gap:6px;
-}
+body[data-skin=dsh] .sw-root .writing-paper-options{gap:6px;}
 
 body[data-skin=dsh] .sw-root .writing-paper-options>button {
   box-sizing:border-box;
@@ -2091,10 +2040,7 @@ body[data-skin=dsh] .sw-root .writing-paper-options .paper-option-copy small {
   color:var(--ns-caption, #81858c);
   font-size:11px;
 }
-
-body[data-skin=dsh] .sw-root .writing-paper-options .paper-check {
-  color:var(--ns-label-1, #f9fafb);
-}
+body[data-skin=dsh] .sw-root .writing-paper-options .paper-check{color:var(--ns-label-1, #f9fafb);}
 
 body[data-skin=dsh] .sw-root .writing-paper-options .writing-paper-swatch {
   border:.5px solid var(--ns-border-2, rgba(255, 255, 255, .12));
@@ -2108,10 +2054,7 @@ body[data-skin=dsh] .sw-root .writing-paper-options .writing-paper-swatch i {
   background:var(--ns-border-1, rgba(255, 255, 255, .06));
   border-color:var(--ns-border-2, rgba(255, 255, 255, .12));
 }
-
-body[data-skin=dsh] .sw-root .writing-paper-preview {
-  background:transparent;
-}
+body[data-skin=dsh] .sw-root .writing-paper-preview{background:transparent;}
 
 body[data-skin=dsh] .sw-root .writing-paper-preview .writing-paper-surface.paper-preview-page {
   border:.5px solid var(--ns-border-2, rgba(255, 255, 255, .12));
@@ -2121,14 +2064,8 @@ body[data-skin=dsh] .sw-root .writing-paper-preview .writing-paper-surface.paper
   box-shadow:none;
   color:var(--ns-label-2, #cfd3d6);
 }
-
-body[data-skin=dsh] .sw-root .writing-paper-preview .paper-preview-page :is(h2,p,footer) {
-  color:var(--ns-label-2, #cfd3d6);
-}
-
-body[data-skin=dsh] .sw-root .writing-paper-preview .paper-preview-page h2 {
-  color:var(--ns-label-1, #f9fafb);
-}
+body[data-skin=dsh] .sw-root .writing-paper-preview .paper-preview-page :is(h2,p,footer){color:var(--ns-label-2, #cfd3d6);}
+body[data-skin=dsh] .sw-root .writing-paper-preview .paper-preview-page h2{color:var(--ns-label-1, #f9fafb);}
 
 body[data-skin=dsh] .sw-root .writing-paper-preview .paper-preview-running {
   color:var(--ns-caption, #81858c);
@@ -2140,9 +2077,10 @@ body[data-skin=dsh] .n-switch .n-switch__button {
   box-shadow:inset 0 0 0 .5px var(--ns-border-3, rgba(255, 255, 255, .16));
 }
 
-body[data-skin=dsh] [data-module=lore] .ob-row {
-  padding-left:2px;
-}
+/* ==================== 设定 ==================== */
+body[data-skin=dsh] [data-module=lore] .ob-row{padding-left:2px;}
+
+/* ==================== 基础变量与全局 ==================== */
 
 html body[data-skin=dsh] {
   --nsx-glass-1: color-mix(in srgb, var(--ns-layer-1, #fafafa) 66%, transparent);
@@ -2176,10 +2114,14 @@ html[data-ns-dark] body[data-skin=dsh] {
   --nsx-shadow-2: 0 18px 48px rgba(0, 0, 0, .56), 0 2px 8px rgba(0, 0, 0, .4);
 }
 
+/* ==================== 顶栏 ==================== */
+
 html body[data-skin=dsh] .app-topbar-shell .wb-topbar-content {
   background:transparent;
   box-shadow:none;
 }
+
+/* ==================== 书架 ==================== */
 
 html body[data-skin=dsh] :is(.app-topbar,.original-shelf .app-topbar) {
   box-sizing:border-box;
@@ -2196,10 +2138,7 @@ html body[data-skin=dsh] :is(.app-topbar,.original-shelf .app-topbar) {
   color:var(--nsx-ink-1);
   transition:background-color .24s ease,border-color .24s ease,box-shadow .24s ease;
 }
-
-html body[data-skin=dsh] :is(.app-topbar,.original-shelf .app-topbar) .app-topbar-brand-text {
-  font-family:var(--nsx-serif);
-}
+html body[data-skin=dsh] :is(.app-topbar,.original-shelf .app-topbar) .app-topbar-brand-text{font-family:var(--nsx-serif);}
 
 html body[data-skin=dsh] :is(.app-topbar,.original-shelf .app-topbar) .app-topnav {
   flex:0 1 auto;
@@ -2243,6 +2182,8 @@ html body[data-skin=dsh] :is(.app-topbar,.original-shelf .app-topbar) [data-topb
   font:400 13px/1 var(--nsx-sans);
 }
 
+/* ==================== 基础变量与全局 ==================== */
+
 html body[data-skin=dsh] :is(.n-modal,.n-card,.n-popover,.n-dropdown-menu,.n-dialog) {
   background-color:var(--nsx-glass-1);
   -webkit-backdrop-filter:blur(var(--nsx-blur)) saturate(1.4);
@@ -2282,7 +2223,7 @@ html body[data-skin=dsh] .workbench-shell[data-module=lore][data-flow] :is(.side
   overflow: hidden;
   min-height: 0;
 }
-body[data-skin=dsh] .workbench-shell[data-module=lore] .center-pane { min-width: 0; }
+body[data-skin=dsh] .workbench-shell[data-module=lore] .center-pane{min-width:0;}
 /* 侧栏与主区之间 16px：拖拽手柄占满这条缝，不画分隔线（原型 .divider 也是透明的） */
 body[data-skin=dsh] .workbench-shell[data-module=lore] .side-resizer {
   flex: none;
@@ -2290,9 +2231,7 @@ body[data-skin=dsh] .workbench-shell[data-module=lore] .side-resizer {
   margin-left: 0;
   background: transparent;
 }
-body[data-skin=dsh] .workbench-shell[data-module=lore] .side-resizer:is(:hover, :active) {
-  background: transparent;
-}
+body[data-skin=dsh] .workbench-shell[data-module=lore] .side-resizer:is(:hover, :active){background:transparent;}
 
 /* 8.2 侧栏（原型 nav-head / nav-search / nav-section-label / nav-tree / category / nav-entry / nav-foot） */
 body[data-skin=dsh] [data-module=lore] .nav-pane {
@@ -2362,7 +2301,7 @@ body[data-skin=dsh] [data-module=lore] .nav-search input {
   color: #e3daec;
   outline: none;
 }
-body[data-skin=dsh] [data-module=lore] .nav-search input::placeholder { color: #b7a9c7; }
+body[data-skin=dsh] [data-module=lore] .nav-search input::placeholder{color:#b7a9c7;}
 body[data-skin=dsh] [data-module=lore] .nav-search-clear {
   flex: none;
   display: grid;
@@ -2376,7 +2315,7 @@ body[data-skin=dsh] [data-module=lore] .nav-search-clear {
   color: #b7a9c7;
   cursor: pointer;
 }
-body[data-skin=dsh] [data-module=lore] .nav-search-clear:hover { color: #f2ecf6; }
+body[data-skin=dsh] [data-module=lore] .nav-search-clear:hover{color:#f2ecf6;}
 body[data-skin=dsh] [data-module=lore] .nav-section-label {
   flex: none;
   display: flex;
@@ -2440,9 +2379,9 @@ body[data-skin=dsh] [data-module=lore] .category small {
   color: #b6a7c7;
   font-variant-numeric: tabular-nums;
 }
-body[data-skin=dsh] [data-module=lore] .category:hover { background: rgb(255 255 255 / .05); }
+body[data-skin=dsh] [data-module=lore] .category:hover{background:rgb(255 255 255 / .05);}
 body[data-skin=dsh] [data-module=lore] .category.current { background: rgb(255 255 255 / .095); color: #fff; }
-body[data-skin=dsh] [data-module=lore] .category.current > svg { color: #fff; }
+body[data-skin=dsh] [data-module=lore] .category.current > svg{color:#fff;}
 body[data-skin=dsh] [data-module=lore] .nav-children {
   margin: 0 0 12px 7px;
   padding-left: 13px;
@@ -2464,7 +2403,7 @@ body[data-skin=dsh] [data-module=lore] .nav-entry {
   white-space: nowrap;
   cursor: pointer;
 }
-body[data-skin=dsh] [data-module=lore] .nav-entry:hover { background: rgb(255 255 255 / .05); }
+body[data-skin=dsh] [data-module=lore] .nav-entry:hover{background:rgb(255 255 255 / .05);}
 body[data-skin=dsh] [data-module=lore] .nav-entry.selected { background: rgb(191 214 204 / .13); color: #d0e8df; }
 body[data-skin=dsh] [data-module=lore] .nav-empty { margin: 0; padding: 12px 8px; font-size: 11px; color: #b8a9c8; }
 body[data-skin=dsh] [data-module=lore] .nav-clear {
@@ -2491,9 +2430,10 @@ body[data-skin=dsh] [data-module=lore] .nav-foot {
   white-space: nowrap;
 }
 body[data-skin=dsh] [data-module=lore] .nav-foot > svg { flex: none; color: #a99bb8; }
-body[data-skin=dsh] [data-module=lore] .nav-foot span:last-child { margin-left: auto; }
+body[data-skin=dsh] [data-module=lore] .nav-foot span:last-child{margin-left:auto;}
 
 /* 8.3 头部与三视图切换器（原型 .fusion-head / .view-switch） */
+/* ==================== 设定 ==================== */
 body[data-skin=dsh] [data-module=lore] .lore-head {
   box-sizing: border-box;
   height: 105px;
@@ -2534,7 +2474,7 @@ body[data-skin=dsh] [data-module=lore] .lore-switch button {
   color: #c8b8d6;
   cursor: pointer;
 }
-body[data-skin=dsh] [data-module=lore] .lore-switch button:hover { color: #f6f1f9; }
+body[data-skin=dsh] [data-module=lore] .lore-switch button:hover{color:#f6f1f9;}
 body[data-skin=dsh] [data-module=lore] .lore-switch button.on { background: #f3eff5; color: #33283b; }
 
 /* 8.4 工具条（原型 .mubu-toolbar）：42px 一条、按钮 26 高、右端计数 10px。
@@ -2557,7 +2497,7 @@ body[data-skin=dsh] [data-module=lore] .ob-toolbar {
   color: #d6c9e1;
   scrollbar-width: none;
 }
-body[data-skin=dsh] [data-module=lore] .ob-toolbar::-webkit-scrollbar { display: none; }
+body[data-skin=dsh] [data-module=lore] .ob-toolbar::-webkit-scrollbar{display:none;}
 body[data-skin=dsh] [data-module=lore] .ob-toolbar .tb {
   display: inline-flex;
   align-items: center;
@@ -2593,7 +2533,7 @@ body[data-skin=dsh] [data-module=lore] .ob-toolbar .ob-count {
 }
 
 /* 8.5 滚动区与内容层（原型 .write-scroll / .write-surface） */
-body[data-skin=dsh] [data-module=lore] .lore-surface { padding: 0; }
+body[data-skin=dsh] [data-module=lore] .lore-surface{padding:0;}
 /* flow-shell.css §4.2 给 .ob-editor 单铺了一块 52% 玻璃板（(0,5,2)），这里撤掉：
    原型 A 视图是条目直接写在主区玻璃上，滚动口只负责留白与滚动。 */
 html body[data-skin=dsh] .workbench-shell[data-module=lore] .lore-surface .ob-editor,
@@ -2613,6 +2553,7 @@ html body[data-skin=dsh] .workbench-shell[data-module=lore][data-flow] .lore-sur
   scrollbar-width: thin;
   scrollbar-color: rgb(119 100 131 / .33) transparent;
 }
+/* ==================== 基础变量与全局 ==================== */
 body[data-skin=dsh] [data-module=lore] .write-surface {
   position: relative;
   min-height: 100%;
@@ -2620,6 +2561,7 @@ body[data-skin=dsh] [data-module=lore] .write-surface {
 }
 
 /* 8.6 行（原型 .mubu-row）：35px 行高、--indent = min(depth*22px,154px)、顶级行间距 14px */
+/* ==================== 设定 ==================== */
 body[data-skin=dsh] [data-module=lore] .ob-row {
   box-sizing: border-box;
   --indent: min(calc(var(--depth, 0) * 22px), 154px);
@@ -2634,15 +2576,15 @@ body[data-skin=dsh] [data-module=lore] .ob-row {
   background: transparent;
   color: #f4eef7;
 }
-body[data-skin=dsh] [data-module=lore] .ob-row[data-depth='0'] { margin-top: 14px; }
-body[data-skin=dsh] [data-module=lore] .lore-set-head + .ob-row[data-depth='0'] { margin-top: 0; }
-body[data-skin=dsh] [data-module=lore] .ob-row:hover { background: rgb(255 255 255 / .035); }
-body[data-skin=dsh] [data-module=lore] .ob-row:focus-within { background: rgb(255 255 255 / .05); }
+body[data-skin=dsh] [data-module=lore] .ob-row[data-depth='0']{margin-top:14px;}
+body[data-skin=dsh] [data-module=lore] .lore-set-head + .ob-row[data-depth='0']{margin-top:0;}
+body[data-skin=dsh] [data-module=lore] .ob-row:hover{background:rgb(255 255 255 / .035);}
+body[data-skin=dsh] [data-module=lore] .ob-row:focus-within{background:rgb(255 255 255 / .05);}
 body[data-skin=dsh] [data-module=lore] .ob-row.ns-row-on {
   background: rgb(255 255 255 / .05);
   box-shadow: inset 2px 0 #9ec3ac;
 }
-body[data-skin=dsh] [data-module=lore] .ob-row.ns-row-on .ob-text { color: #f4eef7; }
+body[data-skin=dsh] [data-module=lore] .ob-row.ns-row-on .ob-text{color:#f4eef7;}
 /* 层级引导线：绝定位 1px，left 由模板按 (depth-1)*22+12 给出（原型 .row-guides i） */
 body[data-skin=dsh] [data-module=lore] .ob-row .ob-guide {
   position: absolute;
@@ -2672,7 +2614,7 @@ body[data-skin=dsh] [data-module=lore] .ob-row .ob-bullet {
   cursor: grab;
   z-index: 1;
 }
-body[data-skin=dsh] [data-module=lore] .ob-row .ob-bullet:hover { background: rgb(255 255 255 / .08); }
+body[data-skin=dsh] [data-module=lore] .ob-row .ob-bullet:hover{background:rgb(255 255 255 / .08);}
 body[data-skin=dsh] [data-module=lore] .ob-row .ob-bullet::before {
   width: 5px;
   height: 5px;
@@ -2703,7 +2645,7 @@ body[data-skin=dsh] [data-module=lore] .ob-row .ob-text {
   color: #f4eef7;
   caret-color: #bfe0cd;
 }
-body[data-skin=dsh] [data-module=lore] .ob-row .ob-text:focus { background: rgb(255 255 255 / .05); }
+body[data-skin=dsh] [data-module=lore] .ob-row .ob-text:focus{background:rgb(255 255 255 / .05);}
 body[data-skin=dsh] [data-module=lore] .ob-row[data-depth='0'] .ob-text {
   min-height: 29px;
   font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia, serif;
@@ -2711,7 +2653,7 @@ body[data-skin=dsh] [data-module=lore] .ob-row[data-depth='0'] .ob-text {
   font-weight: 500;
   line-height: 1.6;
 }
-body[data-skin=dsh] [data-module=lore] .ob-row[data-depth='1'] .ob-text { font-size: 14px; }
+body[data-skin=dsh] [data-module=lore] .ob-row[data-depth='1'] .ob-text{font-size:14px;}
 body[data-skin=dsh] [data-module=lore] .ob-row[data-depth='2'] .ob-text,
 body[data-skin=dsh] [data-module=lore] .ob-row[data-depth='3'] .ob-text,
 body[data-skin=dsh] [data-module=lore] .ob-row[data-depth='4'] .ob-text { font-size: 13px; opacity: .92; }
@@ -2746,7 +2688,7 @@ body[data-skin=dsh] [data-module=lore] .ob-row .ob-ops {
   margin: 0 0 0 3px;
   opacity: 0;
 }
-body[data-skin=dsh] [data-module=lore] .ob-row:is(:hover, :focus-within, .ns-row-on) .ob-ops { opacity: 1; }
+body[data-skin=dsh] [data-module=lore] .ob-row:is(:hover, :focus-within, .ns-row-on) .ob-ops{opacity:1;}
 body[data-skin=dsh] [data-module=lore] .ob-row .ob-op {
   width: 22px;
   height: 26px;
@@ -2775,7 +2717,7 @@ body[data-skin=dsh] [data-module=lore] .lore-set-head {
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
 }
-body[data-skin=dsh] [data-module=lore] .lore-set-head:first-child { margin-top: 0; }
+body[data-skin=dsh] [data-module=lore] .lore-set-head:first-child{margin-top:0;}
 body[data-skin=dsh] [data-module=lore] .lore-set-head .ls-name {
   font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia, serif;
   font-size: 15px;
@@ -2785,6 +2727,7 @@ body[data-skin=dsh] [data-module=lore] .lore-set-head .ls-name {
 body[data-skin=dsh] [data-module=lore] .lore-set-head .ls-count { font-size: 10px; color: #b6a6c5; }
 
 /* 8.8 底部提示行（原型 .fusion-write-footer）：左 = 当前条目路径，右 = 键盘提示 */
+/* ==================== 基础变量与全局 ==================== */
 body[data-skin=dsh] [data-module=lore] .fusion-write-footer {
   flex: none;
   height: 43px;
@@ -2812,14 +2755,17 @@ body[data-skin=dsh] [data-module=lore] .fusion-write-footer .wf-keys {
 
 /* 8.9 窄档（原型 @media 1099 / 559 的同一套降级） */
 @media (max-width: 1099px) {
-  body[data-skin=dsh] .workbench-shell[data-module=lore] .wb-body { padding: 12px 20px 20px; }
+body[data-skin=dsh] .workbench-shell[data-module=lore] .wb-body{padding:12px 20px 20px;}
+/* ==================== 设定 ==================== */
   body[data-skin=dsh] [data-module=lore] .lore-head { height: 99px; min-height: 99px; padding: 20px 25px; }
-  body[data-skin=dsh] [data-module=lore] .ob-toolbar { padding: 0 23px; }
-  body[data-skin=dsh] [data-module=lore] .ob-editor { padding: 0 20px 34px; }
-  body[data-skin=dsh] [data-module=lore] .fusion-write-footer { padding: 0 23px; }
+body[data-skin=dsh] [data-module=lore] .ob-toolbar{padding:0 23px;}
+body[data-skin=dsh] [data-module=lore] .ob-editor{padding:0 20px 34px;}
+/* ==================== 基础变量与全局 ==================== */
+body[data-skin=dsh] [data-module=lore] .fusion-write-footer{padding:0 23px;}
 }
 @media (max-width: 559px) {
-  body[data-skin=dsh] .workbench-shell[data-module=lore] .wb-body { padding: 7px 12px 12px; }
+body[data-skin=dsh] .workbench-shell[data-module=lore] .wb-body{padding:7px 12px 12px;}
+/* ==================== 设定 ==================== */
   body[data-skin=dsh] [data-module=lore] .lore-head {
     height: auto;
     min-height: 0;
@@ -2828,14 +2774,15 @@ body[data-skin=dsh] [data-module=lore] .fusion-write-footer .wf-keys {
     padding: 16px 17px;
   }
   body[data-skin=dsh] [data-module=lore] .lore-h1 { font-size: 22px; margin-top: 6px; }
-  body[data-skin=dsh] [data-module=lore] .lore-head-actions { width: 100%; }
+body[data-skin=dsh] [data-module=lore] .lore-head-actions{width:100%;}
   body[data-skin=dsh] [data-module=lore] .lore-switch { width: 100%; justify-content: space-between; padding: 3px; }
   body[data-skin=dsh] [data-module=lore] .lore-switch button { flex: 1; padding: 6px 5px; font-size: 11px; }
   body[data-skin=dsh] [data-module=lore] .ob-toolbar { height: 38px; min-height: 38px; max-height: 38px; padding: 0 10px; gap: 1px; }
   body[data-skin=dsh] [data-module=lore] .ob-row { --indent: min(calc(var(--depth, 0) * 16px), 64px); gap: 0; }
   body[data-skin=dsh] [data-module=lore] .ob-row .ob-text { font-size: 13px; line-height: 1.85; padding: 0 2px; }
   body[data-skin=dsh] [data-module=lore] .ob-row[data-depth='0'] .ob-text { font-size: 16px; line-height: 1.65; }
-  body[data-skin=dsh] [data-module=lore] .ob-editor { padding: 0 14px 30px; }
+body[data-skin=dsh] [data-module=lore] .ob-editor{padding:0 14px 30px;}
+/* ==================== 基础变量与全局 ==================== */
   body[data-skin=dsh] [data-module=lore] .fusion-write-footer { height: 40px; padding: 0 15px; }
-  body[data-skin=dsh] [data-module=lore] .fusion-write-footer .wf-keys { display: none; }
+body[data-skin=dsh] [data-module=lore] .fusion-write-footer .wf-keys{display:none;}
 }
