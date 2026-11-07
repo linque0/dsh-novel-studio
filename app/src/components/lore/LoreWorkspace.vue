@@ -1,21 +1,32 @@
-<!-- 设定工作区外壳（三视图）——结构与度量对照设计稿 docs/前端美化/设定-融合总稿-20261105/：
-     A 条目编写（MubuView：整棵森林 / 玻璃直写）/ B 设定详情（LoreDetail：同级条目 + 阅读区）/
-     C 视觉导图（层级导图 LoreTreeMap / 关系网络 LoreGraph + 右条目摘要）。
-     三视图在同一个中央 pane 内切换；头部（crumbs / .lore-h1 / eyebrow / 新建条目 / 视图切换器）归外壳，
-     A 的「折叠 / 展开」按设计稿进幕布工具条（见 MubuView 的 ob-toolbar 右端）。
-     状态唯一真源在 ui store：loreView / loreActiveId / loreMapMode / loreReturn（见 stores/ui.js）。 -->
+<!-- 设定工作区外壳（面板矩阵，三单共用）——结构与度量对照设计稿 docs/前端美化/设定-融合总稿-20261105/：
+     nav 列 | 16px 分隔 | [B: 同层列 | 16px] main | [C: 16px | 摘要列]；页头住在 main pane 内（原型 fusion-head）。
+     三列各自可收起成 40px 竖排细轨（nav 的细轨由 MubuTree 自己输出），列宽可拖拽/键盘调整并落库。
+     状态唯一真源在 ui store：loreView / loreActiveId / loreMapMode / loreNavWidth… / loreNavClosed… / loreScope。
+     ≤1099 不再有顶部移动栏：窄档默认是完整正文页，「条目列表」入口在 LoreDetail 的
+     return-tools 里（仅窄档渲染），点它才切到 list 屏；宽档不渲染。
+     A 条目编写（MubuView：整棵森林）/ B 设定详情（LoreEntryList + LoreDetail）/ C 视觉导图（LoreTreeMap / LoreGraph + LoreInspector）。 -->
 <script setup>
+import '../../styles/lore-free-tree.css'
+import { autosave } from '../../services/autosave'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import OIcon from '../OIcon.vue'
 import MubuView from '../MubuView.vue'
+import MubuTree from '../MubuTree.vue'
 import LoreDetail from '../LoreDetail.vue'
-import LoreRelRows from '../LoreRelRows.vue'
+import { resolveLoreFocus } from '../../services/lore-core.js'
+import { parseTarget, targetById } from '../../services/doublelinks'
+import LoreReferences from './LoreReferences.vue'
+import LorePeek from './LorePeek.vue'
+import LoreHead from './LoreHead.vue'
+import LoreEntryList from '../LoreEntryList.vue'
 import LoreGraph from '../LoreGraph.vue'
 import LoreTreeMap from './LoreTreeMap.vue'
+import LoreInspector from './LoreInspector.vue'
+import LoreDivider from './LoreDivider.vue'
+import { loreWidths } from './lore-layout.js'
+import { jumpTo } from '../../services/doublelinks'
 import { useWorkStore } from '../../stores/work'
 import { useUiStore } from '../../stores/ui'
-import { jumpTo } from '../../services/doublelinks'
-import { tagColor } from '../../services/tagcolors'
 
 const work = useWorkStore()
 const ui = useUiStore()
@@ -24,61 +35,68 @@ const mubu = ref(null) // A 视图实例：新建 / 定位 / 滚动
 const treeMap = ref(null) // C 层级导图实例：缩放 / 适应 / 聚焦
 const graphRef = ref(null) // C 关系网络实例：缩放 / 适应
 const hoverLink = ref(null)
-const VIEWS = [
-  { id: 'write', label: '条目编写' },
-  { id: 'detail', label: '设定详情' },
-  { id: 'map', label: '视觉导图' }
-]
+const drawer = ref(false) // ≤1099：nav 变抽屉（原型 drawer）
+const screen = ref('main') // ≤1099 两屏流程：main | list | insp（宽档不生效）
+const innerWidth = ref(typeof window === 'undefined' ? 1440 : window.innerWidth)
 
-/* ---------- 头部（设计稿 eyebrow：N 个设定集 · M 条目 · K 条关系） ---------- */
-const setCount = computed(() => work.mubuRoots().length)
-const entryTotal = computed(() => {
-  let n = 0
-  const walk = (pid) => {
-    for (const c of work.mubuChildren(pid)) {
-      n++
-      walk(c.id)
-    }
-  }
-  work.mubuRoots().forEach((r) => walk(r.id))
-  return n
-})
-const relTotal = computed(() => work.liveLoreLinks.length)
-const filterText = computed(() => String(ui.mubuQuery || '').trim())
+/* ---------- 面板矩阵的列宽（纯函数算，结果写成 CSS 变量） ---------- */
+const widths = computed(() => loreWidths({
+  view: ui.loreView,
+  innerWidth: innerWidth.value,
+  navWidth: ui.loreNavWidth,
+  listWidth: ui.loreListWidth,
+  detailWidth: ui.loreDetailWidth,
+  navClosed: ui.loreNavClosed,
+  listClosed: ui.loreListClosed,
+  detailClosed: ui.loreDetailClosed
+}))
+const shellStyle = computed(() => ({
+  '--lore-nav-w': widths.value.nav + 'px',
+  '--lore-list-w': widths.value.list + 'px',
+  '--lore-detail-w': widths.value.detail + 'px'
+}))
+const narrow = computed(() => widths.value.narrow)
+function onResize() {
+  innerWidth.value = window.innerWidth
+  if (!narrow.value) drawer.value = false
+}
+/** 面包屑里的「世界设定」：窄档开抽屉，宽档确保 nav 列展开 */
+function openNav() {
+  if (narrow.value) drawer.value = true
+  else if (ui.loreNavClosed) ui.setPref('loreNavClosed', false)
+}
+function openList() {
+  ui.setPref('loreListClosed', false)
+}
+function openInspector() {
+  ui.setPref('loreDetailClosed', false)
+}
+/** 窄档三屏互切：main（阅读区 / 导图）· list（同级条目）· insp（条目摘要）；宽档不产生任何影响 */
+function toScreen(next) {
+  screen.value = next
+}
+/** 切视图时重置两屏：三视图一律从主屏起步（detail → 正文页、map → 导图页、write → 编写页）。
+    旧实现让窄档的 detail 默认停在 'list'，main pane 被整块 display:none，
+    页头 / 正文 / 关联关系 / 子条目 / 页脚全部离屏（用户报的「设定详情界面不全」）。 */
+function resetScreen() {
+  screen.value = 'main'
+}
+/** 同级条目列点条目：列内既有逻辑（写 loreActiveId）之后，窄档回到阅读区 */
+function pickEntry(id) {
+  if (id) ui.navigateLore({ activeId: id, selectedId: id })
+  syncSet(id)
+  if (narrow.value) screen.value = 'main'
+}
+
+/* ---------- 头部：页头已抽成 LoreHead.vue（只发事件），范围切换仍由外壳落库 ---------- */
 const node = computed(() => (ui.loreActiveId ? work.mubu.find((n) => n.id === ui.loreActiveId && !n.deletedAt) || null : null))
-const headTitle = computed(() => {
-  if (ui.loreView === 'map') return '视觉导图'
-  if (ui.loreView === 'detail') return (node.value?.text || '').trim() || '设定详情'
-  return work.currentMubuRoot()?.text || '世界设定'
-})
-const entries = computed(() => (node.value ? work.loreLinksOf('mubu', node.value.id) : []))
-const crumbs = computed(() => {
-  const out = []
-  let cur = node.value
-  let guard = 0
-  while (cur && guard++ < 30) {
-    out.unshift({ id: cur.id, text: (cur.text || '（空节点）').slice(0, 24) })
-    cur = cur.parentId ? work.mubu.find((n) => n.id === cur.parentId && !n.deletedAt) || null : null
-  }
-  return out
-})
-/** 摘要区正文：直属叶子子条目的文字（与 B 同一口径） */
-const proseList = computed(() => {
-  if (!node.value) return []
-  return work.mubuChildren(node.value.id)
-    .filter((c) => !work.mubuChildren(c.id).length)
-    .map((c) => String(c.text || '').trim())
-    .filter(Boolean)
-    .slice(0, 3)
-})
-const kids = computed(() => (node.value ? work.mubuChildren(node.value.id) : []))
-function tagStyle(t) {
-  const c = tagColor(t)
-  return {
-    color: c,
-    borderColor: `color-mix(in srgb, ${c} 42%, transparent)`,
-    background: `color-mix(in srgb, ${c} 9%, transparent)`
-  }
+function toggleScope() {
+  ui.navigateLore({ rootId: null, rootPath: [], scope: ui.loreScope === 'all' ? 'set' : 'all' })
+}
+/** 进详情时同步当前设定集：否则导航高亮的是 A 集、同级条目列列的是 B 集 */
+function syncSet(id) {
+  const root = id ? work.mubuRootOf(id) : null
+  if (root && root.id !== work.mubuSetId) work.setMubuSet(root.id)
 }
 
 /* ---------- 视图切换（保留当前条目；返回恢复视图与滚动位置） ---------- */
@@ -90,7 +108,7 @@ function captureScroll() {
 }
 function switchView(next) {
   if (next === ui.loreView) return
-  const id = next === 'detail' ? fallbackId() : undefined
+  const id = next === 'detail' ? (ui.loreRootId || fallbackId()) : undefined
   if (next === 'detail' && !id) return
   const scroll = captureScroll()
   ui.setLoreView(next, { id, scroll })
@@ -98,11 +116,12 @@ function switchView(next) {
 async function back() {
   const prev = ui.loreBack()
   await nextTick()
-  if (ui.loreView === 'write' && prev && prev.scroll != null) mubu.value?.setScroll(prev.scroll)
+  if (ui.loreView === 'write' && prev && prev.position?.scroll != null) mubu.value?.setScroll(prev.position.scroll)
 }
 function openDetail(id) {
   if (!id) return
   ui.setLoreView('detail', { id, scroll: captureScroll() })
+  syncSet(id)
 }
 /** B「查看导图」→ C 的层级导图（关系网络是 C 里的另一个模式，不能顺着上一个模式走） */
 function openMap() {
@@ -113,7 +132,9 @@ function openMap() {
 async function locate(id) {
   const target = id || ui.loreActiveId
   if (!target) return
-  ui.setLoreView('write', { id: target, scroll: 0 })
+  const parent = work.mubu.find(n => n.id === target)?.parentId
+  ui.navigateLore({ view: 'write', rootId: parent || target, rootPath: work.mubuPath(parent || target).map(n => n.id), activeId: target, selectedId: target, scope: 'set' })
+  syncSet(target)
   await nextTick()
   mubu.value?.focusNode(target)
 }
@@ -129,32 +150,40 @@ function selectNode(id) {
   const root = work.mubuRootOf(id)
   if (root) work.setMubuSet(root.id)
 }
-/** 关系行点击：目标为设定 → 切目标条目；人物 → 跳人物模块 */
-function pickRel(e) {
-  if (!e) return
-  if (e.otherKind === 'mubu') {
-    const root = work.mubuRootOf(e.otherId)
-    if (root) work.setMubuSet(root.id)
-    ui.loreActiveId = e.otherId
-    return
-  }
-  jumpTo({ kind: 'character', id: e.otherId })
-}
-function onHoverRel(e) {
-  hoverLink.value = e ? e.linkId : null
-}
-function openRelPanel() {
-  if (!node.value) return
-  ui.loreRelationPanel = { kind: 'mubu', id: node.value.id, x: Math.max(8, window.innerWidth / 2 - 170), y: 110 }
-}
 
 /* ---------- C 视觉导图 ---------- */
 const mapMode = computed(() => ui.loreMapMode)
-const mapSetId = computed(() => work.currentMubuRoot()?.id || null)
-const graphCenterId = computed(() => ui.loreActiveId || work.mubuChildren(mapSetId.value)[0]?.id || mapSetId.value || '')
+const mapSetId = computed(() => ui.loreRootId || work.currentMubuRoot()?.id || null)
+/* 层级导图的范围：'all' 画全部设定集（多根），否则只画当前集 */
+const mapSetIds = computed(() => (ui.loreScope === 'all' ? work.mubuRoots().map((r) => r.id) : [work.currentMubuRoot()?.id].filter(Boolean)))
+const relCount = (id) => (id ? work.loreLinksOf('mubu', id).length : 0)
+/** 列表里关系最多的节点：单次扫描取首个最大值（同数取列表靠前者，列表已按 sortOrder 排） */
+function busiest(list) {
+  let hit = null
+  let best = 0
+  for (const n of list) {
+    const c = relCount(n.id)
+    if (c > best) {
+      best = c
+      hit = n
+    }
+  }
+  return hit
+}
+/** 关系网络中心择优：当前条目有关系就用它；否则当前集子树里关系最多的；再否则全库关系最多的；
+    全库零关系才退回旧规则（当前条目 / 集内第一个子条目 / 当前集），保证空库时仍有中心卡片。 */
+const graphCenterId = computed(() => {
+  if (ui.loreActiveId && relCount(ui.loreActiveId) > 0) return ui.loreActiveId
+  const root = work.currentMubuRoot()
+  const inSet = root ? busiest([root, ...work.mubuDescendants(root.id)]) : null
+  if (inSet) return inSet.id
+  const anywhere = busiest([...work.mubuRoots(), ...work.liveMubu()])
+  if (anywhere) return anywhere.id
+  return ui.loreActiveId || work.mubuChildren(mapSetId.value)[0]?.id || mapSetId.value || ''
+})
 const graphEntries = computed(() => (graphCenterId.value && work.mubu.find((n) => n.id === graphCenterId.value) ? work.loreLinksOf('mubu', graphCenterId.value) : []))
 const mapContext = computed(() => {
-  if (mapMode.value === 'hierarchy') return '条目层级'
+  if (mapMode.value === 'hierarchy') return ui.loreScope === 'all' ? '全部设定 · 层级' : '条目层级'
   const t = graphCenterId.value ? (work.mubu.find((n) => n.id === graphCenterId.value) || {}).text || '' : ''
   return `${(t || '未命名').slice(0, 18)} · 一跳关系`
 })
@@ -185,6 +214,15 @@ function zoomFocus() {
 function setMapMode(mode) {
   ui.setLoreMapMode(mode)
 }
+function onHoverRel(e) {
+  hoverLink.value = e ? e.linkId : null
+}
+/** 关系网络空态「去建立关联关系」→ 打开全局关系设置面板（ui.loreRelationPanel 单例；无当前中心时退回当前集） */
+function openRelPanel() {
+  const id = graphCenterId.value || ui.loreActiveId || mapSetId.value || ''
+  if (!id) return
+  ui.loreRelationPanel = { kind: 'mubu', id, x: Math.max(8, window.innerWidth / 2 - 170), y: 110 }
+}
 function onGraphPick(e) {
   if (!e) return
   if (e.otherKind === 'mubu') return selectNode(e.otherId)
@@ -193,13 +231,55 @@ function onGraphPick(e) {
 
 /* ---------- 会话恢复：按作品记视图/条目/模式（刷新后回来还是走到的位置） ---------- */
 let saveTimer = null
+const ownerWorkId = work.work?.id
 function schedulePersist() {
   clearTimeout(saveTimer)
-  saveTimer = setTimeout(() => ui.persistLoreState(work.work?.id), 300)
+  saveTimer = setTimeout(() => ui.persistLoreState(ownerWorkId), 300)
 }
-watch(() => [ui.loreView, ui.loreActiveId, ui.loreMapMode], schedulePersist)
+watch(() => [ui.loreView, ui.loreRootId, ui.loreActiveId, ui.mubuSelectedId, ui.loreScope, ui.mubuQuery, ui.loreMapMode, ui.loreNavFold, ui.loreLinksOpen, ui.loreReferenceTab, ui.lorePositions], schedulePersist, { deep: true })
+watch(() => [ui.loreRootId, ui.loreRestoreTick], () => { drawer.value = false; screen.value = 'main'; const id = ui.loreRootId || ui.loreActiveId; if (id) syncSet(id) })
+watch(() => work.mubu.map(n => [n.id,n.parentId,n.deletedAt].join(':')).join('|'), () => {
+  const next = resolveLoreFocus(work.mubu, ui.loreRootId, ui.loreRootPath, work.work?.id)
+  if (next !== ui.loreRootId) ui.navigateLore({ rootId: next, rootPath: work.mubuPath(next).map(n => n.id), activeId: next, selectedId: next, scope: next ? 'set' : 'all' }, { replace: true })
+  else if (next) ui.loreRootPath = work.mubuPath(next).map(n => n.id)
+})
+/* 换视图即收抽屉并重置两屏：抽屉里点条目后主区就不该再被遮 */
+watch(() => ui.loreView, () => {
+  drawer.value = false
+  resetScreen()
+})
+/** 窄档：点常驻细轨（含 MubuTree 输出的 .lore-rail / data-rail）→ 开抽屉；
+    抽屉里点设定集 / 条目（原型 .category / .nav-entry）后收抽屉；展开箭头、搜索不关。
+    宽档不参与：宽档点 .lore-rail 仍由 MubuTree 自己 loreNavClosed=false 展开列。 */
+function onNavClick(e) {
+  if (!narrow.value) return
+  if (e.target.closest('.lore-rail')) {
+    drawer.value = true
+    return
+  }
+  if (!drawer.value) return
+  if (e.target.closest('.category, .nav-entry, .lore-nav-node')) drawer.value = false
+}
+function onKeydown(e) {
+  if (e.isComposing) return
+  if (e.altKey && ['ArrowLeft','ArrowRight'].includes(e.key)) { e.preventDefault(); e.key === 'ArrowLeft' ? ui.loreBack() : ui.loreNext(); return }
+  if (e.key === 'Escape' && ui.lorePeek) { ui.lorePeek = null; return }
+  if (e.key === 'Escape' && ui.loreLinksOpen && narrow.value) { ui.loreLinksOpen = false; return }
+  if (e.key === 'Escape' && drawer.value) {
+    drawer.value = false
+    e.preventDefault()
+  }
+}
 onMounted(async () => {
+  window.addEventListener('resize', onResize)
+  window.addEventListener('keydown', onKeydown)
+  const requested = ui.loreWorkId !== work.work?.id && ui.loreRootId && work.liveMubu().some(n => n.id === ui.loreRootId) ? ui.loreRootId : null
   await ui.restoreLoreState(work.work?.id)
+  if (requested) ui.focusLoreNode(requested, work.mubuPath(requested))
+  const resolved = resolveLoreFocus(work.mubu, ui.loreRootId, ui.loreRootPath, work.work?.id)
+  if (resolved !== ui.loreRootId) { ui.loreRootId = resolved; ui.loreScope = resolved ? 'set' : 'all' }
+  if (!ui.loreNavSeeded) { const keep = new Set(work.mubuPath(ui.loreRootId || work.mubuSetId).map(n => n.id)); ui.loreNavFold = work.liveMubu().filter(n => !keep.has(n.id) && work.mubuChildren(n.id).length).map(n => n.id); ui.loreNavSeeded = true }
+  nextTick(() => mubu.value?.restorePosition())
   /* 恢复的条目可能属于别的作品或被删：无效就退回条目编写 */
   const id = ui.loreActiveId
   if (id && !work.mubu.some((n) => n.id === id && !n.deletedAt)) {
@@ -210,77 +290,106 @@ onMounted(async () => {
     ui.loreActiveId = fallbackId()
     if (!ui.loreActiveId) ui.loreView = 'write'
   }
+  resetScreen()
+  // Default categories are seeded only for a new work, never restored on entry.
 })
-onBeforeUnmount(() => clearTimeout(saveTimer))
+onBeforeUnmount(() => {
+  mubu.value?.rememberPosition(); void ui.persistLoreState(ownerWorkId)
+  clearTimeout(saveTimer)
+  window.removeEventListener('resize', onResize)
+  window.removeEventListener('keydown', onKeydown)
+})
+function onLinkClick(e) {
+  const link = e.target.closest?.('[data-dl-target]')
+  if (!link) return
+  const t = parseTarget(link.dataset.dlTarget); if (!t) return
+  e.preventDefault(); e.stopPropagation()
+  const target = targetById(t.kind, t.id)
+  if ((e.ctrlKey || e.metaKey) && target) jumpTo(target)
+  else ui.lorePeek = { ...t, title: target?.title || link.dataset.dlTitle || link.textContent }
+}
+function rememberReading(e) {
+  if (ui.loreView === 'write' || !e.target.matches?.('.lore-detail-reader,.lore-detail-main')) return
+  ui.lorePositions[ui.lorePositionKey()] = { scroll: e.target.scrollTop }
+}
+watch(() => ui.loreRestoreTick, () => nextTick(() => {
+  if (ui.loreView === 'write') return
+  const el = document.querySelector('.lore-detail-reader'), position = ui.lorePositions[ui.lorePositionKey()]
+  if (el && position) el.scrollTop = position.scroll || 0
+}))
 </script>
 
 <template>
-  <div class="lore-workspace">
-    <header class="lore-head">
-      <div class="lore-head-main">
-        <div class="lore-crumbs">
-          <span>{{ work.work?.title || '未命名作品' }}</span>
-          <i>›</i>
-          <span>世界设定</span>
+  <div class="lore-shell-wrap" @click.capture="onLinkClick" @scroll.capture="rememberReading">
+    <div class="lore-shell" :data-view="ui.loreView" :data-screen="screen" :data-drawer="drawer ? 'nav' : null" :data-narrow="narrow ? 'true' : null" :style="shellStyle">
+      <aside class="lore-pane" data-pane="nav" :data-closed="ui.loreNavClosed ? 'true' : null" @click="onNavClick">
+        <MubuTree />
+      </aside>
+      <LoreDivider size="nav" />
+
+      <template v-if="ui.loreView === 'detail'">
+        <aside class="lore-pane" data-pane="list" :data-closed="ui.loreListClosed ? 'true' : null">
+          <!-- 窄档两屏流程：列表屏独占一屏，必须自带页头（宽档不出现第二份） -->
+          <LoreHead
+            v-if="narrow && ui.loreView === 'detail' && screen === 'list'"
+            compact
+            :narrow="narrow"
+            :nav-open="drawer"
+            @view="switchView"
+            @scope="toggleScope"
+            @new="newEntry"
+            @clear-filter="clearFilter"
+            @nav="openNav"
+          />
+          <LoreEntryList @pick="pickEntry" />
+          <button class="lore-rail" data-rail="list" type="button" title="展开同级条目" aria-label="展开同级条目" @click="openList">
+            <OIcon name="rows" :size="16" />
+            <span>同级条目</span>
+          </button>
+        </aside>
+        <LoreDivider size="list" />
+      </template>
+
+      <main class="lore-pane lore-main" data-pane="main">
+        <!-- 页头：结构与类名在 LoreHead.vue（契约要求住在 main pane 内、是其直接子元素） -->
+        <LoreHead
+          :narrow="narrow"
+          :nav-open="drawer"
+          @view="switchView"
+          @scope="toggleScope"
+          @new="newEntry"
+          @clear-filter="clearFilter"
+          @nav="openNav"
+          @position="mubu?.rememberPosition()"
+        />
+
+        <!-- A 条目编写：整棵森林（保留挂载，返回时滚动位置与选中态原样还在） -->
+        <div v-show="ui.loreView === 'write'" class="lore-views">
+          <div v-if="ui.autosave.error" class="lore-free-save-error" role="alert">保存失败，输入仍保留。<button @click="autosave.flushAll()">重试保存</button></div>
+          <MubuView ref="mubu" />
         </div>
-        <h1 class="lore-h1">{{ headTitle }}</h1>
-        <div class="lore-meta">
-          <span>{{ setCount }} 个设定集</span>
-          <i>·</i>
-          <span>{{ entryTotal }} 条目</span>
-          <i>·</i>
-          <span>{{ relTotal }} 条关系</span>
-          <template v-if="filterText">
-            <i>·</i>
-            <span class="lore-filter">正在筛选「{{ filterText }}」<button @click="clearFilter">清除</button></span>
-          </template>
+
+        <!-- B 设定详情：阅读区（同级条目列已在左侧独立 pane） -->
+        <div v-if="ui.loreView === 'detail'" class="lore-views">
+          <LoreDetail :can-back="ui.loreReturn.length > 0" :list-back="narrow" @back="back" @list="toScreen('list')" @locate="locate" @map="openMap" />
         </div>
-      </div>
-      <div class="lore-head-actions">
-        <button v-if="ui.loreView === 'write'" class="lore-btn primary" type="button" @click="newEntry">
-          <OIcon name="plus" :size="12" /> {{ setCount ? '新建条目' : '新建设定集' }}
-        </button>
-        <nav class="lore-switch" role="tablist" aria-label="设定视图">
-          <button
-            v-for="v in VIEWS"
-            :key="v.id"
-            type="button"
-            role="tab"
-            :class="{ on: ui.loreView === v.id }"
-            :aria-selected="ui.loreView === v.id"
-            :data-lore-view="v.id"
-            @click="switchView(v.id)"
-          >{{ v.label }}</button>
-        </nav>
-      </div>
-    </header>
 
-    <!-- A 条目编写：整棵森林（保留挂载，返回时滚动位置与选中态原样还在） -->
-    <div v-show="ui.loreView === 'write'" class="lore-views">
-      <MubuView ref="mubu" />
-    </div>
-
-    <!-- B 设定详情 -->
-    <div v-if="ui.loreView === 'detail'" class="lore-views">
-      <LoreDetail @back="back" @locate="locate" @map="openMap" />
-    </div>
-
-    <!-- C 视觉导图：左图区 + 右条目摘要 -->
-    <div v-if="ui.loreView === 'map'" class="lore-views">
-      <div class="lore-map">
-        <div class="lore-map-main">
+        <!-- C 视觉导图：导图子条 + 图区 + 底部工具（摘要列在右侧独立 pane） -->
+        <div v-if="ui.loreView === 'map'" class="lore-views lore-map-view">
           <div class="lore-map-subbar">
             <div class="lore-map-modes" role="tablist" aria-label="导图模式">
               <button type="button" role="tab" :class="{ on: mapMode === 'hierarchy' }" :aria-selected="mapMode === 'hierarchy'" @click="setMapMode('hierarchy')">层级导图</button>
               <button type="button" role="tab" :class="{ on: mapMode === 'relations' }" :aria-selected="mapMode === 'relations'" @click="setMapMode('relations')">关系网络</button>
             </div>
             <span class="lore-map-context">{{ mapContext }}</span>
+            <button class="lore-mobile-back" type="button" @click="toScreen('insp')">摘要</button>
           </div>
           <div class="lore-map-stage">
             <LoreTreeMap
               v-if="mapMode === 'hierarchy'"
               ref="treeMap"
               :set-id="mapSetId"
+              :set-ids="mapSetIds"
               :active-id="ui.loreActiveId"
               @select="selectNode"
               @open="openDetail"
@@ -298,6 +407,7 @@ onBeforeUnmount(() => clearTimeout(saveTimer))
                 :center-h="116"
                 @pick="onGraphPick"
                 @hover="onHoverRel"
+                @empty-action="openRelPanel"
               />
             </div>
           </div>
@@ -317,41 +427,29 @@ onBeforeUnmount(() => clearTimeout(saveTimer))
             </div>
           </div>
         </div>
+        <LoreReferences v-if="ui.loreLinksOpen" :overlay="narrow || (ui.loreView !== 'write' && innerWidth < 1440)" />
+      </main>
+      <LorePeek @link-click="onLinkClick" />
 
-        <aside class="lore-map-insp" aria-label="条目摘要">
-          <header class="lore-map-insp-head">
-            <OIcon name="map-pin" :size="12" />
+      <template v-if="ui.loreView === 'map'">
+        <LoreDivider size="detail" />
+        <aside class="lore-pane" data-pane="detail" :data-closed="ui.loreDetailClosed ? 'true' : null">
+          <LoreInspector @open="openDetail" @locate="locate" @back="toScreen('main')" />
+          <button class="lore-rail" data-rail="detail" type="button" title="展开条目摘要" aria-label="展开条目摘要" @click="openInspector">
+            <OIcon name="note" :size="16" />
             <span>条目摘要</span>
-            <button class="lore-map-insp-close" type="button" title="收起摘要（回条目编写）" @click="switchView('write')">×</button>
-          </header>
-          <div v-if="node" class="lore-map-insp-scroll">
-            <div class="lore-map-insp-crumbs">{{ crumbs.map((c) => c.text).join(' / ') }}</div>
-            <h2 class="lore-map-insp-title">{{ (node.text || '').trim() || '（空节点）' }}</h2>
-            <div v-if="(node.tags || []).length" class="lore-map-insp-tags">
-              <button v-for="t in node.tags" :key="t" class="lore-detail-tag" type="button" :style="tagStyle(t)" @click="ui.mubuQuery = t">{{ t }}</button>
-            </div>
-            <p v-for="(p, i) in proseList" :key="'p' + i" class="lore-map-insp-p">{{ p }}</p>
-            <section class="lore-map-insp-sec">
-              <h3>关联关系 <small>{{ entries.length }}</small></h3>
-              <LoreRelRows v-if="entries.length" :entries="entries" :hover-link="hoverLink" compact @pick="pickRel" @hover="onHoverRel" />
-              <p v-else class="lore-map-insp-empty" style="padding: 0">暂无关联关系</p>
-            </section>
-            <section v-if="kids.length" class="lore-map-insp-sec">
-              <h3>子条目 <small>{{ kids.length }}</small></h3>
-              <button v-for="k in kids" :key="k.id" class="lore-map-insp-child" type="button" :title="k.text" @click="selectNode(k.id)">
-                <span>{{ k.text }}</span>
-                <OIcon name="caret-right" :size="11" />
-              </button>
-            </section>
-          </div>
-          <div v-else class="lore-map-insp-empty">选择导图节点查看内容</div>
-          <footer class="lore-map-insp-foot">
-            <button class="lore-btn primary" type="button" :disabled="!node" @click="openDetail(node && node.id)">查看完整详情</button>
-            <button class="lore-icon" type="button" :disabled="!node" title="在条目中定位" @click="locate(node && node.id)"><OIcon name="map-pin" :size="13" /></button>
-            <button class="lore-icon" type="button" :disabled="!node" title="添加关联关系" @click="openRelPanel"><OIcon name="link" :size="13" /></button>
-          </footer>
+          </button>
         </aside>
-      </div>
+      </template>
+
+      <!-- ≤1099：nav 列变抽屉，遮罩盖住整个工作区 -->
+      <button v-if="drawer" type="button" class="lore-scrim" aria-label="关闭设定目录" tabindex="-1" @click="drawer = false"></button>
     </div>
   </div>
 </template>
+
+<style scoped>
+/* 面板矩阵的纵向容器：外壳原本是父级 flex 列的直接子项（.lore-shell 自带 flex:1），
+   多隔一层后由本容器承担同一个 flex:1，继续让外壳撑满可用高度。 */
+.lore-shell-wrap { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; }
+</style>

@@ -25,7 +25,7 @@ const props = defineProps({
   degree: { type: Number, default: 1 },
   scope: { type: String, default: 'center' }
 })
-const emit = defineEmits(['pick', 'hover'])
+const emit = defineEmits(['pick', 'hover', 'empty-action'])
 
 const work = useWorkStore()
 const canvasEl = ref(null)
@@ -51,6 +51,10 @@ const centerTitle = computed(() => {
 
 /** 集合是否超出「中心 + 一度邻居」（degree / scope 才打开这条路径，默认不碰） */
 const expandedSet = computed(() => props.scope === 'set' || props.degree > 1)
+
+/** 空态：没有关系条目且不在集合展开模式（nodes 此时只剩中心卡片，画布不渲染任何节点） */
+const emptyMode = computed(() => !props.entries.length && !expandedSet.value)
+const emptyText = '暂无关联关系——从关系列表「添加关系」建立后在此查看图谱'
 
 const nodes = computed(() => {
   const out = [{ key: centerKey.value, center: true, kind: 'mubu', title: centerTitle.value }]
@@ -134,6 +138,7 @@ function flushSave() {
 
 /* ---------- 连线（方向箭头 + 类型标签 + 两端避障） ---------- */
 const edges = computed(() => {
+  if (emptyMode.value) return [] // 空态不画任何连线
   if (expandedSet.value) return pairEdges() // 集合内任意两点的连线（degree/scope 才走）
   const out = []
   const rects = []
@@ -363,7 +368,8 @@ defineExpose({ zoomIn, zoomOut, zoomReset, fitView, zoom })
 <template>
   <div class="om-wrap lg-wrap" :style="wrapStyle">
     <div class="om-toolbar lg-toolbar">
-      <span class="oc-count">{{ nodes.length - 1 }} 个邻居 · {{ entries.length }} 条关系</span>
+      <span v-if="emptyMode" class="oc-count">0 条关系</span>
+      <span v-else class="oc-count">{{ nodes.length - 1 }} 个邻居 · {{ entries.length }} 条关系</span>
       <span style="flex: 1"></span>
       <button class="om-btn" title="缩小" @click="zoom = Math.max(0.3, zoom - 0.15)"><OIcon name="minus" :size="14" /></button>
       <button class="om-btn" title="放大" @click="zoom = Math.min(2.2, zoom + 0.15)"><OIcon name="plus" :size="14" /></button>
@@ -415,7 +421,8 @@ defineExpose({ zoomIn, zoomOut, zoomReset, fitView, zoom })
           @mouseleave="hoverEdge(null)"
         >{{ e.entry.label }}</div>
 
-        <!-- 节点：中心条目 + 一度邻居（邻居可拖动，点击跳转/切换详情） -->
+        <!-- 节点：中心条目 + 一度邻居（邻居可拖动，点击跳转/切换详情）；空态整层不渲染，避免与空态文案叠字 -->
+        <template v-if="!emptyMode">
         <div
           v-for="n in nodes"
           :key="n.key"
@@ -431,8 +438,13 @@ defineExpose({ zoomIn, zoomOut, zoomReset, fitView, zoom })
           <span class="lg-title">{{ n.title }}</span>
           <span v-if="n.center && entries.length" class="lg-badge">{{ entries.length }}</span>
         </div>
+        </template>
       </div>
-      <div v-if="!entries.length" class="lg-empty">暂无关联关系——从关系列表「添加关系」建立后在此查看图谱</div>
+      <!-- 空态放在 .lg-canvas 直接子层（不进 .om-inner），避免被平移缩放坐标系带走 -->
+      <div v-if="emptyMode" class="lg-empty">
+        <p>{{ emptyText }}</p>
+        <button class="lore-btn primary" type="button" @click="$emit('empty-action')">去建立关联关系</button>
+      </div>
     </div>
   </div>
 </template>

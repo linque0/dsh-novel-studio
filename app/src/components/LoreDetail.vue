@@ -1,40 +1,32 @@
-<!-- 设定详情（B 视图）——结构与度量严格对照设计稿 b-detail-1440：
-     中列 = 同级条目（list-pane：同级条目·N 项 / 集名 / 全部标签 / 条目卡 / 新建条目）；
-     右列 = 阅读区（return-tools → archive-reader → archive-article → archive-footer）：
-     条目菜单（类型 · N 项子条目）/ 大标题 / 标签 / 正文段落 / 关联关系（两列关系行）/ 子条目（01 编号行）。
-     它是 LoreWorkspace 中央 pane 里的一格：没有 fixed 定位、没有 Esc 关闭，返回 = 切回条目编写。
+<!-- Existing read view uses the same node HTML, including ID links. -->
+<!-- 设定详情 · 阅读区（B 视图的 main 那一格）——结构与度量对照设计稿 b-detail-1440：
+     return-tools → archive-reader → archive-article（条目菜单 / 大标题 / 标签 / 正文段落 / 关联关系 / 子条目）→ archive-footer。
+     同级条目列已拆成独立 pane（LoreEntryList.vue），关系图谱的出入口在 C 视图（视觉导图），
+     这里不再内联分栏、也不再内联图谱：它是 LoreWorkspace 主 pane 里的一段内容。
      当前条目来自 ui.loreActiveId（唯一真源），本组件只渲染与触发切换。 -->
 <script setup>
+import { cleanLoreHtml } from '../services/lore-editor-dom.js'
 import { computed, ref } from 'vue'
 import OIcon from './OIcon.vue'
 import LoreRelRows from './LoreRelRows.vue'
-import LoreGraph from './LoreGraph.vue'
+import { kindOf } from './lore/lore-kinds.js'
 import { useWorkStore } from '../stores/work'
 import { useUiStore } from '../stores/ui'
 import { jumpTo } from '../services/doublelinks'
 import { tagColor } from '../services/tagcolors'
 
-const emit = defineEmits(['back', 'locate', 'map'])
+defineProps({
+  canBack: { type: Boolean, default: false },
+  listBack: { type: Boolean, default: false }
+})
+const emit = defineEmits(['back', 'list', 'locate', 'map'])
 const work = useWorkStore()
 const ui = useUiStore()
 
-const listClosed = ref(false)
-const tagFilter = ref('')
 const hoverLink = ref(null)
 
 const node = computed(() => (ui.loreActiveId ? work.mubu.find((n) => n.id === ui.loreActiveId && !n.deletedAt) || null : null))
 const entries = computed(() => (node.value ? work.loreLinksOf('mubu', node.value.id) : []))
-const allSiblings = computed(() => {
-  const n = node.value
-  if (!n) return []
-  return n.parentId ? work.mubuChildren(n.parentId) : work.mubuRoots()
-})
-const tagsOfSet = computed(() => {
-  const seen = new Set()
-  for (const s of allSiblings.value) for (const t of s.tags || []) seen.add(t)
-  return [...seen].sort((a, b) => a.localeCompare(b))
-})
-const siblings = computed(() => (tagFilter.value ? allSiblings.value.filter((s) => (s.tags || []).includes(tagFilter.value)) : allSiblings.value))
 const parentName = computed(() => {
   const n = node.value
   if (!n || !n.parentId) return '设定集'
@@ -53,26 +45,14 @@ const crumbs = computed(() => {
   return out
 })
 const parentPath = computed(() => crumbs.value.slice(0, -1).map((c) => c.text).join(' / ') || '世界设定')
-const childCount = computed(() => {
-  if (!node.value) return 0
-  let n = 0
-  const walk = (pid) => {
-    for (const c of work.mubuChildren(pid)) {
-      n++
-      walk(c.id)
-    }
-  }
-  walk(node.value.id)
-  return n
-})
-const kindName = computed(() => (node.value && (node.value.tags || [])[0]) || '设定条目')
+
 /** 正文段落：直属叶子子条目的文字（设计稿的 detail-child-prose） */
 const proseList = computed(() => {
   if (!node.value) return []
   return work.mubuChildren(node.value.id)
     .filter((c) => !work.mubuChildren(c.id).length)
-    .map((c) => String(c.text || '').trim())
-    .filter(Boolean)
+    .filter(c => (c.text || '').trim() || c.html)
+    .map(c => ({ id: c.id, html: cleanLoreHtml(c.html || String(c.text || '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('\n', '<br>')) }))
 })
 /** 子条目：直属子节点（设计稿 01/02 编号行 + 一行摘要） */
 const kids = computed(() => {
@@ -84,13 +64,6 @@ const kids = computed(() => {
     desc: work.mubuChildren(k.id).map((c) => String(c.text || '').trim()).filter(Boolean).join(' ').slice(0, 80)
   }))
 })
-function relCountOf(id) {
-  return work.loreLinksOf('mubu', id).length
-}
-function descOf(n) {
-  const t = work.mubuChildren(n.id).map((c) => String(c.text || '').trim()).filter(Boolean).join(' ')
-  return t.slice(0, 90) || (n.parentId ? parentName.value : '设定集')
-}
 function tagStyle(t) {
   const c = tagColor(t)
   return {
@@ -100,7 +73,7 @@ function tagStyle(t) {
   }
 }
 function goTo(id) {
-  if (id) ui.loreActiveId = id
+  if (id) ui.navigateLore({ activeId: id, selectedId: id })
 }
 /** 关系行点击：目标为设定 → 切换当前条目；人物 → 跳人物模块 */
 function pickRel(e) {
@@ -108,7 +81,7 @@ function pickRel(e) {
   if (e.otherKind === 'mubu') {
     const root = work.mubuRootOf(e.otherId)
     if (root) work.setMubuSet(root.id)
-    ui.loreActiveId = e.otherId
+    ui.navigateLore({ activeId: e.otherId, selectedId: e.otherId })
     return
   }
   jumpTo({ kind: 'character', id: e.otherId })
@@ -124,62 +97,22 @@ function filterTag(t) {
   ui.mubuQuery = t
   emit('back')
 }
-function addSibling() {
+function addChild() {
   const n = node.value
   if (!n) return
-  const row = work.mubuAdd(n.parentId || null, n.id, '新条目')
+  work.mubuCheckpoint()
+  const row = work.mubuAdd(n.id, null, '新节点')
   if (row) ui.loreActiveId = row.id
 }
 </script>
 
 <template>
   <div v-if="node" class="lore-detail">
-    <aside v-if="!listClosed" class="lore-detail-list">
-      <header class="lore-detail-list-head">
-        <div class="lore-detail-context">同级条目<span class="lore-detail-dot" />{{ siblings.length }} 项</div>
-        <div class="lore-detail-list-title">
-          <h2 :title="parentName">{{ parentName }}</h2>
-          <button class="lore-icon" type="button" title="收起条目列表" @click="listClosed = true">‹</button>
-        </div>
-        <div class="lore-detail-filter">
-          <OIcon name="rows" :size="12" />
-          <select v-model="tagFilter" aria-label="筛选标签">
-            <option value="">全部标签</option>
-            <option v-for="t in tagsOfSet" :key="t" :value="t">{{ t }}</option>
-          </select>
-        </div>
-      </header>
-      <div class="lore-detail-entries">
-        <button
-          v-for="s in siblings"
-          :key="s.id"
-          type="button"
-          class="lore-detail-entry"
-          :class="{ selected: s.id === node.id }"
-          :title="s.text"
-          @click="goTo(s.id)"
-        >
-          <div class="lore-detail-entry-head">
-            <h3>{{ (s.text || '').trim() || '（空节点）' }}</h3>
-            <OIcon v-if="s.id === node.id" name="caret-right" :size="12" />
-          </div>
-          <p class="lore-detail-desc">{{ descOf(s) }}</p>
-          <div class="lore-detail-entry-meta">
-            <span v-for="t in (s.tags || []).slice(0, 2)" :key="t" class="lore-detail-tagchip" :style="tagStyle(t)">{{ t }}</span>
-            <span>{{ relCountOf(s.id) }} 关联</span>
-          </div>
-        </button>
-        <p v-if="!siblings.length" class="lore-detail-tiny" style="padding: 16px 20px">这一层没有匹配的条目</p>
-      </div>
-      <footer class="lore-detail-list-bottom">
-        <button class="lore-btn block" type="button" @click="addSibling">＋ 新建条目</button>
-      </footer>
-    </aside>
-    <button v-else class="lore-detail-rail" type="button" title="展开条目列表" @click="listClosed = false">同级条目</button>
-
     <div class="lore-detail-main">
       <div class="lore-detail-return">
-        <button class="lore-btn quiet" type="button" title="返回条目编写" @click="emit('back')"><OIcon name="back" :size="12" /> 返回</button>
+        <!-- 窄档（≤1099）回列表屏的唯一入口：宽档 listBack=false，不渲染 -->
+        <button v-if="listBack" class="lore-mobile-back" type="button" @click="emit('list')"><OIcon name="back" :size="12" /> 条目列表</button>
+        <button v-if="canBack" class="lore-btn quiet" type="button" title="返回条目编写" @click="emit('back')"><OIcon name="back" :size="12" /> 返回</button>
         <span class="lore-detail-context">{{ parentPath }}</span>
         <button class="lore-btn quiet" type="button" @click="emit('locate', node.id)"><OIcon name="map-pin" :size="12" /> 条目中定位</button>
         <button class="lore-btn quiet" type="button" @click="emit('map')"><OIcon name="container" :size="12" /> 查看导图</button>
@@ -189,10 +122,8 @@ function addSibling() {
         <article class="lore-detail-article">
           <div class="lore-detail-menu">
             <div class="lore-detail-context">
-              <OIcon name="tag" :size="13" />
-              {{ kindName }}
-              <span class="lore-detail-dot" />
-              {{ childCount }} 项子条目
+              <OIcon :name="kindOf(node).icon" :size="13" />
+              {{ kindOf(node).label }}
             </div>
             <div class="lore-detail-menu-actions">
               <button class="lore-icon" type="button" title="在条目编写中编辑" @click="emit('locate', node.id)"><OIcon name="edit" :size="13" /></button>
@@ -204,7 +135,7 @@ function addSibling() {
             <button v-for="t in node.tags" :key="t" class="lore-detail-tag" type="button" :style="tagStyle(t)" :title="`筛选标签「${t}」`" @click="filterTag(t)">{{ t }}</button>
           </div>
           <div v-for="(p, i) in proseList" :key="'p' + i" class="lore-detail-childprose">
-            <p class="lore-detail-body">{{ p }}</p>
+            <div class="lore-detail-body" v-html="p.html" />
           </div>
 
           <section class="lore-detail-section">
@@ -220,23 +151,14 @@ function addSibling() {
                 @pick="pickRel"
                 @hover="onHoverRel"
               />
-              <p v-else class="lore-detail-tiny">尚未建立关联关系——点右上「＋」，或在条目编写里右键「设置关系…」</p>
-            </div>
-          </section>
-
-          <section class="lore-detail-section">
-            <h3 class="lore-detail-section-head">
-              关系图谱 <small>拖动邻居调整布局（自动记忆）</small>
-            </h3>
-            <div class="lore-detail-graph">
-              <LoreGraph :node-id="node.id" :entries="entries" @pick="pickRel" @hover="onHoverRel" />
+              <p v-else class="lore-detail-tiny" title="点右上「＋」，或在条目编写里右键「设置关系…」">尚未建立关联关系</p>
             </div>
           </section>
 
           <section class="lore-detail-section">
             <h3 class="lore-detail-section-head">
               子条目 <small>{{ kids.length }}</small>
-              <button class="lore-icon" type="button" title="添加子条目" @click="addSibling"><OIcon name="plus" :size="12" /></button>
+              <button class="lore-icon" type="button" title="添加子条目" @click="addChild"><OIcon name="plus" :size="12" /></button>
             </h3>
             <p v-if="!kids.length" class="lore-detail-tiny">没有更深的条目层级</p>
             <div v-for="k in kids" :key="k.id" class="lore-detail-child">

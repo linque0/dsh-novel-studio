@@ -4,13 +4,16 @@
      交互：拖动空白平移、Ctrl+滚轮缩放、点击选中（联动右摘要）、双击进 B、圆点折叠。
      数据仍取 work.mubu*，不套大纲画布（OutlineCanvas）的节点/连线模型。 -->
 <script setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useWorkStore } from '../../stores/work'
 import { usePanZoom } from '../../services/graphview'
 import OIcon from '../OIcon.vue'
+import { kindOf } from './lore-kinds.js'
 
 const props = defineProps({
   setId: { type: String, default: '' },
+  /* 「全部设定」总览：非空时每个 id 各画一棵树（集与集之间纵向留白），空时退回单集 setId */
+  setIds: { type: Array, default: () => [] },
   activeId: { type: String, default: '' }
 })
 const emit = defineEmits(['select', 'open'])
@@ -22,6 +25,7 @@ const { zoom, innerStyle, onWheel, onPanStart, fit, centerOn } = usePanZoom(canv
 const NODE_W = 176
 const SET_W = 160
 const NODE_H = 68
+const EDGE_PAD = 100 // svg 相对画布外扩的留白；<g> 用同一常量反向补偿，路径坐标与节点坐标同源
 const STEP_X = 232
 const STEP_Y = 80
 const folded = ref(new Set())
@@ -29,10 +33,19 @@ const folded = ref(new Set())
 function widthOf(n) {
   return n.set ? SET_W : NODE_W
 }
+/* 卡片 kind 行：设定集仍写「设定集」；条目按 kindOf 取名，读原始节点才有 tags/kind（只读，不动布局） */
+function cardKind(n) {
+  if (n.set) return { icon: 'folder', label: '设定集' }
+  const raw = work.mubu.find((x) => x.id === n.id && !x.deletedAt)
+  return kindOf(raw || n)
+}
+
+/* 布局根：setIds 非空即多根总览，否则单集（setId 兼容旧接线） */
+const roots = computed(() => (props.setIds.length ? props.setIds : [props.setId || work.currentMubuRoot()?.id].filter(Boolean)))
+const ROOT_GAP = 60 // 集与集之间的纵向留白（上一集末叶与下一集首叶的 y 差）
 
 const layout = computed(() => {
-  const setId = props.setId || work.currentMubuRoot()?.id || null
-  if (!setId) return { nodes: [], edges: [], bounds: { x: 0, y: 0, w: 760, h: 580 } }
+  if (!roots.value.length) return { nodes: [], edges: [], bounds: { x: 0, y: 0, w: 760, h: 580 } }
   const nodes = []
   const edges = []
   const seen = new Set()
@@ -60,7 +73,11 @@ const layout = computed(() => {
     maxDepth = Math.max(maxDepth, depth)
     return y
   }
-  if (work.mubu.some((n) => n.id === setId && !n.deletedAt)) visit(setId, 0, true)
+  /* 多根依次布局：cursor / maxDepth 跨根累计，每集之间留 ROOT_GAP；上一根没画出节点（已删除的 id）不留白 */
+  roots.value.forEach((rid, i) => {
+    if (i && nodes.length) cursor += ROOT_GAP
+    visit(rid, 0, true)
+  })
   const byId = new Map(nodes.map((n) => [n.id, n]))
   const paths = edges
     .map((e) => {
@@ -82,7 +99,12 @@ const layout = computed(() => {
 
 const nodeCount = computed(() => layout.value.nodes.length)
 function fitAll() {
-  fit(layout.value.bounds)
+  fit(layout.value.bounds, { minZoom: 0.12 })
+}
+function frameTree() {
+  const n = layout.value.nodes.find(x => x.id === props.activeId) || layout.value.nodes[0]
+  if (window.innerWidth <= 559 && n) { zoom.value = 0.8; centerOn(n.x, n.y) }
+  else fitAll()
 }
 function toggleFold(id, e) {
   if (e) e.stopPropagation()
@@ -97,7 +119,7 @@ function nodeStyle(n) {
     left: n.x + 'px',
     top: n.y + 'px',
     width: widthOf(n) + 'px',
-    height: NODE_H + 'px',
+    minHeight: NODE_H + 'px',
     transform: 'translate(-50%, -50%)'
   }
 }
@@ -119,15 +141,44 @@ function zoomReset() {
 }
 function focusActive() {
   const n = layout.value.nodes.find((x) => x.id === props.activeId)
-  if (n) centerOn(n.x, n.y)
+  if (n) { if (window.innerWidth <= 559) zoom.value = Math.max(0.8, zoom.value); centerOn(n.x, n.y) }
   else fitAll()
 }
 
-watch(() => props.setId, () => {
+watch(roots, () => {
   folded.value = new Set()
-  nextTick(fitAll)
+  nextTick(frameTree)
 })
-onMounted(() => nextTick(fitAll))
+/* 尺寸自适应：细轨收起 / 摘要列收起 / 窗口缩放都会改 stage 宽度，画布自身尺寸一变就重新 fitAll */
+let ro = null
+let resizeTimer = 0
+onMounted(() => {
+  nextTick(frameTree)
+  const el = canvasEl.value
+  if (!el || typeof ResizeObserver === 'undefined') return
+  let lastW = el.clientWidth
+  let lastH = el.clientHeight
+  ro = new ResizeObserver((entries) => {
+    const box = entries[entries.length - 1].contentRect
+    const w = Math.round(box.width)
+    const h = Math.round(box.height)
+    if (w === lastW && h === lastH) return // 首帧与平移缩放不动画布尺寸，不触发重排
+    lastW = w
+    lastH = h
+    if (resizeTimer) clearTimeout(resizeTimer)
+    resizeTimer = setTimeout(() => {
+      resizeTimer = 0
+      nextTick(frameTree)
+    }, 60)
+  })
+  ro.observe(el)
+})
+onBeforeUnmount(() => {
+  ro?.disconnect()
+  ro = null
+  if (resizeTimer) clearTimeout(resizeTimer)
+  resizeTimer = 0
+})
 
 defineExpose({ zoomIn, zoomOut, zoomReset, fitAll, focusActive, zoom })
 </script>
@@ -135,8 +186,15 @@ defineExpose({ zoomIn, zoomOut, zoomReset, fitAll, focusActive, zoom })
 <template>
   <div ref="canvasEl" class="lore-tm-wrap" @mousedown="onPanStart" @wheel.prevent="onWheel">
     <div class="lore-tm-inner" :style="innerStyle">
-      <svg class="lore-tm-edges" :width="layout.bounds.w + 200" :height="layout.bounds.h + 200" style="left: -100px; top: -100px">
-        <path v-for="p in layout.edges" :key="p.id" class="lore-tm-edge" :d="p.d" />
+      <svg
+        class="lore-tm-edges"
+        :width="layout.bounds.w + EDGE_PAD * 2"
+        :height="layout.bounds.h + EDGE_PAD * 2"
+        :style="{ left: -EDGE_PAD + 'px', top: -EDGE_PAD + 'px' }"
+      >
+        <g :transform="`translate(${EDGE_PAD},${EDGE_PAD})`">
+          <path v-for="p in layout.edges" :key="p.id" class="lore-tm-edge" :d="p.d" />
+        </g>
       </svg>
       <div
         v-for="n in layout.nodes"
@@ -152,7 +210,7 @@ defineExpose({ zoomIn, zoomOut, zoomReset, fitAll, focusActive, zoom })
         @dblclick.stop="onNodeDblClick(n)"
         @keydown.enter="onNodeClick(n)"
       >
-        <small class="lore-tm-kind"><OIcon :name="n.set ? 'folder' : 'tag'" :size="10" />{{ n.set ? '设定集' : '设定条目' }}</small>
+        <small class="lore-tm-kind"><OIcon :name="cardKind(n).icon" :size="10" />{{ cardKind(n).label }}</small>
         <h3 class="lore-tm-title">{{ n.text }}</h3>
         <button
           v-if="n.childCount"
