@@ -1,0 +1,320 @@
+{
+  "at": "2026-11-05T14:44:21.017Z",
+  "passed": 54,
+  "failed": 0,
+  "results": [
+    {
+      "name": "插件范围：三类设置，无主题或模型入口",
+      "pass": true
+    },
+    {
+      "name": "appearance 1440 页面边界与横向溢出",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "main": {
+          "left": 280,
+          "right": 1412,
+          "bottom": 870
+        }
+      }
+    },
+    {
+      "name": "appearance 1280 页面边界与横向溢出",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "main": {
+          "left": 260,
+          "right": 1252,
+          "bottom": 870
+        }
+      }
+    },
+    {
+      "name": "appearance 760 页面边界与横向溢出",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "main": {
+          "left": 20,
+          "right": 740,
+          "bottom": 880
+        }
+      }
+    },
+    {
+      "name": "appearance 380 页面边界与横向溢出",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "main": {
+          "left": 12,
+          "right": 368,
+          "bottom": 888
+        }
+      }
+    },
+    {
+      "name": "data 1440 页面边界与横向溢出",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "main": {
+          "left": 280,
+          "right": 1412,
+          "bottom": 870
+        }
+      }
+    },
+    {
+      "name": "data 1280 页面边界与横向溢出",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "main": {
+          "left": 260,
+          "right": 1252,
+          "bottom": 870
+        }
+      }
+    },
+    {
+      "name": "data 760 页面边界与横向溢出",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "main": {
+          "left": 20,
+          "right": 740,
+          "bottom": 880
+        }
+      }
+    },
+    {
+      "name": "data 380 页面边界与横向溢出",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "main": {
+          "left": 12,
+          "right": 368,
+          "bottom": 888
+        }
+      }
+    },
+    {
+      "name": "about 1440 页面边界与横向溢出",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "main": {
+          "left": 280,
+          "right": 1412,
+          "bottom": 870
+        }
+      }
+    },
+    {
+      "name": "about 1280 页面边界与横向溢出",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "main": {
+          "left": 260,
+          "right": 1252,
+          "bottom": 870
+        }
+      }
+    },
+    {
+      "name": "about 760 页面边界与横向溢出",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "main": {
+          "left": 20,
+          "right": 740,
+          "bottom": 880
+        }
+      }
+    },
+    {
+      "name": "about 380 页面边界与横向溢出",
+      "pass": true,
+      "evidence": {
+        "overflow": false,
+        "main": {
+          "left": 12,
+          "right": 368,
+          "bottom": 888
+        }
+      }
+    },
+    {
+      "name": "字体预览实际应用 kai",
+      "pass": true
+    },
+    {
+      "name": "字体预览实际应用 jinghua",
+      "pass": true
+    },
+    {
+      "name": "字体预览实际应用 zhaohua",
+      "pass": true
+    },
+    {
+      "name": "字体预览实际应用 yunyou",
+      "pass": true
+    },
+    {
+      "name": "字体预览实际应用 hei",
+      "pass": true
+    },
+    {
+      "name": "字体预览实际应用 song",
+      "pass": true
+    },
+    {
+      "name": "西文字体实际应用",
+      "pass": true
+    },
+    {
+      "name": "字号上限与实时预览",
+      "pass": true
+    },
+    {
+      "name": "字号下限不可继续减小",
+      "pass": true
+    },
+    {
+      "name": "字号步进生效",
+      "pass": true
+    },
+    {
+      "name": "顶栏开关更新预览",
+      "pass": true
+    },
+    {
+      "name": "刷新恢复全部外观偏好",
+      "pass": true
+    },
+    {
+      "name": "取消恢复默认不修改偏好",
+      "pass": true
+    },
+    {
+      "name": "恢复默认仅作用于外观",
+      "pass": true
+    },
+    {
+      "name": "撤销恢复先前外观",
+      "pass": true
+    },
+    {
+      "name": "保存失败保留选择并明确提示",
+      "pass": true
+    },
+    {
+      "name": "重试后真实保存",
+      "pass": true
+    },
+    {
+      "name": "设置搜索覆盖字体名",
+      "pass": true
+    },
+    {
+      "name": "搜索结果定位并聚焦控件",
+      "pass": true
+    },
+    {
+      "name": "设置搜索无结果有清除入口",
+      "pass": true
+    },
+    {
+      "name": "手机独立预览不挤压设置",
+      "pass": true
+    },
+    {
+      "name": "手机预览中直接调整字号并立即看到结果",
+      "pass": true
+    },
+    {
+      "name": "手机分类抽屉焦点约束",
+      "pass": true
+    },
+    {
+      "name": "Esc关闭分类并归还焦点",
+      "pass": true
+    },
+    {
+      "name": "完整备份真实生成且包含作品和偏好",
+      "pass": true
+    },
+    {
+      "name": "备份时间反馈来自实际操作",
+      "pass": true
+    },
+    {
+      "name": "导入文本创建作品并保留正文",
+      "pass": true
+    },
+    {
+      "name": "正文导出真实生成文件",
+      "pass": true
+    },
+    {
+      "name": "非法备份不替换当前数据",
+      "pass": true
+    },
+    {
+      "name": "恢复备份必须先明确确认",
+      "pass": true
+    },
+    {
+      "name": "取消恢复保留当前数据",
+      "pass": true
+    },
+    {
+      "name": "确认后应用已校验备份",
+      "pass": true
+    },
+    {
+      "name": "撤销恢复可找回原工作区",
+      "pass": true
+    },
+    {
+      "name": "回收站恢复移动真实条目",
+      "pass": true
+    },
+    {
+      "name": "取消永久删除保留条目",
+      "pass": true
+    },
+    {
+      "name": "确认删除仅影响指定条目",
+      "pass": true
+    },
+    {
+      "name": "帮助入口展示真实键盘操作",
+      "pass": true
+    },
+    {
+      "name": "写作概览从当前内容派生",
+      "pass": true
+    },
+    {
+      "name": "多窗口同步偏好并保留当前分类",
+      "pass": true
+    },
+    {
+      "name": "共用流动背景可用",
+      "pass": true
+    },
+    {
+      "name": "无浏览器运行异常",
+      "pass": true,
+      "evidence": []
+    }
+  ]
+}

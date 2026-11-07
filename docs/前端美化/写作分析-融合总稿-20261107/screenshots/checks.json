@@ -1,0 +1,21 @@
+{
+  "assertions": 183,
+  "coverage": [
+    {
+      "width": 1440,
+      "views": 6,
+      "entryContexts": 2
+    },
+    {
+      "width": 864,
+      "views": 6,
+      "entryContexts": 2
+    },
+    {
+      "width": 380,
+      "views": 6,
+      "entryContexts": 2
+    }
+  ],
+  "browserExceptions": []
+}

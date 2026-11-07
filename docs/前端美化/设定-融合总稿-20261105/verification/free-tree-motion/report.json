@@ -1,0 +1,42 @@
+[
+  {
+    "file": "motion-walkthrough-end.jpg",
+    "state": null,
+    "size": "1440x900",
+    "zoom": 1,
+    "group": "walkthrough",
+    "issues": [],
+    "frames": {
+      "start": {
+        "file": "motion-walkthrough-start.jpg",
+        "source": "Page.captureScreenshot",
+        "timeMs": 847
+      },
+      "mid": {
+        "file": "motion-walkthrough-mid.jpg",
+        "source": "Page.screencastFrame",
+        "timeMs": 1021
+      },
+      "end": {
+        "file": "motion-walkthrough-end.jpg",
+        "source": "Page.captureScreenshot",
+        "timeMs": 2181
+      }
+    },
+    "sampling": {
+      "mode": "action",
+      "step": 3,
+      "action": "click",
+      "raw": "click .write-surface a[data-link-id=keepers]"
+    },
+    "durationMs": 2181,
+    "consistency": {
+      "status": "matched",
+      "reference": "motion-walkthrough-end.jpg",
+      "different": false,
+      "changedPixels": 0,
+      "maxTilePixels": 0,
+      "pixelRatio": 0
+    }
+  }
+]

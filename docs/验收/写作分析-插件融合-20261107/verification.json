@@ -1,0 +1,21 @@
+{
+  "build": "passed; assets/app updated from this repository",
+  "builtEntry": "assets/app/assets/index-BFaC4HQH.js",
+  "css": "assets/app/assets/style-DqE2WkqC.css",
+  "screenshots": 31,
+  "isolatedChecks": 22,
+  "reducedMotionChecks": 66,
+  "baselineUnrelatedChanges": 0,
+  "video": {
+    "file": "writing-analysis-plugin.mp4",
+    "sha256": "1643e3a06c585a1e4a6dc808832409966050454714b17764a87d9c7e67f6e736"
+  },
+  "formalChecks": 1744,
+  "formalScenarios": 34,
+  "dataTests": 12,
+  "loreTests": 9,
+  "characterTests": 8,
+  "settingsTests": 19,
+  "smokeTests": 82,
+  "contract": "host and client passed"
+}

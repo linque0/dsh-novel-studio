@@ -71,7 +71,8 @@ export default {
       ],
       "text": "雾港灯塔",
       "html": null,
-      "sortOrder": 0
+      "sortOrder": 0,
+      "heading": 2
     },
     {
       "id": "lighthouse-text-0",
@@ -85,8 +86,8 @@ export default {
     {
       "id": "lighthouse-text-1",
       "parentId": "lighthouse",
-      "text": "它不只为归航者指路，也替某些人守住不能被看见的东西。镇上的人习惯在入夜前离开堤岸，没有人公开谈论那一束逆着潮汐的光。",
-      "html": null,
+      "text": "它不只为归航者指路，也替某些人守住不能被看见的东西。镇上的人习惯在入夜前离开堤岸，没有人公开谈论那一束逆着潮汐的光。 这一切由守灯人协会掌管。",
+      "html": "它不只为归航者指路，也替某些人守住不能被看见的东西。镇上的人习惯在入夜前离开堤岸，没有人公开谈论那一束逆着潮汐的光。 这一切由<a class=\"wiki-link\" data-link-id=\"keepers\" href=\"#node=keepers\">守灯人协会</a>掌管。",
       "tags": [],
       "sortOrder": -1000,
       "kind": "entry"
@@ -101,13 +102,14 @@ export default {
       ],
       "text": "旧港与栈桥",
       "html": null,
-      "sortOrder": 1000
+      "sortOrder": 1000,
+      "heading": 2
     },
     {
       "id": "harbor-text-0",
       "parentId": "harbor",
-      "text": "旧港已经停用七年，仍有人在午夜修补栈桥。来港的第一班渡轮，会在这里多停留三分钟。",
-      "html": null,
+      "text": "旧港已经停用七年，仍有人在午夜修补栈桥。来港的第一班渡轮，会在这里多停留三分钟。 栈桥尽头正对雾港灯塔。",
+      "html": "旧港已经停用七年，仍有人在午夜修补栈桥。来港的第一班渡轮，会在这里多停留三分钟。 栈桥尽头正对<a class=\"wiki-link\" data-link-id=\"lighthouse\" href=\"#node=lighthouse\">雾港灯塔</a>。",
       "tags": [],
       "sortOrder": -2000,
       "kind": "entry"
@@ -122,7 +124,8 @@ export default {
       ],
       "text": "潮汐集市",
       "html": null,
-      "sortOrder": 2000
+      "sortOrder": 2000,
+      "heading": 2
     },
     {
       "id": "market-text-0",
@@ -148,8 +151,8 @@ export default {
     {
       "id": "keepers-text-0",
       "parentId": "keepers",
-      "text": "由历代守灯人组成的松散协会，名册上永远只有七个名字。协会负责维护灯塔，也决定哪些船可以在夜里靠岸。",
-      "html": null,
+      "text": "由历代守灯人组成的松散协会，名册上永远只有七个名字。协会负责维护雾港灯塔，也决定哪些船可以在夜里靠岸。",
+      "html": "由历代守灯人组成的松散协会，名册上永远只有七个名字。协会负责维护<a class=\"wiki-link\" data-link-id=\"lighthouse\" href=\"#node=lighthouse\">雾港灯塔</a>，也决定哪些船可以在夜里靠岸。",
       "tags": [],
       "sortOrder": -2000,
       "kind": "entry"

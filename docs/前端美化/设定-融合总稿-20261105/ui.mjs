@@ -5,7 +5,21 @@ const extra={folder:'<path d="M3 6h7l2 3h9v11H3z"/>',place:'<path d="M12 22s8-8 
 export const icon=(name,size=16)=>`<svg class="icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${extra[name]||outlineGlyphs[name]||extra.entry}</svg>`
 export const button=(text,act,cls='',id='',glyph='')=>`<button type="button" class="btn ${cls}" data-act="${act}" data-id="${esc(id)}">${glyph?icon(glyph,14):''}${esc(text)}</button>`
 export const ib=(label,act,id='',glyph='more')=>`<button type="button" class="icon-button" aria-label="${esc(label)}" title="${esc(label)}" data-act="${act}" data-id="${esc(id)}">${icon(glyph,15)}</button>`
-export function cleanHtml(html){const t=document.createElement('template');t.innerHTML=html||'';const walk=node=>{if(node.nodeType===3)return esc(node.textContent);if(node.nodeType!==1)return '';if(['SCRIPT','STYLE','IFRAME','OBJECT'].includes(node.tagName))return '';const inner=[...node.childNodes].map(walk).join('');if(node.tagName==='BR')return '<br>';if(['B','STRONG','I','EM','U','S'].includes(node.tagName))return `<${node.tagName.toLowerCase()}>${inner}</${node.tagName.toLowerCase()}>`;if(node.tagName==='SPAN'){const style=['color','background-color','font-weight','font-style','text-decoration'].map(k=>node.style.getPropertyValue(k)?k+':'+node.style.getPropertyValue(k):'').filter(Boolean).join(';');return style?`<span style="${esc(style)}">${inner}</span>`:inner}return inner+(['DIV','P'].includes(node.tagName)?'<br>':'')};return [...t.content.childNodes].map(walk).join('')}
+export function cleanHtml(html){
+ const t=document.createElement('template');t.innerHTML=html||'';
+ const walk=node=>{
+  if(node.nodeType===3)return esc(node.textContent);if(node.nodeType!==1)return '';
+  if(['SCRIPT','STYLE','IFRAME','OBJECT'].includes(node.tagName))return '';
+  const inner=[...node.childNodes].map(walk).join('');
+  if(node.tagName==='A'&&/^[a-zA-Z0-9_-]+$/.test(node.getAttribute('data-link-id')||'')){
+   const id=node.getAttribute('data-link-id');return `<a class="wiki-link" data-link-id="${id}" href="#node=${id}" contenteditable="false">${inner}</a>`;
+  }
+  if(node.tagName==='BR')return '<br>';
+  if(['B','STRONG','I','EM','U','S'].includes(node.tagName))return `<${node.tagName.toLowerCase()}>${inner}</${node.tagName.toLowerCase()}>`;
+  if(node.tagName==='SPAN'){const style=['color','background-color','font-weight','font-style','text-decoration'].map(k=>node.style.getPropertyValue(k)?k+':'+node.style.getPropertyValue(k):'').filter(Boolean).join(';');return style?`<span style="${esc(style)}">${inner}</span>`:inner}
+  return inner+(['DIV','P'].includes(node.tagName)?'<br>':'');
+ };return [...t.content.childNodes].map(walk).join('');
+}
 export const markup=n=>n?.html?cleanHtml(n.html):esc(n?.text||'').replace(/\n/g,'<br>')
 export function caretOffset(el){const s=getSelection();if(!s?.rangeCount||!el.contains(s.anchorNode))return 0;const r=s.getRangeAt(0).cloneRange();r.selectNodeContents(el);r.setEnd(s.anchorNode,s.anchorOffset);return r.toString().length}
 export function setCaret(el,offset){if(!el)return;el.focus({preventScroll:true});const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);let n,remaining=Math.max(0,offset),last;while(n=w.nextNode()){last=n;if(remaining<=n.textContent.length){const r=document.createRange();r.setStart(n,remaining);r.collapse(true);getSelection().removeAllRanges();getSelection().addRange(r);return}remaining-=n.textContent.length}const r=document.createRange();r.selectNodeContents(el);r.collapse(false);getSelection().removeAllRanges();getSelection().addRange(r)}

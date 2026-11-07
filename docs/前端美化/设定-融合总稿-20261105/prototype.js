@@ -1,5 +1,5 @@
 (() => {
-  // content.mjs
+  // docs/前端美化/设定-融合总稿-20261105/content.mjs
   var content_default = {
     "title": "\u957F\u591C\u5C06\u660E",
     "nodes": [
@@ -73,7 +73,8 @@
         ],
         "text": "\u96FE\u6E2F\u706F\u5854",
         "html": null,
-        "sortOrder": 0
+        "sortOrder": 0,
+        "heading": 2
       },
       {
         "id": "lighthouse-text-0",
@@ -87,8 +88,8 @@
       {
         "id": "lighthouse-text-1",
         "parentId": "lighthouse",
-        "text": "\u5B83\u4E0D\u53EA\u4E3A\u5F52\u822A\u8005\u6307\u8DEF\uFF0C\u4E5F\u66FF\u67D0\u4E9B\u4EBA\u5B88\u4F4F\u4E0D\u80FD\u88AB\u770B\u89C1\u7684\u4E1C\u897F\u3002\u9547\u4E0A\u7684\u4EBA\u4E60\u60EF\u5728\u5165\u591C\u524D\u79BB\u5F00\u5824\u5CB8\uFF0C\u6CA1\u6709\u4EBA\u516C\u5F00\u8C08\u8BBA\u90A3\u4E00\u675F\u9006\u7740\u6F6E\u6C50\u7684\u5149\u3002",
-        "html": null,
+        "text": "\u5B83\u4E0D\u53EA\u4E3A\u5F52\u822A\u8005\u6307\u8DEF\uFF0C\u4E5F\u66FF\u67D0\u4E9B\u4EBA\u5B88\u4F4F\u4E0D\u80FD\u88AB\u770B\u89C1\u7684\u4E1C\u897F\u3002\u9547\u4E0A\u7684\u4EBA\u4E60\u60EF\u5728\u5165\u591C\u524D\u79BB\u5F00\u5824\u5CB8\uFF0C\u6CA1\u6709\u4EBA\u516C\u5F00\u8C08\u8BBA\u90A3\u4E00\u675F\u9006\u7740\u6F6E\u6C50\u7684\u5149\u3002 \u8FD9\u4E00\u5207\u7531\u5B88\u706F\u4EBA\u534F\u4F1A\u638C\u7BA1\u3002",
+        "html": '\u5B83\u4E0D\u53EA\u4E3A\u5F52\u822A\u8005\u6307\u8DEF\uFF0C\u4E5F\u66FF\u67D0\u4E9B\u4EBA\u5B88\u4F4F\u4E0D\u80FD\u88AB\u770B\u89C1\u7684\u4E1C\u897F\u3002\u9547\u4E0A\u7684\u4EBA\u4E60\u60EF\u5728\u5165\u591C\u524D\u79BB\u5F00\u5824\u5CB8\uFF0C\u6CA1\u6709\u4EBA\u516C\u5F00\u8C08\u8BBA\u90A3\u4E00\u675F\u9006\u7740\u6F6E\u6C50\u7684\u5149\u3002 \u8FD9\u4E00\u5207\u7531<a class="wiki-link" data-link-id="keepers" href="#node=keepers">\u5B88\u706F\u4EBA\u534F\u4F1A</a>\u638C\u7BA1\u3002',
         "tags": [],
         "sortOrder": -1e3,
         "kind": "entry"
@@ -103,13 +104,14 @@
         ],
         "text": "\u65E7\u6E2F\u4E0E\u6808\u6865",
         "html": null,
-        "sortOrder": 1e3
+        "sortOrder": 1e3,
+        "heading": 2
       },
       {
         "id": "harbor-text-0",
         "parentId": "harbor",
-        "text": "\u65E7\u6E2F\u5DF2\u7ECF\u505C\u7528\u4E03\u5E74\uFF0C\u4ECD\u6709\u4EBA\u5728\u5348\u591C\u4FEE\u8865\u6808\u6865\u3002\u6765\u6E2F\u7684\u7B2C\u4E00\u73ED\u6E21\u8F6E\uFF0C\u4F1A\u5728\u8FD9\u91CC\u591A\u505C\u7559\u4E09\u5206\u949F\u3002",
-        "html": null,
+        "text": "\u65E7\u6E2F\u5DF2\u7ECF\u505C\u7528\u4E03\u5E74\uFF0C\u4ECD\u6709\u4EBA\u5728\u5348\u591C\u4FEE\u8865\u6808\u6865\u3002\u6765\u6E2F\u7684\u7B2C\u4E00\u73ED\u6E21\u8F6E\uFF0C\u4F1A\u5728\u8FD9\u91CC\u591A\u505C\u7559\u4E09\u5206\u949F\u3002 \u6808\u6865\u5C3D\u5934\u6B63\u5BF9\u96FE\u6E2F\u706F\u5854\u3002",
+        "html": '\u65E7\u6E2F\u5DF2\u7ECF\u505C\u7528\u4E03\u5E74\uFF0C\u4ECD\u6709\u4EBA\u5728\u5348\u591C\u4FEE\u8865\u6808\u6865\u3002\u6765\u6E2F\u7684\u7B2C\u4E00\u73ED\u6E21\u8F6E\uFF0C\u4F1A\u5728\u8FD9\u91CC\u591A\u505C\u7559\u4E09\u5206\u949F\u3002 \u6808\u6865\u5C3D\u5934\u6B63\u5BF9<a class="wiki-link" data-link-id="lighthouse" href="#node=lighthouse">\u96FE\u6E2F\u706F\u5854</a>\u3002',
         "tags": [],
         "sortOrder": -2e3,
         "kind": "entry"
@@ -124,7 +126,8 @@
         ],
         "text": "\u6F6E\u6C50\u96C6\u5E02",
         "html": null,
-        "sortOrder": 2e3
+        "sortOrder": 2e3,
+        "heading": 2
       },
       {
         "id": "market-text-0",
@@ -150,8 +153,8 @@
       {
         "id": "keepers-text-0",
         "parentId": "keepers",
-        "text": "\u7531\u5386\u4EE3\u5B88\u706F\u4EBA\u7EC4\u6210\u7684\u677E\u6563\u534F\u4F1A\uFF0C\u540D\u518C\u4E0A\u6C38\u8FDC\u53EA\u6709\u4E03\u4E2A\u540D\u5B57\u3002\u534F\u4F1A\u8D1F\u8D23\u7EF4\u62A4\u706F\u5854\uFF0C\u4E5F\u51B3\u5B9A\u54EA\u4E9B\u8239\u53EF\u4EE5\u5728\u591C\u91CC\u9760\u5CB8\u3002",
-        "html": null,
+        "text": "\u7531\u5386\u4EE3\u5B88\u706F\u4EBA\u7EC4\u6210\u7684\u677E\u6563\u534F\u4F1A\uFF0C\u540D\u518C\u4E0A\u6C38\u8FDC\u53EA\u6709\u4E03\u4E2A\u540D\u5B57\u3002\u534F\u4F1A\u8D1F\u8D23\u7EF4\u62A4\u96FE\u6E2F\u706F\u5854\uFF0C\u4E5F\u51B3\u5B9A\u54EA\u4E9B\u8239\u53EF\u4EE5\u5728\u591C\u91CC\u9760\u5CB8\u3002",
+        "html": '\u7531\u5386\u4EE3\u5B88\u706F\u4EBA\u7EC4\u6210\u7684\u677E\u6563\u534F\u4F1A\uFF0C\u540D\u518C\u4E0A\u6C38\u8FDC\u53EA\u6709\u4E03\u4E2A\u540D\u5B57\u3002\u534F\u4F1A\u8D1F\u8D23\u7EF4\u62A4<a class="wiki-link" data-link-id="lighthouse" href="#node=lighthouse">\u96FE\u6E2F\u706F\u5854</a>\uFF0C\u4E5F\u51B3\u5B9A\u54EA\u4E9B\u8239\u53EF\u4EE5\u5728\u591C\u91CC\u9760\u5CB8\u3002',
         "tags": [],
         "sortOrder": -2e3,
         "kind": "entry"
@@ -696,7 +699,7 @@
     ]
   };
 
-  // tree.mjs
+  // docs/前端美化/设定-融合总稿-20261105/tree.mjs
   var clone = (v) => structuredClone(v);
   var escape = (v) => String(v || "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
   var TreeStore = class {
@@ -724,7 +727,7 @@
       return out;
     }
     root(id) {
-      return this.path(id).find((n) => n.isSet);
+      return this.path(id).find((n) => n.parentId === null && n.kind !== "person");
     }
     descendants(id) {
       const out = [], seen = /* @__PURE__ */ new Set([id]);
@@ -788,27 +791,27 @@
       return true;
     }
     add(parentId, afterId = null, text = "", html = null) {
-      if (!this.node(parentId) || this.node(parentId).kind === "person") return false;
+      if (parentId !== null && (!this.node(parentId) || this.node(parentId).kind === "person")) return false;
       this.checkpoint();
       const siblings = this.children(parentId);
       this.normalize(parentId, siblings);
       const at = siblings.findIndex((n2) => n2.id === afterId), sortOrder = at < 0 ? (siblings.at(-1)?.sortOrder || 0) + 1e3 : (siblings[at].sortOrder + (siblings[at + 1]?.sortOrder ?? siblings[at].sortOrder + 2e3)) / 2;
-      const n = { id: "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), parentId, text, html, tags: [], sortOrder, kind: "entry" };
+      const n = { id: "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), parentId, isSet: parentId === null, text, html, tags: [], sortOrder, kind: "entry" };
       this.data.nodes.push(n);
       this.selected = n.id;
       return n;
     }
     canMove(id, targetId) {
       const n = this.node(id), t = this.node(targetId);
-      return !!n && !n.isSet && !!t && id !== targetId && !this.descendants(id).some((n2) => n2.id === targetId) && t.kind !== "person";
+      return !!n && n.kind !== "person" && !!t && id !== targetId && !this.descendants(id).some((n2) => n2.id === targetId) && t.kind !== "person";
     }
     move(id, targetId, zone = "inside") {
       if (!this.canMove(id, targetId)) return false;
       const n = this.node(id), t = this.node(targetId);
-      if (t.isSet && zone !== "inside") return false;
       this.checkpoint();
       const old = n.parentId;
       n.parentId = zone === "inside" ? t.id : t.parentId;
+      n.isSet = n.parentId === null;
       const sib = this.children(n.parentId).filter((x) => x.id !== id), at = zone === "inside" ? sib.length : sib.findIndex((x) => x.id === targetId) + (zone === "after" ? 1 : 0);
       sib.splice(at, 0, n);
       this.normalize(n.parentId, sib);
@@ -824,7 +827,7 @@
     }
     outdent(id) {
       const n = this.node(id), p = n && this.node(n.parentId);
-      return p && !p.isSet && p.parentId ? this.move(id, p.id, "after") : false;
+      return p ? this.move(id, p.id, "after") : false;
     }
     reorder(id, dir) {
       const n = this.node(id);
@@ -834,7 +837,7 @@
     }
     backspace(id) {
       const n = this.node(id);
-      if (!n || n.isSet) return false;
+      if (!n || n.kind === "person") return false;
       const sib = this.children(n.parentId), at = sib.findIndex((n2) => n2.id === id), prev = sib[at - 1];
       if (!prev) {
         return this.outdent(id) ? id : false;
@@ -853,7 +856,7 @@
     }
     remove(id) {
       const n = this.node(id);
-      if (!n || n.isSet) return false;
+      if (!n || n.kind === "person") return false;
       this.checkpoint();
       const ids = /* @__PURE__ */ new Set([id, ...this.descendants(id).map((n2) => n2.id)]);
       this.data.nodes = this.data.nodes.filter((n2) => !ids.has(n2.id));
@@ -913,7 +916,7 @@
     return { nodes, edges, width: Math.max(760, 180 + maxDepth * 232), height: Math.max(580, cursor + 70) };
   }
 
-  // icons.mjs
+  // docs/前端美化/设定-融合总稿-20261105/icons.mjs
   var outlineGlyphs = {
     search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/>',
     gear: '<circle cx="12" cy="12" r="3"/><path d="m10 3 4 0 .6 3 2 .9 2.8-1 2 3.4-2.2 2v2.4l2.2 2-2 3.4-2.8-1-2 .9-.6 3h-4l-.6-3-2-.9-2.8 1-2-3.4 2.2-2v-2.4L2.6 9.3l2-3.4 2.8 1 2-.9z"/>',
@@ -936,7 +939,7 @@
     arrow: '<path d="M4 12h16m-6-6 6 6-6 6"/>'
   };
 
-  // ui.mjs
+  // docs/前端美化/设定-融合总稿-20261105/ui.mjs
   var $ = (s) => document.querySelector(s);
   var $$ = (s) => [...document.querySelectorAll(s)];
   var esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -952,6 +955,10 @@
       if (node2.nodeType !== 1) return "";
       if (["SCRIPT", "STYLE", "IFRAME", "OBJECT"].includes(node2.tagName)) return "";
       const inner = [...node2.childNodes].map(walk).join("");
+      if (node2.tagName === "A" && /^[a-zA-Z0-9_-]+$/.test(node2.getAttribute("data-link-id") || "")) {
+        const id = node2.getAttribute("data-link-id");
+        return `<a class="wiki-link" data-link-id="${id}" href="#node=${id}" contenteditable="false">${inner}</a>`;
+      }
       if (node2.tagName === "BR") return "<br>";
       if (["B", "STRONG", "I", "EM", "U", "S"].includes(node2.tagName)) return `<${node2.tagName.toLowerCase()}>${inner}</${node2.tagName.toLowerCase()}>`;
       if (node2.tagName === "SPAN") {
@@ -995,7 +1002,7 @@
     getSelection().addRange(r);
   }
 
-  // editor.mjs
+  // docs/前端美化/设定-融合总稿-20261105/editor.mjs
   function bindEditor(ctx2) {
     let dragId = null, composing = false, range = null;
     const field = (e) => e.target.closest("[data-edit-node]");
@@ -1097,7 +1104,28 @@
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         ctx2.commit();
-        const n = m.node(id), row = m.add(n.parentId, id, "");
+        const n = m.node(id);
+        if (el.matches("h1")) {
+          const row2 = m.add(id, null, "");
+          ctx2.reveal(row2.id);
+          ctx2.save();
+          ctx2.render();
+          focus(row2.id, 0);
+          return;
+        }
+        const historyBeforeSplit = m.history.length;
+        const selection = getSelection(), tail = document.createRange();
+        tail.selectNodeContents(el);
+        if (selection?.rangeCount) tail.setStart(selection.getRangeAt(0).endContainer, selection.getRangeAt(0).endOffset);
+        const suffix = tail.cloneContents(), holder = document.createElement("div");
+        holder.append(suffix);
+        const afterText = holder.textContent, afterHtml = cleanHtml(holder.innerHTML);
+        if (afterText) {
+          tail.deleteContents();
+          m.edit(id, el.textContent, cleanHtml(el.innerHTML));
+        }
+        const row = m.add(n.parentId, id, afterText, afterText ? afterHtml : null);
+        if (afterText && m.history.length > historyBeforeSplit + 1) m.history.pop();
         ctx2.reveal(row.id);
         ctx2.save();
         ctx2.render();
@@ -1120,7 +1148,7 @@
         change(() => m.backspace(id), id, len);
         return;
       }
-      const rows = ctx2.store.visible(ctx2.store.setId, ctx2.prefs.writeFold, ctx2.query, ctx2.tag), i = rows.findIndex((r) => r.node.id === id);
+      const rows = ctx2.visibleRows(), i = rows.findIndex((r) => r.node.id === id);
       if (e.key === "ArrowUp" && offset === 0 && i > 0) {
         e.preventDefault();
         focus(rows[i - 1].node.id);
@@ -1161,13 +1189,6 @@
       document.execCommand(format.dataset.format);
       draft(el);
     });
-    document.addEventListener("dblclick", (e) => {
-      const el = field(e);
-      if (el && ctx2.view === "write") {
-        e.preventDefault();
-        ctx2.open("detail", el.dataset.editNode);
-      }
-    });
     document.addEventListener("contextmenu", (e) => {
       const row = e.target.closest("[data-row]");
       if (!row) return;
@@ -1195,7 +1216,7 @@
       const row = e.target.closest("[data-row]"), surface = e.target.closest(".write-surface");
       if (!dragId || !surface) return;
       e.preventDefault();
-      const group = e.target.closest("[data-write-set]"), target = row?.dataset.row || group?.dataset.writeSet || ctx2.store.setId, zone = row?.dataset.drop || "inside";
+      const group = e.target.closest("[data-write-set]"), target = row?.dataset.row || group?.dataset.writeSet || ctx2.contentRootId, zone = row?.dataset.drop || "inside";
       const ok = ctx2.store.move(dragId, target, zone);
       dragId = null;
       if (!ok) ctx2.toast("\u4E0D\u80FD\u5F52\u5165\u81EA\u8EAB\u6216\u540E\u4EE3\u6761\u76EE");
@@ -1212,7 +1233,211 @@
     } };
   }
 
-  // map.mjs
+  // docs/前端美化/设定-融合总稿-20261105/links.mjs
+  function referenceIds(n) {
+    return [...String(n?.html || "").matchAll(/data-link-id="([^"]+)"/g)].map((m) => m[1]);
+  }
+  function bindLinks(ctx2) {
+    let saved = null, field = null, picker = null, query2 = "", index = 0, range = null, items = [], hoverTimer = null;
+    const editorField = (el) => el?.closest?.("[data-edit-node]");
+    const currentRange = () => {
+      const s = getSelection();
+      return s?.rangeCount ? s.getRangeAt(0).cloneRange() : null;
+    };
+    function close() {
+      picker?.remove();
+      picker = null;
+      query2 = "";
+      index = 0;
+      document.querySelector("#link-hover")?.remove();
+    }
+    function position(el, rect) {
+      el.style.left = Math.max(12, Math.min(innerWidth - el.offsetWidth - 12, rect.left)) + "px";
+      el.style.top = Math.max(100, Math.min(innerHeight - el.offsetHeight - 12, rect.bottom + 9)) + "px";
+    }
+    function update() {
+      items = ctx2.store.data.nodes.filter((n) => n.id !== field?.dataset.editNode && n.text.trim() && (!query2 || n.text.toLowerCase().includes(query2.toLowerCase()))).slice(0, 7);
+      if (index >= items.length) index = 0;
+      picker.innerHTML = `<div class="link-picker-label">${icon("link", 13)} \u94FE\u63A5\u5230\u8282\u70B9 <kbd>Esc</kbd></div>${items.map((n, i) => `<button class="${index === i ? "active" : ""}" data-link-choice="${n.id}"><span>${icon(n.kind || "entry", 14)}<strong>${esc(n.text.length > 26 ? n.text.slice(0, 26) + "\u2026" : n.text)}</strong></span><small>${esc(ctx2.store.path(n.id).slice(0, -1).map((n2) => n2.text.slice(0, 10)).join(" \u203A ") || "\u4E16\u754C\u8BBE\u5B9A")}</small>${index === i ? "<kbd>\u21B5</kbd>" : ""}</button>`).join("") || '<p class="link-picker-empty">\u6CA1\u6709\u5339\u914D\u8282\u70B9</p>'}${query2 ? `<button data-link-create="true" class="create-linked">${icon("plus", 13)} \u521B\u5EFA\u300C${esc(query2.slice(0, 24))}\u300D</button>` : ""}<footer>\u2191 \u2193 \u9009\u62E9 \xB7 Enter \u63D2\u5165 \xB7 \u60AC\u505C\u94FE\u63A5\u9884\u89C8</footer>`;
+      const rect = range?.getBoundingClientRect();
+      position(picker, rect?.width || rect?.height ? rect : field.getBoundingClientRect());
+    }
+    function openPicker() {
+      if (!field?.isConnected) field = document.querySelector(`[data-edit-node="${ctx2.selected}"]`) || document.querySelector(".write-surface [data-edit-node]");
+      if (!field) return ctx2.toast("\u5148\u70B9\u51FB\u4E00\u4E2A\u8282\u70B9\uFF0C\u518D\u63D2\u5165\u94FE\u63A5");
+      if (!range || !field.contains(range.startContainer)) {
+        setCaret(field, field.textContent.length);
+        range = currentRange();
+      }
+      saved = range?.cloneRange();
+      query2 = "";
+      index = 0;
+      picker?.remove();
+      picker = document.createElement("div");
+      picker.id = "link-picker";
+      picker.className = "link-picker";
+      picker.setAttribute("role", "dialog");
+      picker.setAttribute("aria-label", "\u9009\u62E9\u94FE\u63A5\u8282\u70B9");
+      document.body.append(picker);
+      update();
+    }
+    function detect(el) {
+      const selection = getSelection();
+      if (!selection?.isCollapsed) return;
+      const before = selection.getRangeAt(0).cloneRange();
+      before.selectNodeContents(el);
+      before.setEnd(selection.anchorNode, selection.anchorOffset);
+      const match = before.toString().match(/\[\[([^\[\]\n]*)$/);
+      if (!match) {
+        if (picker) close();
+        return;
+      }
+      field = el;
+      query2 = match[1];
+      index = 0;
+      range = currentRange();
+      saved = range.cloneRange();
+      let remaining = before.toString().length - match[0].length;
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      let node2;
+      while (node2 = walker.nextNode()) {
+        if (remaining <= node2.textContent.length) {
+          saved.setStart(node2, remaining);
+          break;
+        }
+        remaining -= node2.textContent.length;
+      }
+      if (!picker) {
+        picker = document.createElement("div");
+        picker.id = "link-picker";
+        picker.className = "link-picker";
+        picker.setAttribute("role", "dialog");
+        picker.setAttribute("aria-label", "\u9009\u62E9\u94FE\u63A5\u8282\u70B9");
+        document.body.append(picker);
+      }
+      update();
+    }
+    function insert(id) {
+      const target = ctx2.store.node(id);
+      if (!target || !field?.isConnected || !saved) return;
+      const sourceId = field.dataset.editNode;
+      ctx2.commit();
+      const a = document.createElement("a");
+      a.className = "wiki-link";
+      a.dataset.linkId = id;
+      a.href = "#node=" + encodeURIComponent(id);
+      a.textContent = target.text;
+      a.contentEditable = "false";
+      saved.deleteContents();
+      saved.insertNode(a);
+      saved.setStartAfter(a);
+      saved.collapse(true);
+      getSelection().removeAllRanges();
+      getSelection().addRange(saved);
+      const offset = caretOffset(field);
+      ctx2.store.edit(sourceId, field.textContent, cleanHtml(field.innerHTML));
+      close();
+      ctx2.save();
+      ctx2.render();
+      ctx2.editor.focus(sourceId, offset);
+    }
+    function decorate() {
+      for (const a of document.querySelectorAll("a[data-link-id]")) {
+        const n = ctx2.store.node(a.dataset.linkId);
+        a.classList.toggle("broken-link", !n);
+        a.setAttribute("title", n ? "\u9884\u89C8 " + n.text + " \xB7 \u70B9\u51FB\u4FA7\u8FB9\u67E5\u770B \xB7 Ctrl+\u70B9\u51FB\u8FDB\u5165" : "\u76EE\u6807\u8282\u70B9\u5DF2\u5220\u9664");
+        a.setAttribute("contenteditable", "false");
+      }
+    }
+    function hover(a) {
+      clearTimeout(hoverTimer);
+      hoverTimer = setTimeout(() => {
+        const n = ctx2.store.node(a.dataset.linkId);
+        if (!n || !a.isConnected) return;
+        document.querySelector("#link-hover")?.remove();
+        const el = document.createElement("div");
+        el.id = "link-hover";
+        el.className = "link-hover";
+        el.innerHTML = `<span>${icon("link", 12)} ${esc(ctx2.store.path(n.id).slice(0, -1).map((n2) => n2.text.slice(0, 10)).join(" \u203A "))}</span><h3>${esc(n.text)}</h3><p>${esc(ctx2.store.children(n.id).slice(0, 2).map((n2) => n2.text).join(" ").slice(0, 150) || "\u8FDB\u5165\u8282\u70B9\u7EE7\u7EED\u8865\u5145\u5185\u5BB9")}</p><footer>\u70B9\u51FB\u4FA7\u8FB9\u67E5\u770B \xB7 Ctrl+\u70B9\u51FB\u8FDB\u5165</footer>`;
+        document.body.append(el);
+        position(el, a.getBoundingClientRect());
+      }, 260);
+    }
+    document.addEventListener("selectionchange", () => {
+      const el = editorField(getSelection()?.anchorNode?.parentElement);
+      if (el && !picker) {
+        field = el;
+        range = currentRange();
+      }
+    });
+    document.addEventListener("input", (e) => {
+      const el = editorField(e.target);
+      if (el && !e.isComposing) detect(el);
+    });
+    document.addEventListener("compositionend", (e) => {
+      const el = editorField(e.target);
+      if (el) queueMicrotask(() => detect(el));
+    });
+    document.addEventListener("keydown", (e) => {
+      if (!picker || e.isComposing) return;
+      if (["ArrowDown", "ArrowUp", "Enter", "Escape", "Tab"].includes(e.key)) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (e.key === "Escape" || e.key === "Tab") {
+          close();
+          return;
+        }
+        if (e.key === "Enter") {
+          if (items[index]) insert(items[index].id);
+          return;
+        }
+        index = (index + (e.key === "ArrowDown" ? 1 : -1) + Math.max(1, items.length)) % Math.max(1, items.length);
+        update();
+      }
+    }, true);
+    document.addEventListener("mousedown", (e) => {
+      if (e.target.closest("#link-picker")) e.preventDefault();
+      else if (picker && !editorField(e.target)) close();
+    });
+    document.addEventListener("click", (e) => {
+      const choice = e.target.closest("[data-link-choice]");
+      if (choice) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        insert(choice.dataset.linkChoice);
+        return;
+      }
+      if (e.target.closest("[data-link-create]")) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const n = ctx2.store.add(ctx2.rootId, null, query2.trim());
+        if (n) insert(n.id);
+        return;
+      }
+      const a = e.target.closest("a[data-link-id]");
+      if (!a) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      close();
+      ctx2.commit();
+      if (!ctx2.store.node(a.dataset.linkId)) return ctx2.toast("\u76EE\u6807\u8282\u70B9\u5DF2\u5220\u9664\uFF0C\u53EF\u64A4\u9500\u5220\u9664\u6062\u590D");
+      if (e.ctrlKey || e.metaKey) ctx2.focusNode(a.dataset.linkId);
+      else ctx2.showPeek(a.dataset.linkId);
+    }, true);
+    document.addEventListener("mouseover", (e) => {
+      const a = e.target.closest("a[data-link-id]");
+      if (a && !a.contains(e.relatedTarget)) hover(a);
+    });
+    document.addEventListener("mouseout", (e) => {
+      if (e.target.closest("a[data-link-id]")) {
+        clearTimeout(hoverTimer);
+        document.querySelector("#link-hover")?.remove();
+      }
+    });
+    return { openPicker, decorate, close };
+  }
+
+  // docs/前端美化/设定-融合总稿-20261105/map.mjs
   var current = null;
   var context = null;
   var hoverBound = false;
@@ -1361,11 +1586,11 @@
     ctx2.save();
   }
 
-  // app.mjs
+  // docs/前端美化/设定-融合总稿-20261105/app.mjs
   var store = new TreeStore(content_default);
   var KEY = "latent:lore-fusion:20261105:v1";
   var clone2 = (v) => structuredClone(v);
-  var initial = () => ({ navWidth: 220, listWidth: 300, detailWidth: 348, navClosed: false, listClosed: false, detailClosed: false, writeFold: [], writeScope: "set", hierFold: content_default.nodes.filter((n) => !n.isSet && n.id !== "lighthouse" && content_default.nodes.some((c) => c.parentId === n.id)).map((n) => n.id), relationCenter: "lighthouse", cameras: {}, positions: {} });
+  var initial = () => ({ focusId: null, navFold: ["architecture", "watch", "secret", "clues", "harbor", "market", "factions", "rules", "history", "objects", "beliefs"], linkPanel: false, linkTab: "backlinks", navWidth: 246, listWidth: 300, detailWidth: 348, navClosed: false, listClosed: false, detailClosed: false, writeFold: [], writeScope: "set", hierFold: content_default.nodes.filter((n) => !n.isSet && n.id !== "lighthouse" && content_default.nodes.some((c) => c.parentId === n.id)).map((n) => n.id), relationCenter: "lighthouse", cameras: {}, positions: {} });
   var prefs = initial();
   var view = "write";
   var mapMode = "hierarchy";
@@ -1376,6 +1601,8 @@
   var editId = null;
   var caret = { id: "lighthouse", offset: 0 };
   var history = [];
+  var future = [];
+  var peekId = null;
   var scrolls = /* @__PURE__ */ new Map();
   var drafts = /* @__PURE__ */ new Map();
   var sessionOnly = location.protocol === "about:";
@@ -1460,12 +1687,80 @@
   }
   function snapshot() {
     remember();
-    return { view, selected: store.selected, setId: store.setId, screen, mapMode, center: prefs.relationCenter, caret: clone2(caret), scrolls: clone2([...scrolls]), cameras: clone2(prefs.cameras) };
+    return { view, selected: store.selected, setId: store.setId, focusId: prefs.focusId, writeScope: prefs.writeScope, query, tag, screen, mapMode, center: prefs.relationCenter, caret: clone2(caret), scrolls: clone2([...scrolls]), cameras: clone2(prefs.cameras) };
+  }
+  function pushLocation() {
+    history.push(snapshot());
+    if (history.length > 60) history.shift();
+    future = [];
+  }
+  function applyLocation(s) {
+    commit();
+    view = s.view;
+    store.setId = node(s.setId)?.id || store.data.nodes.find((n) => n.isSet)?.id;
+    store.selected = node(s.selected)?.id || store.setId;
+    prefs.focusId = node(s.focusId)?.id || null;
+    prefs.writeScope = s.writeScope || "set";
+    query = s.query || "";
+    tag = s.tag || "";
+    screen = s.screen;
+    mapMode = s.mapMode;
+    prefs.relationCenter = s.center;
+    prefs.cameras = s.cameras;
+    caret = s.caret;
+    scrolls = new Map(s.scrolls);
+    editId = null;
+    drawer = false;
+    save();
+    render(false);
+    if (view === "write" && caret?.id) editor.focus(caret.id, caret.offset);
+  }
+  function forward() {
+    const next = future.pop();
+    if (!next) return;
+    history.push(snapshot());
+    applyLocation(next);
+  }
+  function focusRoot() {
+    return node(prefs.focusId) || node(store.setId);
+  }
+  function focusNode(id, { push = true } = {}) {
+    peekId = null;
+    document.querySelector("#peek-panel")?.remove();
+    if (!node(id) || node(id).kind === "person") return open("detail", id);
+    remember();
+    commit();
+    if (push) pushLocation();
+    prefs.focusId = id;
+    prefs.writeScope = "set";
+    store.selected = id;
+    store.setId = store.root(id)?.id || id;
+    view = "write";
+    query = "";
+    tag = "";
+    drawer = false;
+    screen = "main";
+    for (const a of store.path(id)) prefs.navFold = prefs.navFold.filter((x) => x !== a.id);
+    caret = { id, offset: 0 };
+    save();
+    render(false);
+    if (!matchMedia("(prefers-reduced-motion: reduce)").matches) document.querySelector(".fusion-head")?.animate([{ opacity: 0.5, transform: "translateY(4px)" }, { opacity: 1, transform: "none" }], { duration: 150 });
+  }
+  function focusUp() {
+    const current2 = focusRoot();
+    if (current2?.parentId) focusNode(current2.parentId);
+    else if (prefs.focusId) {
+      pushLocation();
+      prefs.focusId = null;
+      prefs.writeScope = "all";
+      save();
+      render(false);
+    }
   }
   function open(next, id = store.selected, { push = true, locate = false, mode = null } = {}) {
     remember();
     commit();
-    if (push) history.push(snapshot());
+    if (push) pushLocation();
     if (id && node(id)) {
       store.selected = id;
       store.setId = store.root(id)?.id || store.setId;
@@ -1479,29 +1774,20 @@
       if (mapMode === "relations") prefs.relationCenter = store.selected;
       else reveal(store.selected, { map: true });
     }
-    if (next === "write" && locate) reveal(store.selected);
+    if (next === "write" && locate) {
+      const ancestors = store.path(id).map((n) => n.id);
+      if (!ancestors.includes(prefs.focusId)) prefs.focusId = node(id)?.parentId || id;
+      reveal(store.selected);
+    }
     save();
     render(false);
     if (next === "write" && locate) editor.focus(store.selected, caret.id === store.selected ? caret.offset : null);
   }
   function back() {
-    commit();
-    const s = history.pop();
-    if (!s) return open("write", store.selected, { push: false, locate: true });
-    view = s.view;
-    store.setId = node(s.setId)?.id || store.setId;
-    store.selected = node(s.selected)?.id || store.children(store.setId)[0]?.id;
-    screen = s.screen;
-    mapMode = s.mapMode;
-    prefs.relationCenter = s.center;
-    prefs.cameras = s.cameras;
-    caret = s.caret;
-    scrolls = new Map(s.scrolls);
-    editId = null;
-    drawer = false;
-    save();
-    render(false);
-    if (view === "write") editor.focus(caret.id, caret.offset);
+    const prev = history.pop();
+    if (!prev) return;
+    future.push(snapshot());
+    applyLocation(prev);
   }
   function select(id) {
     if (!node(id)) return;
@@ -1516,40 +1802,37 @@
     render(false);
   }
   function category(id) {
-    remember();
-    commit();
-    store.setId = id;
-    prefs.writeScope = "set";
-    store.selected = store.children(id)[0]?.id || id;
-    query = "";
-    tag = "";
-    drawer = false;
-    screen = view === "detail" && narrow() ? "list" : "main";
-    if (view === "map" && mapMode === "relations") prefs.relationCenter = store.selected;
-    save();
-    render(false);
+    focusNode(id);
   }
   function tags(n) {
     return `<div class="tags">${(n?.tags || []).map((t) => `<button class="tag ${tag === t ? "active" : ""}" data-act="tag" data-tag="${esc(t)}">${esc(t)}</button>`).join("")}</div>`;
   }
   function nav() {
-    const roots = store.data.nodes.filter((n) => n.isSet), allCount = roots.reduce((n, r) => n + store.descendants(r.id).length, 0), allOn = prefs.writeScope === "all", allRow = '<button class="category all-scope ' + (allOn ? "current" : "") + '" data-act="scope-toggle" aria-pressed="' + allOn + '">' + icon("container", 15) + "<span>\u5168\u90E8\u8BBE\u5B9A</span><small>" + allCount + "</small></button>";
-    return `<button class="nav-rail" data-act="nav-toggle" aria-label="\u5C55\u5F00\u8BBE\u5B9A\u76EE\u5F55">${icon("tree", 17)}<span>\u4E16\u754C\u8BBE\u5B9A</span></button><div class="nav-head">${icon("folder", 16)}<h2>\u4E16\u754C\u8BBE\u5B9A</h2>${ib("\u6536\u8D77\u8BBE\u5B9A\u76EE\u5F55", "nav-toggle", "", "chevron")}</div><label class="nav-search">${icon("search", 14)}<input data-focus-key="search" id="nav-search" aria-label="\u641C\u7D22\u6761\u76EE\u6216\u6807\u7B7E" value="${esc(query)}" placeholder="\u641C\u7D22\u6761\u76EE\u3001\u6807\u7B7E\u2026">${query || tag ? ib("\u6E05\u9664\u7B5B\u9009", "clear", "", "close") : ""}</label><div class="nav-section-label">\u8BBE\u5B9A\u96C6 <span>${roots.length}${ib("\u6DFB\u52A0\u540C\u7EA7\u6761\u76EE", "add", "", "plus")}</span></div><div class="nav-tree" data-scroll="nav">${allRow}${roots.map((r) => `<button class="category ${!allOn && r.id === store.setId ? "current" : ""}" data-act="category" data-id="${r.id}">${icon(r.kind, 15)}<span>${esc(r.text)}</span><small>${store.descendants(r.id).length}</small></button>${r.id === store.setId ? `<div class="nav-children">${store.children(r.id).map((n) => `<button class="nav-entry ${n.id === store.selected ? "selected" : ""}" data-act="nav-pick" data-id="${n.id}">${esc(short(n.text, 24))}</button>`).join("")}</div>` : ""}`).join("")}${query || tag ? `<div class="nav-section-label search-label">\u68C0\u7D22\u7ED3\u679C <span>${store.search(query, tag).length}</span></div>${store.search(query, tag).map((n) => `<button class="nav-entry" data-act="search-pick" data-id="${n.id}" title="${esc(n.text)}">${esc(short(n.text, 24))}</button>`).join("")}${!store.search(query, tag).length ? `<div class="empty">\u6CA1\u6709\u5339\u914D\u6761\u76EE${button("\u6E05\u9664\u7B5B\u9009", "clear")}</div>` : ""}` : ""}</div><footer class="nav-foot">${icon("link", 12)}<span>${store.data.relations.length} \u6761\u4E16\u754C\u5173\u7CFB</span><span>${store.data.nodes.filter((n) => !n.isSet && n.kind !== "person").length} \u6761\u76EE</span></footer>`;
+    const roots = store.data.nodes.filter((n) => n.isSet), all = prefs.writeScope === "all", current2 = focusRoot()?.id;
+    const branch = (n, depth = 0) => {
+      const kids = store.children(n.id), closed = prefs.navFold.includes(n.id);
+      return `<div class="free-nav-branch" role="treeitem" aria-level="${depth + 1}" ${kids.length ? `aria-expanded="${!closed}"` : ""}><div class="free-nav-row ${current2 === n.id && !all ? "current" : ""}" style="--nav-depth:${depth}">${kids.length ? `<button class="nav-fold ${closed ? "folded" : ""}" data-act="nav-fold" data-id="${n.id}" aria-label="${closed ? "\u5C55\u5F00" : "\u6298\u53E0"}${esc(label(n.id))}">${icon("chevron", 11)}</button>` : '<span class="nav-fold-spacer"></span>'}<button class="nav-node" data-act="focus-node" data-id="${n.id}" title="${esc(n.text)}">${depth === 0 ? icon(n.kind, 14) : '<span class="nav-dot"></span>'}<span>${esc(short(n.text, 24))}</span></button><button class="nav-node-more" data-act="node-menu" data-id="${n.id}" aria-label="${esc(short(n.text, 12))}\u7684\u64CD\u4F5C">${icon("more", 12)}</button></div>${!closed && kids.length ? `<div role="group">${kids.map((c) => branch(c, depth + 1)).join("")}</div>` : ""}</div>`;
+    };
+    return `<button class="nav-rail" data-act="nav-toggle" aria-label="\u5C55\u5F00\u8BBE\u5B9A\u76EE\u5F55">${icon("tree", 17)}<span>\u4E16\u754C\u8BBE\u5B9A</span></button><div class="nav-head">${icon("folder", 16)}<h2>\u4E16\u754C\u8BBE\u5B9A</h2>${ib("\u6536\u8D77\u8BBE\u5B9A\u76EE\u5F55", "nav-toggle", "", "chevron")}</div><label class="nav-search">${icon("search", 14)}<input data-focus-key="search" id="nav-search" aria-label="\u641C\u7D22\u8282\u70B9\u6216\u6807\u7B7E" value="${esc(query)}" placeholder="\u641C\u7D22\u8282\u70B9\u3001\u6807\u7B7E\u2026">${query || tag ? ib("\u6E05\u9664\u7B5B\u9009", "clear", "", "close") : ""}</label><div class="nav-section-label">\u8282\u70B9\u76EE\u5F55 <span>${ib("\u65B0\u5EFA\u6839\u8282\u70B9", "add-root", "", "plus")}</span></div><div class="nav-tree" data-scroll="nav"><button class="category all-scope ${all ? "current" : ""}" data-act="show-all" aria-pressed="${all}">${icon("container", 15)}<span>\u5168\u90E8\u8BBE\u5B9A</span><small>${store.data.nodes.filter((n) => n.kind !== "person").length}</small></button><div role="tree" aria-label="\u8BBE\u5B9A\u8282\u70B9\u6811">${roots.map((n) => branch(n)).join("")}</div>${query || tag ? `<div class="nav-section-label search-label">\u68C0\u7D22\u7ED3\u679C <span>${store.search(query, tag).length}</span></div>${store.search(query, tag).map((n) => `<button class="nav-entry" data-act="search-pick" data-id="${n.id}">${esc(short(n.text, 24))}<small class="nav-result-path">${esc(store.path(n.id).slice(0, -1).map((n2) => short(n2.text, 10)).join(" \u203A "))}</small></button>`).join("") || '<p class="empty">\u6CA1\u6709\u5339\u914D\u8282\u70B9</p>'}` : ""}</div><footer class="nav-foot">${icon("link", 12)}<span>${store.data.relations.length} \u6761\u5173\u7CFB</span><button data-act="add-root">${icon("plus", 12)} \u65B0\u5EFA\u8282\u70B9</button></footer>`;
   }
   function top() {
     return `<a class="brand" href="index.html">\u5C0F\u8BF4\u5DE5\u574A <small>LATENT</small></a><nav class="global-nav" aria-label="\u529F\u80FD\u6A21\u5757">${["\u4E66\u67B6", "\u6B63\u6587", "\u5927\u7EB2", "\u8BBE\u5B9A", "\u4EBA\u7269", "\u7075\u611F"].map((n) => `<button ${n === "\u8BBE\u5B9A" ? 'class="active" aria-current="page"' : "disabled"}>${n}</button>`).join("")}</nav><div class="top-actions"><span class="save-status" id="save-state" role="status"></span><button class="round" data-act="search" aria-label="\u641C\u7D22\u6240\u6709\u8BBE\u5B9A">${icon("search", 18)}</button><button class="round" data-act="settings" aria-label="\u8BBE\u7F6E">${icon("gear", 18)}</button></div>`;
   }
   function head() {
-    const all = prefs.writeScope === "all", sets = store.data.nodes.filter((n) => n.isSet), entryTotal = (all ? sets : [node(store.setId)]).reduce((n, r) => n + store.descendants(r.id).length, 0), relTotal = store.data.relations.length, title = view === "write" ? all ? "\u5168\u90E8\u8BBE\u5B9A" : name(store.setId) : { detail: "\u8BBE\u5B9A\u8BE6\u60C5", map: "\u89C6\u89C9\u5BFC\u56FE" }[view], eyebrow = (all ? sets.length + " \u4E2A\u8BBE\u5B9A\u96C6<i>\xB7</i>" : "\u8BBE\u5B9A\u96C6<i>\xB7</i>") + entryTotal + " \u6761\u76EE<i>\xB7</i>" + relTotal + " \u6761\u5173\u7CFB";
-    return `<header class="fusion-head"><div><div class="crumbs"><span>\u957F\u591C\u5C06\u660E</span>${icon("chevron", 11)}<button data-act="nav-open">\u4E16\u754C\u8BBE\u5B9A</button></div><h1>${esc(title)}</h1>${view === "write" ? `<div class="head-eyebrow">${eyebrow}</div>` : ""}</div><div class="head-actions">${view === "write" ? `<button class="scope-toggle${all ? " on" : ""}" data-act="scope-toggle" aria-pressed="${all}" title="${all ? "\u56DE\u5230\u5F53\u524D\u8BBE\u5B9A\u96C6" : "\u603B\u89C8\u5168\u90E8\u8BBE\u5B9A\u96C6"}">${icon("container", 12)}${all ? "\u5F53\u524D\u8BBE\u5B9A\u96C6" : "\u5168\u90E8\u8BBE\u5B9A"}</button>${button("\u65B0\u5EFA\u6761\u76EE", "add", "primary", "", "plus")}` : ""}<nav class="view-switch" aria-label="\u8BBE\u5B9A\u89C6\u56FE">${[["write", "\u6761\u76EE\u7F16\u5199"], ["detail", "\u8BBE\u5B9A\u8BE6\u60C5"], ["map", "\u89C6\u89C9\u5BFC\u56FE"]].map(([id, t]) => `<button data-act="view" data-id="${id}" aria-pressed="${view === id}" class="${view === id ? "on" : ""}">${t}</button>`).join("")}</nav></div></header>`;
+    const all = prefs.writeScope === "all", current2 = view === "write" ? focusRoot() : node(store.selected), path = all && view === "write" ? [] : store.path(current2?.id), title = view === "write" ? all ? "\u5168\u90E8\u8BBE\u5B9A" : name(current2?.id) : view === "detail" ? name(store.selected) : "\u89C6\u89C9\u5BFC\u56FE";
+    return `<header class="fusion-head free-head"><div class="free-heading"><div class="crumbs free-crumbs"><div class="history-controls"><button data-act="back" aria-label="\u540E\u9000" title="\u540E\u9000 Alt+\u2190" ${history.length ? "" : "disabled"}>${icon("back", 13)}</button><button data-act="forward" aria-label="\u524D\u8FDB" title="\u524D\u8FDB Alt+\u2192" ${future.length ? "" : "disabled"}>${icon("arrow", 13)}</button></div><button data-act="show-all">\u4E16\u754C\u8BBE\u5B9A</button>${path.map((n) => `${icon("chevron", 10)}<button data-act="focus-node" data-id="${n.id}" ${n.id === current2?.id ? 'aria-current="page"' : ""} title="${esc(n.text)}">${esc(short(n.text, 12))}</button>`).join("")}</div><h1 ${view === "write" && !all ? 'contenteditable="true" role="textbox" data-edit-node="' + current2?.id + '" aria-label="\u5F53\u524D\u8282\u70B9\u540D\u79F0" spellcheck="false"' : ""}>${esc(title)}</h1><div class="head-eyebrow">${view === "write" ? all ? store.data.nodes.filter((n) => n.kind !== "person").length + " \u4E2A\u8282\u70B9" : store.children(current2?.id).length + " \u4E2A\u5B50\u8282\u70B9 \xB7 " + store.descendants(current2?.id).length + " \u4E2A\u540E\u4EE3\u8282\u70B9" : "\u957F\u591C\u5C06\u660E"}${current2?.tags?.length ? " <i>\xB7</i> " + current2.tags.map(esc).join(" / ") : ""}</div></div><div class="head-actions"><nav class="view-switch" aria-label="\u8BBE\u5B9A\u89C6\u56FE">${[["write", "\u8282\u70B9\u5927\u7EB2"], ["detail", "\u9605\u8BFB\u89C6\u56FE"], ["map", "\u89C6\u89C9\u5BFC\u56FE"]].map(([id, t]) => `<button data-act="view" data-id="${id}" aria-pressed="${view === id}" class="${view === id ? "on" : ""}">${t}</button>`).join("")}</nav><button class="icon-button ${prefs.linkPanel ? "reference-active" : ""}" data-act="links-toggle" aria-label="\u94FE\u63A5\u4E0E\u5F15\u7528" aria-pressed="${prefs.linkPanel}" title="\u94FE\u63A5\u4E0E\u5F15\u7528">${icon("link", 15)}</button>${view === "write" ? button("\u65B0\u5EFA\u8282\u70B9", "add-here", "primary", "", "plus") : ""}</div></header>`;
   }
   function returnTools() {
     return `<div class="return-tools">${history.length ? button("\u8FD4\u56DE", "back", "quiet", "", "back") : ""}<span class="context-line">${esc(store.path(store.selected).slice(0, -1).map((n) => short(n.text, 16)).join(" / ") || "\u5173\u8054\u4EBA\u7269")}</span>${view !== "write" ? button("\u6761\u76EE\u4E2D\u5B9A\u4F4D", "locate", "quiet", "", "tree") : ""}${view === "detail" ? button("\u67E5\u770B\u5BFC\u56FE", "map-current", "quiet", "", "container") : ""}</div>`;
   }
-  var setHead = (s) => `<header class="mubu-set-head">${icon(s.kind, 15)}<h2>${esc(s.text)}</h2><small>${store.descendants(s.id).length} \u6761\u76EE</small>${ib("\u5728\u6B64\u8BBE\u5B9A\u96C6\u65B0\u5EFA\u6761\u76EE", "add-set", s.id, "plus")}</header>`;
   function write() {
-    const all = prefs.writeScope === "all", sets = store.data.nodes.filter((n) => n.isSet), groups = (all ? sets : [node(store.setId)]).map((r) => ({ set: r, rows: store.visible(r.id, prefs.writeFold, query, tag) })), shown = groups.filter((g) => g.rows.length), rowCount = shown.reduce((n, g) => n + g.rows.length, 0), total = (all ? sets : [node(store.setId)]).reduce((n, r) => n + store.descendants(r.id).length, 0), rowHtml = ({ node: n, depth }) => `<div class="mubu-row ${store.selected === n.id ? "selected" : ""} ${depth === 0 ? "top-level" : ""}" data-row="${n.id}" data-depth="${depth}" style="--depth:${depth}"><div class="row-guides" aria-hidden="true">${Array.from({ length: depth }, (_, i) => `<i style="left:${i * 22 + 12}px"></i>`).join("")}</div><button class="bullet ${store.children(n.id).length ? "has-children" : ""} ${prefs.writeFold.includes(n.id) ? "folded" : ""}" data-act="fold" data-id="${n.id}" data-drag="${n.id}" draggable="true" aria-label="${store.children(n.id).length ? prefs.writeFold.includes(n.id) ? "\u5C55\u5F00" : "\u6298\u53E0" : "\u62D6\u52A8"}${esc(short(n.text, 18))}" aria-expanded="${!prefs.writeFold.includes(n.id)}"><span></span></button><div class="row-content"><div class="node-text" contenteditable="true" role="textbox" data-edit-node="${n.id}" spellcheck="false" aria-label="\u6761\u76EE ${esc(short(n.text, 30))}" data-placeholder="\u8F93\u5165\u5185\u5BB9\uFF0C\u56DE\u8F66\u7EE7\u7EED\u7F16\u5199\u2026">${markup(n)}</div>${(n.tags || []).length ? tags(n) : ""}</div>${store.links(n.id).length ? `<button class="row-link" data-act="relation" data-id="${n.id}" title="${store.links(n.id).length}\u6761\u5173\u7CFB">${icon("link", 11)}${store.links(n.id).length}</button>` : ""}<div class="row-ops">${ib("\u67E5\u770B\u8BE6\u60C5", "open-detail", n.id, "expand")}${ib("\u5728\u5BFC\u56FE\u4E2D\u67E5\u770B", "open-map", n.id, "container")}${ib("\u6761\u76EE\u64CD\u4F5C", "node-menu", n.id)}</div></div>`, body = shown.map((g) => `<div class="write-group" data-write-set="${g.set.id}">${all ? setHead(g.set) : ""}${g.rows.map((r) => rowHtml(r)).join("")}</div>`).join("");
-    return `<main class="pane main-pane fusion-write">${head()}<div class="mubu-toolbar">${ib("\u64A4\u9500 Ctrl+Z", "undo", "", "undo")}${ib("\u91CD\u505A Ctrl+Y", "redo", "", "redo")}<i></i><button data-format="bold" title="\u52A0\u7C97 Ctrl+B"><b>B</b></button><button data-format="italic" title="\u659C\u4F53 Ctrl+I"><i>I</i></button><button data-format="underline" title="\u4E0B\u5212\u7EBF Ctrl+U"><u>U</u></button><i></i><button data-act="add" data-editor-command>${icon("plus", 12)} \u540C\u7EA7</button><button data-act="add-child" data-editor-command>${icon("plus", 12)} \u5B50\u7EA7</button><span></span><button data-act="fold-all">\u6298\u53E0</button><button data-act="expand-all">\u5C55\u5F00</button><small>${rowCount} / ${total} \u6761\u76EE</small></div><div class="write-scroll" data-scroll="${all ? "write-all" : "write-" + store.setId}"><section class="write-surface">${query || tag ? `<div class="filter-notice">\u6B63\u5728\u7B5B\u9009\u300C${esc(query || tag)}\u300D${button("\u6E05\u9664\u7B5B\u9009", "clear", "quiet", "", "close")}</div>` : ""}${body || `<div class="empty"><h3>${query || tag ? "\u6CA1\u6709\u5339\u914D\u6761\u76EE" : "\u4ECE\u7B2C\u4E00\u6761\u8BBE\u5B9A\u5F00\u59CB"}</h3>${button(query || tag ? "\u6E05\u9664\u7B5B\u9009" : "\u6DFB\u52A0\u7B2C\u4E00\u6761\u8BBE\u5B9A", query || tag ? "clear" : "add", "primary", "", "plus")}</div>`}</section></div><footer class="fusion-write-footer"><span id="write-location"></span><span>Enter \u540C\u7EA7 <i>\xB7</i> Tab \u5C42\u7EA7 <i>\xB7</i> \u53CC\u51FB\u8BE6\u60C5</span></footer></main>`;
+    const all = prefs.writeScope === "all", root = focusRoot(), roots = store.data.nodes.filter((n) => n.isSet), scopes = all ? roots : root ? [root] : [], groups = scopes.map((r) => ({ set: r, rows: store.visible(r.id, prefs.writeFold, query, tag) })), total = scopes.reduce((n, r) => n + store.descendants(r.id).length, 0);
+    const rowHtml = ({ node: n, depth }) => {
+      const kids = store.children(n.id), closed = prefs.writeFold.includes(n.id);
+      return `<div class="mubu-row free-row ${store.selected === n.id ? "selected" : ""} ${depth === 0 ? "top-level" : ""} ${n.heading ? "heading-" + n.heading : ""}" data-row="${n.id}" data-depth="${depth}" style="--depth:${depth}"><div class="row-guides" aria-hidden="true">${Array.from({ length: depth }, (_, i) => `<i style="left:${i * 22 + 24}px"></i>`).join("")}</div><button class="drag-handle" data-drag="${n.id}" draggable="true" aria-label="\u79FB\u52A8${esc(short(n.text, 12))}" title="\u62D6\u52A8\u6574\u4E2A\u5206\u652F">${icon("grip", 12)}</button><button class="fold-toggle ${closed ? "folded" : ""} ${kids.length ? "" : "no-kids"}" data-act="fold" data-id="${n.id}" ${kids.length ? "" : "disabled"} aria-expanded="${!closed}" aria-label="${closed ? "\u5C55\u5F00" : "\u6298\u53E0"}\u5B50\u8282\u70B9">${icon("chevron", 12)}</button><button class="bullet ${kids.length ? "has-children" : ""}" data-act="focus-node" data-id="${n.id}" aria-label="\u8FDB\u5165${esc(short(n.text, 18))}" title="\u8FDB\u5165\u6B64\u8282\u70B9"><span></span></button><div class="row-content"><div class="node-text" contenteditable="true" role="textbox" data-edit-node="${n.id}" spellcheck="false" aria-label="\u8282\u70B9 ${esc(short(n.text, 30))}" data-placeholder="\u8F93\u5165\u5185\u5BB9\uFF0C\u6216\u8F93\u5165 [[ \u94FE\u63A5\u8282\u70B9\u2026">${markup(n)}</div>${n.tags?.length ? tags(n) : ""}</div>${closed && kids.length ? `<button class="fold-count" data-act="fold" data-id="${n.id}" title="\u5C55\u5F00 ${store.descendants(n.id).length} \u4E2A\u8282\u70B9">${store.descendants(n.id).length}</button>` : ""}${store.links(n.id).length ? `<button class="row-link" data-act="relation" data-id="${n.id}" title="\u8BBE\u5B9A\u5173\u7CFB">${icon("link", 11)}${store.links(n.id).length}</button>` : ""}<div class="row-ops">${ib("\u6DFB\u52A0\u5B50\u8282\u70B9", "add-child", n.id, "plus")}${ib("\u4FA7\u8FB9\u67E5\u770B", "peek", n.id, "expand")}${ib("\u8282\u70B9\u64CD\u4F5C", "node-menu", n.id)}</div></div>`;
+    };
+    const body = groups.map((g) => `<div class="write-group" data-write-set="${g.set.id}">${all ? `<header class="mubu-set-head"><button data-act="focus-node" data-id="${g.set.id}">${icon(g.set.kind, 15)}<h2>${esc(g.set.text)}</h2></button><small>${store.descendants(g.set.id).length} \u8282\u70B9</small>${ib("\u6DFB\u52A0\u5B50\u8282\u70B9", "add-set", g.set.id, "plus")}</header>` : ""}${g.rows.map(rowHtml).join("")}</div>`).join("");
+    return `<main class="pane main-pane fusion-write"><div class="free-main-column">${head()}<div class="mubu-toolbar free-toolbar">${ib("\u64A4\u9500 Ctrl+Z", "undo", "", "undo")}${ib("\u91CD\u505A Ctrl+Y", "redo", "", "redo")}<i></i><button data-format="bold" title="\u52A0\u7C97 Ctrl+B"><b>B</b></button><button data-format="italic" title="\u659C\u4F53 Ctrl+I"><i>I</i></button><button data-act="heading-menu" title="\u8BBE\u7F6E\u6807\u9898\u5C42\u7EA7">H<span>\u2304</span></button><i></i><button data-act="insert-link" data-editor-command>${icon("link", 12)} \u94FE\u63A5</button><button data-act="add-child" data-editor-command>${icon("plus", 12)} \u5B50\u7EA7</button><span></span><button data-act="fold-all">\u6298\u53E0</button><button data-act="expand-all">\u5C55\u5F00</button>${ib("\u8FD4\u56DE\u4E0A\u4E00\u7EA7", "focus-up", "", "back")}</div><div class="write-scroll" data-scroll="${all ? "write-all" : "focus-" + root?.id}"><section class="write-surface">${query || tag ? `<div class="filter-notice">\u6B63\u5728\u7B5B\u9009\u300C${esc(query || tag)}\u300D${button("\u6E05\u9664\u7B5B\u9009", "clear", "quiet", "", "close")}</div>` : ""}${body}<button class="add-inline" data-act="add-here">${icon("plus", 14)} ${total ? "\u7EE7\u7EED\u6DFB\u52A0\u8282\u70B9" : "\u5199\u4E0B\u7B2C\u4E00\u4E2A\u60F3\u6CD5"}<span>Enter \u7EE7\u7EED \xB7 Tab \u7F29\u8FDB</span></button></section></div><footer class="fusion-write-footer"><span id="write-location"></span><span>\u5706\u70B9\u8FDB\u5165 <i>\xB7</i> \u7BAD\u5934\u6298\u53E0 <i>\xB7</i> [[ \u94FE\u63A5</span></footer></div>${prefs.linkPanel ? linkInspector() : ""}</main>`;
   }
   function relationRows(id) {
     return store.links(id).map((r) => `<div class="rel-row" data-rel="${r.id}" data-related="${r.otherId}"><button class="rel-target" data-act="relation-pick" data-id="${r.otherId}"><span class="rel-mark">${icon(node(r.otherId)?.kind || "entry", 13)}</span><small>${esc(r.displayLabel)}</small><strong>${esc(short(label(r.otherId), 30))}</strong>${icon("chevron", 11)}</button>${ib("\u79FB\u9664\u5173\u7CFB", "remove-relation", r.id, "close")}</div>`).join("") || '<p class="tiny-label">\u5C1A\u672A\u5EFA\u7ACB\u5173\u8054\u5173\u7CFB</p>';
@@ -1607,6 +1890,8 @@
   }
   function render(rememberPosition = true) {
     if (rememberPosition) remember();
+    if (prefs.focusId && !node(prefs.focusId)) prefs.focusId = null;
+    if (!node(store.setId)) store.setId = store.data.nodes.find((n) => n.isSet)?.id;
     if (!node(prefs.relationCenter)) prefs.relationCenter = store.selected || store.children(store.setId)[0]?.id || store.setId;
     const searchActive = document.activeElement?.dataset.focusKey, selection = searchActive ? [document.activeElement.selectionStart, document.activeElement.selectionEnd] : null;
     document.body.dataset.view = view;
@@ -1626,6 +1911,8 @@
       if (selection) el?.setSelectionRange(...selection);
     }
     if (view === "map") bindMap(ctx);
+    if (peekId && node(peekId)) showPeek(peekId);
+    links?.decorate();
   }
   function dialog(title, body, actions = "") {
     commit();
@@ -1636,8 +1923,9 @@
     requestAnimationFrame(() => d.querySelector("[autofocus]")?.focus());
   }
   function showNodeMenu(id = store.selected) {
+    store.selected = id;
     if (!node(id)) return;
-    dialog(short(label(id), 25), `<div class="settings-options">${button("\u67E5\u770B\u8BE6\u60C5", "open-detail", "", id, "expand")}${button("\u5728\u6761\u76EE\u4E2D\u5B9A\u4F4D", "locate", "", id, "tree")}${button("\u67E5\u770B\u89C6\u89C9\u5BFC\u56FE", "open-map", "", id, "container")}${button("\u6DFB\u52A0\u5B50\u6761\u76EE", "add-child", "", id, "plus")}${button("\u7F16\u8F91\u6807\u7B7E", "tags", "", id, "edit")}${button("\u8BBE\u7F6E\u5173\u7CFB", "relation", "", id, "link")}${button("\u5220\u9664\u6761\u76EE", "delete-confirm", "danger", id, "trash")}</div>`);
+    dialog(short(label(id), 25), `<div class="settings-options">${button("\u8FDB\u5165\u6B64\u8282\u70B9", "focus-node", "", id, "tree")}${button("\u4FA7\u8FB9\u67E5\u770B", "peek", "", id, "expand")}${button("\u964D\u4E3A\u5B50\u8282\u70B9 Tab", "indent-node", "", id, "arrow")}${button("\u63D0\u5347\u4E00\u7EA7 Shift+Tab", "outdent-node", "", id, "back")}${button("\u67E5\u770B\u8BE6\u60C5", "open-detail", "", id, "expand")}${button("\u5728\u6761\u76EE\u4E2D\u5B9A\u4F4D", "locate", "", id, "tree")}${button("\u67E5\u770B\u89C6\u89C9\u5BFC\u56FE", "open-map", "", id, "container")}${button("\u6DFB\u52A0\u5B50\u6761\u76EE", "add-child", "", id, "plus")}${button("\u7F16\u8F91\u6807\u7B7E", "tags", "", id, "edit")}${button("\u8BBE\u7F6E\u5173\u7CFB", "relation", "", id, "link")}${button("\u5220\u9664\u6761\u76EE", "delete-confirm", "danger", id, "trash")}</div>`);
   }
   function relation(id = store.selected) {
     if (!node(id)) return;
@@ -1669,18 +1957,18 @@
   function add(child = false, id = store.selected) {
     remember();
     commit();
-    if (node(id)?.kind === "person") return toast("\u8BF7\u9009\u62E9\u8BBE\u5B9A\u6761\u76EE");
-    const n = node(id), parent = child ? id : n?.isSet ? n.id : n?.parentId || store.setId, row = store.add(parent, child ? null : id, "\u65B0\u8BBE\u5B9A");
+    if (node(id)?.kind === "person") return toast("\u8BF7\u9009\u62E9\u8BBE\u5B9A\u8282\u70B9");
+    const n = node(id), root = focusRoot(), parent = child ? id : id === root?.id ? root.id : n?.parentId ?? root?.id ?? null, row = store.add(parent, child ? null : id === root?.id ? null : id, "");
     if (!row) return;
-    reveal(row.id);
     view = "write";
-    screen = "main";
-    editId = null;
+    reveal(row.id);
     save();
     render(false);
     editor.focus(row.id, 0);
   }
-  var ctx = { store, get prefs() {
+  var ctx = { store, focusNode, visibleRows: () => store.visible(focusRoot()?.id, prefs.writeFold, query, tag), get contentRootId() {
+    return focusRoot()?.id;
+  }, get prefs() {
     return prefs;
   }, get view() {
     return view;
@@ -1698,12 +1986,96 @@
     caret = v;
   }, camera, cameraKey, commit, save, status, render, toast, reveal, open, select, showNodeMenu, updateLocation: status };
   var editor = bindEditor(ctx);
+  var links = bindLinks({ store, commit, save, render, focusNode, showPeek, get selected() {
+    return store.selected;
+  }, get rootId() {
+    return focusRoot()?.id;
+  }, editor, toast });
   function act(action, id, el) {
-    if (!["cancel-edit", "preset", "dialog-close"].includes(action)) commit();
+    if (!["cancel-edit", "preset", "dialog-close", "insert-link"].includes(action)) commit();
     if ($("#dialog").open && !["preset", "dialog-close"].includes(action)) $("#dialog").close();
     switch (action) {
       case "view":
-        open(id, store.selected, { push: false });
+        open(id, view === "write" && prefs.focusId ? prefs.focusId : store.selected);
+        break;
+      case "focus-node":
+        focusNode(id);
+        break;
+      case "focus-up":
+        focusUp();
+        break;
+      case "forward":
+        forward();
+        break;
+      case "nav-fold":
+        prefs.navFold = prefs.navFold.includes(id) ? prefs.navFold.filter((x) => x !== id) : [...prefs.navFold, id];
+        save();
+        render();
+        break;
+      case "show-all":
+        pushLocation();
+        prefs.focusId = null;
+        prefs.writeScope = "all";
+        view = "write";
+        query = "";
+        tag = "";
+        drawer = false;
+        save();
+        render(false);
+        break;
+      case "add-root": {
+        pushLocation();
+        const r = store.add(null, null, "\u65B0\u8282\u70B9");
+        prefs.focusId = r.id;
+        prefs.writeScope = "set";
+        store.setId = r.id;
+        view = "write";
+        save();
+        render(false);
+        editor.focus(r.id, 0);
+        break;
+      }
+      case "add-here":
+        add(true, focusRoot()?.id);
+        break;
+      case "links-toggle":
+        prefs.linkPanel = !prefs.linkPanel;
+        save();
+        render();
+        break;
+      case "link-tab":
+        prefs.linkTab = id;
+        save();
+        render();
+        break;
+      case "peek":
+        showPeek(id);
+        break;
+      case "peek-close":
+        peekId = null;
+        document.querySelector("#peek-panel")?.remove();
+        break;
+      case "insert-link":
+        links.openPicker();
+        break;
+      case "heading-menu":
+        headingMenu();
+        break;
+      case "set-heading": {
+        const n = node(store.selected);
+        if (n) {
+          store.checkpoint();
+          n.heading = Number(id);
+          save();
+          render();
+        }
+        break;
+      }
+      case "indent-node":
+        mutate(() => store.indent(id));
+        break;
+      case "outdent-node":
+        mutate(() => store.outdent(id));
         break;
       case "back":
         back();
@@ -1724,12 +2096,7 @@
         open("map", store.selected);
         break;
       case "nav-pick":
-        if (view === "write") {
-          select(id);
-          reveal(id);
-          render();
-          editor.focus(id);
-        } else select(id);
+        focusNode(id);
         break;
       case "detail-pick":
         select(id);
@@ -1744,6 +2111,8 @@
         category(id);
         break;
       case "scope-toggle":
+        pushLocation();
+        prefs.focusId = null;
         prefs.writeScope = prefs.writeScope === "all" ? "set" : "all";
         save();
         render(false);
@@ -1832,18 +2201,10 @@
         openSearch();
         break;
       case "search-result":
-        if (view === "write") {
-          query = "";
-          tag = "";
-          open("write", id, { locate: true });
-        } else open(view === "map" ? "map" : "detail", id);
+        focusNode(id);
         break;
       case "search-pick":
-        if (view === "write") {
-          query = "";
-          tag = "";
-          open("write", id, { locate: true });
-        } else select(id);
+        focusNode(id);
         break;
       case "edit":
         editId = id || store.selected;
@@ -1886,14 +2247,16 @@
         toast("\u5173\u7CFB\u5DF2\u79FB\u9664", true);
         break;
       case "delete-confirm":
-        if (node(id)?.isSet) {
-          toast("\u8BF7\u9009\u62E9\u5177\u4F53\u6761\u76EE");
-          break;
-        }
         dialog("\u5220\u9664\u8FD9\u9879\u6761\u76EE\uFF1F", `<p>\u300C${esc(short(label(id), 44))}\u300D\u4E0E ${store.descendants(id).length} \u9879\u5B50\u6761\u76EE\u53CA\u76F8\u5173\u5173\u7CFB\u5C06\u79FB\u9664\uFF0C\u5220\u9664\u540E\u53EF\u64A4\u9500\u3002</p>`, button("\u5220\u9664\u6761\u76EE", "delete", "danger", id));
         break;
       case "delete":
         mutate(() => store.remove(id), { focus: false });
+        if (!node(prefs.focusId)) {
+          prefs.focusId = null;
+          store.setId = store.data.nodes.find((n) => n.isSet)?.id;
+          save();
+          render();
+        }
         toast("\u6761\u76EE\u5DF2\u79FB\u9664", true);
         break;
       case "map-mode":
@@ -2067,6 +2430,11 @@
   });
   document.addEventListener("keydown", (e) => {
     if (e.isComposing) return;
+    if (e.altKey && ["ArrowLeft", "ArrowRight"].includes(e.key)) {
+      e.preventDefault();
+      e.key === "ArrowLeft" ? back() : forward();
+      return;
+    }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
       e.preventDefault();
       openSearch();
@@ -2082,6 +2450,17 @@
         e.preventDefault();
         first.focus();
       }
+    }
+    if (e.key === "Escape" && peekId) {
+      peekId = null;
+      document.querySelector("#peek-panel")?.remove();
+      return;
+    }
+    if (e.key === "Escape" && prefs.linkPanel && narrow()) {
+      prefs.linkPanel = false;
+      save();
+      render();
+      return;
     }
     if (e.key === "Escape" && drawer) {
       e.preventDefault();
@@ -2135,6 +2514,32 @@
       save();
     }
   });
+  var previewParams = new URLSearchParams(location.search);
+  var previewState = previewParams.get("state");
+  var stateNodes = { focus: "lighthouse", links: "lighthouse", deep: "watch", peek: "lighthouse", detail: "lighthouse", map: "lighthouse", relations: "lighthouse" };
+  var requestedNode = previewParams.get("node") || stateNodes[previewState];
+  if (node(requestedNode)) {
+    prefs.focusId = requestedNode;
+    store.selected = requestedNode;
+    store.setId = store.root(requestedNode)?.id || requestedNode;
+    prefs.writeScope = "set";
+    view = "write";
+    if (["links", "peek"].includes(previewState) || previewParams.get("links") === "1") prefs.linkPanel = true;
+    else if (previewState) prefs.linkPanel = false;
+    if (previewState === "peek") peekId = "keepers";
+    if (previewState === "detail") view = "detail";
+    if (["map", "relations"].includes(previewState)) {
+      view = "map";
+      mapMode = previewState === "relations" ? "relations" : "hierarchy";
+    }
+    for (const a of store.path(requestedNode)) prefs.navFold = prefs.navFold.filter((x) => x !== a.id);
+  }
+  if (previewState === "overview") {
+    prefs.focusId = null;
+    prefs.writeScope = "all";
+    view = "write";
+    prefs.linkPanel = false;
+  }
   render(false);
   window.__fusion = { store, get prefs() {
     return prefs;
@@ -2148,8 +2553,35 @@
     return drafts;
   }, get history() {
     return history;
-  }, open, select, render, save, get key() {
+  }, focusNode, forward, back, showPeek, open, select, render, save, get key() {
     return KEY;
   } };
   window.__fusionReady = true;
+  function incoming(id) {
+    return store.data.nodes.filter((n) => n.id !== id && referenceIds(n).includes(id));
+  }
+  function outgoing(id) {
+    return [...new Set([id, ...store.descendants(id).map((n) => n.id)].flatMap((k) => referenceIds(node(k))))].map(node).filter(Boolean);
+  }
+  function linkInspector() {
+    const root = focusRoot(), id = root?.id, backlinks = incoming(id), out = outgoing(id), tabs = [["backlinks", "\u53CD\u5411\u94FE\u63A5", backlinks.length], ["outline", "\u672C\u9875\u76EE\u5F55", store.children(id).length], ["relations", "\u5173\u7CFB", store.links(id).length]];
+    return `<aside class="reference-pane" aria-label="\u94FE\u63A5\u4E0E\u5F15\u7528"><header><span>${icon("link", 14)} \u94FE\u63A5\u4E0E\u5F15\u7528</span>${ib("\u5173\u95ED\u94FE\u63A5\u4E0E\u5F15\u7528", "links-toggle", "", "close")}</header><nav class="reference-tabs">${tabs.map(([key, text, count]) => `<button class="${prefs.linkTab === key ? "active" : ""}" data-act="link-tab" data-id="${key}">${text}<small>${count}</small></button>`).join("")}</nav><div class="reference-scroll">${prefs.linkTab === "backlinks" ? `<p class="reference-caption">\u5F15\u7528\u300C${esc(short(label(id), 16))}\u300D</p>${backlinks.map((n) => `<button class="backlink-item" data-act="peek" data-id="${n.id}"><span>${esc(store.path(n.id).slice(0, -1).map((n2) => short(n2.text, 10)).join(" \u203A "))}</span><p>${markup(n)}</p>${icon("arrow", 12)}</button>`).join("") || '<div class="reference-empty">\u8FD8\u6CA1\u6709\u5185\u5BB9\u94FE\u63A5\u5230\u8FD9\u91CC\u3002<br>\u5728\u5176\u4ED6\u8282\u70B9\u8F93\u5165 [[ \u5373\u53EF\u5EFA\u7ACB\u5F15\u7528\u3002</div>'}<h3 class="reference-subhead">\u51FA\u94FE <small>${out.length}</small></h3>${out.map((n) => `<button class="outgoing-item" data-act="peek" data-id="${n.id}">${icon("link", 12)}${esc(short(n.text, 22))}${icon("chevron", 11)}</button>`).join("") || '<p class="reference-empty">\u5F53\u524D\u5206\u652F\u6CA1\u6709\u51FA\u94FE</p>'}` : prefs.linkTab === "outline" ? store.children(id).map((n) => `<button class="outline-item" data-act="focus-node" data-id="${n.id}">${icon(store.children(n.id).length ? "tree" : "entry", 12)}${esc(short(n.text, 26))}</button>`).join("") || '<p class="reference-empty">\u8FD8\u6CA1\u6709\u5B50\u8282\u70B9</p>' : `<p class="reference-caption">\u624B\u52A8\u5EFA\u7ACB\u7684\u8BBE\u5B9A\u5173\u7CFB</p>${relationRows(id) || '<p class="reference-empty">\u6CA1\u6709\u8BBE\u5B9A\u5173\u7CFB</p>'}${button("\u5EFA\u7ACB\u5173\u7CFB", "relation", "", id, "plus")}`}</div></aside>`;
+  }
+  function showPeek(id) {
+    const n = node(id);
+    if (!n) return;
+    peekId = id;
+    document.querySelector("#peek-panel")?.remove();
+    const panel = document.createElement("aside");
+    panel.id = "peek-panel";
+    panel.className = "peek-panel";
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-label", "\u4FA7\u8FB9\u67E5\u770B " + short(n.text, 20));
+    panel.innerHTML = `<header><span>${icon("expand", 13)} \u4FA7\u8FB9\u67E5\u770B</span>${ib("\u5173\u95ED\u4FA7\u8FB9\u67E5\u770B", "peek-close", "", "close")}</header><div class="peek-scroll"><div class="peek-path">${esc(store.path(id).slice(0, -1).map((n2) => short(n2.text, 12)).join(" \u203A ") || "\u4E16\u754C\u8BBE\u5B9A")}</div><h2>${esc(n.text)}</h2>${tags(n)}${store.children(id).slice(0, 8).map((c) => `<div class="peek-child"><button data-act="peek" data-id="${c.id}" aria-label="\u4FA7\u8FB9\u8FDB\u5165${esc(short(c.text, 12))}">\u2022</button><p>${markup(c)}</p></div>`).join("")}<div class="peek-backlinks">${incoming(id).length} \u5904\u5185\u5BB9\u5F15\u7528 \xB7 ${store.links(id).length} \u6761\u8BBE\u5B9A\u5173\u7CFB</div></div><footer>${button("\u8FDB\u5165\u6B64\u8282\u70B9", "focus-node", "primary", id, "arrow")}</footer>`;
+    document.body.append(panel);
+    links?.decorate();
+  }
+  function headingMenu() {
+    dialog("\u8282\u70B9\u6587\u5B57\u5C42\u7EA7", `<p class="context-line">\u6837\u5F0F\u6539\u53D8\u6587\u5B57\u7684\u9605\u8BFB\u5C42\u7EA7\uFF0C\u4E0D\u6539\u53D8\u7236\u5B50\u5F52\u5C5E\u3002</p><div class="heading-options">${[[0, "\u666E\u901A\u8282\u70B9"], [1, "\u4E00\u7EA7\u6807\u9898"], [2, "\u4E8C\u7EA7\u6807\u9898"], [3, "\u4E09\u7EA7\u6807\u9898"]].map(([n, t]) => `<button data-act="set-heading" data-id="${n}" class="heading-option heading-${n}">${t}</button>`).join("")}</div>`);
+  }
 })();

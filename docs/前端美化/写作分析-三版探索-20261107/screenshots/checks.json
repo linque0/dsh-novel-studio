@@ -1,0 +1,51 @@
+{
+  "assertions": 235,
+  "coverage": [
+    {
+      "variant": "a-journey",
+      "width": 1440,
+      "views": 6
+    },
+    {
+      "variant": "b-manuscript",
+      "width": 1440,
+      "views": 6
+    },
+    {
+      "variant": "c-atlas",
+      "width": 1440,
+      "views": 6
+    },
+    {
+      "variant": "a-journey",
+      "width": 864,
+      "views": 6
+    },
+    {
+      "variant": "b-manuscript",
+      "width": 864,
+      "views": 6
+    },
+    {
+      "variant": "c-atlas",
+      "width": 864,
+      "views": 6
+    },
+    {
+      "variant": "a-journey",
+      "width": 380,
+      "views": 6
+    },
+    {
+      "variant": "b-manuscript",
+      "width": 380,
+      "views": 6
+    },
+    {
+      "variant": "c-atlas",
+      "width": 380,
+      "views": 6
+    }
+  ],
+  "browserExceptions": []
+}

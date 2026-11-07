@@ -13,6 +13,7 @@ build/
 # —— 由 novel-studio 迁入，避免占用桌面仓库空间；它随 .tmp/ 一并忽略
 .tmp/
 .tmp-*/
+.tmp-*
 
 # 前端工程的依赖（目录联接或本地安装，不进库）
 app/node_modules/

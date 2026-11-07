@@ -193,7 +193,7 @@
 现读磁盘的 —— 重建后它立刻指向新的哈希资源，那些路径没注册 → 404 → 面板白屏、点「重新载入」也没用。
 现在整个 `/api/novelstudio/app/` 由 webServer 前缀路由承接（按请求实时读盘），无 webServer 的组合仍回落精确路由。
 
-## 宿主契约（读 dsh-client-connection 源码核实，写插件必须遵守）
+## 宿主契约（读 dsh-client-connection / dsh-app-boot / dsh-tools 源码核实，写插件必须遵守）
 
 1. **fetch 路由是"精确路径"匹配**：`ctx.connection.fetch.register({ path })` 的 path 是 Map 的键，**不支持通配符**；`/api/foo/*` 永远匹配不到任何请求，且会直接抛错（段名必须匹配 `/^[A-Za-z0-9_$.-]+$/`）。
 2. **每个 GET/HEAD 路由必须显式声明 `requestBody: 'buffered'`**：未声明时宿主取到 `undefined`，会退到 streaming 分支给 GET 挂 body，`new Request()` 直接抛错 → 浏览器收到 **400**（本项目踩过这个坑）。
@@ -205,6 +205,28 @@
    文件天然可服务（这正是「重建产物不用重启」的依据）。单席位的 `registerFallback` 已被 DSH 主界面占走，别抢。
 7. 前缀路由**不经过** connection 的鉴权闸门，要自己调 `ctx.connection.requestRejection(request)`
    （与精确路由内部的 `admit()` 同一个判定）拿 401/403。
+8. **profile 装载有版本门，不满足会被静默跳过**：宿主 `@deepseek-ai/dsh-app-boot` 的 `loadProfileDirectory()`
+   对 `package.json` 里 `dsh.profile.bundles` 的每一项调用 `evaluatePluginCompatibility()`，不满足就 throw，
+   该 bundle 落进 `skippedBundles`（**不打印任何提示**）：插件的服务端代码根本不加载，表现为「工具/技能全消失，
+   但 profile 里还写着它」。判定规则（`dsh-app-boot/lib/index.js:1097-1117`、`:1129-1143`、`:1800-1821`）：
+   manifest 有 `engines.dsh` 时**只看它并忽略 peerDependencies**；没有 `engines.dsh` 时才逐个校验
+   `@deepseek-ai/dsh` 与 `@deepseek-ai/dsh-*` 的 peerDependencies（`@deepseek-ai/cordis`、
+   `@deepseek-ai/schemastery` 不属于 dsh peer，不参与判定）。所以**不写 `engines.dsh` 却把 peer 钉成精确版本，
+   宿主一升级插件就被静默跳过**。
+9. **`Config` 必须是 Standard Schema，且 `validate` 必须同步**：cordis 的 `resolveConfig()`
+   （`cordis/lib/index.js:244-250`）直接访问 `runtime.Config['~standard'].validate(config)`，并拒绝 async 校验。
+   用「可选 import 宿主 schemastery，失败就退回一个假对象」的写法，`Config` 就不是 Standard Schema：
+   即使插件被正常装载，也会在配置校验阶段抛 `TypeError`，`apply()` 永不执行。正确做法是**零宿主包依赖**，
+   自己提供一个返回 `{ value }` / `{ issues }` 的同步 Standard Schema。
+10. **工具的 `parameters` 是原生 JSON Schema，宿主原样下发给模型**：`ToolsService.register()` 只校验
+    `output.schema`（`dsh-tools/lib/index.js:433-445`），`projectToolSchema()` 把 `parameters` 原样投影给模型
+    （`:366-376`），所以 `parameters` 必须是根 `type: 'object'` 的 JSON Schema——把 JSON Schema 降级成某个
+    「作者格式」属性表只会得到一个非法 schema。宿主支持的 schema 关键字子集是 `type / oneOf / properties /
+    required / additionalProperties / items / enum / const` 加 annotations（`description`、`title` 等），
+    出现其它关键字（`default`、`pattern`、`minLength`、`format`…）会被拒绝（`dsh-tools/lib/shared-*.js:210-221`）。
+
+本轮（v0.2.8）已按第 8-10 条整改：`package.json` 声明 `engines.dsh`、peer 全改区间；`src/index.js` 不再 import 任何 `@deepseek-ai/*`（自带同步 Standard Schema）；工具直接下发 `parameters` 原生 JSON Schema。
+已在 DSH 0.2.2-rc.1 实机验证：重启后 10 个 `studio_*` 工具与 6 个 `studio-*` 技能都已注册，`studio_works → studio_outline → studio_read → studio_search → studio_propose → studio_apply → studio_undo` 全链路走通，回退后作品库回到测试前状态。
 
 ## 已知限制
 
