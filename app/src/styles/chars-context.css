@@ -1,0 +1,247 @@
+/* 右列·关系与设定（卷宗视图）+ 紧凑档案（剧场视图）。
+   度量（栏宽 / 留白 / 圆角 / 细轨）在 chars-shell.css，本文件只管列内排版；
+   窄档作为第二屏（data-screen='context'），退回主区靠组件内的返回键 + shell.setBar。
+   数值出处：fusion.css:4-6 与 studio.css 的 .inspector-label / .context-top / .context-scroll /
+   .context-section / .relation-row / .lore-row / .mini-network / .pane-foot / .compact-dossier。
+   暗色真值在这里换算成主题变量（--bg-panel / --border / --text / --accent），不写死颜色。 */
+
+.char-side {
+  display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0;
+  color: var(--text); font-size: 12px; line-height: 1.65;
+}
+
+/* ---------- 列头（studio.css .inspector-label：21px 22px 16px / 下边界线 / 12px 弱色） ---------- */
+.char-side .inspector-label {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 21px 22px 16px; border-bottom: 1px solid var(--border);
+  font-size: 12px; color: var(--text-dim); flex: none;
+}
+.char-side .inspector-identity { display: flex; flex-direction: column; min-width: 0; }
+.char-side .inspector-heading { display: flex; align-items: center; gap: 7px; min-width: 0; } /* fusion.css:9 */
+.char-side .inspector-heading > span {
+  max-width: 125px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--text); font-weight: 500;
+} /* fusion.css:10 */
+.char-side .context-sub { margin-top: 6px; font-size: 11px; color: var(--text-dim); } /* studio.css .context-top small */
+.char-side .inspector-actions { display: flex; align-items: center; gap: 2px; flex: none; }
+.char-side .icon-btn {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 26px; height: 26px; padding: 0; border: 0; border-radius: 7px;
+  background: transparent; color: var(--text-dim); cursor: pointer;
+}
+.char-side .icon-btn:hover { background: var(--bg-hover); color: var(--text); }
+.char-side .ctx-back {
+  display: inline-flex; align-items: center; gap: 5px; flex: none;
+  padding: 3px 9px; border: 1px solid var(--border); border-radius: 999px;
+  background: transparent; color: var(--accent); font: inherit; font-size: 11px; cursor: pointer;
+}
+.char-side .ctx-back:hover { background: var(--bg-hover); }
+
+/* ---------- 滚动区（studio.css .context-scroll：0 20px 24px） ---------- */
+.char-context .context-scroll {
+  flex: 1; min-height: 0; overflow: auto; padding: 0 20px 24px;
+  scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent;
+}
+.char-inspector .inspector-scroll {
+  flex: 1; min-height: 0; overflow: auto;
+  scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent;
+}
+
+/* ---------- 小型关系网（fusion.css:4 的 profile 原型值：高 65 / 下距 13） ----------
+   260x65 视窗内的纯 SVG：中心方块 = 当前人物，周围圆点 = 一度邻居（最多 6 个），细线相连。 */
+.char-context .mini-network { display: block; width: 100%; height: 65px; margin: 0 0 13px; overflow: visible; }
+.char-context .mini-network line { stroke: var(--border-strong); stroke-width: 1; }
+.char-context .mini-network .net-center { fill: var(--bg-hover); stroke: var(--border-strong); stroke-width: 1; }
+.char-context .mini-network .net-initial {
+  fill: var(--accent); font-family: var(--serif, 'Songti SC', serif); font-size: 15px;
+  text-anchor: middle; dominant-baseline: central;
+}
+.char-context .mini-network .net-node { cursor: pointer; }
+.char-context .mini-network .net-node circle { fill: var(--bg-panel); stroke: var(--accent); stroke-width: 1.2; transition: fill .16s; }
+.char-context .mini-network .net-node:hover circle,
+.char-context .mini-network .net-node:focus-visible circle { fill: var(--accent-soft); }
+.char-context .mini-network .net-node:focus-visible { outline: none; }
+.char-context .mini-network .net-node:focus-visible circle { stroke-width: 2; }
+
+/* ---------- 分区（fusion.css:6：23 / 20；边界线沿用 studio.css .context-section+） ---------- */
+.char-context .context-section + .context-section {
+  margin-top: 23px; padding-top: 20px; border-top: 1px solid var(--border);
+}
+.char-side .section-head { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; } /* studio.css .section-head */
+.char-side .section-head h3 { flex: 1; min-width: 0; font-size: 13px; font-weight: 500; }
+.char-side .section-head small { font-size: 11px; color: var(--text-dim); }
+.char-side .section-index { font-family: var(--serif, 'Songti SC', serif); font-size: 11px; color: var(--text-faint); }
+.char-context .section-add {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 24px; height: 24px; padding: 0; border: 1px solid var(--border); border-radius: 999px;
+  background: transparent; color: var(--text-dim); cursor: pointer;
+}
+.char-context .section-add:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---------- 人物关系（fusion.css:5：min-height 50 / padding 6px 0） ---------- */
+.char-context .relation-list { display: flex; flex-direction: column; gap: 4px; }
+.char-context .relation-row { position: relative; display: flex; align-items: center; gap: 10px; min-height: 50px; padding: 6px 0; width: 100%; }
+.char-context .relation-pick {
+  flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; padding: 0;
+  border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.char-context .ctx-portrait {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 32px; height: 36px; overflow: hidden; border: 1px solid var(--border-strong); border-radius: 8px;
+  background: var(--bg-hover); color: var(--accent); font-family: var(--serif, 'Songti SC', serif); font-size: 17px;
+}
+.char-context .ctx-portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.char-context .relation-copy { flex: 1; min-width: 0; }
+.char-context .relation-copy strong {
+  display: block; font-size: 13px; font-weight: 500; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.char-context .relation-copy small {
+  display: block; margin-top: 1px; font-size: 11px; color: var(--text-dim);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.char-context .relation-pick:hover strong { color: var(--accent); }
+.char-context .rel-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); opacity: .4; }
+.char-context .rel-more { width: 25px; height: 25px; opacity: .45; } /* studio.css .relation-row .icon-btn */
+.char-context .relation-row:hover .rel-more,
+.char-context .relation-row:focus-within .rel-more { opacity: 1; }
+
+/* ⋯ 菜单：改标签 / 改线型 / 改色 / 删除关系（原型走独立弹窗，这里收进行内面板） */
+.char-context .rel-menu {
+  position: absolute; right: 0; top: calc(100% - 2px); z-index: 6;
+  display: flex; flex-direction: column; gap: 10px; width: 224px; padding: 12px 13px;
+  border: 1px solid var(--border-strong); border-radius: 10px;
+  background: var(--bg-panel); box-shadow: var(--shadow-pop);
+}
+.char-context .rel-field { display: flex; flex-direction: column; gap: 6px; }
+.char-context .rel-field > span { font-size: 11px; color: var(--text-dim); }
+.char-context .rel-field input,
+.char-context .rel-add input,
+.char-context .rel-add select {
+  width: 100%; min-width: 0; padding: 6px 8px; border: 1px solid var(--border); border-radius: 7px;
+  background: var(--bg-editor); color: var(--text); font: inherit; font-size: 12px;
+}
+.char-context .rel-field input:focus,
+.char-context .rel-add input:focus,
+.char-context .rel-add select:focus { border-color: var(--accent); }
+.char-context .rel-chips { display: flex; gap: 5px; }
+.char-context .chip {
+  padding: 3px 8px; border: 1px solid var(--border); border-radius: 999px;
+  background: transparent; color: var(--text-dim); font: inherit; font-size: 11px; cursor: pointer;
+}
+.char-context .chip:hover { border-color: var(--accent); color: var(--text); }
+.char-context .chip.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.char-context .rel-colors { display: flex; align-items: center; gap: 6px; }
+.char-context .swatch {
+  width: 16px; height: 16px; padding: 0; border: 1px solid var(--border-strong); border-radius: 50%;
+  background: transparent; cursor: pointer;
+}
+.char-context .swatch.theme { background: linear-gradient(135deg, var(--bg-panel) 45%, var(--accent) 45% 55%, var(--bg-panel) 55%); }
+.char-context .swatch.on { outline: 2px solid var(--accent); outline-offset: 1px; }
+.char-context .rel-del {
+  padding: 5px 0 1px; border: 0; border-top: 1px solid var(--border);
+  background: transparent; color: var(--danger); font: inherit; font-size: 11px; text-align: left; cursor: pointer;
+}
+.char-context .rel-del.asking { color: #fff; background: var(--danger); border-radius: 6px; padding: 5px 8px; text-align: center; }
+.char-context .rel-add { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.char-context .rel-add select { flex: 1 1 100px; }
+.char-context .rel-add input { flex: 1 1 90px; }
+
+/* ---------- 关联设定（studio.css .lore-row：48 / 7px 0） ---------- */
+.char-context .lore-list { display: flex; flex-direction: column; gap: 2px; }
+.char-context .lore-row {
+  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 7px 0;
+  border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.char-context .lore-row > svg:first-child { color: var(--text-faint); }
+.char-context .lore-row > svg:last-child { margin-left: auto; width: 12px; color: var(--text-faint); }
+.char-context .lore-copy { flex: 1; min-width: 0; }
+.char-context .lore-copy strong {
+  display: block; font-size: 12px; font-weight: 500; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.char-context .lore-copy small { display: block; font-size: 11px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.char-context .lore-row:hover strong { color: var(--accent); }
+
+.char-side .tiny-empty { padding: 8px 0 15px; font-size: 12px; color: var(--text-dim); }
+.char-side .ctx-empty { padding: 20px 0; font-size: 12px; color: var(--text-dim); line-height: 1.9; }
+.char-side .context-note { font-size: 12px; color: var(--text-dim); line-height: 1.9; }
+
+/* ---------- 页脚（studio.css .pane-foot：上边界线 / 16px / min-height 66） ---------- */
+.char-side .pane-foot {
+  display: flex; align-items: center; gap: 10px; flex: none;
+  min-height: 66px; padding: 16px; border-top: 1px solid var(--border);
+}
+.char-side .pane-foot > span {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 11px; color: var(--text-dim);
+}
+.char-side .pane-foot .btn { margin-left: auto; }
+.char-side .btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  min-height: 32px; padding: 6px 13px; border: 1px solid var(--border-strong); border-radius: 999px;
+  background: var(--bg-panel); color: var(--text); font: inherit; font-size: 12px;
+  white-space: nowrap; cursor: pointer;
+}
+.char-side .btn:hover { background: var(--bg-hover); }
+.char-side .btn:disabled { opacity: .45; cursor: default; }
+.char-side .btn.tiny { min-height: 24px; padding: 3px 9px; font-size: 11px; }
+.char-side .btn.soft { border-color: transparent; background: transparent; color: var(--text-dim); }
+
+/* ---------- 剧场紧凑档案（studio.css:2 的 .compact-dossier 全套 compact 值） ---------- */
+.char-inspector .compact-dossier { padding: 25px 24px 30px; width: 100%; max-width: 860px; margin: 0 auto; }
+.char-inspector .compact-dossier .identity { display: flex; align-items: center; gap: 15px; padding-bottom: 22px; }
+.char-inspector .cd-portrait {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 53px; height: 70px; overflow: hidden; border: 1px solid var(--border-strong); border-radius: 8px;
+  background: var(--bg-hover); color: var(--accent); font-family: var(--serif, 'Songti SC', serif); font-size: 31px;
+}
+.char-inspector .cd-portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.char-inspector .identity-copy { flex: 1; min-width: 0; }
+.char-inspector .identity-meta { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; font-size: 11px; color: var(--text-dim); }
+.char-inspector .role-mark { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--accent); }
+.char-inspector .role-mark::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+.char-inspector .identity h2 {
+  font-family: var(--serif, 'Songti SC', serif); font-size: 29px; font-weight: 500; line-height: 1.35;
+  letter-spacing: .07em; overflow-wrap: anywhere;
+}
+.char-inspector .identity .aliases { margin-top: 8px; font-size: 11px; color: var(--text-dim); }
+.char-inspector .tags { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; margin-top: 12px; }
+.char-inspector .tag {
+  padding: 2px 7px; border: 1px solid var(--border); border-radius: 5px;
+  background: var(--accent-soft); color: var(--card-ink); font-size: 11px; line-height: 1.65;
+}
+.char-inspector .identity-note {
+  margin: 0 0 23px; padding: 17px 0 17px 13px; border-left: 2px solid var(--accent);
+  color: var(--card-ink); font-size: 13px; line-height: 1.9;
+}
+.char-inspector .section-head { margin-bottom: 11px; }
+.char-inspector .dossier-section + .dossier-section { margin-top: 24px; padding-top: 21px; border-top: 1px solid var(--border); }
+.char-inspector .prose { font-size: 13px; line-height: 1.9; color: var(--text); max-width: 40em; overflow-wrap: anywhere; white-space: pre-wrap; }
+.char-inspector .prose p + p { margin-top: 16px; }
+.char-inspector .field-grid { display: grid; grid-template-columns: 1fr; gap: 17px; }
+.char-inspector .field-item { min-width: 0; }
+.char-inspector .field-item dt { margin-bottom: 6px; font-size: 11px; color: var(--text-dim); }
+.char-inspector .field-item dd { margin: 0; font-size: 13px; line-height: 1.85; color: var(--card-ink); overflow-wrap: anywhere; }
+
+/* ---------- 窄档（studio.css @media 1099 / 559 的 context-scroll 与 compact-dossier 值） ---------- */
+@media (max-width: 1099px) {
+  .char-context .context-scroll { padding: 0 28px 28px; }
+  .char-inspector .compact-dossier { max-width: 760px; padding: 30px 34px; }
+  .char-inspector .identity h2 { font-size: 36px; }
+  .char-inspector .cd-portrait { width: 70px; height: 90px; font-size: 40px; }
+  .char-inspector .prose { font-size: 15px; }
+  .char-inspector .field-grid { grid-template-columns: 1fr 1fr; }
+  .char-side .pane-foot { padding: 15px 24px; }
+}
+
+@media (max-width: 559px) {
+  .char-side .inspector-label { padding: 17px 20px; font-size: 11px; }
+  .char-context .context-scroll { padding: 0 22px 25px; }
+  .char-inspector .compact-dossier { padding: 25px 22px; }
+  .char-inspector .identity h2 { font-size: 31px; }
+  .char-inspector .cd-portrait { width: 58px; height: 76px; font-size: 33px; }
+  .char-inspector .prose { font-size: 14px; }
+  .char-inspector .field-grid { grid-template-columns: 1fr; }
+  .char-side .pane-foot { padding: 12px 17px; min-height: 59px; }
+}

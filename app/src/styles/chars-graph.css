@@ -1,0 +1,241 @@
+/* 主区·关系剧场（graph pane）样式：由 D4 填充。
+   度量在 chars-shell.css；定位走 work.charFocusId / charFocusTick。
+   结构逐条对照 docs/前端美化/人物-融合总稿-20261105/studio.css 的
+   .graph-pane .module-head / .module-head / .segmented / .graph-subbar / .graph-stage /
+   .graph-world / .graph-node / .edge-line / .edge-label / .edge-label-bg / .graph-foot /
+   .zoom-controls / .graph-hint / .graph-empty 段，以及 app.mjs:44 graphMain() 的三层结构。
+   颜色一律走主题变量（--lore-* 优先，退回 --border / --text / --bg-panel），
+   这样三套主题与 dsh 皮肤都只换变量、不换规则。 */
+
+/* ---------- 骨架 ---------- */
+.graph-pane { display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; }
+
+/* studio.css .module-head（padding 23px 28px 21px / min-height 112px）+ .graph-pane .module-head{min-height:111px} */
+.graph-pane .module-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+  padding: 23px 28px 21px; min-height: 111px; flex: none;
+  border-bottom: 1px solid var(--lore-line, var(--border));
+}
+.graph-pane .module-head > div:first-child { min-width: 0; }
+.graph-pane .breadcrumbs {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 9px;
+  font-size: 11px; color: var(--text-faint, var(--text-dim));
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.graph-pane .breadcrumbs i { font-style: normal; opacity: .6; }
+/* studio.css .module-head h1{font:500 24px/1.5 var(--serif)} */
+.graph-pane .module-head h1 { font: 500 24px/1.5 var(--lore-serif, var(--g-serif, serif)); letter-spacing: .025em; margin: 0; }
+.graph-pane .head-actions { display: flex; align-items: center; gap: 6px; padding-top: 10px; flex: none; }
+
+/* studio.css .segmented */
+.graph-pane .segmented {
+  display: inline-flex; gap: 3px; padding: 3px; white-space: nowrap;
+  border: 1px solid var(--lore-tag-line, var(--border)); border-radius: 999px;
+  background: var(--lore-zoom-bg, var(--bg-panel));
+}
+.graph-pane .segmented button {
+  font-size: 11px; padding: 6px 10px; border-radius: 999px; border: 0; cursor: pointer;
+  background: none; color: var(--text-dim); transition: background .16s, color .16s;
+}
+.graph-pane .segmented button:hover { background: var(--lore-hover, var(--bg-hover)); }
+.graph-pane .segmented button.on { background: var(--lore-primary-bg, var(--text)); color: var(--lore-primary-ink, var(--bg)); }
+
+.graph-pane .icon-btn {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 29px; height: 29px; border: 0; border-radius: 8px; cursor: pointer;
+  background: none; color: var(--text-dim);
+}
+.graph-pane .icon-btn:hover { background: var(--lore-hover, var(--bg-hover)); color: var(--text); }
+.graph-pane .icon-btn[aria-pressed='true'] { color: var(--accent); background: var(--lore-hover, var(--bg-hover)); }
+/* studio.css .head-actions 的收起键：宽档显示；窄档入口在顶部工具条，故 ≤1099 隐藏 */
+.char-head-toggle { display: inline-flex; }
+@media (max-width: 1099px) { .char-head-toggle { display: none; } }
+
+/* ---------- 范围条 ---------- */
+/* studio.css .graph-subbar{padding:13px 24px;border-bottom:1px solid …} */
+.graph-subbar {
+  position: relative; display: flex; gap: 10px; flex: none;
+  justify-content: space-between; align-items: center;
+  padding: 13px 24px; border-bottom: 1px solid var(--lore-line, var(--border));
+}
+.graph-subbar > span { font-size: 11px; color: var(--text-faint, var(--text-dim)); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.graph-subbar > span b { font-weight: 500; color: var(--text); }
+.graph-subbar .graph-tools { display: flex; align-items: center; gap: 8px; flex: none; }
+.graph-subbar .graph-island {
+  font-size: 11px; padding: 2px 8px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+  border: 1px solid var(--lore-tag-line, var(--border)); background: var(--lore-tag-bg, transparent);
+  color: var(--text-dim); margin-left: 8px;
+}
+.graph-subbar .graph-island:hover { color: var(--accent); border-color: var(--accent); }
+
+/* 筛选 / 排布浮层（收在 ⋯ 里） */
+.graph-filters {
+  position: absolute; right: 18px; top: calc(100% + 6px); z-index: 20;
+  width: min(300px, calc(100vw - 60px)); padding: 12px 14px;
+  border: 1px solid var(--border); border-radius: 12px;
+  background: var(--bg-panel); box-shadow: var(--shadow-pop, 0 6px 24px rgb(0 0 0 / .18));
+}
+.graph-filters h4 { margin: 0 0 7px; font-size: 11px; font-weight: 500; color: var(--text-faint, var(--text-dim)); }
+.graph-filters .graph-row { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 11px; }
+.graph-filters .graph-row:last-child { margin-bottom: 0; }
+.graph-chip {
+  font-size: 11px; padding: 3px 8px; border-radius: 6px; cursor: pointer; white-space: nowrap;
+  border: 1px solid var(--lore-tag-line, var(--border)); background: var(--lore-tag-bg, transparent);
+  color: var(--text-dim);
+}
+.graph-chip:hover { color: var(--text); border-color: var(--accent); }
+.graph-chip.on { background: var(--lore-primary-bg, var(--text)); color: var(--lore-primary-ink, var(--bg)); border-color: transparent; }
+.graph-filters .graph-chip.act { display: inline-flex; align-items: center; gap: 5px; }
+
+/* ---------- 舞台 ---------- */
+/* studio.css .graph-stage{… cursor:grab;radial-gradient(…) .7px;background-size:24px 24px} */
+.graph-stage {
+  position: relative; flex: 1; min-height: 0; overflow: hidden; cursor: grab;
+  touch-action: none; user-select: none;
+  background-image: radial-gradient(var(--lore-grid-dot, rgb(150 130 160 / .18)) .7px, transparent .7px);
+  background-size: 24px 24px;
+}
+.graph-stage.panning { cursor: grabbing; }
+.graph-world { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+.graph-edges { position: absolute; overflow: visible; pointer-events: none; }
+.graph-edge { fill: none; stroke: var(--lore-edge, #b7a5c6); stroke-width: 1.1; opacity: .47; }
+.graph-edge.adjacent { stroke: var(--lore-edge-strong, var(--accent)); stroke-width: 1.6; opacity: .9; }
+.graph-edge-hit { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; cursor: pointer; }
+.graph-elabel { pointer-events: all; cursor: pointer; }
+.edge-label-bg { fill: var(--char-edge-label-bg, #46394f); stroke: var(--char-edge-label-line, #9b86a7); stroke-width: .7; }
+.edge-label { font-size: 11px; fill: var(--char-edge-label-ink, #f4eef7); pointer-events: none; }
+.graph-elabel:hover .edge-label { fill: var(--accent); }
+.graph-draft { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-dasharray: 6 4; }
+
+/* studio.css .graph-node{width:134px;min-height:84px;padding:13px 10px 11px;border-radius:13px;transform:translate(-50%,-50%)} */
+.graph-node {
+  --tone: #b8d0be;
+  position: absolute; width: 134px; min-height: 84px; padding: 13px 10px 11px;
+  transform: translate(-50%, -50%); z-index: 3; text-align: center; cursor: grab;
+  border: 1px solid color-mix(in srgb, var(--tone) 35%, #55445f);
+  border-radius: 13px; background: var(--char-node-bg, #332c40);
+  box-shadow: 0 9px 25px rgb(12 8 20 / .17);
+  transition: opacity .14s, border-color .14s, background .14s, box-shadow .14s;
+}
+.graph-node:hover { border-color: var(--accent); }
+.graph-node.selected {
+  width: 156px; min-height: 103px; z-index: 6; background: var(--char-node-bg-selected, #3b3c43);
+  border-color: var(--lore-edge-strong, var(--accent));
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 12%, transparent), 0 12px 25px rgb(16 11 30 / .2);
+}
+.graph-node.dimmed { opacity: .28; }
+.graph-node.flash { animation: graph-flash 1.5s ease; }
+.graph-node .portrait {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 30px; height: 34px; overflow: hidden; font: 400 19px/1 var(--lore-serif, var(--g-serif, serif));
+  border-radius: 50%; color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 11%, transparent);
+}
+.graph-node .portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* studio.css .graph-node h3{font:500 17px/1.5 var(--serif)} / .graph-node.selected h3{font-size:20px} */
+.graph-node h3 { margin: 5px 0 0; font: 500 17px/1.5 var(--lore-serif, var(--g-serif, serif)); overflow-wrap: anywhere; color: var(--char-node-ink, #f4eef7); }
+.graph-node.selected h3 { font-size: 20px; }
+/* studio.css .graph-node small{font-size:11px} */
+.graph-node small { display: block; margin-top: 3px; font-size: 11px; color: var(--char-node-dim, #bbacc7); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 四向锚点（拖线建关系） */
+.graph-port {
+  position: absolute; width: 11px; height: 11px; border-radius: 50%; opacity: 0; cursor: crosshair;
+  border: 1px solid var(--lore-edge-strong, var(--accent)); background: var(--bg-panel);
+  transition: opacity .12s; z-index: 2;
+}
+.graph-node:hover .graph-port, .graph-node.selected .graph-port { opacity: 1; }
+.graph-port[data-side='top'] { left: 50%; top: -6px; transform: translateX(-50%); }
+.graph-port[data-side='bottom'] { left: 50%; bottom: -6px; transform: translateX(-50%); }
+.graph-port[data-side='left'] { top: 50%; left: -6px; transform: translateY(-50%); }
+.graph-port[data-side='right'] { top: 50%; right: -6px; transform: translateY(-50%); }
+.graph-port:hover { background: var(--accent); }
+
+/* studio.css .graph-hint{position:absolute;top:16px;left:18px;font-size:11px} */
+.graph-hint { position: absolute; top: 16px; left: 18px; font-size: 11px; color: var(--text-faint, var(--text-dim)); pointer-events: none; }
+.graph-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; padding: 20px; }
+.graph-empty strong { font: 500 22px/1.5 var(--lore-serif, var(--g-serif, serif)); color: var(--text); }
+.graph-empty p { margin: 0; font-size: 12px; color: var(--text-faint, var(--text-dim)); }
+.graph-empty button { margin-top: 4px; font-size: 11px; padding: 5px 12px; border-radius: 999px; cursor: pointer; border: 1px solid var(--border); background: var(--lore-tag-bg, transparent); color: var(--text); }
+.graph-empty button:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---------- 底栏 ---------- */
+/* studio.css .graph-foot{padding:13px 18px;min-height:64px;border-top:…} */
+.graph-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 13px 18px; min-height: 64px; flex: none;
+  border-top: 1px solid var(--lore-line, var(--border));
+}
+.graph-foot > span { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-faint, var(--text-dim)); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* studio.css .zoom-controls */
+.zoom-controls { display: flex; align-items: center; padding: 3px; border-radius: 999px; border: 1px solid var(--lore-tag-line, var(--border)); background: var(--lore-zoom-bg, var(--bg-panel)); }
+.zoom-controls button { min-width: 29px; padding: 5px 8px; font-size: 11px; border: 0; border-radius: 999px; cursor: pointer; background: none; color: var(--text-dim); }
+.zoom-controls button:nth-child(2) { min-width: 44px; color: var(--text); }
+.zoom-controls button:hover { background: var(--lore-hover, var(--bg-hover)); color: var(--text); }
+.zoom-controls i { width: 1px; height: 15px; margin: 0 3px; background: var(--lore-tag-line, var(--border)); }
+.graph-foot .btn {
+  display: inline-flex; align-items: center; gap: 5px; flex: none; cursor: pointer;
+  min-height: 28px; padding: 4px 12px; font-size: 11px; border-radius: 999px;
+  border: 1px solid var(--lore-tag-line, var(--border)); background: var(--lore-tag-bg, transparent); color: var(--text);
+}
+.graph-foot .btn:hover { border-color: var(--accent); color: var(--accent); }
+.graph-foot .btn:disabled { opacity: .4; cursor: default; }
+
+/* ---------- 浮层（统一 Teleport 到 .app-root，fixed 定位不随画布缩放变形） ---------- */
+.graph-pop {
+  position: fixed; z-index: 60; padding: 8px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--bg-panel);
+  box-shadow: var(--shadow-pop, 0 6px 24px rgb(0 0 0 / .18)); font-size: 12px;
+}
+.graph-pop button {
+  display: block; width: 100%; text-align: left; padding: 6px 9px; border: 0; border-radius: 6px;
+  background: none; color: var(--text); font-size: 12px; cursor: pointer; white-space: nowrap;
+}
+.graph-pop button:hover { background: var(--lore-hover, var(--bg-hover)); color: var(--accent); }
+.graph-relinput { display: flex; align-items: center; gap: 6px; }
+.graph-relinput input, .graph-eedit input {
+  width: 168px; min-width: 0; padding: 6px 9px; font-size: 12px; outline: none;
+  border: 1px solid var(--border); border-radius: 7px; background: var(--bg-editor, var(--bg-panel)); color: var(--text);
+}
+.graph-eedit { width: 214px; }
+.graph-eedit.flip { transform: translateY(-100%); }
+.graph-eedit .graph-kindrow { display: flex; gap: 4px; margin: 7px 0; }
+.graph-eedit .graph-kind {
+  flex: 1; text-align: center; padding: 4px 0; font-size: 11px; border-radius: 5px; cursor: pointer;
+  border: 1px solid var(--border); color: var(--text-dim);
+}
+.graph-eedit .graph-kind.on { background: var(--lore-primary-bg, var(--text)); color: var(--lore-primary-ink, var(--bg)); border-color: transparent; }
+.graph-eedit .graph-swatches { display: flex; align-items: center; gap: 6px; }
+.graph-eedit .graph-sw { width: 15px; height: 15px; border-radius: 50%; cursor: pointer; border: 1px solid var(--border); }
+.graph-eedit .graph-sw.on { box-shadow: 0 0 0 2px var(--accent); }
+.graph-eedit .graph-del { margin-left: auto; padding: 3px 7px; font-size: 11px; border-radius: 6px; border: 1px solid var(--border); background: none; color: var(--danger, #b03a2e); cursor: pointer; }
+.graph-eedit .graph-del:hover { border-color: var(--danger, #b03a2e); }
+
+@keyframes graph-flash {
+  0%, 100% { box-shadow: 0 9px 25px rgb(12 8 20 / .17); }
+  30% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 45%, transparent); }
+}
+
+/* ---------- 窄档收紧（studio.css @media 1100–1320 / ≤1099 / ≤559） ---------- */
+@media (max-width: 1320px) {
+  .graph-subbar { padding: 13px 18px; }
+}
+@media (max-width: 1099px) {
+  .graph-pane .module-head { padding: 22px 26px; min-height: 105px; }
+  .graph-subbar { padding: 13px 24px; }
+  .graph-foot { padding: 13px 24px; }
+}
+@media (max-width: 559px) {
+  .graph-pane .module-head { padding: 20px 20px 17px; min-height: 108px; gap: 9px; flex-wrap: wrap; }
+  .graph-pane .module-head h1 { font-size: 24px; }
+  .graph-subbar { padding: 11px 15px; gap: 6px; flex-wrap: wrap; }
+  .graph-stage { min-height: 180px; }
+  .graph-hint { top: 13px; left: 13px; }
+  .graph-foot { flex-direction: column; align-items: stretch; min-height: 79px; gap: 7px; padding: 11px 13px; }
+  .graph-foot > span { justify-content: center; }
+  .graph-node { width: 148px; min-height: 90px; }
+  .graph-node h3 { font-size: 21px; line-height: 1.4; }
+  .graph-node.selected h3 { font-size: 23px; }
+  .graph-node small { font-size: 13px; }
+  .graph-node .portrait { font-size: 22px; }
+}

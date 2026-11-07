@@ -1,0 +1,114 @@
+/* 人物工作区的插件皮肤层（app/plugin/dsh/index.js 已按序挂载，位于 outline-fusion.css 之后）：
+   同权重时后写为胜，这里只做「观感覆盖」——暗玻璃 / 紫灰底 / 宋体姓名，一律挂在 body[data-skin=dsh] 下。
+   三处数值出处，不自行发挥：
+   1) 宿主令牌 --ns-*（--ns-bg / --ns-layer-1..3 / --ns-border-1..4 / --ns-hover / --ns-active /
+      --ns-accent / --ns-label-1..3 / --ns-shadow）：见本目录 dsh.css 第 1 节与文件头令牌清单；
+   2) 设定页皮肤块 dsh.css 第 8 节（.lore-pane：1px 亮线 + 20px 圆角 + rgb(29 25 39 / .65) + blur(24px)
+      saturate(1.25) + --nsx-shadow-2）——本文件与它同源，底色照抄设计稿 .pane 的 rgb(29 25 39/.68)；
+   3) 设计真值 docs/前端美化/人物-融合总稿-20261105/（studio.css 根令牌：body #292333、--ink #f4eef7、
+      --muted #c9bed3、--faint #b1a4bd、--accent #bad6c6、--serif Noto Serif SC；.pane 边框
+      rgb(255 255 255/.17)、.main-pane rgb(33 27 44/.55)、.resize-handle::after rgb(201 226 210/.5)、
+      .side-pane #2c2539f5、.scrim #100a1e99 + blur(3px)、.rail>span 竖排 letter-spacing .2em）。
+   ⚠ 留白与网格只归 app/src/styles/chars-shell.css 的 .char-shell 那一层（studio.css .workspace 的
+   inset 108px 28px 30px 已在那里折成外壳内距）。本层不要再给 .char-shell / .wb-body / .panel-body 加内距：
+   2026-11-06 两层各自留白导致有效留白 56/48（设计稿 28/24）。
+   本层不改任何列宽 / 圆角 / 间距度量，那三样在 chars-*.css 里由设计稿数值一次写死。 */
+
+/* 1. 令牌：把 chars-*.css 读的 --char-* 接到宿主 --ns-* 与设计稿紫灰 + 宋体。
+      外壳只换底：流动背板（flow-shell.css）要能透上来，所以 .char-shell 自身不落实底。 */
+body[data-skin=dsh] .char-shell {
+  --char-pane-line: var(--ns-border-2, rgb(255 255 255 / .17));
+  --char-pane-bg: rgb(29 25 39 / .68);
+  --char-main-bg: rgb(33 27 44 / .55);
+  --char-ink: var(--ns-label-1, #f4eef7);
+  --char-dim: var(--ns-label-3, #b1a4bd);
+  --char-hover: var(--ns-hover, rgb(255 255 255 / .055));
+  --char-accent: var(--ns-accent, #bad6c6);
+  background: transparent;
+  color: var(--char-ink);
+}
+
+/* 2. pane 卡：studio.css .pane 原值——rgb(29 25 39/.68) 暗玻璃 + blur(24px) saturate(1.25)
+      + 1px rgb(255 255 255/.17) 边线 + 阴影。
+      宋体姓名同理从这一层下发（chars-roster.css 只在 pane 上声明过 --char-serif，这里覆盖到同一层）。 */
+body[data-skin=dsh] .char-pane {
+  --char-serif: var(--lore-serif, var(--ls-serif, "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", serif));
+  border: 1px solid rgb(255 255 255 / .17);
+  background: rgb(29 25 39 / .68);
+  -webkit-backdrop-filter: blur(24px) saturate(1.25);
+  backdrop-filter: blur(24px) saturate(1.25);
+  box-shadow: var(--ns-shadow, 0 18px 48px rgb(10 6 28 / .45));
+  color: var(--ns-label-1, #f4eef7);
+}
+
+/* 主区（卷宗正文 / 关系画布）：studio.css .main-pane 原值 rgb(33 27 44/.55)。
+      比两侧 .68 略透（差 .13）——设计稿里主区是唯一露底的一列，层级靠边线与阴影区分。 */
+body[data-skin=dsh] .char-pane[data-pane='main'] {
+  background: rgb(33 27 44 / .55);
+}
+
+/* 3. 收起细轨（studio.css .rail）：文案用 caption 色，悬停只做 wash，不描边不发光 */
+body[data-skin=dsh] .char-rail {
+  color: var(--ns-label-3, #b1a4bd);
+  background: transparent;
+  border: 0;
+}
+body[data-skin=dsh] .char-rail:hover {
+  background: var(--ns-hover, rgb(255 255 255 / .055));
+  color: var(--ns-label-1, #f6f1f9);
+}
+
+/* 4. 分隔条抓手（studio.css .resize-handle::after）：2px→本层沿用外壳的 4×48 度量，只给色；
+      设计稿 rgb(201 226 210/.5) 即 --ns-accent 的 alpha 版 */
+body[data-skin=dsh] .char-divider::after {
+  background: transparent;
+}
+body[data-skin=dsh] .char-divider:is(:hover, :focus-visible)::after {
+  background: var(--ns-accent, #bad6c6);
+  opacity: .5;
+}
+
+/* 5. 窄档工具条（≤1099 才出现）：内容做成暗玻璃胶囊，标题用 caption 色 */
+body[data-skin=dsh] .char-mobilebar {
+  color: var(--ns-label-2, #c9bed3);
+}
+body[data-skin=dsh] .char-mobile-btn {
+  border: .5px solid var(--ns-border-2, rgb(255 255 255 / .16));
+  border-radius: 999px;
+  background: rgb(29 25 39 / .62);
+  color: var(--ns-label-1, #f4eef7);
+  -webkit-backdrop-filter: blur(24px) saturate(1.25);
+  backdrop-filter: blur(24px) saturate(1.25);
+}
+body[data-skin=dsh] .char-mobile-btn:hover {
+  background: var(--ns-hover, rgb(255 255 255 / .09));
+  color: #f6f1f9;
+}
+body[data-skin=dsh] .char-mobile-title {
+  color: var(--ns-label-3, #b1a4bd);
+}
+
+/* 6. 抽屉遮罩（studio.css .scrim 的 #100a1e99 + blur(3px)）：压在玻璃之上，主区仍看得见形状 */
+body[data-skin=dsh] .char-scrim {
+  background: rgb(16 10 30 / .6);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+
+/* 7. 文字：标题统一 500 字重 + 宋体（设计稿 .module-head h1 / .identity h2 / .side-title 都是 500 serif），
+      次级信息落到 --ns-label-3，与 --char-dim 同一档。 */
+body[data-skin=dsh] .char-pane :is(.char-module-head, .char-roster-head, .char-identity, .char-blank-inner) :is(h1, h2) {
+  font-family: var(--char-serif);
+  font-weight: 500;
+  color: var(--ns-label-1, #f4eef7);
+}
+body[data-skin=dsh] .char-pane :is(.char-crumbs, .char-roster-label, .char-section-index, .char-identity-meta, .char-tiny-empty) {
+  color: var(--ns-label-3, #b1a4bd);
+}
+
+/* 8. 窄档抽屉是「脱流的覆盖层」，玻璃会叠两层（遮罩 + 背板），按 studio.css .side-pane 的不透明档补实 */
+@media (max-width: 1099px) {
+  body[data-skin=dsh] .char-shell[data-drawer='roster'] .char-pane[data-pane='roster'] {
+    background: rgb(44 37 57 / .96);
+  }
+}

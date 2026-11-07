@@ -1,0 +1,137 @@
+/* 人物名录列（roster pane）样式：由 D2 填充（divider 拖宽不改这里）。
+   度量（列宽 / 留白 / 圆角 / 细轨）在 chars-shell.css；组件契约见 CharactersWorkspace.vue。
+   设计依据：docs/前端美化/人物-融合总稿-20261105/ 的 app.mjs:28-30 与 studio.css 的
+   .pane-top / .side-title / .search-box / .select-filter / .list-label / .person-row / .side-foot。
+   数值按 studio.css 的档位落：宽档基线 → ≤1099（.pane-top / .person-row / .portrait 都不再缩，只有插件自己的内边距收一点）。
+   原型是深色稿，这里按插件皮肤换算成主题变量（走 .char-shell 下发的 --char-* 与 themes.css 的 --bg-* / --accent-soft）。 */
+
+/* 两列共用的最小原语（本文件先于 chars-dossier.css 加载）：按钮 / 图标键 / 头像框 / 标签 chip / 面包屑。
+   只做视觉，不承载布局度量。 */
+.char-pane[data-pane='roster'],
+.char-pane[data-pane='main'] {
+  --char-serif: var(--ls-serif, "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", serif);
+}
+
+.char-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 6px 12px; border: 1px solid var(--char-pane-line); border-radius: 9px;
+  background: transparent; color: var(--char-ink); font-family: inherit; font-size: 12px;
+  cursor: pointer;
+}
+.char-btn:hover { background: var(--char-hover); }
+.char-btn:focus-visible { outline: 2px solid var(--char-accent); outline-offset: -1px; }
+.char-btn.small { padding: 5px 10px; border-radius: 8px; font-size: 11px; }
+.char-btn.soft { border-color: transparent; background: var(--bg-hover); }
+.char-btn.primary { border-color: var(--char-accent); background: var(--char-accent); color: #fff; }
+.char-btn.primary:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+
+.char-icon-btn {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 26px; height: 26px; padding: 0; border: 1px solid transparent; border-radius: 7px;
+  background: transparent; color: var(--char-dim); font-family: inherit; cursor: pointer;
+}
+.char-icon-btn:hover { background: var(--char-hover); color: var(--char-ink); }
+.char-icon-btn:focus-visible { outline: 2px solid var(--char-accent); outline-offset: 1px; }
+
+/* 头像框（studio.css .portrait）：无图时取姓名首字，serif；色标由 --char-tone 内联给出。
+   基础尺寸 36×42 / 字号 20 / 圆角 8，身份区与编辑态各自覆盖宽高与字号。 */
+.char-portrait {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 36px; height: 42px; overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--char-tone, #7f9a86) 34%, transparent); border-radius: 8px;
+  background: color-mix(in srgb, var(--char-tone, #7f9a86) 13%, var(--char-pane-bg));
+  color: color-mix(in srgb, var(--char-tone, #7f9a86) 72%, #3c3427);
+  font: 400 20px/1 var(--char-serif);
+}
+.char-portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+/* 标签 chip（studio.css .tag）：阅读态可点筛选，编辑态当快捷 chip 用 */
+.char-tag {
+  display: inline-flex; align-items: center; padding: 2px 7px;
+  border: 1px solid var(--char-pane-line); border-radius: 5px;
+  background: transparent; color: var(--char-dim); font-family: inherit; font-size: 11px; line-height: 1.65; cursor: pointer;
+}
+.char-tag:hover { background: var(--char-hover); color: var(--char-ink); }
+.char-tag.on { border-color: var(--char-accent); background: var(--accent-soft); color: var(--char-accent); }
+
+/* ---------- 名录列本体 ---------- */
+.char-roster { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+
+/* 标题行（studio.css .pane-top / .side-title）：people 图标 + 标题 + 收起。
+   h2 同时吃 .pane-top h2{font-size:14px;font-weight:500;flex:1} 与 .side-title{font:500 20px/1.5 var(--serif)}，
+   前者的组件选择器更具体，故字号落到 14px，serif 字族来自 .side-title。 */
+.char-roster-head { display: flex; align-items: center; gap: 9px; flex: none; padding: 21px 20px 16px; min-height: 70px; }
+.char-roster-head > svg { flex: none; color: var(--char-dim); }
+.char-roster-head h2 {
+  flex: 1; min-width: 0; margin: 0; color: var(--char-ink);
+  font: 500 14px/1.5 var(--char-serif);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* 搜索框（studio.css .search-box / .side-search） */
+.char-search {
+  display: flex; align-items: center; gap: 8px; flex: none;
+  margin: 0 16px 14px; padding: 8px 10px;
+  border: 1px solid var(--char-pane-line); border-radius: 10px;
+  background: var(--bg-editor, #fcfaf2); color: var(--char-dim);
+}
+.char-search > svg { flex: none; }
+.char-search input {
+  flex: 1; min-width: 0; padding: 0; border: 0; background: none; outline: none;
+  color: var(--char-ink); font-family: inherit; font-size: 12px;
+}
+.char-search:focus-within { border-color: var(--char-accent); }
+.char-search input::placeholder { color: var(--char-dim); opacity: .8; }
+.char-search .char-icon-btn { width: 20px; height: 20px; }
+
+/* 两个筛选（studio.css .select-filter） */
+.char-filters { display: flex; gap: 8px; flex: none; padding: 0 16px 12px; }
+.char-filters select {
+  width: 100%; min-width: 0; padding: 6px 7px;
+  border: 1px solid var(--char-pane-line); border-radius: 7px;
+  background: var(--char-pane-bg); color: var(--char-ink); font-family: inherit; font-size: 12px;
+  cursor: pointer;
+}
+.char-filters select:focus-visible { outline: 2px solid var(--char-accent); outline-offset: 1px; }
+
+/* 计数行（studio.css .list-label） */
+.char-roster-label { display: flex; justify-content: space-between; gap: 10px; flex: none; padding: 1px 21px 11px; font-size: 12px; color: var(--char-dim); }
+
+/* 人物行列表：本列的滚动容器（外壳按 data-char-scroll="roster" 记位置） */
+.char-roster-list { flex: 1; min-height: 0; overflow: auto; padding-bottom: 8px; scrollbar-width: thin; }
+
+/* 人物行（studio.css .person-row） */
+.char-person {
+  display: flex; align-items: center; gap: 11px; width: calc(100% - 20px); margin: 0 10px 4px;
+  padding: 12px 11px; border: 1px solid transparent; border-radius: 10px; min-width: 0;
+  background: transparent; color: var(--char-ink); font-family: inherit; text-align: left; cursor: pointer;
+}
+.char-person:hover { background: var(--char-hover); }
+.char-person.on { background: var(--accent-soft); border-color: var(--char-pane-line); }
+.char-person:focus-visible { outline: 2px solid var(--char-accent); outline-offset: -2px; }
+.char-person-copy { flex: 1; min-width: 0; }
+.char-person-copy strong {
+  display: block; font-size: 14px; font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.char-person-copy small {
+  display: block; margin-top: 2px; color: var(--char-dim); font-size: 11px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.char-person-go { flex: none; color: var(--char-accent); opacity: 0; }
+.char-person:is(.on, :hover) .char-person-go { opacity: 1; }
+
+/* 空名录（studio.css .empty） */
+.char-roster-empty { padding: 35px 22px; color: var(--char-dim); font-size: 12px; line-height: 1.9; text-align: center; }
+.char-roster-empty p { margin: 8px 0 18px; }
+.char-roster-empty .char-btn { margin: 0 auto; }
+
+/* 页脚（studio.css .pane-foot / .side-foot）：.side-foot 的 padding 覆盖 .pane-foot 的 16px，min-height 仍随 .pane-foot。 */
+.char-roster-foot { display: flex; flex: none; padding: 14px 16px; min-height: 66px; border-top: 1px solid var(--char-pane-line); }
+.char-roster-foot .char-btn { width: 100%; justify-content: center; }
+
+/* 窄档（≤1099）：studio.css 在这一档不缩 .pane-top / .person-row / .portrait，只收插件自己的内边距。 */
+@media (max-width: 1099px) {
+  .char-search { margin: 0 14px 12px; }
+  .char-filters { padding: 0 14px 10px; }
+}

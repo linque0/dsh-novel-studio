@@ -1,0 +1,119 @@
+/* ==================== 人物工作区外壳（面板矩阵） ====================
+   结构：roster | 16px 分隔 | main | 16px 分隔 | context，DOM 顺序由 CharactersWorkspace.vue 固定。
+   设计依据（唯一真值）：docs/前端美化/人物-融合总稿-20261105/
+   - 两套默认栏宽：fusion.css:2-3 与 app.mjs:17 的 defaults（profile 248/304、graph 220/332）。
+     列宽由 char-layout.js 写成 --char-left-w / --char-right-w；网格 gap 恒为 0，
+     16px 呼吸全部由独立的 .char-divider 网格列承担（studio.css .workspace 的 16px 列）。
+   - 留白只在这一层给（studio.css .workspace 的 inset 108px 28px 30px 折成外壳内距），
+     pane 自身不加任何外边距，否则三列会各缩一圈。
+   - pane 圆角 20 / 18（≤1099）/ 16（≤559）：studio.css 只在两个窄档写了 18 与 16，
+     宽档基准 20 与设定模块同源（「宽 → 窄 → 手机」的 20/18/16 降级序列）。
+   - 细轨 40（studio.css .rail）、分隔列 16（.resize-handle）、主区下限 420（char-layout.js MAIN_MIN，
+     与 app.mjs:53/138 的 420 一致，设计稿 report.json 的 1440 / 1280 实测即此档位）。
+   窄档（≤1099）：矩阵塌成「工具条 + 单列」两行网格，名录脱流成外壳内的绝对覆盖层 + 遮罩
+   （studio.css .mobile-tools / .side-pane / .scrim），侧栏变第二屏（data-screen='context'）。
+   收起规则必须包在 @media(min-width:1100px)，否则窄档抽屉会被 data-closed 的 display:none 掏空。 */
+
+.char-shell-host { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; }
+
+/* 三列网格（宽档）：列宽来自 JS，全文件唯一一处留白 */
+.char-shell {
+  --char-pane-line: var(--border, #e0d6bf);
+  --char-pane-bg: var(--bg-panel, #faf7ec);
+  --char-main-bg: var(--bg-editor, #fcfaf2);
+  --char-ink: var(--text, #3c3427);
+  --char-dim: var(--text-dim, #8d8271);
+  --char-hover: var(--bg-hover, #efe8d2);
+  --char-accent: var(--accent, #8c6f4e);
+  position: relative; flex: 1; min-width: 0; min-height: 0; display: grid; gap: 0;
+  grid-template-columns: var(--char-left-w, 248px) 16px minmax(420px, 1fr) 16px var(--char-right-w, 304px);
+  padding: 24px 28px 30px;
+}
+
+/* pane 卡：1px 亮线 + 20px 圆角（窄档 18 / 手机 16）；主区单独底色 */
+.char-pane {
+  position: relative; box-sizing: border-box; display: flex; flex-direction: column;
+  min-width: 0; min-height: 0; overflow: hidden;
+  border: 1px solid var(--char-pane-line); border-radius: 20px; background: var(--char-pane-bg);
+}
+.char-pane[data-pane='main'] { background: var(--char-main-bg); }
+
+/* 分隔条（studio.css .resize-handle）：16px 网格列、透明；悬停/聚焦露出 4×48 抓手 */
+.char-divider { position: relative; width: 16px; background: transparent; cursor: col-resize; touch-action: none; outline: none; }
+.char-divider::after { content: ''; position: absolute; top: calc(50% - 24px); left: 6px; width: 4px; height: 48px; border-radius: 5px; background: transparent; }
+.char-divider:is(:hover, :focus-visible)::after { background: var(--char-accent); opacity: .55; }
+
+/* 收起细轨（studio.css .rail）：44px、整列高、竖排文案；宽档只在收起态出现 */
+.char-rail {
+  display: none; width: 44px; flex: 1; height: 100%; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px; padding: 20px 0; border: 0; background: transparent; color: var(--char-dim);
+  font-family: inherit; font-size: 12px; cursor: pointer;
+}
+.char-rail:hover { background: var(--char-hover); color: var(--char-ink); }
+.char-rail svg { width: 17px; height: 17px; }
+.char-rail span { writing-mode: vertical-rl; letter-spacing: .2em; }
+
+/* 收起态只在宽档生效：收起的列宽已由 char-layout.js 写成 44px，pane 里只剩细轨 */
+@media (min-width: 1100px) {
+  .char-pane[data-closed] .char-rail { display: flex; }
+  .char-pane[data-closed] > :not(.char-rail) { display: none; }
+}
+
+/* 抽屉遮罩：只在窄档 + 抽屉态出现（见下方窄档） */
+.char-scrim { display: none; }
+
+/* 窄档顶部工具条（原型 studio.css .mobile-tools 的三段式 [左按钮][标题][右按钮]）：
+   内容由子组件用 charShell.setBar 驱动，外壳只负责排版与点击转发。 */
+.char-mobilebar { display: none; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; height: 48px; }
+.char-mobile-btn { flex: none; max-width: 34%; min-height: 28px; padding: 5px 11px; border: 1px solid var(--char-pane-line);
+  border-radius: 999px; background: var(--char-pane-bg); color: var(--char-ink); font-family: inherit; font-size: 11px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.char-mobile-btn:hover { background: var(--char-hover); }
+.char-mobile-title { flex: 1; min-width: 0; text-align: center; color: var(--char-dim); font-size: 11px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 占位桩（D2/D3/D4 替换成真实组件时可一并删除这两条） */
+.char-stub { flex: 1; min-height: 0; overflow: auto; padding: 20px 22px; color: var(--char-dim); font-size: 12px; line-height: 1.9; }
+.char-stub strong { display: block; margin-bottom: 6px; color: var(--char-ink); font-size: 13px; font-weight: 500; }
+.char-stub p { margin: 0 0 4px; }
+.char-stub-link { margin-left: 6px; padding: 0; border: 0; background: none; color: var(--char-accent);
+  font-family: inherit; font-size: inherit; text-decoration: underline; cursor: pointer; }
+
+/* ==================== 窄档（≤1099）：工具条 + 单列两行网格 + 名录抽屉 + 侧栏第二屏 ====================
+   studio.css @media(max-width:1099px) 的 .workspace / .mobile-tools / .side-pane / .scrim；
+   留白 12px 20px 20px、pane 圆角 18；1099 / 559 两档各自一套数值。 */
+@media (max-width: 1099px) {
+  /* 单列两行：第一行工具条、第二行 pane（设计稿 760 档实测就是整幅单块 pane：x=20、right=740）。
+     窄档不再有常驻细轨列——宽档收起时仍是 44px 细轨（见上方 @media(min-width:1100px) 与 .char-rail 的 44px 宽）。 */
+  .char-shell {
+    display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: 48px minmax(0, 1fr);
+    padding: 12px 20px 20px;
+  }
+  .char-divider { display: none; }
+  .char-pane { border-radius: 18px; }
+  /* 工具条占第一行 */
+  .char-mobilebar { display: flex; grid-column: 1; grid-row: 1; }
+  /* 名录列默认整列不出现：窄档的唯一入口是工具条左侧按钮（子组件用 setBar 设置） */
+  .char-pane[data-pane='roster'] { display: none; min-height: 0; }
+  /* 细轨在窄档一律不显示（宽档收起态才用它） */
+  .char-rail { display: none; }
+  /* 抽屉：外壳内的绝对覆盖层（与遮罩同原点，顶部不会漏盖） */
+  .char-shell[data-drawer='roster'] .char-pane[data-pane='roster'] {
+    display: flex; position: absolute; top: 0; left: 0; bottom: 0;
+    width: min(300px, calc(100vw - 40px)); z-index: 40; background: var(--char-pane-bg);
+  }
+  /* 遮罩：相对外壳（.char-shell 已 position:relative）铺满，不再照抄原型的 125px 导航行偏移 */
+  .char-scrim { display: block; position: absolute; inset: 0; z-index: 30; padding: 0; border: 0;
+    background: rgb(16 10 30 / .6); }
+  /* 主区与侧栏两屏互斥：都占唯一那一列 */
+  .char-pane[data-pane='main'] { flex: 1; width: 100%; min-width: 0; grid-column: 1; grid-row: 2; }
+  .char-pane[data-pane='context'] { display: none; width: 100%; flex: 1; min-height: 0; grid-column: 1; grid-row: 2; }
+  .char-shell[data-screen='context'] .char-pane[data-pane='context'] { display: flex; }
+  .char-shell[data-screen='context'] .char-pane[data-pane='main'] { display: none; }
+}
+
+@media (max-width: 559px) {
+  .char-shell { padding: 7px 12px 12px; }
+  .char-pane { border-radius: 16px; }
+  .char-shell[data-drawer='roster'] .char-pane[data-pane='roster'] { width: min(300px, calc(100vw - 24px)); }
+}
