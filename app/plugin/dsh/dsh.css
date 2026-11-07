@@ -752,167 +752,6 @@ body[data-skin='dsh'] .os-modal-open:hover{filter:brightness(1.08);}
 body[data-skin='dsh'] .workbench-shell .right-panel.ns-notes-drawer{animation:none;}
 }
 
-/* ===== 6. 人物页（M2a）=====
- * 去装饰：卡片 = --nsx-glass-1 + 0.5px --nsx-line + 圆角 12；人物列表行 34px、选中 --ns-active；
- * 头像 / 立绘容器改中性底 + 0.5px 描边（图片与首字兜底同一层，不加花纹）；
- * 字段表用 0.5px 分隔线；人物页按钮统一 28（tiny/small）/ 34（medium 及以上）高。
- * 统一挂 .workbench-shell 一层，压过 themes.css 的 .rp-* / .side-item 单类规则。 */
-/* ==================== 人物 ==================== */
-body[data-skin='dsh'] .workbench-shell .character-surface {
-  background: var(--ns-bg, #151517);
-  color: var(--ns-label-1, #f9fafb);
-}
-body[data-skin='dsh'] .workbench-shell .character-surface .dossier-body {
-  box-sizing: border-box;
-  padding: 16px;
-  border: 0.5px solid var(--nsx-line, var(--ns-border-2, rgba(255, 255, 255, 0.12)));
-  border-radius: 12px;
-  background: var(--nsx-glass-1, var(--ns-layer-1, #232324));
-}
-
-/* 头像 / 立绘：中性容器 + 0.5px 描边，内部图片只负责裁切 */
-body[data-skin='dsh'] .workbench-shell .character-surface .character-portrait {
-  box-sizing: border-box;
-  padding: 4px;
-  border: 0.5px solid var(--nsx-line, var(--ns-border-2, rgba(255, 255, 255, 0.12)));
-  border-radius: 12px;
-  background: var(--nsx-glass-2, var(--ns-layer-2, #2c2c2e));
-}
-body[data-skin='dsh'] .workbench-shell .character-surface .character-portrait .avatar-lg {
-  display: block;
-  width: 72px;
-  height: 72px;
-  border: 0;
-  border-radius: 8px;
-  background: var(--nsx-glass-3, var(--ns-layer-2, #2c2c2e));
-  object-fit: cover;
-}
-body[data-skin='dsh'] .workbench-shell .character-surface .character-initial {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--ns-label-3, #a3a7ad);
-  font: 500 28px/1 'Microsoft YaHei', system-ui, sans-serif;
-}
-
-/* 角色定位胶囊：中性描边，选中 --ns-active（与列表行一致） */
-body[data-skin='dsh'] .workbench-shell .character-surface .role-chips{gap:6px;}
-body[data-skin='dsh'] .workbench-shell .character-surface .role-chip {
-  display: inline-flex;
-  align-items: center;
-  box-sizing: border-box;
-  height: 28px;
-  padding: 0 10px;
-  border: 0.5px solid var(--nsx-line, var(--ns-border-2, rgba(255, 255, 255, 0.12)));
-  border-radius: var(--nsx-pill, var(--ns-radius-sm, 8px));
-  background: transparent;
-  color: var(--ns-label-2, #cfd3d6);
-  font-size: 12px;
-  line-height: 1;
-}
-body[data-skin='dsh'] .workbench-shell .character-surface .role-chip:hover {
-  background: var(--ns-hover, rgba(255, 255, 255, 0.06));
-  border-color: var(--ns-border-3, rgba(255, 255, 255, 0.16));
-  color: var(--ns-label-1, #f9fafb);
-}
-body[data-skin='dsh'] .workbench-shell .character-surface .role-chip.on {
-  border-color: transparent;
-  background: var(--ns-active, rgba(255, 255, 255, 0.1));
-  color: var(--ns-label-1, #f9fafb);
-  font-weight: 600;
-}
-
-/* 表单控件：中性底 + 0.5px 描边 */
-body[data-skin='dsh'] .workbench-shell .character-surface :is(.rp-input, .rp-textarea) {
-  box-sizing: border-box;
-  border: 0.5px solid var(--nsx-line, var(--ns-border-2, rgba(255, 255, 255, 0.12)));
-  border-radius: var(--ns-radius-sm, 8px);
-  background: var(--nsx-glass-2, var(--ns-layer-2, #2c2c2e));
-  color: var(--ns-label-1, #f9fafb);
-}
-body[data-skin='dsh'] .workbench-shell .character-surface :is(.rp-input, .rp-textarea):focus{border-color:var(--ns-accent, #7aaaff);}
-
-/* 字段表 / 关系表：行与行之间 0.5px 分隔线，区块标题用 caption 色 */
-body[data-skin='dsh'] .workbench-shell .character-surface .divider {
-  height: 0;
-  margin: 14px 0 8px;
-  border: 0;
-  border-top: 0.5px solid var(--ns-border-1, rgba(255, 255, 255, 0.06));
-  background: none;
-}
-body[data-skin='dsh'] .workbench-shell .character-surface .rp-title {
-  margin-bottom: 4px;
-  color: var(--ns-label-3, #a3a7ad);
-  font-size: 12px;
-}
-body[data-skin='dsh'] .workbench-shell .character-surface .field-row {
-  box-sizing: border-box;
-  gap: 8px;
-  margin: 0;
-  padding: 6px 0;
-  border-bottom: 0.5px solid var(--ns-border-1, rgba(255, 255, 255, 0.06));
-}
-
-/* 按钮统一 28 / 34 高（tiny、small 与 medium 以上） */
-body[data-skin='dsh'] .workbench-shell .character-surface .n-button {
-  height: 28px;
-  min-height: 28px;
-}
-body[data-skin='dsh'] .workbench-shell .character-surface .n-button:is(.n-button--medium-type, .n-button--large-type) {
-  height: 34px;
-  min-height: 34px;
-}
-
-/* 人物列表（左栏）：行 34px、圆角 12、选中 --ns-active */
-body[data-skin='dsh'] .workbench-shell[data-module='characters'] .side-panel .character-list-head {
-  padding: 6px;
-  gap: 6px;
-  border: 0;
-  background: transparent;
-}
-body[data-skin='dsh'] .workbench-shell[data-module='characters'] .side-panel .char-viewtoggle button {
-  height: 28px;
-  padding: 0 8px;
-  border: 0.5px solid var(--nsx-line, var(--ns-border-2, rgba(255, 255, 255, 0.12)));
-  border-radius: var(--nsx-pill, var(--ns-radius-sm, 8px));
-  background: transparent;
-  color: var(--ns-label-2, #cfd3d6);
-}
-body[data-skin='dsh'] .workbench-shell[data-module='characters'] .side-panel .side-list{padding:2px 4px 6px;}
-body[data-skin='dsh'] .workbench-shell[data-module='characters'] .side-panel .side-item {
-  box-sizing: border-box;
-  height: 34px;
-  min-height: 34px;
-  margin: 1px 0;
-  padding: 0 8px;
-  border-radius: var(--nsx-pill, 12px);
-  gap: 8px;
-  font-size: 13px;
-  color: var(--ns-label-2, #cfd3d6);
-}
-body[data-skin='dsh'] .workbench-shell[data-module='characters'] .side-panel .side-item:hover{background:var(--ns-hover, rgba(255, 255, 255, 0.06));}
-body[data-skin='dsh'] .workbench-shell[data-module='characters'] .side-panel .side-item.active {
-  background: var(--ns-active, rgba(255, 255, 255, 0.1));
-  color: var(--ns-label-1, #f9fafb);
-  font-weight: 600;
-}
-
-/* 6.1 窄栏人物页：立绘与身份行改为上下排，姓名/角色/别名/字段行允许换行——
- * 380 下原来的单行 flex（姓名 flex:1 + 170px 角色输入）会把卡片顶出视口横向滚动。 */
-@media (max-width: 559px) {
-  body[data-skin='dsh'] .workbench-shell .character-surface .character-identity {
-    flex-direction: column;
-    gap: 10px;
-  }
-body[data-skin='dsh'] .workbench-shell .character-surface .character-name-row,
-  body[data-skin='dsh'] .workbench-shell .character-surface .character-alias-row,
-  body[data-skin='dsh'] .workbench-shell .character-surface .field-row{flex-wrap:wrap;}
-  body[data-skin='dsh'] .workbench-shell .character-surface .character-portrait .avatar-lg {
-    width: 56px;
-    height: 56px;
-  }
-}
-
 /* ===== 7. 设定页（M2b）：左节点层级树 + 幕布树 + 详情页 + 关联关系面板 =====
  * 去装饰：树行 34px / 圆角走 --nsx-pill / hover --ns-hover / 选中 --ns-active；节点圆点与折叠三角中性化；
  * 详情面板 --nsx-glass-1 + 0.5px --nsx-line；标签 pill 28；工具栏与行内按钮 28 高 ghost。
@@ -985,8 +824,11 @@ body[data-skin='dsh'] [data-module='lore'] .ob-toolbar .ob-count {
 /* 7.2 幕布树容器（面板）：--ns-layer-1 + 0.5px --ns-border-2 + 圆角 12 */
 /* 设计稿 A 视图：条目直接写在玻璃上，不再套一张内容卡（2026-11-05） */
 body[data-skin='dsh'] [data-module='lore'] .ob-editor {
+  /* 集头通栏的横向内距：全文件唯一来源，断点只改变量值（宽 34 / ≤1099 20 / ≤559 14） */
+  --lore-pad-x: 34px;
   margin-top: 10px;
-  padding: 0;
+  padding: 0 var(--lore-pad-x) 44px;
+  scrollbar-gutter: stable;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -1043,49 +885,8 @@ body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-text:empty::before {
   color: var(--ns-caption, #81858c);
   opacity: 0.7;
 }
-/* 圆点：设计稿是 5px 实心点（有子级 7px），不是 16px 的空心环；折叠态换成 ▸ */
-body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-bullet {
-  width: 16px;
-  height: 16px;
-  margin: 0 6px 0 2px;
-  border: 0;
-  background: transparent;
-}
-body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-bullet::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 5px;
-  height: 5px;
-  margin: -2.5px 0 0 -2.5px;
-  border-radius: 50%;
-  background: var(--ns-label-3, #a3a7ad);
-  opacity: .85;
-  transition: width .12s ease, height .12s ease, background .12s ease;
-}
-body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-bullet.has-children{border:0;}
-body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-bullet.has-children::before {
-  width: 7px;
-  height: 7px;
-  margin: -3.5px 0 0 -3.5px;
-  background: var(--ns-label-2, #cfd3d6);
-  opacity: 1;
-}
-body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-bullet:hover::before{background:var(--ns-label-1, #f9fafb);}
-body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-bullet.folded { border: 0; background: transparent; }
-body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-bullet.folded::before{display:none;}
-body[data-skin='dsh'] [data-module='lore'] .ob-row .ob-bullet.folded::after {
-  content: '▸';
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--ns-label-2, #cfd3d6);
-  font-size: 9px;
-  line-height: 1;
-}
+/* 圆点 / 折叠键 / 拖动柄的几何已统一到 §8.6（原 16×16 空心环 + 折叠态 ▸ 那版删除：
+ * 折叠箭头归 .ob-fold-toggle 的 caret，圆点在任何折叠状态下都必须原位不动）。 */
 /* 行尾标签 pill：28 高、圆角 8（每行标签自己的色相由行内样式决定，这里只改形状） */
 body[data-skin='dsh'] [data-module='lore'] .ob-tag {
   display: inline-flex;
@@ -1126,61 +927,8 @@ body[data-skin=dsh] [data-module=lore] .ob-relchip,body[data-skin=dsh] [data-mod
 }
 
 /* ==================== 基础变量与全局 ==================== */
-body[data-skin=dsh] .workbench-shell[data-module=lore] .side-panel .side-list{padding:2px 4px 6px;}
-
-body[data-skin=dsh] .workbench-shell[data-module=lore] .side-panel .side-item {
-  box-sizing:border-box;
-  height:34px;
-  min-height:34px;
-  margin:1px 0;
-  padding:0 8px;
-  gap:6px;
-  border-radius:var(--nsx-pill, 12px);
-  font-size:13px;
-  color:var(--ns-label-2, #cfd3d6);
-}
-body[data-skin=dsh] .workbench-shell[data-module=lore] .side-panel .side-item:hover{background:var(--ns-hover, rgba(255, 255, 255, .06));}
-
-body[data-skin=dsh] .workbench-shell[data-module=lore] .side-panel .side-item.active {
-  background:var(--ns-active, rgba(255, 255, 255, .1));
-  color:var(--ns-label-1, #f9fafb);
-  font-weight:600;
-}
-
-/* ==================== 设定 ==================== */
-body[data-skin=dsh] .workbench-shell[data-module=lore] .side-panel :is(.ob-arrow,.side-empty){color:var(--ns-caption, #81858c);}
-
-/* ==================== 基础变量与全局 ==================== */
-
-body[data-skin=dsh] .workbench-shell[data-module=lore] .side-panel .side-search {
-  padding:4px 0;
-  border-bottom:.5px solid var(--ns-border-1, rgba(255, 255, 255, .06));
-}
-
-body[data-skin=dsh] .workbench-shell[data-module=lore] .side-panel .side-search .rp-input {
-  box-sizing:border-box;
-  height:28px;
-  padding:0 8px;
-  border:.5px solid var(--nsx-line, var(--ns-border-2, rgba(255, 255, 255, .12)));
-  border-radius:var(--ns-radius-sm, 8px);
-  background:var(--nsx-glass-2, var(--ns-layer-2, #2c2c2e));
-  color:var(--ns-label-1, #f9fafb);
-  font-size:12px;
-}
-
-body[data-skin=dsh] .workbench-shell[data-module=lore] .side-panel .btn-ghost {
-  height:28px;
-  min-width:28px;
-  border:0;
-  border-radius:var(--ns-radius-sm, 8px);
-  background:transparent;
-  color:var(--ns-label-2, #cfd3d6);
-}
-
-body[data-skin=dsh] .workbench-shell[data-module=lore] .side-panel .btn-ghost:hover {
-  background:var(--ns-hover, rgba(255, 255, 255, .06));
-  color:var(--ns-label-1, #f9fafb);
-}
+/* 旧侧栏（.side-panel / .side-resizer）在 lore 页已不渲染（Workbench.vue: showDirectory 排除 lore），
+   服务它的 .side-panel .side-list / .side-item / .side-search / .btn-ghost 规则整段删除。 */
 
 /* ==================== 大纲 ==================== */
 
@@ -1559,218 +1307,6 @@ body[data-skin=dsh] .n-modal .ns-import-pick p {
   line-height:1.8;
 }
 
-body[data-skin=dsh] .sw-root {
-  box-sizing:border-box;
-  background:var(--nsx-glass-1, var(--ns-layer-1, #232324));
-  border:.5px solid var(--nsx-line, var(--ns-border-2, rgba(255, 255, 255, .12)));
-  border-radius:12px;
-  -webkit-backdrop-filter:blur(18px) saturate(1.4);
-  backdrop-filter:blur(18px) saturate(1.4);
-  color:var(--ns-label-2, #cfd3d6);
-  overflow:hidden;
-}
-
-body[data-skin=dsh] .sw-root .sw-head {
-  box-sizing:border-box;
-  padding:8px 16px;
-  border-bottom:.5px solid var(--nsx-line, var(--ns-border-1, rgba(255, 255, 255, .06)));
-  background:transparent;
-}
-
-body[data-skin=dsh] .sw-root .sw-title {
-  font-size:16px;
-  line-height:24px;
-  color:var(--ns-label-1, #f9fafb);
-}
-
-body[data-skin=dsh] .sw-root .sw-sub {
-  font-size:11px;
-  letter-spacing:.18em;
-  color:var(--ns-caption, #81858c);
-}
-body[data-skin=dsh] .sw-root .sw-body{background:transparent;}
-
-body[data-skin=dsh] .sw-root .sw-nav {
-  box-sizing:border-box;
-  padding:8px;
-  gap:2px;
-  border-right:.5px solid var(--nsx-line, var(--ns-border-1, rgba(255, 255, 255, .06)));
-  background:transparent;
-}
-
-body[data-skin=dsh] .sw-root .sw-nav-item {
-  box-sizing:border-box;
-  height:34px;
-  min-height:34px;
-  padding:0 8px;
-  gap:8px;
-  border-radius:var(--nsx-pill, 12px);
-  background:transparent;
-  color:var(--ns-label-2, #cfd3d6);
-}
-body[data-skin=dsh] .sw-root .sw-nav-item:hover{background:var(--ns-hover, rgba(255, 255, 255, .06));}
-body[data-skin=dsh] .sw-root .sw-nav-item.on{background:var(--ns-active, rgba(255, 255, 255, .1));}
-
-body[data-skin=dsh] .sw-root .sw-nav-ico {
-  width:22px;
-  height:22px;
-  border:.5px solid var(--nsx-line, var(--ns-border-2, rgba(255, 255, 255, .12)));
-  border-radius:8px;
-  background:transparent;
-  color:var(--ns-label-2, #cfd3d6);
-  font-size:11px;
-}
-
-body[data-skin=dsh] .sw-root .sw-nav-item.on .sw-nav-ico {
-  background:transparent;
-  border-color:var(--ns-border-3, rgba(255, 255, 255, .16));
-  color:var(--ns-label-1, #f9fafb);
-}
-
-body[data-skin=dsh] .sw-root .sw-nav-text b {
-  font-size:13px;
-  line-height:16px;
-  font-weight:600;
-  color:var(--ns-label-1, #f9fafb);
-}
-
-body[data-skin=dsh] .sw-root .sw-nav-text i {
-  font-size:10.5px;
-  line-height:14px;
-  color:var(--ns-caption, #81858c);
-}
-body[data-skin=dsh] .sw-root .sw-nav-item.on .sw-nav-text b{color:var(--ns-label-1, #f9fafb);}
-
-body[data-skin=dsh] .sw-root .sw-content {
-  box-sizing:border-box;
-  margin:8px 8px 8px 0;
-  padding:14px 16px 20px;
-  border:.5px solid var(--nsx-line, var(--ns-border-1, rgba(255, 255, 255, .06)));
-  border-radius:12px;
-  background:var(--nsx-glass-2, var(--ns-layer-1, #232324));
-}
-
-body[data-skin=dsh] .sw-root .sw-h {
-  font-size:16px;
-  line-height:24px;
-  font-weight:600;
-  color:var(--ns-label-1, #f9fafb);
-}
-
-body[data-skin=dsh] .sw-root .sw-h2 {
-  margin:16px 0 6px;
-  font-size:11px;
-  font-weight:600;
-  letter-spacing:.04em;
-  color:var(--ns-caption, #81858c);
-}
-
-body[data-skin=dsh] .sw-root .sw-desc {
-  font-size:12px;
-  color:var(--ns-caption, #81858c);
-}
-
-body[data-skin=dsh] .sw-root .sw-card {
-  border:.5px solid var(--nsx-line, var(--ns-border-1, rgba(255, 255, 255, .06)));
-  border-radius:12px;
-  background:transparent;
-}
-
-body[data-skin=dsh] .sw-root .sw-row {
-  min-height:34px;
-  padding:8px 12px;
-  gap:12px;
-}
-body[data-skin=dsh] .sw-root :is(.sw-row+.sw-row,.sw-item+.sw-item){border-top:.5px solid var(--nsx-line, var(--ns-border-1, rgba(255, 255, 255, .06)));}
-
-body[data-skin=dsh] .sw-root .sw-row-main b {
-  font-size:13px;
-  color:var(--ns-label-1, #f9fafb);
-}
-
-body[data-skin=dsh] .sw-root .sw-row-main i {
-  font-size:11px;
-  color:var(--ns-caption, #81858c);
-}
-
-body[data-skin=dsh] .sw-root .sw-item {
-  box-sizing:border-box;
-  min-height:34px;
-  padding:8px 12px;
-  color:var(--ns-label-2, #cfd3d6);
-}
-body[data-skin=dsh] .sw-root .sw-item:hover{background:var(--ns-hover, rgba(255, 255, 255, .06));}
-body[data-skin=dsh] .sw-root .sw-item:hover .sw-row-main b{color:var(--ns-label-1, #f9fafb);}
-body[data-skin=dsh] .sw-root .sw-item svg{color:var(--ns-caption, #81858c);}
-body[data-skin=dsh] .sw-root .sw-item.is-danger,body[data-skin=dsh] .sw-root .sw-item.is-danger:hover,body[data-skin=dsh] .sw-root .sw-item.is-danger .sw-row-main b,body[data-skin=dsh] .sw-root .sw-item.is-danger:hover .sw-row-main b,body[data-skin=dsh] .sw-root .sw-item.is-danger svg{color:var(--ns-error, #f25a5a);}
-body[data-skin=dsh] .sw-root .sw-item.is-danger:hover{background:var(--ns-hover, rgba(255, 255, 255, .06));}
-
-body[data-skin=dsh] .sw-root :is(.n-input,.n-base-selection) {
-  box-sizing:border-box;
-  height:28px;
-  min-height:28px;
-  border-radius:8px;
-  background:var(--nsx-glass-2, var(--ns-layer-1, #232324));
-  box-shadow:inset 0 0 0 .5px var(--nsx-line, var(--ns-border-2, rgba(255, 255, 255, .12)));
-  font-size:13px;
-}
-
-body[data-skin=dsh] .sw-root :is(.n-input,.n-base-selection) :is(.n-input__input-el,.n-base-selection-label,.n-base-selection-input) {
-  font-size:13px;
-  color:var(--ns-label-1, #f9fafb);
-}
-
-body[data-skin=dsh] .sw-root .n-button {
-  height:28px;
-  min-height:28px;
-  border-radius:8px;
-  font-size:13px;
-}
-body[data-skin=dsh] .sw-root .chips{gap:6px;}
-
-body[data-skin=dsh] .sw-root .chip {
-  box-sizing:border-box;
-  height:28px;
-  padding:0 12px;
-  border:.5px solid var(--nsx-line, var(--ns-border-2, rgba(255, 255, 255, .12)));
-  border-radius:var(--nsx-pill, 8px);
-  background:var(--nsx-glass-2, var(--ns-layer-1, #232324));
-  color:var(--ns-label-2, #cfd3d6);
-  font-size:12px;
-}
-
-body[data-skin=dsh] .sw-root .chip:hover {
-  border-color:var(--ns-border-3, rgba(255, 255, 255, .16));
-  color:var(--ns-label-1, #f9fafb);
-}
-
-body[data-skin=dsh] .sw-root .chip.on {
-  border-color:transparent;
-  background:var(--ns-active, rgba(255, 255, 255, .1));
-  color:var(--ns-label-1, #f9fafb);
-  font-weight:600;
-}
-
-body[data-skin=dsh] .sw-root .fs b {
-  font-size:13px;
-  color:var(--ns-label-1, #f9fafb);
-}
-
-body[data-skin=dsh] .sw-root .sw-warn {
-  margin:8px 12px;
-  padding:6px 10px;
-  border:.5px solid var(--nsx-line, var(--ns-border-2, rgba(255, 255, 255, .12)));
-  border-radius:8px;
-  background:transparent;
-  color:var(--ns-warn, #f59e0b);
-  font-size:11px;
-}
-body[data-skin=dsh] .sw-root .sw-warn.hot{color:var(--ns-label-2, #cfd3d6);}
-
-body[data-skin=dsh] .sw-root .sw-foot {
-  font-size:10.5px;
-  color:var(--ns-caption, #81858c);
-}
 html body[data-skin=dsh] .rg-main{background:var(--ns-bg, #151517);}
 
 html body[data-skin=dsh] .rg-main .rg-canvas {
@@ -2011,65 +1547,30 @@ html body[data-skin=dsh] .lg-wrap .lg-elabel {
   font-size:11px;
 }
 
-html body[data-skin=dsh] .lg-wrap .lg-empty {
-  color:var(--ns-caption, #81858c);
-  font-size:11px;
-}
-body[data-skin=dsh] .sw-root .writing-paper-options{gap:6px;}
-
-body[data-skin=dsh] .sw-root .writing-paper-options>button {
+/* 关系网络空态：挂在 .lg-canvas（position:relative）上绝对居中，不遮挡节点卡片交互 */
+html body[data-skin=dsh] [data-module=lore] .lg-wrap .lg-empty {
+  position:absolute;
+  inset:0;
   box-sizing:border-box;
-  padding:6px 10px;
-  border:.5px solid var(--ns-border-1, rgba(255, 255, 255, .06));
-  border-radius:8px;
-  background:var(--ns-layer-2, #2c2c2e);
-  color:var(--ns-label-1, #f9fafb);
+  display:grid;
+  place-content:center;
+  gap:12px;
+  padding:24px;
+  text-align:center;
+  pointer-events:none;
+  font-size:12px;
+  color:var(--ns-label-3, #81858c);
 }
 
-body[data-skin=dsh] .sw-root .writing-paper-options>button[aria-pressed=true] {
-  border-color:var(--ns-border-3, rgba(255, 255, 255, .16));
-  background:var(--ns-active, rgba(255, 255, 255, .1));
+html body[data-skin=dsh] [data-module=lore] .lg-wrap .lg-empty > button,
+html body[data-skin=dsh] [data-module=lore] .lg-wrap .lg-empty > .lore-btn {
+  pointer-events:auto;
 }
 
-body[data-skin=dsh] .sw-root .writing-paper-options .paper-option-copy strong {
-  color:var(--ns-label-1, #f9fafb);
-  font-size:13px;
-}
-
-body[data-skin=dsh] .sw-root .writing-paper-options .paper-option-copy small {
-  color:var(--ns-caption, #81858c);
-  font-size:11px;
-}
-body[data-skin=dsh] .sw-root .writing-paper-options .paper-check{color:var(--ns-label-1, #f9fafb);}
-
-body[data-skin=dsh] .sw-root .writing-paper-options .writing-paper-swatch {
-  border:.5px solid var(--ns-border-2, rgba(255, 255, 255, .12));
-  border-radius:6px;
-  background:var(--ns-layer-1, #232324);
-  background-image:none;
-  box-shadow:none;
-}
-
-body[data-skin=dsh] .sw-root .writing-paper-options .writing-paper-swatch i {
-  background:var(--ns-border-1, rgba(255, 255, 255, .06));
-  border-color:var(--ns-border-2, rgba(255, 255, 255, .12));
-}
-body[data-skin=dsh] .sw-root .writing-paper-preview{background:transparent;}
-
-body[data-skin=dsh] .sw-root .writing-paper-preview .writing-paper-surface.paper-preview-page {
-  border:.5px solid var(--ns-border-2, rgba(255, 255, 255, .12));
-  border-radius:12px;
-  background:var(--ns-layer-1, #232324);
-  background-image:none;
-  box-shadow:none;
-  color:var(--ns-label-2, #cfd3d6);
-}
-body[data-skin=dsh] .sw-root .writing-paper-preview .paper-preview-page :is(h2,p,footer){color:var(--ns-label-2, #cfd3d6);}
-body[data-skin=dsh] .sw-root .writing-paper-preview .paper-preview-page h2{color:var(--ns-label-1, #f9fafb);}
-
-body[data-skin=dsh] .sw-root .writing-paper-preview .paper-preview-running {
-  color:var(--ns-caption, #81858c);
-  font-size:11px;
+html body[data-skin=dsh] [data-module=lore] .lg-wrap .lg-empty p {
+  margin:0;
+  line-height:1.9;
+  max-width:34ch;
 }
 
 body[data-skin=dsh] .n-switch .n-switch__button {
@@ -2203,16 +1704,47 @@ html body[data-skin=dsh] :is(.n-modal,.n-card,.n-popover,.n-dropdown-menu,.n-dia
    这里不碰其余模块。
    ============================================================================ */
 
-/* 8.1 工作区：padding 24 28 30；侧栏 220 / 16 分隔 / 主区；两侧都是 .pane 玻璃 */
+/* 8.1 面板矩阵 nav | 16 | [list | 16] main [16 | detail]。
+   列间距全部由 16px 分隔列承担（gap 恒为 0），列宽由 lore-layout.js 写成 --lore-*-w。
+   ⚠ 工作区留白（宽 24/28/30、≤1099 12/20/20、≤559 7/12/12）只由 themes.css 的 .lore-shell 那一层提供：
+   插件构建与桌面构建都拿得到它。本层不要再给 .wb-body / .panel-body / .lore-shell 加 padding
+   （唯一例外：≤1099 的 .lore-shell 横排 padding 12/20/20 在同值下重复声明一次，让插件层自足，不作叠加），
+   也不要把 .lore-shell 的 padding 清零——那会叠加或抵消，1440 实机曾因此多出 28/24。
+   旧的 [data-module=lore] .side-panel / .side-resizer 规则已删：设定不再走外置侧栏与中央 pane。 */
 body[data-skin=dsh] .workbench-shell[data-module=lore] .wb-body {
-  padding: 24px 28px 30px;
   gap: 0;
 }
-/* 选择器要压过 flow-shell.css §3 的 (0,4,2)（62% / blur20，且带 0 24px 56px 阴影）：
-   带 [data-flow] 的那一条是 (0,5,2)，无流动底的窗口由第一条兜住。 */
-html body[data-skin=dsh] .workbench-shell[data-module=lore] :is(.side-panel, .center-pane),
-html body[data-skin=dsh] .workbench-shell[data-module=lore][data-flow] :is(.side-panel, .center-pane) {
+/* 拆窗面板（PanelHost）没有 .wb-body：只清列间距，内边距同样归 .lore-shell */
+body[data-skin=dsh] .panel-host[data-module=lore] .panel-body {
+  gap: 0;
+}
+body[data-skin=dsh] [data-module=lore] .lore-shell-host { flex: 1; min-width: 0; min-height: 0; }
+
+/* 网格：write / detail / map 三套模板 */
+body[data-skin=dsh] [data-module=lore] .lore-shell {
+  display: grid;
+  gap: 0;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+  grid-template-columns: var(--lore-nav-w) 16px minmax(480px, 1fr);
+}
+body[data-skin=dsh] [data-module=lore] .lore-shell[data-view='detail'] {
+  grid-template-columns: var(--lore-nav-w) 16px var(--lore-list-w) 16px minmax(480px, 1fr);
+}
+body[data-skin=dsh] [data-module=lore] .lore-shell[data-view='map'] {
+  grid-template-columns: var(--lore-nav-w) 16px minmax(480px, 1fr) 16px var(--lore-detail-w);
+}
+
+/* pane 卡：1px 亮线 / 20px 圆角 / 玻璃；三列各自底色 */
+body[data-skin=dsh] [data-module=lore] .lore-pane {
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
   border: 1px solid rgb(255 255 255 / .17);
   border-radius: 20px;
   background: rgb(27 25 36 / .65);
@@ -2220,18 +1752,137 @@ html body[data-skin=dsh] .workbench-shell[data-module=lore][data-flow] :is(.side
   -webkit-backdrop-filter: blur(24px) saturate(1.25);
   backdrop-filter: blur(24px) saturate(1.25);
   box-shadow: none;
-  overflow: hidden;
-  min-height: 0;
 }
-body[data-skin=dsh] .workbench-shell[data-module=lore] .center-pane{min-width:0;}
-/* 侧栏与主区之间 16px：拖拽手柄占满这条缝，不画分隔线（原型 .divider 也是透明的） */
-body[data-skin=dsh] .workbench-shell[data-module=lore] .side-resizer {
+body[data-skin=dsh] [data-module=lore] .lore-pane[data-pane='main'] { background: rgb(30 25 40 / .48); }
+body[data-skin=dsh] [data-module=lore] .lore-pane[data-pane='list'] { background: rgb(39 31 49 / .62); }
+body[data-skin=dsh] [data-module=lore] .lore-pane[data-pane='detail'] { background: rgb(27 25 36 / .65); }
+body[data-skin=dsh] [data-module=lore] .lore-pane[data-pane='nav'] > .nav-pane { flex: 1; min-width: 0; min-height: 0; }
+
+/* 收起态（宽档）：列宽 40px 由 inline --lore-*-w 给出，pane 里只剩竖排细轨。
+   nav 的细轨由 MubuTree 输出在 .nav-pane 里，故多一层判据。
+   整块只在 min-width:1100px 生效——窄档一律不出细轨、也不按 data-closed 收窄。 */
+@media (min-width: 1100px) {
+  body[data-skin=dsh] [data-module=lore] .lore-rail { display: none; }
+  body[data-skin=dsh] [data-module=lore] .lore-pane[data-closed] .lore-rail { display: flex; }
+  body[data-skin=dsh] [data-module=lore] .lore-pane[data-closed] > :not(.lore-rail):not(.nav-pane) { display: none; }
+  body[data-skin=dsh] [data-module=lore] .lore-pane[data-pane="nav"] .lore-rail { display: none; }
+  body[data-skin=dsh] [data-module=lore] .lore-pane[data-pane="nav"][data-closed] .lore-rail { display: flex; }
+  body[data-skin=dsh] [data-module=lore] .lore-pane[data-pane="nav"][data-closed] .nav-pane > :not(.lore-rail) { display: none; }
+  body[data-skin=dsh] [data-module=lore] .lore-mobile-back { display: none; }
+}
+
+/* 细轨：40px、整列高、竖排文案 */
+body[data-skin=dsh] [data-module=lore] .lore-rail {
+  display: none;
+  width: 40px;
+  flex: 1;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #bcafc9;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+body[data-skin=dsh] [data-module=lore] .lore-rail:hover { background: rgb(255 255 255 / .05); color: #f2ecf6; }
+body[data-skin=dsh] [data-module=lore] .lore-rail span { writing-mode: vertical-rl; letter-spacing: .22em; }
+
+/* 「返回上一屏」按钮（三处共用：条目列表 / 摘要 / 视觉导图）；宽档不出现，≤1099 改 inline-flex */
+body[data-skin=dsh] [data-module=lore] .lore-mobile-back {
+  display: none;
+  align-items: center;
+  gap: 4px;
   flex: none;
+  min-height: 24px;
+  padding: 3px 9px;
+  border: 1px solid rgb(255 255 255 / .16);
+  border-radius: 999px;
+  background: rgb(27 25 36 / .65);
+  font-family: inherit;
+  font-size: 10px;
+  line-height: 1.5;
+  color: #cdbfd9;
+  white-space: nowrap;
+  cursor: pointer;
+}
+body[data-skin=dsh] [data-module=lore] .lore-mobile-back:hover { background: rgb(255 255 255 / .09); color: #f6f1f9; }
+
+/* 分隔条：16px 网格列、透明背景；悬停/聚焦时正中露出 4×48 圆角抓手 */
+body[data-skin=dsh] [data-module=lore] .lore-divider {
+  position: relative;
   width: 16px;
-  margin-left: 0;
+  background: transparent;
+  cursor: col-resize;
+  touch-action: none;
+  outline: none;
+}
+body[data-skin=dsh] [data-module=lore] .lore-divider::after {
+  content: '';
+  position: absolute;
+  top: calc(50% - 24px);
+  left: 6px;
+  width: 4px;
+  height: 48px;
+  border-radius: 5px;
   background: transparent;
 }
-body[data-skin=dsh] .workbench-shell[data-module=lore] .side-resizer:is(:hover, :active){background:transparent;}
+body[data-skin=dsh] [data-module=lore] .lore-divider:is(:hover, :focus-visible)::after { background: #b7d9d0; }
+
+/* 窄档（≤1099）：抽屉 + 两屏（原型 studio.css @media(max-width:1099px)）。
+   nav 脱流浮出成抽屉；list / detail 按 shell 的 data-screen 逐屏切换（宽档三列都在，data-screen 不产生效果）。 */
+@media (max-width: 1099px) {
+  body[data-skin=dsh] [data-module=lore] .lore-mobile-back { display: inline-flex; }
+  /* 横排：[40px 细轨][main 或两屏之一]；抽屉为覆盖层，不占列 */
+  body[data-skin=dsh] [data-module=lore] .lore-shell { display: flex; flex-direction: row; padding: 12px 20px 20px; }
+  body[data-skin=dsh] [data-module=lore] .lore-divider { display: none; }
+  body[data-skin=dsh] [data-module=lore] .lore-pane[data-pane="main"] { flex: 1; width: auto; min-width: 0; }
+  body[data-skin=dsh] [data-module=lore] .lore-pane[data-pane="list"],
+  body[data-skin=dsh] [data-module=lore] .lore-pane[data-pane="detail"] { display: none; width: auto; flex: 1; min-height: 0; }
+  body[data-skin=dsh] [data-module=lore] .lore-shell[data-screen="list"] .lore-pane[data-pane="list"] { display: flex; }
+  body[data-skin=dsh] [data-module=lore] .lore-shell[data-screen="list"] .lore-pane[data-pane="main"] { display: none; }
+  body[data-skin=dsh] [data-module=lore] .lore-shell[data-screen="insp"] .lore-pane[data-pane="detail"] { display: flex; }
+  body[data-skin=dsh] [data-module=lore] .lore-shell[data-screen="insp"] .lore-pane[data-pane="main"] { display: none; }
+  /* 常驻 40px 细轨列：窄档 nav 不再整列消失。细轨显隐键在 [data-narrow]，
+     ⚠ 不能键在 [data-closed]：窄档点细轨时 MubuTree 会把 loreNavClosed 置 false，data-closed 随即消失。 */
+  body[data-skin=dsh] [data-module=lore] .lore-pane[data-pane="nav"] {
+    display: flex;
+    width: 40px;
+    flex: none;
+    min-height: 0;
+  }
+  body[data-skin=dsh] [data-module=lore] .lore-rail { display: flex; }
+  /* 列表 / 摘要各自的细轨只服务宽档收起态；窄档两屏是整屏，细轨不占列 */
+  body[data-skin=dsh] [data-module=lore] .lore-pane[data-pane="list"] > .lore-rail,
+  body[data-skin=dsh] [data-module=lore] .lore-pane[data-pane="detail"] > .lore-rail { display: none; }
+  body[data-skin=dsh] [data-module=lore] .lore-shell[data-narrow] .lore-pane[data-pane="nav"] .lore-rail { display: flex; }
+  body[data-skin=dsh] [data-module=lore] .lore-shell[data-narrow]:not([data-drawer="nav"]) .lore-pane[data-pane="nav"] .nav-pane > :not(.lore-rail) { display: none; }
+  /* 抽屉态：nav 脱流成 270px 覆盖层（遮罩见 .lore-scrim），非抽屉态才只留细轨 */
+  body[data-skin=dsh] [data-module=lore] .lore-shell[data-drawer="nav"] .lore-pane[data-pane="nav"] {
+    position: absolute;
+    left: 16px;
+    top: 8px;
+    bottom: 20px;
+    width: 270px;
+    max-width: calc(100% - 32px);
+    z-index: 31;
+    background: #292334;
+    border-radius: 20px;
+  }
+  /* 抽屉里恢复 .nav-pane 其余内容：隐藏细轨，其余子元素照各自规则显示 */
+  body[data-skin=dsh] [data-module=lore] .lore-shell[data-drawer="nav"] .lore-pane[data-pane="nav"] .lore-rail { display: none; }
+  body[data-skin=dsh] [data-module=lore] .lore-scrim {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    background: rgb(12 8 22 / .53);
+  }
+}
 
 /* 8.2 侧栏（原型 nav-head / nav-search / nav-section-label / nav-tree / category / nav-entry / nav-foot） */
 body[data-skin=dsh] [data-module=lore] .nav-pane {
@@ -2431,6 +2082,10 @@ body[data-skin=dsh] [data-module=lore] .nav-foot {
 }
 body[data-skin=dsh] [data-module=lore] .nav-foot > svg { flex: none; color: #a99bb8; }
 body[data-skin=dsh] [data-module=lore] .nav-foot span:last-child{margin-left:auto;}
+/* 「全部设定」行与检索追加段（原型 fusion.css：.category.all-scope / .nav-section-label.search-label） */
+body[data-skin=dsh] [data-module=lore] .category.all-scope { margin-bottom: 2px; }
+body[data-skin=dsh] [data-module=lore] .nav-section-label.search-label { padding: 13px 7px; margin-top: 10px; }
+body[data-skin=dsh] [data-module=lore] .nav-section-label .nav-add > svg { width: 12px; height: 12px; }
 
 /* 8.3 头部与三视图切换器（原型 .fusion-head / .view-switch） */
 /* ==================== 设定 ==================== */
@@ -2453,6 +2108,17 @@ body[data-skin=dsh] [data-module=lore] .lore-h1 {
   color: #f6f1f9;
 }
 body[data-skin=dsh] [data-module=lore] .lore-meta { margin-top: 6px; font-size: 10px; letter-spacing: .06em; color: #b7a9c6; }
+/* 页头紧档（LoreHead 的 compact）：高度交给内容，只留 padding 与一条细底线；
+   用 .lore-head.lore-head--compact 压过 ≤1099 / ≤559 那两处 .lore-head 定量。 */
+body[data-skin=dsh] [data-module=lore] .lore-head.lore-head--compact {
+  box-sizing: border-box;
+  height: auto;
+  min-height: 0;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid rgb(255 255 255 / .07);
+}
+body[data-skin=dsh] [data-module=lore] .lore-head--compact .lore-h1 { margin: 6px 0 0; font-size: 20px; }
+body[data-skin=dsh] [data-module=lore] .lore-head--compact .lore-meta { display: none; }
 body[data-skin=dsh] [data-module=lore] .lore-switch {
   display: flex;
   gap: 3px;
@@ -2476,6 +2142,49 @@ body[data-skin=dsh] [data-module=lore] .lore-switch button {
 }
 body[data-skin=dsh] [data-module=lore] .lore-switch button:hover{color:#f6f1f9;}
 body[data-skin=dsh] [data-module=lore] .lore-switch button.on { background: #f3eff5; color: #33283b; }
+/* 页头右簇与范围切换（原型 fusion.css .head-actions / .scope-toggle） */
+body[data-skin=dsh] [data-module=lore] .lore-head-actions { flex: none; display: flex; align-items: center; gap: 10px; }
+body[data-skin=dsh] [data-module=lore] .lore-scope {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 6px 12px;
+  border: 1px solid rgb(255 255 255 / .16);
+  border-radius: 999px;
+  background: rgb(255 255 255 / .04);
+  font-family: inherit;
+  font-size: 11px;
+  color: #cdbfd9;
+  white-space: nowrap;
+  cursor: pointer;
+}
+body[data-skin=dsh] [data-module=lore] .lore-scope:hover { background: rgb(255 255 255 / .09); color: #f6f1f9; }
+body[data-skin=dsh] [data-module=lore] .lore-scope[aria-pressed='true'] {
+  border-color: rgb(158 195 172 / .42);
+  background: rgb(158 195 172 / .18);
+  color: #dbeadf;
+}
+/* 面包屑里的「世界设定」是可点的可见胶囊（LoreHead / LoreWorkspace 共用这一处样式） */
+body[data-skin=dsh] [data-module=lore] .lore-crumb-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 22px;
+  padding: 2px 9px;
+  border: 1px dashed rgb(255 255 255 / .17);
+  border-radius: 999px;
+  background: none;
+  font: inherit;
+  line-height: 1.5;
+  color: inherit;
+  cursor: pointer;
+}
+body[data-skin=dsh] [data-module=lore] .lore-crumb-nav:hover {
+  border-color: rgb(255 255 255 / .34);
+  background: rgb(255 255 255 / .06);
+  color: #f6f1f9;
+}
 
 /* 8.4 工具条（原型 .mubu-toolbar）：42px 一条、按钮 26 高、右端计数 10px。
    顶边那条 1px 用 inset 阴影画：验收判据要求 .ob-toolbar 的 border-top/left 为 0。 */
@@ -2524,6 +2233,7 @@ body[data-skin=dsh] [data-module=lore] .ob-toolbar .tb-sep {
   margin: 0 5px;
   background: rgb(255 255 255 / .13);
 }
+body[data-skin=dsh] [data-module=lore] .ob-toolbar .tb-gap { flex: 1; min-width: 0; }
 body[data-skin=dsh] [data-module=lore] .ob-toolbar .ob-count {
   margin-left: auto;
   padding: 0 0 0 7px;
@@ -2541,7 +2251,8 @@ html body[data-skin=dsh] .workbench-shell[data-module=lore][data-flow] .lore-sur
   flex: 1;
   min-height: 0;
   margin-top: 0;
-  padding: 0 34px 44px;
+  padding: 0 var(--lore-pad-x) 44px;
+  scrollbar-gutter: stable;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -2597,39 +2308,51 @@ body[data-skin=dsh] [data-module=lore] .ob-row .ob-guide {
   background: rgb(255 255 255 / .13);
   z-index: 0;
 }
-/* 圆点：5px 实心，有子级 7px + 3px 光晕，折叠态换小箭头 */
-body[data-skin=dsh] [data-module=lore] .ob-row .ob-bullet {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 27px;
-  min-width: 24px;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  position: relative;
-  cursor: grab;
-  z-index: 1;
+/* 圆点 / 折叠键 / 拖动柄：与 themes.css 同一套几何（逐字同值）。
+ * 圆点只用 ::before 绝对居中，折叠箭头归 .ob-fold-toggle 的 caret，::after 一律 content:none；
+ * 三种状态（展开 / 折叠 / 叶子）盒宽恒为 21×27，只有 ::before 尺寸与光晕随 has-children 变。
+ * 特异性 (0,6,2)：html+body 两个元素位，压过 lore-free-tree.css 最高 (0,6,0) 与本文件旧 (0,4,1)。 */
+html body[data-skin=dsh] [data-module=lore] .lore-main .lore-surface .ob-row > .ob-fold-toggle {
+  flex: none; box-sizing: border-box; width: 16px; min-width: 16px; height: 27px; margin: 0; padding: 0;
+  border: 0; background: transparent; display: grid; place-items: center; color: inherit; opacity: .75; cursor: pointer;
 }
-body[data-skin=dsh] [data-module=lore] .ob-row .ob-bullet:hover{background:rgb(255 255 255 / .08);}
-body[data-skin=dsh] [data-module=lore] .ob-row .ob-bullet::before {
-  width: 5px;
-  height: 5px;
-  margin: -2.5px 0 0 -2.5px;
-  border: 0;
-  background: #b6a7c3;
-  opacity: 1;
+/* 叶子行保留占位（visibility 而非 display:none，否则后面的圆点整体左移） */
+html body[data-skin=dsh] [data-module=lore] .lore-main .lore-surface .ob-row > .ob-fold-toggle.empty { visibility: hidden; }
+html body[data-skin=dsh] [data-module=lore] .lore-main .lore-surface .ob-row > .ob-fold-toggle > svg { width: 12px; height: 12px; transform: rotate(90deg); transition: transform .15s; }
+html body[data-skin=dsh] [data-module=lore] .lore-main .lore-surface .ob-row > .ob-fold-toggle.folded > svg { transform: none; }
+
+html body[data-skin=dsh] [data-module=lore] .lore-main .lore-surface .ob-row > .ob-bullet {
+  flex: none; box-sizing: border-box; width: 21px; min-width: 21px; height: 27px; margin: 0; padding: 0;
+  border: 0; background: transparent; position: relative; cursor: pointer;
 }
-body[data-skin=dsh] [data-module=lore] .ob-row .ob-bullet.has-children::before {
-  width: 7px;
-  height: 7px;
-  margin: -3.5px 0 0 -3.5px;
-  background: #c9b9d7;
-  opacity: 1;
-  box-shadow: 0 0 0 3px rgb(255 255 255 / .10);
+html body[data-skin=dsh] [data-module=lore] .lore-main .lore-surface .ob-row > .ob-bullet::before {
+  content: ''; position: absolute; left: 50%; top: 50%; width: 5px; height: 5px;
+  margin: 0; transform: translate(-50%, -50%); border-radius: 50%; background: #c5b5d2;
+  transition: width .12s ease, height .12s ease, background .12s ease;
+}
+html body[data-skin=dsh] [data-module=lore] .lore-main .lore-surface .ob-row > .ob-bullet.has-children::before {
+  width: 7px; height: 7px; background: #c9b9d7; box-shadow: 0 0 0 3px rgb(255 255 255 / .10);
+}
+html body[data-skin=dsh] [data-module=lore] .lore-main .lore-surface .ob-row > .ob-bullet::after { content: none; }
+html body[data-skin=dsh] [data-module=lore] .lore-main .lore-surface .ob-row > .ob-bullet.folded::before { display: block; }
+html body[data-skin=dsh] [data-module=lore] .lore-main .lore-surface .ob-row > .ob-bullet.folded::after { content: none; }
+html body[data-skin=dsh] [data-module=lore] .lore-main .lore-surface .ob-row > .ob-bullet:hover { background: rgb(255 255 255 / .08); border-radius: 4px; }
+
+html body[data-skin=dsh] [data-module=lore] .lore-main .lore-surface .ob-row > .ob-drag-handle {
+  position: absolute; left: calc(min(var(--depth) * 22px, 154px) + 2px); top: 6px; width: 12px; height: 25px; padding: 0;
+  border: 0; background: transparent; opacity: 0; color: inherit; cursor: grab;
+}
+html body[data-skin=dsh] [data-module=lore] .lore-main .lore-surface .ob-row:is(:hover, :focus-within) > .ob-drag-handle { opacity: .75; }
+/* 窄档触控尺寸（≤559px）：与 themes.css 同值（圆点 28×34、折叠键 13×34）。
+ * 选择器与上方宽档逐字同构、特异性同为 (0,6,2)；同特异性下靠"更靠后"取胜，
+ * 因此只在窄档内生效，宽档与 ::before 圆点本体尺寸（5/7px）完全不动。 */
+@media (max-width: 559px) {
+  html body[data-skin=dsh] [data-module=lore] .lore-main .lore-surface .ob-row > .ob-bullet {
+    width: 28px; min-width: 28px; height: 34px;
+  }
+  html body[data-skin=dsh] [data-module=lore] .lore-main .lore-surface .ob-row > .ob-fold-toggle {
+    width: 13px; min-width: 13px; height: 34px;
+  }
 }
 /* 正文：14px/1.9；顶级 17px/1.6 serif（验收按三档字号递减判） */
 body[data-skin=dsh] [data-module=lore] .ob-row .row-content { min-width: 0; flex: 1; }
@@ -2701,30 +2424,109 @@ body[data-skin=dsh] [data-module=lore] .ob-row .ob-op {
 }
 body[data-skin=dsh] [data-module=lore] .ob-row .ob-op:hover { background: rgb(255 255 255 / .08); color: #f4eef7; }
 
-/* 8.7 集头：沿用吸顶分组头，字号/间距对齐 A 截图（名称 15 serif / 计数 10 / 底部 0.5px 线） */
-body[data-skin=dsh] [data-module=lore] .lore-set-head {
+/* 8.7 集头（原型 fusion.css「全部设定：按设定集分组的粘性标题」）：通栏吸顶、上渐变 + 磨砂、
+   名称 15 serif / 计数 10 等宽 / 悬停才露出操作；左侧小 caret 归 .ls-fold。
+   通栏负数外边距 = .ob-editor 的横向内距（宽 34 / ≤1099 20 / ≤559 14）。 */
+body[data-skin=dsh] [data-module=lore] :is(.lore-set-head, .mubu-set-head) {
   position: sticky;
   top: 0;
   z-index: 3;
   display: flex;
   align-items: center;
   gap: 9px;
-  margin: 0 0 2px;
-  padding: 8px 10px 8px 6px;
-  border-radius: 8px;
-  border-bottom: .5px solid rgb(255 255 255 / .13);
-  background: rgb(30 26 40 / .86);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+  margin: 0 calc(-1 * var(--lore-pad-x)) 10px;
+  padding: 11px var(--lore-pad-x);
+  border: 0;
+  border-bottom: 1px solid rgb(255 255 255 / .10);
+  border-radius: 0;
+  background: linear-gradient(rgb(34 29 44 / .995), rgb(34 29 44 / .965));
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+  backdrop-filter: blur(16px) saturate(1.1);
+  box-shadow: 0 8px 16px -12px rgb(9 5 17 / .55);
 }
 body[data-skin=dsh] [data-module=lore] .lore-set-head:first-child{margin-top:0;}
+body[data-skin=dsh] [data-module=lore] .lore-set-head:not(:first-child) {
+  margin-top: 26px;
+  border-top: 1px solid rgb(255 255 255 / .10);
+}
+body[data-skin=dsh] [data-module=lore] .lore-set-head .ls-icon { flex: none; width: 15px; height: 15px; color: #9ec3ac; }
+/* 集名折叠键：16px 小 caret，收起态转 -45° */
+body[data-skin=dsh] [data-module=lore] .lore-set-head .ls-fold {
+  position: relative;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #b6a6c5;
+  cursor: pointer;
+}
+body[data-skin=dsh] [data-module=lore] .lore-set-head .ls-fold > span { display: none; }
+body[data-skin=dsh] [data-module=lore] .lore-set-head .ls-fold::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 4.5px;
+  width: 4.5px;
+  height: 4.5px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+}
+body[data-skin=dsh] [data-module=lore] .lore-set-head .ls-fold.folded::after { transform: rotate(-45deg); left: 5px; }
+body[data-skin=dsh] [data-module=lore] .lore-set-head .ls-fold:hover { background: rgb(255 255 255 / .08); color: #f6f1f9; }
 body[data-skin=dsh] [data-module=lore] .lore-set-head .ls-name {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
   font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia, serif;
   font-size: 15px;
   font-weight: 500;
-  color: #f1e9f6;
+  line-height: 1.4;
+  letter-spacing: .015em;
+  color: #f4eef7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: text;
 }
-body[data-skin=dsh] [data-module=lore] .lore-set-head .ls-count { font-size: 10px; color: #b6a6c5; }
+body[data-skin=dsh] [data-module=lore] .lore-set-head .ls-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0 4px;
+  border: 0;
+  border-bottom: 1px solid rgb(158 195 172 / .55);
+  border-radius: 0;
+  background: transparent;
+  font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia, serif;
+  font-size: 15px;
+  color: #f4eef7;
+  outline: none;
+}
+body[data-skin=dsh] [data-module=lore] .lore-set-head .ls-count {
+  flex: none;
+  font-size: 10px;
+  color: #a89bb8;
+  font-variant-numeric: tabular-nums;
+}
+body[data-skin=dsh] [data-module=lore] .lore-set-head .ls-ops {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity .15s;
+}
+body[data-skin=dsh] [data-module=lore] .lore-set-head:is(:hover, :focus-within) .ls-ops { opacity: 1; }
+body[data-skin=dsh] [data-module=lore] .lore-set-head .icon-button {
+  min-width: 22px;
+  min-height: 22px;
+  padding: 3px;
+  color: #a89bb8;
+}
+body[data-skin=dsh] [data-module=lore] .lore-set-head .icon-button:hover { color: #f4eef7; }
 
 /* 8.8 底部提示行（原型 .fusion-write-footer）：左 = 当前条目路径，右 = 键盘提示 */
 /* ==================== 基础变量与全局 ==================== */
@@ -2755,16 +2557,15 @@ body[data-skin=dsh] [data-module=lore] .fusion-write-footer .wf-keys {
 
 /* 8.9 窄档（原型 @media 1099 / 559 的同一套降级） */
 @media (max-width: 1099px) {
-body[data-skin=dsh] .workbench-shell[data-module=lore] .wb-body{padding:12px 20px 20px;}
 /* ==================== 设定 ==================== */
   body[data-skin=dsh] [data-module=lore] .lore-head { height: 99px; min-height: 99px; padding: 20px 25px; }
 body[data-skin=dsh] [data-module=lore] .ob-toolbar{padding:0 23px;}
-body[data-skin=dsh] [data-module=lore] .ob-editor{padding:0 20px 34px;}
+body[data-skin=dsh] [data-module=lore] .ob-editor{--lore-pad-x: 20px;padding-bottom:34px;}
 /* ==================== 基础变量与全局 ==================== */
 body[data-skin=dsh] [data-module=lore] .fusion-write-footer{padding:0 23px;}
 }
 @media (max-width: 559px) {
-body[data-skin=dsh] .workbench-shell[data-module=lore] .wb-body{padding:7px 12px 12px;}
+body[data-skin=dsh] [data-module=lore] .lore-set-head{padding:9px var(--lore-pad-x);}
 /* ==================== 设定 ==================== */
   body[data-skin=dsh] [data-module=lore] .lore-head {
     height: auto;
@@ -2778,11 +2579,49 @@ body[data-skin=dsh] [data-module=lore] .lore-head-actions{width:100%;}
   body[data-skin=dsh] [data-module=lore] .lore-switch { width: 100%; justify-content: space-between; padding: 3px; }
   body[data-skin=dsh] [data-module=lore] .lore-switch button { flex: 1; padding: 6px 5px; font-size: 11px; }
   body[data-skin=dsh] [data-module=lore] .ob-toolbar { height: 38px; min-height: 38px; max-height: 38px; padding: 0 10px; gap: 1px; }
+  body[data-skin=dsh] [data-module=lore] .ob-toolbar .tb-sep { margin: 0 2px; }
   body[data-skin=dsh] [data-module=lore] .ob-row { --indent: min(calc(var(--depth, 0) * 16px), 64px); gap: 0; }
   body[data-skin=dsh] [data-module=lore] .ob-row .ob-text { font-size: 13px; line-height: 1.85; padding: 0 2px; }
   body[data-skin=dsh] [data-module=lore] .ob-row[data-depth='0'] .ob-text { font-size: 16px; line-height: 1.65; }
-body[data-skin=dsh] [data-module=lore] .ob-editor{padding:0 14px 30px;}
+body[data-skin=dsh] [data-module=lore] .ob-editor{--lore-pad-x: 14px;padding-bottom:30px;}
 /* ==================== 基础变量与全局 ==================== */
   body[data-skin=dsh] [data-module=lore] .fusion-write-footer { height: 40px; padding: 0 15px; }
 body[data-skin=dsh] [data-module=lore] .fusion-write-footer .wf-keys{display:none;}
 }
+
+/* 9 侧栏「补齐默认设定集」键与类型图标尺寸（样式单独立成立：MubuTree 删掉内联兜底后仍按此渲染） */
+body[data-skin=dsh] [data-module=lore] .nav-section-label button.nav-default-sets {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #bcafca;
+  cursor: pointer;
+}
+body[data-skin=dsh] [data-module=lore] .nav-section-label button.nav-default-sets:hover { background: rgb(255 255 255 / .08); color: #fff; }
+body[data-skin=dsh] [data-module=lore] .nav-section-label button.nav-default-sets > svg { width: 12px; height: 12px; }
+body[data-skin=dsh] [data-module=lore] .category > svg { width: 15px; height: 15px; }
+body[data-skin=dsh] [data-module=lore] .mubu-set-head > svg.ls-icon { width: 15px; height: 15px; }
+body[data-skin=dsh] [data-module=lore] .lore-tm-kind svg { width: 10px; height: 10px; }
+
+/* 设定写区 · 空态主按钮：MubuView.vue 的 .empty-shelf 用的是无前缀 .btn-primary（themes.css 全局为强调蓝），
+   这里只在设定写区内把它对齐设计稿的浅色胶囊主按钮；其它模块的 .btn-primary 不受影响。 */
+body[data-skin=dsh] [data-module=lore] .lore-surface .btn-primary {
+  border-color: transparent;
+  border-radius: 999px;
+  min-height: 32px;
+  padding: 7px 14px;
+  background: var(--lore-primary-bg);
+  color: var(--lore-primary-ink);
+  font-size: 11px;
+}
+body[data-skin=dsh] [data-module=lore] .lore-surface .btn-primary:hover {
+  background: var(--lore-primary-hover);
+  filter: none;
+}
+

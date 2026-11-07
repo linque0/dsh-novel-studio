@@ -333,7 +333,7 @@ export async function applyProposal(work, card, options = {}) {
       if (index < 0 || entityHash(current) !== change.afterHash) continue
       const row = change.before ? clone(change.before) : { ...current, deletedAt: Date.now() }
       work[change.table][index] = row
-      autosave.mark(change.table, row)
+      autosave.mark(change.table, row, change.table === 'chapters' ? { memoryIntent: null } : {})
     }
     work.olUndo = undoBefore
     work.olRedo = redoBefore

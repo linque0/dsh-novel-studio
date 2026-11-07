@@ -15,24 +15,25 @@ import { mountFlowBackdrop } from '../services/latent/flow.js'
 import { paletteOf, hashString } from '../services/latent/palette.js'
 import ChapterTree from './ChapterTree.vue'
 import OutlineSidebar from './OutlineSidebar.vue'
-import CharacterList from './CharacterList.vue'
-import MubuTree from './MubuTree.vue'
 import SnippetList from './SnippetList.vue'
 import EditorPane from './EditorPane.vue'
 import OutlineCenter from './OutlineCenter.vue'
 import OutlineTopbar from './outline/OutlineTopbar.vue'
-import CharacterCenter from './CharacterCenter.vue'
+import CharactersWorkspace from './characters/CharactersWorkspace.vue'
 import LoreWorkspace from './lore/LoreWorkspace.vue'
 import SnippetCenter from './SnippetCenter.vue'
 import RightPanel from './RightPanel.vue'
 import DLinkPopover from './DLinkPopover.vue'
 import RevisionsModal from './RevisionsModal.vue'
 import SettingsWindow from './SettingsWindow.vue'
+import WritingStatsEntry from './stats/WritingStatsEntry.vue'
 import MubuTagPanel from './MubuTagPanel.vue'
 import LoreRelationPanel from './LoreRelationPanel.vue'
 import AiAssistantPanel from './ai/AiAssistantPanel.vue'
+import { openSettings as openSettingsEntry } from '../services/settings-entry.js'
 const nsPlugin = __NS_PLUGIN__
-function outlineNavigate(key){if(key==='shelf')return flushAndClose();if(key==='settings')return window.native?.panelOpen?.({type:'settings',workId:'app',entityId:'',title:'设置'});spec.value={...spec.value,type:key==='chapters'?'chapter':key};work.tab=key}
+/* 面板窗口里的「设置」也走统一入口：桌面版另开设置面板窗口，开不了时才退回就地视图 */
+function outlineNavigate(key){if(key==='shelf')return flushAndClose();if(key==='settings')return openSettingsEntry(ui);spec.value={...spec.value,type:key==='chapters'?'chapter':key};work.tab=key}
 import PresetWindow from './ai/PresetWindow.vue'
 import StudioWorkspace from './StudioWorkspace.vue'
 import TaskLauncher from './ai/TaskLauncher.vue'
@@ -260,6 +261,7 @@ onBeforeUnmount(() => {
             {{ badgeText }}
           </span>
           <div style="flex: 1"></div>
+          <WritingStatsEntry v-if="nsPlugin" />
           <NButton size="small" @click="flushAndClose">保存并关闭</NButton>
           <NButton size="small" quaternary @click="closePanel"><OIcon name="close" :size="13" /></NButton>
         </div>
@@ -268,14 +270,12 @@ onBeforeUnmount(() => {
           <AiAssistantPanel v-if="!nsPlugin" />
         </div>
         <div v-if="spec.type !== 'ai'" class="panel-body">
-          <div v-if="!(nsPlugin && spec.type === 'outline')" v-show="(spec.type !== 'outline' || ui.outlineSideOpen) && (spec.type !== 'chapter' || (!ui.readMode && !ui.focusMode))" class="side-panel" aria-label="目录与资料" :style="{ width: ui.sideWidth + 'px' }">
+          <div v-if="!(nsPlugin && spec.type === 'outline') && spec.type !== 'lore' && spec.type !== 'characters'" v-show="(spec.type !== 'outline' || ui.outlineSideOpen) && (spec.type !== 'chapter' || (!ui.readMode && !ui.focusMode))" class="side-panel" aria-label="目录与资料" :style="{ width: ui.sideWidth + 'px' }">
             <ChapterTree v-if="spec.type === 'chapter'" in-panel @read="ui.readMode=true" />
             <OutlineSidebar v-else-if="spec.type === 'outline'" />
-            <CharacterList v-else-if="spec.type === 'characters'" />
-            <MubuTree v-else-if="spec.type === 'lore'" />
             <SnippetList v-else-if="spec.type === 'snippets'" />
           </div>
-          <div v-if="!(nsPlugin && spec.type === 'outline')" v-show="(spec.type !== 'outline' || ui.outlineSideOpen) && (spec.type !== 'chapter' || (!ui.readMode && !ui.focusMode))" class="side-resizer" title="拖拽调整侧栏宽度（双击恢复默认）" @mousedown="startSideResize" @dblclick="ui.setPref('sideWidth', 252)"></div>
+          <div v-if="!(nsPlugin && spec.type === 'outline') && spec.type !== 'lore' && spec.type !== 'characters'" v-show="(spec.type !== 'outline' || ui.outlineSideOpen) && (spec.type !== 'chapter' || (!ui.readMode && !ui.focusMode))" class="side-resizer" title="拖拽调整侧栏宽度（双击恢复默认）" @mousedown="startSideResize" @dblclick="ui.setPref('sideWidth', 252)"></div>
           <button
             v-if="!nsPlugin && spec.type === 'outline' && !ui.outlineSideOpen"
             class="ol-side-rail"
@@ -287,11 +287,13 @@ onBeforeUnmount(() => {
             <OIcon name="caret-right" :size="12" />
             <span class="rail-text">故事结构</span>
           </button>
-          <div class="center-pane paper-texture">
+          <!-- 设定面板：委派给 LoreWorkspace 自带的面板矩阵外壳（不再套 .center-pane 与外置侧栏） -->
+          <LoreWorkspace v-if="spec.type === 'lore'" class="lore-shell-host" />
+          <!-- 人物面板：同样委派给 CharactersWorkspace 自带的面板矩阵外壳 -->
+          <CharactersWorkspace v-else-if="spec.type === 'characters'" class="char-shell-host" />
+          <div v-else class="center-pane paper-texture">
             <EditorPane v-if="spec.type === 'chapter'" />
             <OutlineCenter v-else-if="spec.type === 'outline'" style="flex: 1; min-height: 0" />
-            <CharacterCenter v-else-if="spec.type === 'characters'" />
-            <LoreWorkspace v-else-if="spec.type === 'lore'" />
             <SnippetCenter v-else-if="spec.type === 'snippets'" />
           </div>
           <RightPanel v-if="spec.type === 'chapter'" aria-label="批注与资料" />

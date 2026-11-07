@@ -1,3 +1,4 @@
+import { referenceTargets, incomingReferences, lorePath } from './lore-core.js'
 /* 多模块内容互联（关系链接）：目标检索 / 预览内容 / 跳转 / 令牌解析（共享服务，无副作用）
  * 标签形态：
  *  - 富文本（正文 TipTap、设定幕布）：<span class="dl-link" data-dl-target="kind:id" data-dl-title="标题">选中文字</span>
@@ -11,7 +12,7 @@ import { stripTags } from './wordcount'
 import { primaryRole } from './character-tags'
 import { doublelinkTitle } from './doublelink-titles.js'
 
-export const KIND_LABEL = { chapter: '正文', mubu: '设定', character: '人物', outline: '大纲', snippet: '灵感' }
+export const KIND_LABEL = { chapter: '正文', mubu: '设定', character: '人物', outline: '大纲', olnode: '大纲节点', snippet: '灵感' }
 
 /* ---------- TipTap 关系链接标记：正文中的关系链接以标签样式渲染并携带目标 ---------- */
 export const DlLinkMark = Mark.create({
@@ -77,8 +78,9 @@ export function searchTargets(query, limit = 40) {
   for (const c of work.liveChapters) {
     push('chapter', c.id, c.title || '未命名章节', `正文 · ${c.wordCount || 0}字`, stripTags(c.content))
   }
+  const loreNodes = new Map(work.mubu.map(n => [n.id, n]))
   for (const n of work.liveMubu()) {
-    push('mubu', n.id, doublelinkTitle('mubu',n,work), '设定', n.text)
+    push('mubu', n.id, doublelinkTitle('mubu',n,work), lorePath(loreNodes, n.id).slice(0, -1).map(n => n.text).join(' › ') || '设定', n.text)
   }
   for (const c of work.liveCharacters) {
     push('character', c.id, c.name || '未命名', `人物${primaryRole(c) ? ' · ' + primaryRole(c) : ''}`, (c.content || '') + ' ' + (c.aliases || ''))
@@ -130,8 +132,13 @@ export function targetById(kind, id) {
     return c ? { kind, id, title: c.name || '未命名', extra: `人物${primaryRole(c) ? ' · ' + primaryRole(c) : ''}` } : null
   }
   if (kind === 'outline') {
+    if (id !== work.work?.id && !work.liveVolumes.some(v => v.id === id) && !work.liveChapters.some(c => c.id === id)) return null
     const lb = outlineLabel(id)
     return lb ? { kind, id, title: lb, extra: '大纲' } : null
+  }
+  if (kind === 'olnode') {
+    const n = work.olnodes.find(n => n.id === id && !n.deletedAt)
+    return n ? { kind, id, title: n.text || '大纲节点', extra: '大纲画布' } : null
   }
   if (kind === 'snippet') {
     const s = work.liveSnippets.find((x) => x.id === id)
@@ -150,14 +157,18 @@ export function parseTarget(str) {
 export function findByTitle(title) {
   const t = String(title || '').trim().toLowerCase()
   if (!t) return null
-  const all = searchTargets('', 400)
-  return all.find((x) => x.title.toLowerCase() === t) || all.find((x) => x.title.toLowerCase().includes(t)) || null
+  const all = searchTargets('', Infinity)
+  const exact = all.filter(x => x.title.toLowerCase() === t)
+  if (exact.length) return exact.length === 1 ? exact[0] : null
+  const partial = all.filter(x => x.title.toLowerCase().includes(t))
+  return partial.length === 1 ? partial[0] : null
 }
 
 /* ---------- 目标预览内容（悬浮窗用） ---------- */
 export function previewFor(target) {
   if (!target) return null
   const work = useWorkStore()
+  if (target.kind === 'olnode') { const n = work.olnodes.find(n => n.id === target.id && !n.deletedAt); return n ? { kindLabel: '大纲', title: n.text || '大纲节点', meta: '大纲画布', body: n.text || '' } : null }
   const cut = (s, n = 900) => {
     const t = String(s || '').trim()
     return t.length > n ? t.slice(0, n) + '…' : t
@@ -235,7 +246,8 @@ export function jumpTo(target) {
     // 目标可能位于另一个设定集：先切换当前集，再由 MubuView 展开定位
     const root = work.mubuRootOf(target.id)
     if (root) work.setMubuSet(root.id)
-    ui.loreFocusId = target.id
+    if (!targetById('mubu', target.id)) return false
+    ui.focusLoreNode(target.id, lorePath(work.mubu, target.id))
   } else if (target.kind === 'character') {
     work.tab = 'characters'
     work.selCharacterId = target.id
@@ -244,6 +256,9 @@ export function jumpTo(target) {
       work.charFocusId = target.id
       work.charFocusTick++
     }
+  } else if (target.kind === 'olnode') {
+    work.tab = 'outline'; work.selOlnodeId = target.id
+    setTimeout(() => work.canvasFocusTick++, 0)
   } else if (target.kind === 'outline') {
     work.tab = 'outline'
     work.selOutlineId = target.id
@@ -360,4 +375,32 @@ export function tokenAtPoint(ta, clientX, clientY) {
     }
   }
   return null
+}
+
+// Identity-based reference records; the legacy title-query API remains above.
+export function referenceSources() {
+  const w = useWorkStore(), out = []
+  const add = (kind, id, title, text, html, path = '') => out.push({ kind, id, title, text: text || '', html: html || '', path })
+  const loreNodes = new Map(w.mubu.map(n => [n.id, n]))
+  for (const n of w.liveMubu()) add('mubu', n.id, n.text || '空节点', n.text, n.html, lorePath(loreNodes, n.id).slice(0, -1).map(n => n.text).join(' › '))
+  for (const n of w.liveChapters) add('chapter', n.id, n.title || '未命名章节', n.fmt === 'text' ? n.content : stripTags(n.content), n.fmt === 'text' ? '' : n.content, '正文')
+  for (const n of w.liveCharacters) add('character', n.id, n.name || '未命名人物', n.content, /<[^>]+>/.test(n.content || '') ? n.content : '', '人物')
+  for (const n of w.outlines.filter(n => !n.deletedAt)) add('outline', n.refId, outlineLabel(n.refId), n.content, /<[^>]+>/.test(n.content || '') ? n.content : '', '大纲')
+  for (const n of w.olnodes.filter(n => !n.deletedAt)) {
+    const explicit = n.kind === 'cite' && parseTarget(n.refId)
+    const html = explicit ? '<span data-dl-target="' + explicit.kind + ':' + explicit.id.replace(/["<>]/g, '') + '"></span>' : ''
+    add('olnode', n.id, n.text || '大纲节点', n.text, html, '大纲画布')
+  }
+  for (const n of w.liveSnippets) add('snippet', n.id, doublelinkTitle('snippet', n, w), n.content, /<[^>]+>/.test(n.content || '') ? n.content : '', '灵感')
+  return out
+}
+export function findReferences(target) {
+  const sources = referenceSources(), targets = searchTargets('', Number.MAX_SAFE_INTEGER)
+  return incomingReferences(sources, target, targets).map(s => ({ ...s, excerpt: (stripTags(s.html) || s.text).slice(0, 200) }))
+}
+export function findOutgoingReferences(target, descendants = false) {
+  const work = useWorkStore(), ids = new Set([target.id, ...(descendants && target.kind === 'mubu' ? work.mubuDescendants(target.id).map(n => n.id) : [])])
+  const sources = referenceSources().filter(s => s.kind === target.kind && ids.has(s.id)), known = searchTargets('', Number.MAX_SAFE_INTEGER), result = new Map()
+  for (const s of sources) for (const t of referenceTargets(s, known)) result.set(t.kind + ':' + t.id, targetById(t.kind, t.id) || { ...t, title: '目标已删除', missing: true })
+  return [...result.values()]
 }

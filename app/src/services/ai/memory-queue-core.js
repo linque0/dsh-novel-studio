@@ -1,6 +1,6 @@
 import { interruptWorkflow } from './workflow-core.js'
 import { chapterHash } from '../project/text.js'
-export const mergeMemoryIntent = (prior={},next={}) => ({...prior,...next,memoryIntent:next.memoryIntent||prior.memoryIntent})
+export const mergeMemoryIntent = (prior={},next={}) => ({...prior,...next,memoryIntent:next.memoryIntent===null?null:next.memoryIntent||prior.memoryIntent})
 export function memoryJob(chapter,intent={},now=Date.now()) {
   if(!chapter?.id||!chapter.workId||chapter.deletedAt)throw new Error('记忆来源章节无效')
   const sourceHash=chapterHash(chapter)

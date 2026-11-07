@@ -54,7 +54,7 @@ function startResize(side,e){
 }
 function drawerControls(){return [...(root.value?.querySelectorAll(`.ow-${activeDrawer.value} button,.ow-${activeDrawer.value} input,.ow-${activeDrawer.value} textarea,.ow-${activeDrawer.value} select,[role="dialog"] [tabindex="0"]`)||[])].filter(el=>!el.disabled&&el.getClientRects().length)}
 function escape(e){
-  if(!activeDrawer.value)return
+  if(ui.statsOpen||!activeDrawer.value)return
   if(e.key==='Escape'){e.preventDefault();e.stopPropagation();activeDrawer.value=null}
   if(e.key==='Tab'){
     const controls=drawerControls(),first=controls[0],last=controls.at(-1)

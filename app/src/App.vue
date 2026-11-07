@@ -7,6 +7,7 @@ import { startAutosave } from './services/autosave'
 import { installLibrarySync } from './services/library-sync'
 import { openDbWithRetry } from './db/database'
 import Bookshelf from './components/Bookshelf.vue'
+import SettingsWorkspace from './components/settings/SettingsWorkspace.vue'
 import StudioWorkspace from './components/StudioWorkspace.vue'
 import GlobalSearch from './components/GlobalSearch.vue'
 import ImportDialog from './components/ImportDialog.vue'
@@ -14,7 +15,7 @@ import ExportDialog from './components/ExportDialog.vue'
 import HelpManual from './components/HelpManual.vue'
 import RevisionsModal from './components/RevisionsModal.vue'
 import TrashModal from './components/TrashModal.vue'
-import StatsModal from './components/StatsModal.vue'
+import WritingStatsDialog from './components/stats/WritingStatsDialog.vue'
 import MubuTagPanel from './components/MubuTagPanel.vue'
 import LoreRelationPanel from './components/LoreRelationPanel.vue'
 import PrefBridge from './components/PrefBridge.vue'
@@ -128,6 +129,7 @@ async function seedDevVerifyBooks() {
           </div>
           <template v-else>
             <Bookshelf v-if="ui.view === 'shelf'" />
+            <SettingsWorkspace v-else-if="ui.view === 'settings'" />
             <StudioWorkspace v-else />
             <GlobalSearch />
             <ImportDialog />
@@ -135,11 +137,11 @@ async function seedDevVerifyBooks() {
             <HelpManual />
             <RevisionsModal />
             <TrashModal />
-            <StatsModal />
             <MubuTagPanel />
             <LoreRelationPanel />
           </template>
         </div>
+        <WritingStatsDialog />
       </NDialogProvider>
     </NMessageProvider>
   </NConfigProvider>

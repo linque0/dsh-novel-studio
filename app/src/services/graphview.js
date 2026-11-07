@@ -48,13 +48,13 @@ export function usePanZoom(canvasEl, initial = {}) {
     window.addEventListener('mouseup', up)
   }
 
-  /** 适应内容包围盒 {x,y,w,h} 到画布（x/y 缺省按 0 处理） */
-  function fit(bounds) {
+  /** 适应内容包围盒 {x,y,w,h} 到画布（x/y 缺省按 0 处理）；opts.minZoom/maxZoom 可放宽缩放钳制，缺省 0.3/1.2 */
+  function fit(bounds, { minZoom = 0.3, maxZoom = 1.2 } = {}) {
     const el = canvasEl.value
     if (!el || !bounds.w || !bounds.h) return
     const vw = el.clientWidth
     const vh = el.clientHeight
-    const z = Math.min(1.2, Math.max(0.3, Math.min(vw / (bounds.w + 80), vh / (bounds.h + 80))))
+    const z = Math.min(maxZoom, Math.max(minZoom, Math.min(vw / (bounds.w + 80), vh / (bounds.h + 80))))
     zoom.value = z
     const bx = bounds.x || 0
     const by = bounds.y || 0

@@ -10,6 +10,7 @@ import { useWorkStore } from '../stores/work'
 import { useUiStore } from '../stores/ui'
 import { resumeChapterOf } from '../db/repo'
 import { sortShelfWorks, formatShelfOpenTime } from '../services/shelf-sort'
+import { openSettings as openSettingsEntry } from '../services/settings-entry.js'
 
 const shelf = useShelfStore()
 const work = useWorkStore()
@@ -107,13 +108,9 @@ async function openWorkAt(w, tab = 'chapters') {
   } finally { opening.value = false }
 }
 
-/* ---------- 设置窗口（面板窗口 settings 类型）：外观 / 恍然梦 / 数据 / 关于 ---------- */
+/* ---------- 设置入口：优先面板窗口，被拦或无桥时退回主窗口就地视图 ---------- */
 function openSettings() {
-  if (!window.native?.panelOpen) {
-    msg.info('设置窗口仅桌面版可用，网页版暂不支持')
-    return
-  }
-  window.native.panelOpen({ type: 'settings', workId: 'app', entityId: '', title: '设置' })
+  openSettingsEntry(ui)
 }
 
 /* 作者名圆印：2 字竖排 / 3-4 字两行 / 1 字单行；无作者则不盖印 */

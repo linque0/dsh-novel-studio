@@ -231,6 +231,26 @@ for (const table of SOURCE_TABLES) {
   db.table(table).hook('deleting', function (_key, row, transaction) { this.onsuccess = () => trackSource(transaction,table,row,'delete') })
 }
 
+// History remains local; its commit notifications refresh analysis without adding it to project/source sync.
+let historyChannel
+function trackWritingHistory(transaction) {
+  if(transaction._writingHistoryChanged)return
+  transaction._writingHistoryChanged=true
+  transaction.on('complete',()=>{
+    if(typeof window==='undefined')return
+    window.dispatchEvent(new CustomEvent('writing-history-changed'))
+    try {
+      if(!historyChannel&&typeof BroadcastChannel==='function')historyChannel=new BroadcastChannel('novel-studio-writing-history')
+      historyChannel?.postMessage({kind:'history-committed'})
+    } catch { /* The current window still receives its committed notification. */ }
+  })
+}
+for(const table of ['revisions','wordlog']){
+  db.table(table).hook('creating',function(_key,_row,transaction){this.onsuccess=()=>trackWritingHistory(transaction)})
+  db.table(table).hook('updating',function(_changes,_key,_row,transaction){this.onsuccess=()=>trackWritingHistory(transaction)})
+  db.table(table).hook('deleting',function(_key,_row,transaction){this.onsuccess=()=>trackWritingHistory(transaction)})
+}
+
 export const uid = () =>
   typeof crypto !== 'undefined' && crypto.randomUUID
     ? crypto.randomUUID()

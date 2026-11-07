@@ -95,8 +95,8 @@ function removeDl() {
   refocus()
 }
 function jumpDl() {
-  const resolved = targetById(parseTarget(act.dlTarget)?.kind, parseTarget(act.dlTarget)?.id)
-  jumpTo(resolved || findByTitle(act.dlTitle))
+  const explicit = parseTarget(act.dlTarget)
+  jumpTo(explicit ? targetById(explicit.kind, explicit.id) : findByTitle(act.dlTitle))
   close()
 }
 

@@ -2,8 +2,10 @@ import { memoryJob, recoverMemoryJob } from '../services/ai/memory-queue-core.js
 import { db, uid, now, todayStr } from './database'
 import { htmlToMd, htmlToPlain } from '../services/importers'
 import { suspendProjection, resumeProjection } from './project-repo.js'
+import { DEFAULT_MUBU_SETS } from '../components/lore/lore-kinds.js'
 import { readWritingPosition } from '../services/writing-position.js'
 import { resolveWritingChapter } from '../services/writing-position-core.js'
+import { STATS_TABLES, buildWritingStats, chapterWordChange, statsDates } from '../services/writing-stats-core.js'
 
 /**
  * Repository 层：所有 Dexie 访问集中在此。
@@ -106,21 +108,28 @@ export async function seedWorkDefaults(workId, { withVolume = true } = {}) {
     const volId = uid()
     await db.volumes.add({ id: volId, workId, title: '第一卷', sortOrder: 0, createdAt: t, updatedAt: t, deletedAt: null })
   }
-  const defaults = ['地点', '势力', '物品', '体系', '大事记']
-  await db.lorecats.bulkAdd(
-    defaults.map((name, i) => ({ id: uid(), workId, name, sortOrder: i }))
-  )
+  // 新作品直接落六个默认设定集（与 ensureDefaultMubuSets 同一真源），不再写旧 lorecats
+  for (const [i, set] of DEFAULT_MUBU_SETS.entries()) {
+    await db.mubu.add({
+      id: uid(), workId, parentId: null, sortOrder: i * 1000,
+      text: set.text, html: null, fold: false, deletedAt: null,
+      createdAt: t, updatedAt: t, kind: set.kind
+    })
+  }
 }
 
 export async function putRow(table, row, opts = {}) {
   row.updatedAt = now()
-  if(table === 'chapters' && opts.memoryIntent) {
-    const job=memoryJob(row,opts.memoryIntent)
-    await db.transaction('rw',db.chapters,db.airuns,async()=>{
+  if (table === 'chapters' && (opts.memoryIntent || opts.recordWordDelta)) {
+    const job = opts.memoryIntent && !row.deletedAt ? memoryJob(row, opts.memoryIntent) : null
+    const tables = [db.chapters, ...(job ? [db.airuns] : []), ...(opts.recordWordDelta ? [db.wordlog] : [])]
+    await db.transaction('rw', tables, async () => {
+      const delta = opts.recordWordDelta ? chapterWordChange(await db.chapters.get(row.id), row) : 0
       await db.chapters.put(JSON.parse(JSON.stringify(row)))
-      if(!await db.airuns.get(job.id))await db.airuns.put(job)
+      if (delta) await addWordLog(row.workId, row.id, delta)
+      if (job && !await db.airuns.get(job.id)) await db.airuns.put(job)
     })
-    return {...row,memoryJobId:job.id}
+    return job ? { ...row, memoryJobId: job.id } : row
   }
   await db.table(table).put(JSON.parse(JSON.stringify(row)))
   return row
@@ -153,10 +162,43 @@ export async function getWordLogs(workId) {
   return workId ? db.wordlog.where('workId').equals(workId).toArray() : db.wordlog.toArray()
 }
 
+/** One committed read, scoped by work ID. Historical logs need at most 90 local dates. */
+export async function readWritingStats(workId, days = 30) {
+  const today = todayStr(), start = statsDates(today, 90)[0]
+  const source = await db.transaction('r', [...STATS_TABLES.map(name => db.table(name)), db.revisions], async () => {
+    const works = (await db.works.toArray()).filter(w => !w.deletedAt)
+    const selected = works.filter(w => workId == null || w.id === workId).map(w => w.id)
+    const tables = STATS_TABLES.filter(name => !['works', 'wordlog'].includes(name))
+    const rows = await Promise.all(tables.map(name => selected.length ? db.table(name).where('workId').anyOf(selected).toArray() : []))
+    const workIds = new Set(selected)
+    const wordlog = selected.length ? await db.wordlog.where('date').between(start, today, true, true).filter(row => workIds.has(row.workId)).toArray() : []
+    const data = Object.fromEntries(tables.map((name, i) => [name, rows[i]]))
+    const chapterOwners = new Map((data.chapters || []).filter(c=>!c.deletedAt).map(c=>[c.id,c.workId]))
+    const revisions = []
+    await db.revisions.where('createdAt').aboveOrEqual(new Date(start+'T00:00:00').getTime()).each(r=>{
+      if(r.entityType==='chapter' && chapterOwners.has(r.entityId))revisions.push({id:r.id,entityType:r.entityType,entityId:r.entityId,workId:chapterOwners.get(r.entityId),createdAt:r.createdAt})
+    })
+    return { works, wordlog, revisions, ...data }
+  })
+  return {
+    choices: source.works.map(w => ({ id: w.id, label: w.title || '未命名作品' })),
+    stats: buildWritingStats(source, { workId, days, today })
+  }
+}
+
+/** Validate ownership again at expansion; historical text is never included in overview reads. */
+export async function readWritingStatsRevision(id, workId, chapterId) {
+  return db.transaction('r',db.chapters,db.revisions,async()=>{
+    const chapter=await db.chapters.get(chapterId), revision=await db.revisions.get(id)
+    if(!chapter||chapter.deletedAt||chapter.workId!==workId||!revision||revision.entityType!=='chapter'||revision.entityId!==chapterId)throw new Error('此版本已不存在或不属于当前章节')
+    return {id:revision.id,createdAt:revision.createdAt,content:revision.content||'',fmt:['html','text'].includes(revision.fmt)?revision.fmt:null}
+  })
+}
+
 /* ---- 版本快照 ---- */
 
-export async function addRevision(entityType, entityId, content) {
-  await db.revisions.add({ id: uid(), entityType, entityId, content, createdAt: now() })
+export async function addRevision(entityType, entityId, content, fmt) {
+  await db.revisions.add({ id: uid(), entityType, entityId, content, ...(['html','text'].includes(fmt)?{fmt}:{}), createdAt: now() })
   const all = await db.revisions.where('[entityType+entityId]').equals([entityType, entityId]).toArray()
   if (all.length > 30) {
     all.sort((a, b) => a.createdAt - b.createdAt)

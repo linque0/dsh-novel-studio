@@ -5,6 +5,7 @@ import AutoHideTopbar from './AutoHideTopbar.vue'
 import { useUiStore } from '../stores/ui'
 import { APP_NAVIGATION } from './app-navigation'
 import DreamModeEntries from './agent/DreamModeEntries.vue'
+import WritingStatsEntry from './stats/WritingStatsEntry.vue'
 
 const props = defineProps({
   active: { type: String, default: 'shelf' },
@@ -71,6 +72,7 @@ function title(item) {
 /* 顶栏放不下时不折叠、不改序：导航保持横向滚动，滚轮就能翻出其余入口。
  * 这里只量"哪一侧还有内容"，交给 CSS 做单边渐隐提示。 */
 const navOvf = ref('')
+const navBudget = ref(0)
 let measuring = false
 
 function measureNav() {
@@ -78,6 +80,14 @@ function measureNav() {
   if (!el || measuring || !el.clientWidth) return
   measuring = true
   try {
+    if (nsPlugin) {
+      const header = el.parentElement.getBoundingClientRect()
+      const brand = el.parentElement.querySelector('.app-topbar-brand')?.getBoundingClientRect()
+      const cluster = el.parentElement.querySelector('.app-topbar-cluster')?.getBoundingClientRect()
+      const reserve = Math.max(brand ? brand.right - header.left : 0, cluster ? header.right - cluster.left : 0)
+      const budget = Math.max(80, Math.floor(header.width - 2 * (reserve + 12)))
+      if (navBudget.value !== budget) { navBudget.value = budget; nextTick(measureNav) }
+    }
     const max = el.scrollWidth - el.clientWidth
     if (max <= 1) { navOvf.value = ''; return }
     const hasLeft = el.scrollLeft > 1
@@ -129,7 +139,7 @@ watch(() => [props.active, ui.skin], async () => {
         <span class="app-topbar-brand-text">小说工坊<small>LATENT</small></span>
         <span class="app-topbar-narrow-title" :title="narrowTitle">{{ narrowTitle }}</span>
       </button>
-      <nav ref="nav" class="app-topnav" aria-label="功能模块" :data-ovf="navOvf || null" @wheel="onNavWheel" @scroll="measureNav">
+      <nav ref="nav" class="app-topnav" aria-label="功能模块" :data-ovf="navOvf || null" :style="navBudget ? {maxWidth:navBudget+'px'} : undefined" @wheel="onNavWheel" @scroll="measureNav">
         <button v-for="item in navItems" :key="item.key" type="button" class="app-topnav-item" :data-nav="item.key" :class="{ active: active === item.key }" :aria-current="active === item.key ? 'page' : undefined" :disabled="disabled(item.key)" :title="title(item)" @click="navigate(item.key)">{{ item.label }}</button>
       </nav>
       <span class="app-topbar-current" aria-hidden="true">{{ currentLabel }}</span>
@@ -145,6 +155,7 @@ watch(() => [props.active, ui.skin], async () => {
           </button>
           <div v-if="$slots.search" class="app-topbar-search" data-topbar-search><slot name="search" /></div>
         </div>
+        <WritingStatsEntry v-if="nsPlugin" class="app-topbar-round" :library="active==='shelf'" :disabled="busy" />
         <button v-if="nsPlugin" type="button" class="app-topbar-round app-topbar-settings" aria-label="设置" title="设置" @click="navigate('settings')">
           <svg class="app-topbar-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3" /><path d="m10 3 4 0 .6 3 2 .9 2.8-1 2 3.4-2.2 2v2.4l2.2 2-2 3.4-2.8-1-2 .9-.6 3h-4l-.6-3-2-.9-2.8 1-2-3.4 2.2-2v-2.4L2.6 9.3l2-3.4 2.8 1 2-.9z" /></svg>
         </button>
@@ -156,6 +167,7 @@ watch(() => [props.active, ui.skin], async () => {
           </svg>
         </button>
       </div>
+      <span v-if="nsPlugin" class="writing-stats-mobile-wrap"><WritingStatsEntry :library="active==='shelf'" :disabled="busy" /></span>
       <span class="app-topbar-more-wrap"><NDropdown trigger="click" placement="bottom-end" :options="moreOptions" @select="onSelect"><button type="button" class="app-topbar-more" aria-label="更多模块" :title="'更多模块（当前：' + currentLabel + '）'">⋯</button></NDropdown></span>
       <div class="app-topbar-actions"><DreamModeEntries v-if="!nsPlugin && active==='shelf'" shelf :disabled="busy" @dream="ui.dreamLauncherOpen=true" /><slot name="actions" /></div>
     </header>

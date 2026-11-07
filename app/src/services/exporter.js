@@ -3,6 +3,7 @@ import { saveTextFile } from './fileio'
 import { decodeText, htmlToMd, htmlToPlain } from './importers'
 import { autosave } from './autosave'
 import JSZip from 'jszip'
+import { db } from '../db/database'
 
 const stamp = () => {
   const d = new Date()
@@ -10,9 +11,17 @@ const stamp = () => {
   return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`
 }
 
+/* 返回值带上 json 本身（设置页要展示/复用这份快照内容），同时把 saveTextFile 的
+   { canceled } 原样透传——旧调用点 `if (!r?.canceled)` 照旧成立。
+   只有真正写盘成功才记「最近备份时间」：用户在保存对话框里取消不算备份过。
+   时间戳写失败只吞掉，备份文件已经生成，不因为一行配置回滚整件事。 */
 export async function backupAll() {
   const json = await exportBackupJson()
-  return saveTextFile(`novel-studio-备份-${stamp()}.json`, json)
+  const saved = await saveTextFile(`novel-studio-备份-${stamp()}.json`, json)
+  if (!saved?.canceled) {
+    try { await db.appconfig.put({ key: 'settings:lastBackupAt', value: Date.now() }) } catch { /* 备份文件已生成 */ }
+  }
+  return { ...saved, json }
 }
 
 export async function restoreBackup(arrayBuffer) {

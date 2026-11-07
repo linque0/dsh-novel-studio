@@ -1,6 +1,6 @@
 import { mergeMemoryIntent } from './ai/memory-queue-core.js'
 import { useUiStore } from '../stores/ui'
-import { putRow, addRevision, addWordLog } from '../db/repo'
+import { putRow, addRevision } from '../db/repo'
 import { markChapterStale } from './ai/summarize'
 import { SOURCE_TABLES } from './project/normalize.js'
 import { captureWritingPositions, flushWritingPositions, discardWritingPositions } from './writing-position.js'
@@ -10,7 +10,7 @@ import { captureWritingPositions, flushWritingPositions, discardWritingPositions
  * - mark() 登记脏实体，防抖 1s 后落盘（只写脏数据）
  * - 30s 定时兜底 / 窗口失焦 / 页面隐藏时 flushAll
  * - 章节落盘时按策略写版本快照（内容有变化且距上次快照 > 5min，或强制）
- * - 落盘前通过 hooks.beforePut 处理码字统计（wordlog）
+ * - 正文和码字统计（wordlog）同一事务落盘
  */
 const pending = new Map() // `${table}:${id}` -> { table, row, forceSnapshot }
 const flushing = new Set()
@@ -46,9 +46,8 @@ async function flushBatch() {
   try {
     for (const it of items) {
       const row = JSON.parse(JSON.stringify(it.row))
-      await autosave.hooks.beforePut?.(it.table, row)
       row.updatedAt = Date.now()
-      const saved = await putRow(it.table, row, { memoryIntent: it.memoryIntent })
+      const saved = await putRow(it.table, row, { memoryIntent: it.memoryIntent, recordWordDelta: it.table === 'chapters' })
       if (saved.memoryJobId) {
         const detail={workId:row.workId,jobId:saved.memoryJobId}
         setTimeout(()=>{
@@ -73,7 +72,9 @@ async function flushBatch() {
       }
     }
     ui().autosave.lastSavedAt = Date.now()
+    ui().autosave.error = false
   } catch (err) {
+    ui().autosave.error = true
     console.error('[autosave] 保存失败，已重新排队', err)
     for (const it of items) {
       const key=`${it.table}:${it.row.id}`
@@ -94,14 +95,12 @@ function maybeSnapshot(row, force) {
   if (!(force || (changed && cooled))) return
   lastSnapshotAt.set(key, Date.now())
   lastSnapshotContent.set(key, content)
-  addRevision('chapter', row.id, content).catch((e) => console.error('[snapshot]', e))
+  addRevision('chapter', row.id, content, row.fmt||'text').catch((e) => console.error('[snapshot]', e))
 }
 
 export const autosave = {
   origin: crypto.randomUUID(),
   hasPending(table, id) { return pending.has(`${table}:${id}`) || flushing.has(`${table}:${id}`) },
-  hooks: { beforePut: null },
-
   mark(table, row, opts = {}) {
     if (!row || !row.id) return
     const key = `${table}:${row.id}`
@@ -138,18 +137,4 @@ export function startAutosave() {
   window.addEventListener('pagehide', () => autosave.flushAll())
   window.__flushNow = () => autosave.flushAll()
   window.__prepareForPanel = async () => {await autosave.flushAll();if(ui().autosave.pending)throw new Error('编辑尚未保存，无法移交编辑权')}
-}
-
-/** 工作打开时装配码字统计钩子（prevCounts: Map<chapterId, 字数>） */
-export function installWordLogHook(prevCounts) {
-  autosave.hooks.beforePut = async (table, row) => {
-    if (table !== 'chapters') return
-    const prev = prevCounts.get(row.id)
-    if (prev == null) return
-    const delta = (row.wordCount || 0) - prev
-    if (delta !== 0) {
-      await addWordLog(row.workId, row.id, delta)
-      prevCounts.set(row.id, row.wordCount || 0)
-    }
-  }
 }

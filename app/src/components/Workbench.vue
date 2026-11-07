@@ -10,18 +10,17 @@ import OutlineTopbar from './outline/OutlineTopbar.vue'
 import DreamModeEntries from './agent/DreamModeEntries.vue'
 import {enterDreamMode,enterLightSleepMode} from '../services/ai/entry-modes.js'
 import { WORK_NAVIGATION } from './app-navigation'
+import { openSettings as openSettingsEntry } from '../services/settings-entry.js'
 import ChapterTree from './ChapterTree.vue'
 import OutlineSidebar from './OutlineSidebar.vue'
-import CharacterList from './CharacterList.vue'
 import SnippetList from './SnippetList.vue'
 import CandidateEditor from './agent/CandidateEditor.vue'
 import {useStoryStore} from '../stores/story.js'
 const story=useStoryStore()
 import { autosave } from '../services/autosave.js'
 import OutlineCenter from './OutlineCenter.vue'
-import CharacterCenter from './CharacterCenter.vue'
+import CharactersWorkspace from './characters/CharactersWorkspace.vue'
 import LoreWorkspace from './lore/LoreWorkspace.vue'
-import MubuTree from './MubuTree.vue'
 import SnippetCenter from './SnippetCenter.vue'
 import RightPanel from './RightPanel.vue'
 import AiAssistantPanel from './ai/AiAssistantPanel.vue'
@@ -35,7 +34,9 @@ const work = useWorkStore()
 const ui = useUiStore()
 const shell = ref(null)
 const narrow = ref(window.matchMedia('(max-width: 1180px)').matches)
-const showDirectory = computed(() => !(nsPlugin && work.tab === 'outline') && !ui.focusMode && !ui.readMode && !modulePopped.value)
+/* 设定页与人物页都自带面板矩阵（LoreWorkspace 的 nav 列 = 设定目录、CharactersWorkspace 的 roster 列 = 人物名录），
+   不再走外置侧栏：.side-panel / .side-resizer / .ol-side-rail 在 lore / characters 页整体让位，别的 tab 一字不动。 */
+const showDirectory = computed(() => work.tab !== 'lore' && work.tab !== 'characters' && !(nsPlugin && work.tab === 'outline') && !ui.focusMode && !ui.readMode && !modulePopped.value)
 const showNotes = computed(() => !!work.activeChapter && !ui.focusMode && !ui.readMode && !modulePopped.value && work.tab === 'chapters')
 /* 目录栏（正文页即章节栏）开合：大纲模块沿用自有开合，其余模块共用 sidePanelOpen */
 const dirVisible = computed(() => (work.tab === 'outline' ? ui.outlineSideOpen : ui.sidePanelOpen))
@@ -84,8 +85,6 @@ function onBookmarkSelect(key) {
 
 const tabs = WORK_NAVIGATION
 function selectTab(key) {
-  /* 设定三视图是同一工作区内的切换：离开设定页时回条目编写（等价于原「关掉全屏详情页」） */
-  if (ui.loreView !== 'write') ui.setLoreView('write')
   work.tab = key
 }
 
@@ -170,13 +169,9 @@ const badgeText = computed(() => {
   return ui.autosave.lastSavedAt ? `已保存 ${fmtTime(ui.autosave.lastSavedAt)}` : '自动保存就绪'
 })
 
-/* ---------- 设置窗口（面板窗口 settings 类型）：外观 / 恍然梦 / 数据 / 关于 ---------- */
+/* ---------- 设置入口：优先面板窗口，被拦或无桥时退回主窗口就地视图 ---------- */
 function openSettings() {
-  if (!window.native?.panelOpen) {
-    msg.info('设置窗口仅桌面版可用，网页版暂不支持')
-    return
-  }
-  window.native.panelOpen({ type: 'settings', workId: 'app', entityId: '', title: '设置' })
+  openSettingsEntry(ui)
 }
 
 function onKeydown(e) {
@@ -243,36 +238,26 @@ const poppedEntityName = computed(() => {
 })
 
 /* ---------- 侧栏宽度拖拽（180–480，松手后写入 appconfig 记忆） ----------
-   设定页侧栏按原型走 220（设计稿 --nav-w），与章节/人物栏的 252 分开记，避免一边调宽另一边跟着变 */
-const loreNavWidth = ref(220)
-const sidePanelStyle = computed(() => ({
-  width: (work.tab === 'lore' ? loreNavWidth.value : Math.min(280, ui.sideWidth || 280)) + 'px'
-}))
+   设定页的列宽由面板矩阵自己管（lore-layout.js + LoreDivider 落库），这里只剩章节/人物/灵感栏 */
+const sidePanelStyle = computed(() => ({ width: Math.min(280, ui.sideWidth || 280) + 'px' }))
 function startSideResize(e) {
   e.preventDefault()
-  const isLore = work.tab === 'lore'
   const startX = e.clientX
-  const startW = isLore ? loreNavWidth.value : ui.sideWidth
+  const startW = ui.sideWidth
   document.body.style.userSelect = 'none'
   const move = (ev) => {
-    const w = Math.min(480, Math.max(180, startW + ev.clientX - startX))
-    if (isLore) loreNavWidth.value = w
-    else ui.sideWidth = w
+    ui.sideWidth = Math.min(480, Math.max(180, startW + ev.clientX - startX))
   }
   const up = () => {
     window.removeEventListener('mousemove', move)
     window.removeEventListener('mouseup', up)
     document.body.style.userSelect = ''
-    if (!isLore) ui.setPref('sideWidth', ui.sideWidth)
+    ui.setPref('sideWidth', ui.sideWidth)
   }
   window.addEventListener('mousemove', move)
   window.addEventListener('mouseup', up)
 }
 function resetSideWidth() {
-  if (work.tab === 'lore') {
-    loreNavWidth.value = 220
-    return
-  }
   ui.setPref('sideWidth', 252)
 }
 /* ---------- 恍然梦停靠列宽度拖拽（300–640，appconfig 记忆，双击恢复默认） ---------- */
@@ -384,7 +369,7 @@ onMounted(() => {
   collapseNotesOnWide(wideMq)
   /* 章节栏与批注栏一致：默认收起，按需点左缘细轨浮出（皮肤把它做成脱流浮层，不占列宽）。
      只在挂载时收一次：之后用户自己打开不会再被自动关掉。
-     设定例外见下方 tab watcher：设计稿 A 视图里 .nav-pane 是常驻左栏（220 / 16 / 主区）。 */
+     设定页现在由 LoreWorkspace 的面板矩阵自带目录列，不再读 sidePanelOpen（下方 tab watcher 仅为兼容旧记录保留）。 */
   if (work.tab !== 'lore' && ui.sidePanelOpen) ui.setPref('sidePanelOpen', false)
   mountStudioBackdrop()
 })
@@ -427,12 +412,10 @@ onBeforeUnmount(() => {
       <div v-if="showDirectory && dirVisible" id="writing-directory" v-show="work.tab !== 'outline' || ui.outlineSideOpen" class="side-panel" aria-label="目录与资料" :style="sidePanelStyle">
         <ChapterTree v-if="work.tab === 'chapters'" @read="onMore('read')" @window="onSplit('chapter')" @collapse="closeDirectory()" />
         <OutlineSidebar v-else-if="work.tab === 'outline'" />
-        <CharacterList v-else-if="work.tab === 'characters'" />
-        <MubuTree v-else-if="work.tab === 'lore'" />
         <SnippetList v-else-if="work.tab === 'snippets'" />
       </div>
       <div
-        v-if="!(nsPlugin && work.tab === 'outline') && !ui.focusMode && !ui.readMode && !modulePopped && dirVisible"
+        v-if="!(nsPlugin && work.tab === 'outline') && work.tab !== 'characters' && !ui.focusMode && !ui.readMode && !modulePopped && dirVisible"
         v-show="work.tab !== 'outline' || ui.outlineSideOpen"
         class="side-resizer"
         title="拖拽调整侧栏宽度（双击恢复默认）"
@@ -472,14 +455,16 @@ onBeforeUnmount(() => {
           <NButton type="primary" @click="focusPopped(work, work.tab, curEntityForTab(work.tab))">前往窗口</NButton>
         </div>
       </div>
-      <div v-show="!modulePopped" class="center-pane paper-texture">
+      <!-- 设定页：委派给 LoreWorkspace 自带的面板矩阵外壳（nav | 16 | list | 16 | main | 16 | detail） -->
+      <LoreWorkspace v-if="work.tab === 'lore'" v-show="!modulePopped" class="lore-shell-host" />
+      <!-- 人物页：委派给 CharactersWorkspace 自带的面板矩阵外壳（roster | 16 | main | 16 | context） -->
+      <CharactersWorkspace v-else-if="work.tab === 'characters'" v-show="!modulePopped" class="char-shell-host" />
+      <div v-else v-show="!modulePopped" class="center-pane paper-texture">
         <div v-if="work.tab==='chapters'&&story.active&&!ui.agentCandidateId&&!nsPlugin" class="story-workshop-bar"><span>{{story.formalView?'正式正文':'与恍然梦共用的工作稿'}} · {{story.active.status==='confirmed'?'本章已确认':'尚未确认入正文'}}</span><button @click="story.formalView=!story.formalView">{{story.formalView?'回到共同工作稿':'对照正式正文'}}</button><button @click="ui.workbenchMode='agent'">回到故事现场</button></div>
         <div id="writing-story-editor-host" v-show="work.tab==='chapters'&&!ui.agentCandidateId&&story.active&&!story.formalView" class="shared-editor-host story-workshop-editor"></div>
         <div id="writing-editor-host" v-show="work.tab==='chapters'&&!ui.agentCandidateId&&(!story.active||story.formalView)" class="shared-editor-host"></div>
         <CandidateEditor v-if="work.tab==='chapters'&&ui.agentCandidateId" :candidate-id="ui.agentCandidateId" handoff @close="ui.agentCandidateId=null" />
         <OutlineCenter v-if="work.tab === 'outline'" />
-        <CharacterCenter v-else-if="work.tab === 'characters'" />
-        <LoreWorkspace v-else-if="work.tab === 'lore'" />
         <SnippetCenter v-else-if="work.tab === 'snippets'" />
       </div>
 

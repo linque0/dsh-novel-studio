@@ -1,34 +1,11 @@
 /* DSH 插件服务端入口：注册工具、静态资源、RPC、技能与稳定提示词段。
- * 结构对齐 dsh-cuigengji-plugin（cordis 插件：name / inject / Config / apply）。 */
+ * 结构对齐 dsh-cuigengji-plugin（cordis 插件：name / inject / Config / apply）。
+ * 本文件不 import 任何 @deepseek-ai/* 包：插件目录没有 node_modules，
+ * 任何一次解析失败都会在启动阶段把整个插件抹掉（2026-11 真实事故）。 */
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { existsSync, readFileSync, readdirSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-/* 宿主导入的稳健化：宿主一般会注入 @deepseek-ai/*，但解析失败时也要能加载，
- * 否则一个 specifier 就会让整个插件在启动阶段消失（排查时最难定位）。 */
-async function optionalImport(specifier) {
-  try {
-    return await import(specifier);
-  } catch (error) {
-    console.warn('[novel-studio] 无法解析 ' + specifier + '：' + (error && (error.code || error.message)));
-    return null;
-  }
-}
-const schemastery = await optionalImport('@deepseek-ai/schemastery');
-const toolsLib = await optionalImport('@deepseek-ai/dsh-tools');
-const chainable = () => {
-  const node = { default: () => node, volatile: () => node, description: () => node, optional: () => node };
-  return node;
-};
-const zFallback = {
-  object: (shape) => ({ _shape: shape }),
-  string: chainable,
-  number: chainable,
-  boolean: chainable,
-  array: chainable,
-};
-const z = (schemastery && schemastery.default) || zFallback;
-const defineTool = (toolsLib && toolsLib.defineTool) || ((spec) => spec);
 import { openLibrary, LAYOUT } from './core/library.js';
 import { createTools } from './core/tools.js';
 import { createExactHandler, createPrefixNodeHandler, makeAppRoute, isValidAppPath } from './adapters/dsh/static.js';
@@ -37,10 +14,38 @@ import { createRpcHandler } from './adapters/dsh/rpc.js';
 export const name = 'novel-studio';
 export const inject = ['tools', 'systemPrompt', 'skills', 'connection'];
 
-export const Config = z.object({
-  libraryDir: z.string().default('').volatile(),
-  appRoot: z.string().default('').volatile(),
+/* cordis 4 的 resolveConfig 直接取 runtime.Config['~standard'].validate(...)，
+ * 并且拒绝异步结果（返回值带 then 就按 Promise 处理）。宿主侧没有 schemastery 可用，
+ * 所以这里自带一份同步 Standard Schema：非法输入返回 issues，合法输入返回 value。 */
+const stringField = (fallback) => ({
+  '~standard': {
+    version: 1,
+    vendor: 'novel-studio',
+    validate: (value) => (value === undefined || value === null
+      ? { value: fallback }
+      : typeof value === 'string'
+        ? { value }
+        : { issues: [{ message: '该项必须是字符串', path: [] }] }),
+  },
 });
+
+export const Config = {
+  '~standard': {
+    version: 1,
+    vendor: 'novel-studio',
+    validate: (raw) => {
+      const source = raw && typeof raw === 'object' ? raw : {};
+      const value = {};
+      const issues = [];
+      for (const [key, field] of Object.entries({ libraryDir: stringField(''), appRoot: stringField('') })) {
+        const result = field['~standard'].validate(source[key]);
+        if (result.issues) issues.push(...result.issues.map((issue) => ({ ...issue, path: [key] })));
+        else value[key] = result.value;
+      }
+      return issues.length ? { issues } : { value };
+    },
+  },
+};
 
 const APP_PREFIX = '/api/novelstudio/app/';
 const RPC_PATH = '/api/novelstudio/rpc';
@@ -101,25 +106,6 @@ function bootstrapPointer() {
   } catch {
     return '';
   }
-}
-
-/** JSON Schema -> defineTool 需要的扁平参数表。
- * 只放行宿主明确接受的键（响应式照催更姬的用法），
- * 嵌套 items / additionalProperties 一律丢弃：宿主的 defineTool 一旦校验失败会抛错，
- * 而 apply 抛错会让整包 effect 被回收（表现为所有路由 404）。 */
-const PARAM_KEYS = ['type', 'enum', 'description', 'required', 'default'];
-export function toParameters(schema = {}) {
-  const required = new Set(Array.isArray(schema.required) ? schema.required : []);
-  const out = {};
-  for (const [key, value] of Object.entries(schema.properties || {})) {
-    const item = {};
-    for (const field of PARAM_KEYS) {
-      if (value && value[field] !== undefined) item[field] = value[field];
-    }
-    if (required.has(key)) item.required = true;
-    out[key] = item;
-  }
-  return out;
 }
 
 /** 列出构建产物里的相对路径（有界），用于"精确路由"兜底。 */
@@ -189,12 +175,11 @@ function readSkills() {
 }
 
 export async function apply(ctx, config = {}) {
-  const read = (value) => (value && typeof value.get === 'function' ? value.get() : value);
-  const configuredDir = String(read(config.libraryDir) || '').trim();
+  const configuredDir = String(config.libraryDir || '').trim();
   const pointed = configuredDir || readPointer();
   const libraryDir = pointed || bootstrapPointer();
   const library = libraryDir ? openLibrary(libraryDir) : null;
-  const appRoot = String(read(config.appRoot) || '').trim() || APP_ROOT;
+  const appRoot = String(config.appRoot || '').trim() || APP_ROOT;
 
   /* 工具（RPC 也要按名字拿到同一批实现，所以在注册路由之前就建好） */
   const tools = library ? createTools(library) : [];
@@ -330,21 +315,24 @@ export async function apply(ctx, config = {}) {
     ctx.logger?.warn?.('[novel-studio] 宿主未提供 connection.fetch.register，界面与 RPC 不可用');
   }
 
-  /* 工具注册 */
+  /* 工具注册：src/core/tools.js 里的 parameters 本来就是宿主接受的 JSON Schema，
+   * 直接下发（经 defineTool 作者格式再转换会把嵌套 items/additionalProperties 丢掉）。
+   * register 返回 disposer，交给 effect 收集，插件卸载时自动摘掉工具。 */
   const failedTools = [];
   for (const tool of tools) {
     try {
-      ctx.tools.register(defineTool({
-      name: tool.name,
-      description: tool.description,
-      parameters: toParameters(tool.parameters),
-      output: { schema: { type: 'string' }, render: (_args, value) => [{ type: 'text', text: value }] },
+      const register = () => ctx.tools.register({
+        name: tool.name,
+        description: tool.description,
+        parameters: tool.parameters,
+        output: { schema: { type: 'string' }, render: (_args, value) => [{ type: 'text', text: value }] },
         execute: async (args, exec) => {
           exec?.signal?.throwIfAborted?.();
-          const result = await tool.execute(args || {}, exec || {});
-          return JSON.stringify(result);
+          return JSON.stringify(await tool.execute(args || {}, exec || {}));
         },
-      }));
+      });
+      if (typeof ctx.effect === 'function') ctx.effect(register, 'novel-studio: tool ' + tool.name);
+      else register();
     } catch (error) {
       failedTools.push(tool.name + ' → ' + (error?.message || error));
       ctx.logger?.warn?.('[novel-studio] 工具注册失败 ' + tool.name + '：' + (error?.message || error));

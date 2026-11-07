@@ -51,6 +51,7 @@ function resolveByEl(el) {
   const resolved = parsed ? targetById(parsed.kind, parsed.id) : null
   const title = el.getAttribute('data-dl-title') || resolved?.title || ''
   if (resolved) return { view: previewFor(resolved) || missingView(title, parsed.kind), target: resolved }
+  if (parsed) return { view: missingView(title, parsed.kind), target: null }
   const byTitle = findByTitle(title)
   return byTitle ? { view: previewFor(byTitle), target: byTitle } : { view: missingView(title, parsed?.kind), target: null }
 }

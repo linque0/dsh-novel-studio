@@ -83,7 +83,7 @@ function toLore() {
   const body = lines.slice(1).join('\n').trim()
   if (body) work.mubuAdd(node.id, null, body)
   work.tab = 'lore'
-  ui.loreFocusId = node.id
+  ui.focusLoreNode(node.id, work.mubuPath(node.id))
   msg.success('已转为设定节点')
 }
 </script>

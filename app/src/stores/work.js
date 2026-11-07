@@ -1,10 +1,11 @@
+import { lorePath, validLoreMove, createLoreHistory, checkpointLore, stepLoreHistory } from '../services/lore-core.js'
 import { initialExpandedContainers } from '../components/outline/outline-layout.js'
 import { normalizeCanvasOpacity } from '../services/canvas-appearance.js'
 import { relationTransaction, flattenRelations } from '../components/outline/canvas-relations.js'
 import { defineStore } from 'pinia'
 import { db, uid, now } from '../db/database'
 import * as repo from '../db/repo'
-import { autosave, installWordLogHook } from '../services/autosave'
+import { autosave } from '../services/autosave'
 import { countWords, stripTags } from '../services/wordcount'
 import { tagColor } from '../services/tagcolors'
 import { scanNoteMarks, removeNoteMark, normalizeNoteColor, noteKindOf, DEFAULT_NOTE_COLOR } from '../services/annotations'
@@ -17,8 +18,22 @@ import { chapterHash, plainChapter } from '../services/ai/contracts'
 import { primaryRole } from '../services/character-tags'
 import { readWritingPosition } from '../services/writing-position.js'
 import { resolveWritingChapter } from '../services/writing-position-core.js'
+import { DEFAULT_MUBU_SETS, kindOf } from '../components/lore/lore-kinds.js'
 
 const urlCache = new Map()
+
+/* 人物关系图相机的最小归一：x/y 取有限数（缺省 0），z 必须为正（缺省 1）；非法输入返回 null。 */
+function normalizeCamera(cam) {
+  if (!cam || typeof cam !== 'object') return null
+  const x = Number(cam.x)
+  const y = Number(cam.y)
+  const z = Number(cam.z)
+  return {
+    x: Number.isFinite(x) ? x : 0,
+    y: Number.isFinite(y) ? y : 0,
+    z: Number.isFinite(z) && z > 0 ? z : 1
+  }
+}
 
 export const useWorkStore = defineStore('work', {
   state: () => ({
@@ -36,6 +51,8 @@ export const useWorkStore = defineStore('work', {
     assets: [],
     links: [],
     mubu: [],
+    mubuRevision: 0,
+    loreHistories: {},
     mubuSetId: null, // 当前设定集（顶层 mubu 节点）id；appconfig mubucoll:<workId> 按作品记忆
     bookmarks: [],
     olnodes: [],
@@ -56,7 +73,6 @@ export const useWorkStore = defineStore('work', {
     charFocusId: null, // 关系图定位的人物 id
     charFocusTick: 0,
     charFocusHandled: 0, // 关系图已处理的定位信号（组件未挂载时请求不丢）
-    prevCounts: new Map(),
     tab: 'chapters', // chapters | outline | characters | lore | snippets
     selChapterId: null,
     writingRestore: null,
@@ -220,8 +236,6 @@ export const useWorkStore = defineStore('work', {
       await this.loadMubuTagMeta()
       await this.loadMubuSet()
       this.ensureMubuSet()
-      this.prevCounts = new Map(this.liveChapters.map((c) => [c.id, c.wordCount || 0]))
-      installWordLogHook(this.prevCounts)
       this.tab = 'chapters'
       const position = restorePosition && !chapterId ? await readWritingPosition(workId) : null
       const selected = resolveWritingChapter(this, position, chapterId)
@@ -240,7 +254,9 @@ export const useWorkStore = defineStore('work', {
     async closeWork() {
       useAiStore().switchWork(null)
       await autosave.flushAll()
+      const histories = this.loreHistories
       this.$reset()
+      this.loreHistories = histories
       useUiStore().view = 'shelf'
       await useShelfStore().refresh()
     },
@@ -300,7 +316,6 @@ export const useWorkStore = defineStore('work', {
       }
       this.chapters.push(ch)
       autosave.mark('chapters', ch)
-      this.prevCounts.set(ch.id, 0)
       const o = { id: uid(), workId: this.work.id, level: 'chapter', refId: ch.id, content: '', createdAt: now(), updatedAt: now(), deletedAt: null }
       this.outlines.push(o)
       autosave.mark('outlines', o)
@@ -423,6 +438,12 @@ export const useWorkStore = defineStore('work', {
       this.tab = 'characters'
       this.selCharacterId = row.id
       return row
+    },
+
+    /* 人物视图切换：值域固定 'list' | 'graph'（services/doublelinks.js:255 依赖它）。
+       人物外壳与 D2/D3/D4 一律走这里，避免写入非法值把关系剧场视图锁死。 */
+    setCharView(next) {
+      this.charView = next === 'graph' ? 'graph' : 'list'
     },
 
     updateCharacter(id, patch) {
@@ -617,6 +638,30 @@ export const useWorkStore = defineStore('work', {
       await db.appconfig.put({ key: flagKey, value: 1 })
     },
 
+    mubuPath(id) { return lorePath(this.mubu, id) },
+    mubuHistory() {
+      const id = this.work?.id || ''
+      return this.loreHistories[id] || (this.loreHistories[id] = createLoreHistory())
+    },
+    mubuCheckpoint(group = null) {
+      const ui = useUiStore()
+      checkpointLore(this.mubuHistory(), this.mubu, { group, selection: { selectedId: ui.mubuSelectedId, location: ui.loreWorkId === this.work?.id ? ui.captureLoreLocation() : null } })
+    },
+    async mubuUndo(direction = 'undo') {
+      const ui = useUiStore(), state = stepLoreHistory(this.mubuHistory(), this.mubu, direction, { selectedId: ui.mubuSelectedId, location: ui.captureLoreLocation() })
+      if (!state) return false
+      await this.mubuSyncTree(state.nodes)
+      if (state.selection?.location) ui.applyLoreLocation(state.selection.location)
+      const selectedId = typeof state.selection === 'string' ? state.selection : state.selection?.selectedId
+      if (selectedId && this.mubu.some(n => n.id === selectedId && !n.deletedAt)) ui.mubuSelectedId = selectedId
+      return true
+    },
+    mubuSetHeading(id, level) {
+      const n = this.mubu.find(n => n.id === id && !n.deletedAt && n.workId === this.work?.id)
+      if (!n) return
+      this.mubuCheckpoint(); n.heading = Math.max(0, Math.min(3, Number(level) || 0))
+      autosave.mark('mubu', n); this.mubuRevision++
+    },
     liveMubu() {
       return this.mubu
         .filter((n) => !n.deletedAt)
@@ -673,24 +718,59 @@ export const useWorkStore = defineStore('work', {
       }
     },
     /** 新建设定集并切换过去 */
-    createMubuSet(text = '新设定集') {
+    createMubuSet(text = '新节点') {
       const row = this.mubuAdd(null, null, text)
       this.setMubuSet(row.id)
       return row
     },
+    /**
+     * 补齐默认设定集（地理/组织/规则/历史/物件/民俗）。
+     * onlyMissing=false：仅当顶层设定集为 0 时建齐六个并选中第一个；
+     * onlyMissing=true：只补缺项，追加在已有集之后，不改动/重排/删除已有集。
+     * 「已存在」判定按顶层集的名字或 kind：老作品的旧分类（地点/势力/物品/体系/大事记）
+     * 没有 kind，靠 kindOf 的名称启发式判出同一类型，因此不会再补一个同义的新集。
+     * 返回 { created: [id], skipped: [text] }
+     */
+    async ensureDefaultMubuSets({ onlyMissing = false } = {}) {
+      const created = []
+      const skipped = []
+      if (!this.work) return { created, skipped }
+      const roots = this.mubuRoots()
+      if (!onlyMissing && roots.length > 0) return { created, skipped }
+      const names = new Set(roots.map((n) => (n.text || '').trim()))
+      const kinds = new Set(roots.map((n) => kindOf(n).kind))
+      let firstId = null
+      for (const set of DEFAULT_MUBU_SETS) {
+        const text = set.text || ''
+        if (names.has(text.trim()) || kinds.has(set.kind)) {
+          skipped.push(text)
+          continue
+        }
+        const row = this.mubuAdd(null, null, text, null, set.kind || null)
+        names.add(text.trim())
+        if (set.kind) kinds.add(set.kind)
+        created.push(row.id)
+        if (!firstId) firstId = row.id
+      }
+      if (!onlyMissing && firstId) this.setMubuSet(firstId)
+      return { created, skipped }
+    },
+
     /** 在当前设定集内新建一条设定（无设定集时自动先建一个） */
     mubuAddInCurrentSet(text = '', html = null) {
       const root = this.currentMubuRoot() || this.createMubuSet()
       return this.mubuAdd(root.id, null, text, html)
     },
 
-    mubuAdd(parentId, afterId = null, text = '', html = null) {
+    mubuAdd(parentId, afterId = null, text = '', html = null, kind = null) {
+      if (!this.work || (parentId && !this.mubu.some(n => n.id === parentId && !n.deletedAt && n.workId === this.work.id))) return null
       const siblings = this.mubuChildren(parentId)
       const row = {
         id: uid(), workId: this.work.id, parentId: parentId || null,
         sortOrder: 0, text, html, fold: false, deletedAt: null,
-        createdAt: now(), updatedAt: now()
+        createdAt: now(), updatedAt: now(), heading: 0
       }
+      if (kind) row.kind = kind
       if (afterId) {
         const i = siblings.findIndex((s) => s.id === afterId)
         row.sortOrder = i >= 0 ? siblings[i].sortOrder + 500 : siblings.length * 1000
@@ -709,7 +789,7 @@ export const useWorkStore = defineStore('work', {
       const flat = []
       const walk = (list, depth) => {
         for (const n of list) {
-          flat.push({ depth, text: n.text || '', html: n.html || null, fold: !!n.fold })
+          flat.push({ depth, node: n })
           walk(n.children || [], depth + 1)
         }
       }
@@ -722,11 +802,12 @@ export const useWorkStore = defineStore('work', {
         lastAt.length = item.depth // 回到浅层时丢弃更深层记录，防旧层级残留误挂
         const parent = item.depth === 0 ? parentId || null : lastAt[item.depth - 1]
         const sameParent = prevDepth === item.depth
-        const r = this.mubuAdd(parent, sameParent ? prevId : null, item.text, item.html)
-        if (item.fold) {
-          r.fold = true
-          autosave.mark('mubu', r)
-        }
+        const data = JSON.parse(JSON.stringify(item.node))
+        const r = this.mubuAdd(parent, sameParent ? prevId : null, data.text || '', data.html || null)
+        if (!r) continue
+        for (const key of ['id', 'workId', 'parentId', 'sortOrder', 'children', 'createdAt', 'updatedAt', 'deletedAt']) delete data[key]
+        Object.assign(r, data)
+        autosave.mark('mubu', r)
         lastAt[item.depth] = r.id
         created.push(r)
         prevId = r.id
@@ -750,6 +831,7 @@ export const useWorkStore = defineStore('work', {
       if (!n) return
       n.text = text
       if (html !== undefined) n.html = html
+      this.mubuRevision++
       autosave.mark('mubu', n)
     },
 
@@ -757,6 +839,7 @@ export const useWorkStore = defineStore('work', {
     mubuSetTags(id, tags) {
       const n = this.mubu.find((x) => x.id === id)
       if (!n) return
+      this.mubuCheckpoint()
       n.tags = [...new Set(
         (Array.isArray(tags) ? tags : [])
           .map((t) => String(t ?? '').trim().slice(0, 20))
@@ -790,8 +873,7 @@ export const useWorkStore = defineStore('work', {
     },
 
     mubuMove(id, targetId, zone) {
-      if (id === targetId) return
-      if (this.mubuDescendants(id).some((n) => n.id === targetId)) return
+      if (!validLoreMove(this.mubu, id, targetId, this.work?.id)) return
       const n = this.mubu.find((x) => x.id === id)
       const t = this.mubu.find((x) => x.id === targetId)
       if (!n || !t) return
@@ -805,6 +887,7 @@ export const useWorkStore = defineStore('work', {
         const targetParent = t.parentId || null
         const wasParent = n.parentId
         n.parentId = targetParent
+        if (wasParent !== targetParent) autosave.mark('mubu', n)
         /* 同层排序也须先把被移动节点剔除再插回——否则数组出现重复项，末次赋值让排序错乱
          * （v1.0.22 修复；对照 olnodeMoveTo 的同名处理） */
         const siblings = this.mubuChildren(targetParent).filter((s) => s.id !== id)
@@ -845,8 +928,16 @@ export const useWorkStore = defineStore('work', {
     },
 
     mubuRestore(id) {
-      const all = [this.mubu.find((x) => x.id === id), ...this.mubuDescendants(id)].filter(Boolean)
-      for (const n of all) {
+      const root = this.mubu.find(x => x.id === id && x.workId === this.work?.id)
+      if (!root?.deletedAt) return
+      const byParent = new Map(), seen = new Set(), queue = [root]
+      for (const n of this.mubu) if (n.workId === root.workId && n.deletedAt === root.deletedAt) {
+        if (!byParent.has(n.parentId)) byParent.set(n.parentId, [])
+        byParent.get(n.parentId).push(n)
+      }
+      for (const n of queue) {
+        if (seen.has(n.id)) continue
+        seen.add(n.id); queue.push(...(byParent.get(n.id) || []))
         n.deletedAt = null
         autosave.mark('mubu', n)
       }
@@ -862,41 +953,26 @@ export const useWorkStore = defineStore('work', {
 
     /** 撤销/重做：用快照同步整棵树（增/删/改差异落库） */
     async mubuSyncTree(flatNodes) {
-      const current = new Map(this.mubu.map((n) => [n.id, n]))
-      const want = new Map(flatNodes.map((n) => [n.id, n]))
-      const t = now()
-      for (const [id, w] of want) {
-        const cur = current.get(id)
-        if (!cur) {
-          const row = {
-            id, workId: this.work.id, parentId: w.parentId || null, sortOrder: w.sortOrder || 0,
-            text: w.text || '', html: w.html ?? null, fold: !!w.fold, deletedAt: null,
-            createdAt: t, updatedAt: t
-          }
-          this.mubu.push(row)
-          await db.mubu.put(JSON.parse(JSON.stringify(row)))
-        } else if (
-          cur.parentId !== (w.parentId || null) || cur.sortOrder !== w.sortOrder ||
-          cur.text !== (w.text || '') || (cur.html ?? null) !== (w.html ?? null) ||
-          !!cur.fold !== !!w.fold || !!cur.deletedAt !== !!w.deletedAt
-        ) {
-          cur.parentId = w.parentId || null
-          cur.sortOrder = w.sortOrder || 0
-          cur.text = w.text || ''
-          cur.html = w.html ?? null
-          cur.fold = !!w.fold
-          cur.deletedAt = w.deletedAt ?? null
-          cur.updatedAt = t
-          await db.mubu.put(JSON.parse(JSON.stringify(cur)))
+      const want = new Map(flatNodes.filter(n => n.workId === this.work?.id).map(n => [n.id, n]))
+      const current = new Map(this.mubu.map(n => [n.id, n]))
+      for (const [id, saved] of want) {
+        const row = current.get(id)
+        if (row) {
+          const keys = new Set([...Object.keys(row), ...Object.keys(saved)])
+          if ([...keys].every(k => k === 'updatedAt' || JSON.stringify(row[k]) === JSON.stringify(saved[k]))) continue
+          // Remove fields absent from the snapshot too (e.g. heading after undo).
+          for (const k of Object.keys(row)) if (!(k in saved)) delete row[k]
+          Object.assign(row, JSON.parse(JSON.stringify(saved)), { updatedAt: now() })
+          autosave.mark('mubu', row)
+        } else {
+          const restored = { ...JSON.parse(JSON.stringify(saved)), updatedAt: now() }
+          this.mubu.push(restored); autosave.mark('mubu', restored)
         }
       }
-      for (const [id, cur] of current) {
-        if (!want.has(id) && !cur.deletedAt) {
-          cur.deletedAt = t
-          cur.updatedAt = t
-          await db.mubu.put(JSON.parse(JSON.stringify(cur)))
-        }
+      for (const row of this.mubu) if (!want.has(row.id) && !row.deletedAt) {
+        row.deletedAt = now(); autosave.mark('mubu', row)
       }
+      this.mubuRevision++; this.ensureMubuSet()
     },
 
     /* ---------- 大纲节点树（8.8 思维导图方向） ---------- */
@@ -1024,6 +1100,7 @@ export const useWorkStore = defineStore('work', {
       if (!n) return
       n.text = text
       if (html !== undefined) n.html = html
+      this.mubuRevision++
       autosave.mark('olnodes', n)
     },
 
@@ -1378,14 +1455,50 @@ export const useWorkStore = defineStore('work', {
 
     /* ---------- 人物关系图（8.8.3） ---------- */
 
-    /** 人物关系图布局持久化（appconfig 按作品隔离） */
-    async loadCharGraph() {
+    /* 人物关系图持久化（appconfig 按作品隔离，单一 key charGraph:<workId>）
+       文档形状：{ positions:{ id:{x,y} }, camera:{ 'local:wide'|'local:compact'|'all:wide'|'all:compact':{x,y,z} } }
+       旧数据（平铺的 id→{x,y}）读回时一律当成 positions —— 只在这一处归一，其余动作都走文档。 */
+    async loadCharGraphDoc() {
       const row = await db.appconfig.get('charGraph:' + this.work?.id)
-      return row?.value || {}
+      const raw = row?.value && typeof row.value === 'object' ? row.value : {}
+      const positions = raw.positions && typeof raw.positions === 'object' ? raw.positions : raw
+      const camera = raw.camera && typeof raw.camera === 'object' ? raw.camera : {}
+      return { positions: { ...positions }, camera: { ...camera } }
     },
-    async saveCharGraph(layout) {
+    async saveCharGraphDoc({ positions, camera } = {}) {
       if (!this.work) return
-      await db.appconfig.put({ key: 'charGraph:' + this.work.id, value: JSON.parse(JSON.stringify(layout)) })
+      const doc = {
+        positions: positions && typeof positions === 'object' ? positions : {},
+        camera: camera && typeof camera === 'object' ? camera : {}
+      }
+      await db.appconfig.put({ key: 'charGraph:' + this.work.id, value: JSON.parse(JSON.stringify(doc)) })
+    },
+    /** 兼容旧签名：只交节点坐标（旧版关系图/旧数据仍按平铺 id→{x,y} 读） */
+    async loadCharGraph() {
+      const doc = await this.loadCharGraphDoc()
+      return doc.positions
+    },
+    /** 兼容旧签名：只写节点坐标，已存的相机原样保留 */
+    async saveCharGraph(positions) {
+      if (!this.work) return
+      const doc = await this.loadCharGraphDoc()
+      await this.saveCharGraphDoc({ positions: positions || {}, camera: doc.camera })
+    },
+    /** 读某一档的相机（key = 'scope:layout'，如 'local:wide'）；没记录返回 null */
+    async loadCharCamera(key) {
+      if (!key) return null
+      const doc = await this.loadCharGraphDoc()
+      return normalizeCamera(doc.camera[key])
+    },
+    /** 存某一档的相机；cam 传 null 表示清掉这一档（其余档位与节点坐标不动） */
+    async saveCharCamera(key, cam) {
+      if (!this.work || !key) return
+      const doc = await this.loadCharGraphDoc()
+      const camera = { ...doc.camera }
+      const next = normalizeCamera(cam)
+      if (next) camera[key] = next
+      else delete camera[key]
+      await this.saveCharGraphDoc({ positions: doc.positions, camera })
     },
 
     /** 关系链接引用卡点选人物 → 跳人物模块并定位关系图 */
@@ -1772,7 +1885,7 @@ export const useWorkStore = defineStore('work', {
         if (c) this.selVolumeId = c.volumeId
       }
       if (type === 'lore') {
-        useUiStore().loreFocusId = id
+        useUiStore().focusLoreNode(id, this.mubuPath(id))
       }
       if (type === 'characters') this.selCharacterId = id
       if (type === 'snippets') this.selSnippetId = id
