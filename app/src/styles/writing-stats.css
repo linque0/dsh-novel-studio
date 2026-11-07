@@ -1,0 +1,11 @@
+/* DSH writing data: typography and surfaces follow the writing workspace. */
+.writing-stats-entry{display:inline-grid;place-items:center;flex:none;width:40px;height:40px;padding:0;border:1px solid rgb(255 255 255/.18);border-radius:50%;background:rgb(255 255 255/.06);color:inherit;cursor:pointer}
+.writing-stats-entry svg{width:18px;height:18px}
+.writing-stats-entry:hover{background:rgb(255 255 255/.14)}
+.writing-stats-entry:disabled{opacity:.4;cursor:default}
+.writing-stats-entry:focus-visible{outline:2px solid #bdd8c8;outline-offset:3px}
+.app-topbar .writing-stats-mobile-wrap{display:none}
+.panel-topbar .writing-stats-entry{width:34px;height:34px}
+@media(max-width:899px){.app-topbar .writing-stats-entry{width:34px;height:34px}}
+@media(max-width:559px){.app-topbar .writing-stats-mobile-wrap{display:inline-flex;flex:none}.app-topbar .writing-stats-mobile-wrap .writing-stats-entry{width:32px;height:32px}.app-topbar .writing-stats-entry svg{width:16px;height:16px}}
+
