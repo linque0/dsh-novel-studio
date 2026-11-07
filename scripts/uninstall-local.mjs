@@ -5,7 +5,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const PACKAGE = 'dsh-novel-studio';
+const PACKAGE = '@linque0/dsh-novel-studio';
 const PROFILE = join(homedir(), '.dsh', 'profiles', 'desktop', 'package.json');
 const PROFILE_ENTRY = join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', PACKAGE);
 const LINK_DIR = join(homedir(), 'dsh-plugins', PACKAGE);

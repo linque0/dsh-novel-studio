@@ -63,7 +63,7 @@ const check = (name, ok, detail = '') => {
   if (!ok) problems.push(name + ' ' + detail);
 };
 
-check('client bundle 走 __ModuleLoader__.load', loaderId === 'dsh-novel-studio', String(loaderId));
+check('client bundle 走 __ModuleLoader__.load', loaderId === '@linque0/dsh-novel-studio', String(loaderId));
 check('apply 不抛错', !failure, failure && (failure.message || String(failure)));
 
 const INJECT = ['slots', 'sidebarRightTabs'];

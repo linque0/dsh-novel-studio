@@ -9,7 +9,7 @@ import { execFileSync } from 'node:child_process';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const pluginDir = join(here, '..');
-const PACKAGE = 'dsh-novel-studio';
+const PACKAGE = '@linque0/dsh-novel-studio';
 const LINK_ROOT = join(homedir(), 'dsh-plugins');
 const LINK_DIR = join(LINK_ROOT, PACKAGE);
 const PROFILE = join(homedir(), '.dsh', 'profiles', 'desktop', 'package.json');
@@ -21,7 +21,7 @@ function ensureJunction() {
     console.log('联接已存在：' + LINK_DIR);
     return;
   }
-  mkdirSync(LINK_ROOT, { recursive: true });
+  mkdirSync(dirname(LINK_DIR), { recursive: true });
   if (isWindows) {
     execFileSync('cmd', ['/c', 'mklink', '/J', LINK_DIR, pluginDir], { stdio: 'inherit' });
   } else {
@@ -66,7 +66,7 @@ function ensureProfileEntry() {
     console.log('profile 解析入口已存在：' + entry);
     return;
   }
-  mkdirSync(modules, { recursive: true });
+  mkdirSync(dirname(entry), { recursive: true });
   execFileSync(process.execPath, ['-e', 'require("fs").symlinkSync(process.argv[1],process.argv[2],"junction")', pluginDir, entry], { stdio: 'inherit' });
   console.log('已建立 profile 解析入口：' + entry + ' -> ' + pluginDir);
 }
