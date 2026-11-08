@@ -15,13 +15,12 @@ import { mountFlowBackdrop } from '../services/latent/flow.js'
 import { paletteOf, hashString } from '../services/latent/palette.js'
 import ChapterTree from './ChapterTree.vue'
 import OutlineSidebar from './OutlineSidebar.vue'
-import SnippetList from './SnippetList.vue'
 import EditorPane from './EditorPane.vue'
 import OutlineCenter from './OutlineCenter.vue'
 import OutlineTopbar from './outline/OutlineTopbar.vue'
 import CharactersWorkspace from './characters/CharactersWorkspace.vue'
 import LoreWorkspace from './lore/LoreWorkspace.vue'
-import SnippetCenter from './SnippetCenter.vue'
+import SnippetsWorkspace from './snippets/SnippetsWorkspace.vue'
 import RightPanel from './RightPanel.vue'
 import DLinkPopover from './DLinkPopover.vue'
 import RevisionsModal from './RevisionsModal.vue'
@@ -270,12 +269,11 @@ onBeforeUnmount(() => {
           <AiAssistantPanel v-if="!nsPlugin" />
         </div>
         <div v-if="spec.type !== 'ai'" class="panel-body">
-          <div v-if="!(nsPlugin && spec.type === 'outline') && spec.type !== 'lore' && spec.type !== 'characters'" v-show="(spec.type !== 'outline' || ui.outlineSideOpen) && (spec.type !== 'chapter' || (!ui.readMode && !ui.focusMode))" class="side-panel" aria-label="目录与资料" :style="{ width: ui.sideWidth + 'px' }">
+          <div v-if="!(nsPlugin && spec.type === 'outline') && spec.type !== 'lore' && spec.type !== 'characters' && spec.type !== 'snippets'" v-show="(spec.type !== 'outline' || ui.outlineSideOpen) && (spec.type !== 'chapter' || (!ui.readMode && !ui.focusMode))" class="side-panel" aria-label="目录与资料" :style="{ width: ui.sideWidth + 'px' }">
             <ChapterTree v-if="spec.type === 'chapter'" in-panel @read="ui.readMode=true" />
             <OutlineSidebar v-else-if="spec.type === 'outline'" />
-            <SnippetList v-else-if="spec.type === 'snippets'" />
           </div>
-          <div v-if="!(nsPlugin && spec.type === 'outline') && spec.type !== 'lore' && spec.type !== 'characters'" v-show="(spec.type !== 'outline' || ui.outlineSideOpen) && (spec.type !== 'chapter' || (!ui.readMode && !ui.focusMode))" class="side-resizer" title="拖拽调整侧栏宽度（双击恢复默认）" @mousedown="startSideResize" @dblclick="ui.setPref('sideWidth', 252)"></div>
+          <div v-if="!(nsPlugin && spec.type === 'outline') && spec.type !== 'lore' && spec.type !== 'characters' && spec.type !== 'snippets'" v-show="(spec.type !== 'outline' || ui.outlineSideOpen) && (spec.type !== 'chapter' || (!ui.readMode && !ui.focusMode))" class="side-resizer" title="拖拽调整侧栏宽度（双击恢复默认）" @mousedown="startSideResize" @dblclick="ui.setPref('sideWidth', 252)"></div>
           <button
             v-if="!nsPlugin && spec.type === 'outline' && !ui.outlineSideOpen"
             class="ol-side-rail"
@@ -291,10 +289,11 @@ onBeforeUnmount(() => {
           <LoreWorkspace v-if="spec.type === 'lore'" class="lore-shell-host" />
           <!-- 人物面板：同样委派给 CharactersWorkspace 自带的面板矩阵外壳 -->
           <CharactersWorkspace v-else-if="spec.type === 'characters'" class="char-shell-host" />
+          <!-- 灵感：自带导航列 + 手札/拼板 + 片段整理，不再借用外置 .side-panel 与 .center-pane -->
+          <SnippetsWorkspace v-else-if="spec.type === 'snippets'" class="snippets-shell-host" />
           <div v-else class="center-pane paper-texture">
             <EditorPane v-if="spec.type === 'chapter'" />
             <OutlineCenter v-else-if="spec.type === 'outline'" style="flex: 1; min-height: 0" />
-            <SnippetCenter v-else-if="spec.type === 'snippets'" />
           </div>
           <RightPanel v-if="spec.type === 'chapter'" aria-label="批注与资料" />
         </div>

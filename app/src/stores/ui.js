@@ -8,6 +8,9 @@ import {normalizeWritingPaper,saveWritingPaperPreference} from '../services/writ
 import { useWorkStore } from './work'
 import { resolveLoreFocus } from '../services/lore-core.js'
 import { normalizeCharPrefs, normalizeCharState } from '../components/characters/char-layout.js'
+import { createSnippetPersistence } from '../services/snippet-persistence.js'
+import { registerFlushHook } from '../services/autosave'
+import { normalizeDrafts, normalizeSnipState } from '../components/snippets/snippet-model.js'
 import { CJK_FONTS, LATIN_FONTS, FONT_MAP, LATIN_MAP, SETTINGS_SAVE_ERROR } from '../components/settings/settings-prefs.js'
 import { SETTINGS_PAGE_KEYS } from '../components/settings/settings-catalog.js'
 
@@ -15,6 +18,30 @@ import { SETTINGS_PAGE_KEYS } from '../components/settings/settings-catalog.js'
    合并成一次 appconfig 写入；写失败静默（下一次改动会再试）。 */
 let charStateTimer = null
 let charStatePending = null
+/* 灵感状态 / 草稿的写入防抖：草稿按键频繁（250ms），状态改动稀少（立即落）。 */
+/* 设计稿状态名 → store 字段名（saveSnipState 的唯一映射点） */
+const SNIP_FIELD = {
+  view: 'snipView', filter: 'snipFilter', tag: 'snipTag', sort: 'snipSort', group: 'snipGroup',
+  query: 'snipQuery', selected: 'snipSelectedId', moreTags: 'snipMoreTags', tagOrder: 'snipTagOrder', order: 'snipOrder', inspector: 'snipInspector', scroll: 'snipScroll'
+}
+
+const snippetPersistence = new WeakMap()
+function snippetsFor(store) {
+  if(!snippetPersistence.has(store)) {
+    const engine=createSnippetPersistence({
+      read:async key=>(await db.appconfig.get(key))?.value,
+      write:async(key,value)=>db.appconfig.put({key,value:plainPref(value)}),
+      apply:snapshot=>{
+        store.snipStateWorkId=snapshot.id
+        for(const [key,field] of Object.entries(SNIP_FIELD))store[field]=snapshot.state[key]
+        store.snipDrafts=snapshot.drafts;store.snipPersistence=snapshot.status
+      }
+    })
+    snippetPersistence.set(store,engine)
+    registerFlushHook(()=>engine.flushAll())
+  }
+  return snippetPersistence.get(store)
+}
 
 /* appconfig 落库前的纯数据降级：Dexie 走结构化克隆，Vue reactive proxy 会抛 DataCloneError
    （典型：{ ...ui.charPrefs, [v]: { ...one } } 只把被覆写的那一档摊平成普通对象，另一档仍是 proxy），
@@ -98,6 +125,24 @@ export const useUiStore = defineStore('ui', {
     charScope: 'local',
     charScroll: { roster: 0, dossier: 0, context: 0 },
     charStateWorkId: null,
+    /* 灵感模块的按作品状态：视图 / 筛选 / 标签 / 排序 / 手动顺序 / 详情开合 / 两视图滚动，
+       与草稿（随手记 + 逐条未提交修改）分开存——草稿每次按键都变，状态很少变。
+       落 appconfig['snipstate:<workId>'] 与 ['snipdraft:<workId>']。 */
+    snipStateWorkId: null,
+    snipView: 'journal',
+    snipFilter: 'all',
+    snipTag: '',
+    snipSort: 'new',
+    snipGroup: '',
+    snipQuery: '',
+    snipSelectedId: '',
+    snipMoreTags: false,
+    snipOrder: [],
+    snipTagOrder: [],
+    snipPersistence: {reading:false,pending:false,readError:false,writeError:false},
+    snipInspector: { journal: true, board: false },
+    snipScroll: { journal: {top:0,left:0}, board: {top:0,left:0} },
+    snipDrafts: { quick: '', edit: {} },
     autosave: { pending: 0, saving: false, lastSavedAt: 0, error: false },
     searchOpen: false,
     statsOpen: false,
@@ -306,6 +351,25 @@ export const useUiStore = defineStore('ui', {
           .catch(() => { /* 落库失败不影响当前编辑，下一次改动会重试 */ })
       }, 250)
     },
+
+    /* ---------- 灵感模块的按作品状态与草稿 ---------- */
+    captureSnipState() {
+      return Object.fromEntries(Object.entries(SNIP_FIELD).map(([key,field])=>[key,plainPref(this[field])]))
+    },
+    async loadSnipState(workId) {if(workId)await snippetsFor(this).activate(workId)},
+    async loadSnipDrafts(workId) {if(workId)await snippetsFor(this).activate(workId)},
+    saveSnipState(patch={}, workId=this.snipStateWorkId) {
+      if(!workId)return
+      snippetsFor(this).patchState(workId,plainPref(patch))
+    },
+    saveSnipDrafts(patch={}, workId=this.snipStateWorkId) {
+      if(!workId)return
+      snippetsFor(this).patchDrafts(workId,plainPref(patch))
+    },
+    setSnipDraft(id,draft,workId=this.snipStateWorkId) {this.saveSnipDrafts({edit:{[id]:draft?{title:draft.title,body:draft.body,...(draft.base?{base:draft.base}:{}),...(draft.editing?{editing:true}:{})}:null}},workId)},
+    getSnipSession(workId=this.snipStateWorkId){return snippetsFor(this).get(workId)},
+    async retrySnipPersistence(){return snippetsFor(this).retry(this.snipStateWorkId)},
+    async flushSnipPersistence(){return snippetsFor(this).flushAll()},
 
     async setSkin(value) {
       const skin = normalizeSkin(value)

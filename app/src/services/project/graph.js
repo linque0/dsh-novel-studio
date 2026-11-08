@@ -1,3 +1,4 @@
+import {snippetReferences} from '../snippet-links.js'
 import { hashContent, rowHash, stableStringify, normalizeText } from './text.js'
 import { outlineConnections } from './outline-connections.js'
 import { doublelinkTitle } from '../doublelink-titles.js'
@@ -65,10 +66,10 @@ export function projectGraph(bundle, docs, decisions = []) {
     if(doc.sourceType==='outlineconnection')continue
     const source=(bundle[doc.sourceTable]||[]).find((r)=>r.id===doc.sourceId)
     const raw=[source?.content,source?.html,source?.text,...(source?.textboxes||[]).map((b)=>b.text)].filter(Boolean).join('\n')
-    if(doc.sourceType==='snippet')for(const link of source?.aiLinks||[]) {
-      const targets=targetDocs(link.type,link.id)
+    if(doc.sourceType==='snippet')for(const link of snippetReferences(source||{})) {
+      const targets=targetDocs(link.kind,link.id)
       if(targets.length)for(const target of targets)edge(doc.id,target.id,'inspiration-link',doc)
-      else issues.push({type:'missing-inspiration-link',sourceId:doc.sourceId,ref:link.type+':'+link.id})
+      else issues.push({type:'missing-inspiration-link',sourceId:doc.sourceId,ref:link.kind+':'+link.id})
     }
     for(const match of raw.matchAll(/data-dl-target\s*=\s*["']([^"']+)["']/g)) {
       const sep=match[1].indexOf(':'),kind=match[1].slice(0,sep),id=match[1].slice(sep+1),targets=sep>0?targetDocs(kind,id):[]

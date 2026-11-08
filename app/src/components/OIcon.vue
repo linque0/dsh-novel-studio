@@ -47,6 +47,7 @@ const ICONS = {
   textbox: '<rect x="3" y="6" width="18" height="12" rx="1.5"/><path d="M7 10h10"/><path d="M7 14h7"/>',
   container: '<path d="M4 8h16v12H4z"/><path d="M4 8l2-4h12l2 4"/><path d="M10 12h4"/>',
   flag: '<path d="M5 21V4"/><path d="M5 4h13l-3 4 3 4H5"/>',
+  tray: '<path d="M4 5h16v14H4zM4 12h5l1 3h4l1-3h5"/>',
   rows: '<path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/>',
   anchor: '<circle cx="12" cy="5" r="3"/><path d="M12 8v13"/><path d="M5 12H3a9 9 0 0 0 18 0h-2"/>',
   image: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>',

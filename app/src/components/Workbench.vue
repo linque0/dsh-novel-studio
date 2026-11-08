@@ -13,7 +13,6 @@ import { WORK_NAVIGATION } from './app-navigation'
 import { openSettings as openSettingsEntry } from '../services/settings-entry.js'
 import ChapterTree from './ChapterTree.vue'
 import OutlineSidebar from './OutlineSidebar.vue'
-import SnippetList from './SnippetList.vue'
 import CandidateEditor from './agent/CandidateEditor.vue'
 import {useStoryStore} from '../stores/story.js'
 const story=useStoryStore()
@@ -21,7 +20,7 @@ import { autosave } from '../services/autosave.js'
 import OutlineCenter from './OutlineCenter.vue'
 import CharactersWorkspace from './characters/CharactersWorkspace.vue'
 import LoreWorkspace from './lore/LoreWorkspace.vue'
-import SnippetCenter from './SnippetCenter.vue'
+import SnippetsWorkspace from './snippets/SnippetsWorkspace.vue'
 import RightPanel from './RightPanel.vue'
 import AiAssistantPanel from './ai/AiAssistantPanel.vue'
 const nsPlugin = __NS_PLUGIN__
@@ -36,7 +35,7 @@ const shell = ref(null)
 const narrow = ref(window.matchMedia('(max-width: 1180px)').matches)
 /* 设定页与人物页都自带面板矩阵（LoreWorkspace 的 nav 列 = 设定目录、CharactersWorkspace 的 roster 列 = 人物名录），
    不再走外置侧栏：.side-panel / .side-resizer / .ol-side-rail 在 lore / characters 页整体让位，别的 tab 一字不动。 */
-const showDirectory = computed(() => work.tab !== 'lore' && work.tab !== 'characters' && !(nsPlugin && work.tab === 'outline') && !ui.focusMode && !ui.readMode && !modulePopped.value)
+const showDirectory = computed(() => work.tab !== 'lore' && work.tab !== 'characters' && work.tab !== 'snippets' && !(nsPlugin && work.tab === 'outline') && !ui.focusMode && !ui.readMode && !modulePopped.value)
 const showNotes = computed(() => !!work.activeChapter && !ui.focusMode && !ui.readMode && !modulePopped.value && work.tab === 'chapters')
 /* 目录栏（正文页即章节栏）开合：大纲模块沿用自有开合，其余模块共用 sidePanelOpen */
 const dirVisible = computed(() => (work.tab === 'outline' ? ui.outlineSideOpen : ui.sidePanelOpen))
@@ -412,7 +411,6 @@ onBeforeUnmount(() => {
       <div v-if="showDirectory && dirVisible" id="writing-directory" v-show="work.tab !== 'outline' || ui.outlineSideOpen" class="side-panel" aria-label="目录与资料" :style="sidePanelStyle">
         <ChapterTree v-if="work.tab === 'chapters'" @read="onMore('read')" @window="onSplit('chapter')" @collapse="closeDirectory()" />
         <OutlineSidebar v-else-if="work.tab === 'outline'" />
-        <SnippetList v-else-if="work.tab === 'snippets'" />
       </div>
       <div
         v-if="!(nsPlugin && work.tab === 'outline') && work.tab !== 'characters' && !ui.focusMode && !ui.readMode && !modulePopped && dirVisible"
@@ -459,13 +457,13 @@ onBeforeUnmount(() => {
       <LoreWorkspace v-if="work.tab === 'lore'" v-show="!modulePopped" class="lore-shell-host" />
       <!-- 人物页：委派给 CharactersWorkspace 自带的面板矩阵外壳（roster | 16 | main | 16 | context） -->
       <CharactersWorkspace v-else-if="work.tab === 'characters'" v-show="!modulePopped" class="char-shell-host" />
+      <SnippetsWorkspace v-else-if="work.tab === 'snippets'" v-show="!modulePopped" class="snippets-shell-host" />
       <div v-else v-show="!modulePopped" class="center-pane paper-texture">
         <div v-if="work.tab==='chapters'&&story.active&&!ui.agentCandidateId&&!nsPlugin" class="story-workshop-bar"><span>{{story.formalView?'正式正文':'与恍然梦共用的工作稿'}} · {{story.active.status==='confirmed'?'本章已确认':'尚未确认入正文'}}</span><button @click="story.formalView=!story.formalView">{{story.formalView?'回到共同工作稿':'对照正式正文'}}</button><button @click="ui.workbenchMode='agent'">回到故事现场</button></div>
         <div id="writing-story-editor-host" v-show="work.tab==='chapters'&&!ui.agentCandidateId&&story.active&&!story.formalView" class="shared-editor-host story-workshop-editor"></div>
         <div id="writing-editor-host" v-show="work.tab==='chapters'&&!ui.agentCandidateId&&(!story.active||story.formalView)" class="shared-editor-host"></div>
         <CandidateEditor v-if="work.tab==='chapters'&&ui.agentCandidateId" :candidate-id="ui.agentCandidateId" handoff @close="ui.agentCandidateId=null" />
         <OutlineCenter v-if="work.tab === 'outline'" />
-        <SnippetCenter v-else-if="work.tab === 'snippets'" />
       </div>
 
       <!-- 批注栏收起后的右缘细轨：点击重新展开（仅正文页显示，与批注栏同条件） -->

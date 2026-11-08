@@ -19,6 +19,7 @@ import { primaryRole } from '../services/character-tags'
 import { readWritingPosition } from '../services/writing-position.js'
 import { resolveWritingChapter } from '../services/writing-position-core.js'
 import { DEFAULT_MUBU_SETS, kindOf } from '../components/lore/lore-kinds.js'
+import { joinContent, normalizeLinks, normalizeTags, normalizeTag, splitNote } from '../components/snippets/snippet-model.js'
 
 const urlCache = new Map()
 
@@ -294,7 +295,7 @@ export const useWorkStore = defineStore('work', {
       if (this.selVolumeId === id) this.selVolumeId = null
     },
 
-    async addChapter(volumeId, title = '新章节') {
+    async addChapter(volumeId, title = '新章节', { keepTab = false } = {}) {
       let vid = volumeId
       if (!vid) vid = this.selVolumeId || this.liveVolumes[0]?.id
       if (!vid) vid = (await this.addVolume('第一卷')).id
@@ -319,7 +320,7 @@ export const useWorkStore = defineStore('work', {
       const o = { id: uid(), workId: this.work.id, level: 'chapter', refId: ch.id, content: '', createdAt: now(), updatedAt: now(), deletedAt: null }
       this.outlines.push(o)
       autosave.mark('outlines', o)
-      this.tab = 'chapters'
+      if (!keepTab) this.tab = 'chapters'
       this.selChapterId = ch.id
       this.selVolumeId = vid
       return ch
@@ -490,9 +491,19 @@ export const useWorkStore = defineStore('work', {
       this.relations = this.relations.filter((r) => r.id !== id)
     },
 
-    /* ---------- 灵感 ---------- */
-    addSnippet(content = '') {
-      const row = { id: uid(), workId: this.work.id, content, tags: [], createdAt: now(), updatedAt: now(), deletedAt: null }
+    /* ---------- 灵感（设计稿：docs/前端美化/灵感-融合总稿-20261107/） ---------- */
+    /** 新增一条；content 首行为标题。tags / links 由调用方归一后传入（snippet-model.js）。 */
+    addSnippet(content = '', opts = {}) {
+      const row = {
+        id: uid(),
+        workId: this.work.id,
+        content,
+        tags: normalizeTags(opts.tags),
+        links: normalizeLinks(opts.links),
+        createdAt: now(),
+        updatedAt: now(),
+        deletedAt: null
+      }
       this.snippets.push(row)
       autosave.mark('snippets', row)
       this.tab = 'snippets'
@@ -507,11 +518,84 @@ export const useWorkStore = defineStore('work', {
       autosave.mark('snippets', s)
     },
 
+    /** 加标签：去重、归一；返回归一后的标签（空串表示不合法，调用方给提示）。 */
+    tagSnippet(id, value) {
+      const s = this.snippets.find((x) => x.id === id)
+      if (!s) return ''
+      const tag = normalizeTag(value)
+      if (!tag) return ''
+      const tags = normalizeTags([...(s.tags || []), tag])
+      if (tags.length === (s.tags || []).length) return tag
+      s.tags = tags
+      autosave.mark('snippets', s)
+      return tag
+    },
+
+    untagSnippet(id, tag) {
+      const s = this.snippets.find((x) => x.id === id)
+      if (!s) return
+      s.tags = (s.tags || []).filter((t) => t !== tag)
+      autosave.mark('snippets', s)
+    },
+
+    /** 关联目标：只存 kind:id（目标改名后关联仍在，渲染时实时解析标题）。 */
+    linkSnippet(id, kind, targetId) {
+      const s = this.snippets.find((x) => x.id === id)
+      if (!s || !targetId) return false
+      const links = normalizeLinks([...(s.links || []), { kind, id: targetId }])
+      if (links.length === (s.links || []).length) return false
+      s.links = links
+      autosave.mark('snippets', s)
+      return true
+    },
+
+    unlinkSnippet(id, key) {
+      const s = this.snippets.find((x) => x.id === id)
+      if (!s) return
+      s.links = (s.links || []).filter((l) => l.kind + ':' + l.id !== key)
+      autosave.mark('snippets', s)
+    },
+
     async deleteSnippet(id) {
       const s = this.snippets.find((x) => x.id === id)
       if (!s) return
       await repo.softDeleteRow('snippets', s)
       if (this.selSnippetId === id) this.selSnippetId = null
+    },
+
+    /** 回收站还原：沿用 restoreItem 的软删语义（同 id 回来，关联与标签不变）。 */
+    async restoreSnippet(id) {
+      const s = this.snippets.find((x) => x.id === id)
+      if (!s) return
+      await repo.restoreRow('snippets', s)
+    },
+
+    /**
+     * 转为章节：保留原灵感（设计稿「转换后保留原灵感」），新建章节并把新章节 id 记进灵感关联。
+     * keepTab 让调用方停在灵感页——设计稿是在灵感页开结果预览，不是跳去正文。
+     */
+    async snippetToChapter(id, volumeId = null) {
+      const s = this.snippets.find((x) => x.id === id)
+      if (!s) return null
+      const { title, body } = splitNote(s)
+      /* keepTab：转换是在灵感页开结果预览，不能把用户甩到正文去（设计稿口径） */
+      const ch = await this.addChapter(volumeId === 'orphans' ? 'orphans' : volumeId, (title || '灵感章节').slice(0, 30), { keepTab: true })
+      this.setChapterContent(ch.id, joinContent(title, body), 'text')
+      this.linkSnippet(id, 'chapter', ch.id)
+      return ch
+    },
+
+    /** 转为设定：在选定设定集（parentId 为空则当前集/新集）里建同名节点，正文写进子节点。 */
+    snippetToMubu(id, parentId = null) {
+      const s = this.snippets.find((x) => x.id === id)
+      if (!s) return null
+      const { title, body } = splitNote(s)
+      const root = parentId ? null : this.currentMubuRoot() || this.createMubuSet()
+      const node = this.mubuAdd(parentId || root.id, null, (title || '新设定').slice(0, 30), null)
+      if (!node) return null
+      if (body.trim()) this.mubuAdd(node.id, null, body.trim(), null)
+      this.linkSnippet(id, 'mubu', node.id)
+      return node
     },
 
     /* ---------- 资产（图片等） ---------- */

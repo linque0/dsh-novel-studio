@@ -1,9 +1,10 @@
+import {snippetReferences} from '../snippet-links.js'
 import { normalizeText, hashContent, rowHash, chapterHash, stableStringify, tokens } from './text.js'
 import { chunkText, paragraphRanges } from './chunker.js'
 import { rolesOf } from '../character-tags.js'
 import { outlineConnections } from './outline-connections.js'
 
-export const PROJECTION_VERSION = 3
+export const PROJECTION_VERSION = 4
 export const SOURCE_TABLES = ['works', 'volumes', 'chapters', 'outlines', 'characters', 'relations', 'lorelinks', 'lorecats', 'lore', 'mubu', 'olnodes', 'snippets', 'annotations', 'assets', 'links']
 export const TABLE_FOR_TYPE = { work: 'works', volume: 'volumes', chapter: 'chapters', outline: 'outlines', outlineconnection:'olnodes', character: 'characters', relation: 'relations', lorelink: 'lorelinks', lorecat: 'lorecats', lore: 'lore', mubu: 'mubu', olnode: 'olnodes', snippet: 'snippets', annotation: 'annotations', asset: 'assets', link: 'links' }
 export function orderedChapters(bundle) {
@@ -105,7 +106,7 @@ export function projectBook(bundle, previous = []) {
     for (const r of live('lore')) add('lore', r, normalizeText(r.content), ['旧版设定', r.title || r.name || r.id], 'setting', { categoryId: r.categoryId })
   }
   for (const r of live('snippets')) {
-    const targets=(r.aiLinks||[]).flatMap(link=>docs.filter(d=>link.type==='outline'?['outline','olnode'].includes(d.sourceType)&&(d.sourceId===link.id||d.meta.refId===link.id):d.sourceType===(link.type==='lore'?'mubu':link.type)&&d.sourceId===link.id))
+    const targets=snippetReferences(r).flatMap(link=>docs.filter(d=>link.kind==='outline'?['outline','olnode'].includes(d.sourceType)&&(d.sourceId===link.id||d.meta.refId===link.id):d.sourceType===link.kind&&d.sourceId===link.id))
     add('snippet', r, [r.title, normalizeText(r.content || r.text, r.fmt), (r.tags || []).join('、'), ...targets.map(d=>'灵感关联（不代表事实）：'+d.headingPath.join(' / '))].filter(Boolean).join('\n'), ['灵感', r.title || r.id], 'inspiration',{},targets.flatMap(d=>d.deps))
   }
   for (const r of live('annotations')) {

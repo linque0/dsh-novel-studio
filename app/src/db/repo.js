@@ -1,3 +1,4 @@
+import Dexie from 'dexie'
 import { memoryJob, recoverMemoryJob } from '../services/ai/memory-queue-core.js'
 import { db, uid, now, todayStr } from './database'
 import { htmlToMd, htmlToPlain } from '../services/importers'
@@ -123,12 +124,14 @@ export async function putRow(table, row, opts = {}) {
   if (table === 'chapters' && (opts.memoryIntent || opts.recordWordDelta)) {
     const job = opts.memoryIntent && !row.deletedAt ? memoryJob(row, opts.memoryIntent) : null
     const tables = [db.chapters, ...(job ? [db.airuns] : []), ...(opts.recordWordDelta ? [db.wordlog] : [])]
-    await db.transaction('rw', tables, async () => {
+    const commit = async () => {
       const delta = opts.recordWordDelta ? chapterWordChange(await db.chapters.get(row.id), row) : 0
       await db.chapters.put(JSON.parse(JSON.stringify(row)))
       if (delta) await addWordLog(row.workId, row.id, delta)
       if (job && !await db.airuns.get(job.id)) await db.airuns.put(job)
-    })
+    }
+    if(opts.inTransaction){if(!Dexie.currentTransaction)throw new Error('事务上下文已失效');await commit()}
+    else await db.transaction('rw', tables, commit)
     return job ? { ...row, memoryJobId: job.id } : row
   }
   await db.table(table).put(JSON.parse(JSON.stringify(row)))

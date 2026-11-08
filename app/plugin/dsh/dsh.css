@@ -1121,85 +1121,9 @@ body[data-skin=dsh] .lrp-panel .lrp-chip.on {
 body[data-skin=dsh] .lrp-panel :is(.n-input,.n-base-selection){height:28px;}
 body[data-skin=dsh] .ldt-page{top:var(--ns-topbar-h, 36px);}
 
-/* ==================== 灵感 ==================== */
-
-body[data-skin=dsh] .workbench-shell[data-module=snippets] .snippet-surface {
-  background:var(--ns-bg, #151517);
-  color:var(--ns-label-1, #f9fafb);
-}
-
-body[data-skin=dsh] .workbench-shell[data-module=snippets] .side-list {
-  box-sizing:border-box;
-  padding:6px;
-  border:.5px solid var(--ns-border-2, rgba(255, 255, 255, .12));
-  border-radius:12px;
-  background:var(--ns-layer-1, #232324);
-  overflow:auto;
-}
-
-body[data-skin=dsh] .workbench-shell[data-module=snippets] .side-item {
-  box-sizing:border-box;
-  height:34px;
-  min-height:34px;
-  margin:0;
-  padding:0 8px;
-  border-bottom:.5px solid var(--ns-border-1, rgba(255, 255, 255, .06));
-  border-radius:8px;
-  gap:8px;
-  font-size:13px;
-  color:var(--ns-label-2, #cfd3d6);
-}
-body[data-skin=dsh] .workbench-shell[data-module=snippets] .side-item:last-child{border-bottom:0;}
-body[data-skin=dsh] .workbench-shell[data-module=snippets] .side-item:hover{background:var(--ns-hover, rgba(255, 255, 255, .06));}
-
-body[data-skin=dsh] .workbench-shell[data-module=snippets] .side-item.active {
-  background:var(--ns-active, rgba(255, 255, 255, .1));
-  color:var(--ns-label-1, #f9fafb);
-}
-
-body[data-skin=dsh] .workbench-shell[data-module=snippets] .side-item .dim {
-  color:var(--ns-caption, #81858c);
-  font-size:11px;
-}
-body[data-skin=dsh] .workbench-shell[data-module=snippets] .side-head .n-input{font-size:12px;}
-
-body[data-skin=dsh] .workbench-shell[data-module=snippets] .side-head .n-button,body[data-skin=dsh] .workbench-shell[data-module=snippets] .snippet-actions .n-button {
-  height:28px;
-  min-height:28px;
-  font-size:12px;
-}
-
-body[data-skin=dsh] .workbench-shell[data-module=snippets] .snippet-surface .n-input {
-  background:var(--ns-layer-1, #232324);
-  border-radius:12px;
-}
-
-body[data-skin=dsh] .workbench-shell[data-module=snippets] .snippet-surface .n-input .n-input__textarea-el {
-  color:var(--ns-label-1, #f9fafb);
-  font-size:14px;
-  line-height:1.75;
-}
-
-body[data-skin=dsh] .workbench-shell[data-module=snippets] .n-tag,body[data-skin=dsh] .n-modal .n-tag {
-  box-sizing:border-box;
-  height:28px;
-  padding:0 10px;
-  border-radius:8px;
-  background:var(--ns-layer-1, #232324);
-  color:var(--ns-label-2, #cfd3d6);
-  font-size:11px;
-}
-
-body[data-skin=dsh] .workbench-shell[data-module=snippets] .empty-shelf .big {
-  color:var(--ns-label-2, #cfd3d6);
-  font-size:15px;
-  font-weight:600;
-}
-
-body[data-skin=dsh] .workbench-shell[data-module=snippets] .empty-shelf p {
-  color:var(--ns-caption, #81858c);
-  font-size:12px;
-}
+/* 灵感（snippets）的界面样式已迁到模块内：app/src/styles/snippets-fusion.css 收在 .snip-shell 命名空间下。
+   本节原先只服务 SnippetList.vue / SnippetCenter.vue 的旧文本区，二者已随设计稿改版移除，
+   对应的 .snippet-surface / .side-list / .side-item / .n-input 规则整段删除。 */
 
 /* ==================== 基础变量与全局 ==================== */
 
