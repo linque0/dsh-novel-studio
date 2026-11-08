@@ -1,0 +1,617 @@
+{
+  "checks": [
+    "no page overflow 1440",
+    "directory breakpoint 1440",
+    "sidebar exact metrics 1440",
+    "all tags get independent lanes 1440",
+    "no page overflow 1280",
+    "directory breakpoint 1280",
+    "sidebar exact metrics 1280",
+    "all tags get independent lanes 1280",
+    "no page overflow 864",
+    "directory breakpoint 864",
+    "sidebar exact metrics 864",
+    "native directory focus trap 864",
+    "directory Escape returns focus 864",
+    "all tags get independent lanes 864",
+    "native details modal 864",
+    "detail Escape returns focus 864",
+    "no page overflow 760",
+    "directory breakpoint 760",
+    "sidebar exact metrics 760",
+    "native directory focus trap 760",
+    "directory Escape returns focus 760",
+    "all tags get independent lanes 760",
+    "native details modal 760",
+    "detail Escape returns focus 760",
+    "no page overflow 380",
+    "directory breakpoint 380",
+    "sidebar exact metrics 380",
+    "native directory focus trap 380",
+    "directory Escape returns focus 380",
+    "all tags get independent lanes 380",
+    "native details modal 380",
+    "read-only details do not open the keyboard",
+    "phone bottom sheet",
+    "keyboard height change preserves draft, focus and caret",
+    "detail Escape returns focus 380",
+    "all tags accessible, only tags scroll",
+    "IME does not save structure or draft",
+    "view switch keeps selected draft",
+    "board horizontal scroll restored",
+    "draft survives reload",
+    "native Ctrl S saves input to DB",
+    "conversion rollback includes chapter/outline/source/wordlog",
+    "failed conversion retains dialog and source",
+    "retry creates one target and traceable wordlog",
+    "conversion undo/redo preserves IDs and body",
+    "conflict preserves draft and refreshes source",
+    "conflict does not overwrite DB",
+    "conflict can be reconciled explicitly without losing draft",
+    "rapid switch isolates drafts",
+    "debounced writes retain work identity",
+    "native drag honors actual target",
+    "cross lane drag confirms tag and order atomically",
+    "cross lane undo preserves original tags",
+    "recycle bin remains browsable in board",
+    "deleted note suspends editing and retains draft",
+    "draft write failure keeps input and pending state",
+    "draft retry persists retained input",
+    "work switch restores selection and view",
+    "undo history retained across modules",
+    "reduced motion reaches final state"
+  ],
+  "metrics": [
+    {
+      "label": "before",
+      "width": 1440,
+      "nav": {
+        "x": 30,
+        "y": 170,
+        "w": 174,
+        "h": 710,
+        "bottom": 880
+      },
+      "title": {
+        "x": 40,
+        "y": 213.59375,
+        "w": 154,
+        "h": 32,
+        "bottom": 245.59375
+      },
+      "titleSize": "20px",
+      "row": {
+        "x": 30,
+        "y": 264.59375,
+        "w": 164,
+        "h": 37,
+        "bottom": 301.59375
+      },
+      "gap": 0,
+      "padding": "0px",
+      "groupSize": "14px",
+      "selected": [
+        "rgb(189, 229, 206)",
+        "rgb(175, 158, 188)"
+      ],
+      "trash": {
+        "x": 30,
+        "y": 829,
+        "w": 164,
+        "h": 37,
+        "bottom": 866
+      },
+      "tags": null,
+      "order": [
+        "场景",
+        "对白",
+        "人物",
+        "雾港",
+        "来信",
+        "离别",
+        "车站"
+      ]
+    },
+    {
+      "label": "before",
+      "width": 1280,
+      "nav": {
+        "x": 30,
+        "y": 170,
+        "w": 174,
+        "h": 710,
+        "bottom": 880
+      },
+      "title": {
+        "x": 40,
+        "y": 213.59375,
+        "w": 154,
+        "h": 32,
+        "bottom": 245.59375
+      },
+      "titleSize": "20px",
+      "row": {
+        "x": 30,
+        "y": 264.59375,
+        "w": 164,
+        "h": 37,
+        "bottom": 301.59375
+      },
+      "gap": 0,
+      "padding": "0px",
+      "groupSize": "14px",
+      "selected": [
+        "rgb(189, 229, 206)",
+        "rgb(175, 158, 188)"
+      ],
+      "trash": {
+        "x": 30,
+        "y": 829,
+        "w": 164,
+        "h": 37,
+        "bottom": 866
+      },
+      "tags": null,
+      "order": [
+        "场景",
+        "对白",
+        "人物",
+        "雾港",
+        "来信",
+        "离别",
+        "车站"
+      ]
+    },
+    {
+      "label": "before",
+      "width": 864,
+      "nav": {
+        "x": 13,
+        "y": 77.59375,
+        "w": 253,
+        "h": 623.578125,
+        "bottom": 701.171875
+      },
+      "title": {
+        "x": 23,
+        "y": 121.1875,
+        "w": 233,
+        "h": 32,
+        "bottom": 153.1875
+      },
+      "titleSize": "20px",
+      "row": {
+        "x": 13,
+        "y": 172.1875,
+        "w": 243,
+        "h": 37,
+        "bottom": 209.1875
+      },
+      "gap": 0,
+      "padding": "0px",
+      "groupSize": "14px",
+      "selected": [
+        "rgb(189, 229, 206)",
+        "rgb(175, 158, 188)"
+      ],
+      "trash": {
+        "x": 13,
+        "y": 650.171875,
+        "w": 243,
+        "h": 37,
+        "bottom": 687.171875
+      },
+      "tags": null,
+      "order": [
+        "场景",
+        "对白",
+        "人物",
+        "雾港",
+        "来信",
+        "离别",
+        "车站"
+      ]
+    },
+    {
+      "label": "before",
+      "width": 760,
+      "nav": {
+        "x": 13,
+        "y": 77.59375,
+        "w": 253,
+        "h": 623.578125,
+        "bottom": 701.171875
+      },
+      "title": {
+        "x": 23,
+        "y": 121.1875,
+        "w": 233,
+        "h": 32,
+        "bottom": 153.1875
+      },
+      "titleSize": "20px",
+      "row": {
+        "x": 13,
+        "y": 172.1875,
+        "w": 243,
+        "h": 37,
+        "bottom": 209.1875
+      },
+      "gap": 0,
+      "padding": "0px",
+      "groupSize": "14px",
+      "selected": [
+        "rgb(189, 229, 206)",
+        "rgb(175, 158, 188)"
+      ],
+      "trash": {
+        "x": 13,
+        "y": 650.171875,
+        "w": 243,
+        "h": 37,
+        "bottom": 687.171875
+      },
+      "tags": null,
+      "order": [
+        "场景",
+        "对白",
+        "人物",
+        "雾港",
+        "来信",
+        "离别",
+        "车站"
+      ]
+    },
+    {
+      "label": "before",
+      "width": 380,
+      "nav": {
+        "x": 1,
+        "y": 65.59375,
+        "w": 350,
+        "h": 623.578125,
+        "bottom": 689.171875
+      },
+      "title": {
+        "x": 11,
+        "y": 109.1875,
+        "w": 330,
+        "h": 32,
+        "bottom": 141.1875
+      },
+      "titleSize": "20px",
+      "row": {
+        "x": 1,
+        "y": 160.1875,
+        "w": 340,
+        "h": 37,
+        "bottom": 197.1875
+      },
+      "gap": 0,
+      "padding": "0px",
+      "groupSize": "14px",
+      "selected": [
+        "rgb(189, 229, 206)",
+        "rgb(175, 158, 188)"
+      ],
+      "trash": {
+        "x": 1,
+        "y": 638.171875,
+        "w": 340,
+        "h": 37,
+        "bottom": 675.171875
+      },
+      "tags": null,
+      "order": [
+        "场景",
+        "对白",
+        "人物",
+        "雾港",
+        "来信",
+        "离别",
+        "车站"
+      ]
+    },
+    {
+      "label": "after",
+      "width": 1440,
+      "nav": {
+        "x": 30,
+        "y": 170,
+        "w": 174,
+        "h": 710,
+        "bottom": 880
+      },
+      "title": {
+        "x": 40,
+        "y": 213.59375,
+        "w": 154,
+        "h": 32,
+        "bottom": 245.59375
+      },
+      "titleSize": "20px",
+      "row": {
+        "x": 30,
+        "y": 264.59375,
+        "w": 164,
+        "h": 37,
+        "bottom": 301.59375
+      },
+      "gap": 3,
+      "padding": "8px 10px",
+      "groupSize": "11px",
+      "selected": [
+        "rgb(189, 229, 206)",
+        "rgb(189, 229, 206)"
+      ],
+      "trash": {
+        "x": 30,
+        "y": 826,
+        "w": 164,
+        "h": 37,
+        "bottom": 863
+      },
+      "tags": {
+        "client": 280,
+        "scroll": 280
+      },
+      "order": [
+        "场景",
+        "雾港",
+        "伏笔",
+        "人物",
+        "秘密",
+        "对白",
+        "来信"
+      ]
+    },
+    {
+      "label": "after",
+      "width": 1280,
+      "nav": {
+        "x": 30,
+        "y": 170,
+        "w": 174,
+        "h": 710,
+        "bottom": 880
+      },
+      "title": {
+        "x": 40,
+        "y": 213.59375,
+        "w": 154,
+        "h": 32,
+        "bottom": 245.59375
+      },
+      "titleSize": "20px",
+      "row": {
+        "x": 30,
+        "y": 264.59375,
+        "w": 164,
+        "h": 37,
+        "bottom": 301.59375
+      },
+      "gap": 3,
+      "padding": "8px 10px",
+      "groupSize": "11px",
+      "selected": [
+        "rgb(189, 229, 206)",
+        "rgb(189, 229, 206)"
+      ],
+      "trash": {
+        "x": 30,
+        "y": 826,
+        "w": 164,
+        "h": 37,
+        "bottom": 863
+      },
+      "tags": {
+        "client": 280,
+        "scroll": 280
+      },
+      "order": [
+        "场景",
+        "雾港",
+        "伏笔",
+        "人物",
+        "秘密",
+        "对白",
+        "来信"
+      ]
+    },
+    {
+      "label": "after",
+      "width": 864,
+      "nav": {
+        "x": 13,
+        "y": 77.59375,
+        "w": 253,
+        "h": 807,
+        "bottom": 884.59375
+      },
+      "title": {
+        "x": 40,
+        "y": 117.1875,
+        "w": 199,
+        "h": 32,
+        "bottom": 149.1875
+      },
+      "titleSize": "20px",
+      "row": {
+        "x": 30,
+        "y": 168.1875,
+        "w": 209,
+        "h": 37,
+        "bottom": 205.1875
+      },
+      "gap": 3,
+      "padding": "8px 10px",
+      "groupSize": "11px",
+      "selected": [
+        "rgb(189, 229, 206)",
+        "rgb(189, 229, 206)"
+      ],
+      "trash": {
+        "x": 30,
+        "y": 834.59375,
+        "w": 209,
+        "h": 37,
+        "bottom": 871.59375
+      },
+      "tags": {
+        "client": 280,
+        "scroll": 280
+      },
+      "order": [
+        "场景",
+        "雾港",
+        "伏笔",
+        "人物",
+        "秘密",
+        "对白",
+        "来信"
+      ]
+    },
+    {
+      "label": "after",
+      "width": 760,
+      "nav": {
+        "x": 13,
+        "y": 77.59375,
+        "w": 253,
+        "h": 807,
+        "bottom": 884.59375
+      },
+      "title": {
+        "x": 40,
+        "y": 117.1875,
+        "w": 199,
+        "h": 32,
+        "bottom": 149.1875
+      },
+      "titleSize": "20px",
+      "row": {
+        "x": 30,
+        "y": 168.1875,
+        "w": 209,
+        "h": 37,
+        "bottom": 205.1875
+      },
+      "gap": 3,
+      "padding": "8px 10px",
+      "groupSize": "11px",
+      "selected": [
+        "rgb(189, 229, 206)",
+        "rgb(189, 229, 206)"
+      ],
+      "trash": {
+        "x": 30,
+        "y": 834.59375,
+        "w": 209,
+        "h": 37,
+        "bottom": 871.59375
+      },
+      "tags": {
+        "client": 280,
+        "scroll": 280
+      },
+      "order": [
+        "场景",
+        "雾港",
+        "伏笔",
+        "人物",
+        "秘密",
+        "对白",
+        "来信"
+      ]
+    },
+    {
+      "label": "after",
+      "width": 380,
+      "nav": {
+        "x": 13,
+        "y": 77.59375,
+        "w": 253,
+        "h": 807,
+        "bottom": 884.59375
+      },
+      "title": {
+        "x": 40,
+        "y": 117.1875,
+        "w": 199,
+        "h": 32,
+        "bottom": 149.1875
+      },
+      "titleSize": "20px",
+      "row": {
+        "x": 30,
+        "y": 168.1875,
+        "w": 209,
+        "h": 37,
+        "bottom": 205.1875
+      },
+      "gap": 3,
+      "padding": "8px 10px",
+      "groupSize": "11px",
+      "selected": [
+        "rgb(189, 229, 206)",
+        "rgb(189, 229, 206)"
+      ],
+      "trash": {
+        "x": 30,
+        "y": 834.59375,
+        "w": 209,
+        "h": 37,
+        "bottom": 871.59375
+      },
+      "tags": {
+        "client": 280,
+        "scroll": 280
+      },
+      "order": [
+        "场景",
+        "雾港",
+        "伏笔",
+        "人物",
+        "秘密",
+        "对白",
+        "来信"
+      ]
+    }
+  ],
+  "screens": [
+    "before-sidebar-1440",
+    "before-sidebar-1280",
+    "before-sidebar-864",
+    "before-sidebar-760",
+    "before-sidebar-380",
+    "journal-1440",
+    "after-sidebar-1440",
+    "board-1440",
+    "detail-1440",
+    "journal-1280",
+    "after-sidebar-1280",
+    "board-1280",
+    "detail-1280",
+    "journal-864",
+    "after-sidebar-864",
+    "board-864",
+    "detail-864",
+    "journal-760",
+    "after-sidebar-760",
+    "board-760",
+    "detail-760",
+    "journal-380",
+    "after-sidebar-380",
+    "board-380",
+    "detail-380",
+    "long-tags-1440",
+    "empty-board-1440",
+    "autohide-1440",
+    "design-sidebar-1440",
+    "design-sidebar-1280",
+    "design-sidebar-864",
+    "design-sidebar-760",
+    "design-sidebar-380"
+  ],
+  "isolated": true
+}

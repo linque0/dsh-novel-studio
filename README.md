@@ -56,6 +56,8 @@
 
 **技能**：6 个（project / write / plan / memory / revise / review），渐进披露，project 为共享段。
 
+**界面 · 灵感**：按 [`docs/前端美化/灵感-融合总稿-20261107/`](docs/前端美化/灵感-融合总稿-20261107/) 重做 —— 页头（手札/拼板切换、检索、记一条）+ 左栏（全部/未标记/有关联/标签/回收站）+ 手札（按日期分组、置顶记录卡）或拼板（按标签分栏、手柄拖动、跨栏确认加标签）+ 片段详情（编辑标题正文并显式保存、标签、关联、转为章节/设定、回收站还原）。数据仍写 `snippets` 行的 `content`（首行 = 标题，四处既有消费者依赖这个约定），新增行内 `links: [{kind,id}]` 与按作品的手动顺序；未提交修改与每作品视图状态分别落 `appconfig['snipdraft:<workId>']` / `['snipstate:<workId>']`。插件版不渲染恍然梦入口（DSH 自身取代）。样式收在 `.snip-shell` 命名空间（`app/src/styles/snippets-fusion.css`），不再占用宿主 `.side-panel`。验收：`npm run test:snippets` + `NS_VERIFY_RUN=snippets-<宽> node scripts/verify-app.mjs`，记录见 [`docs/验收/灵感-插件融合-20261107/`](docs/验收/灵感-插件融合-20261107/)。
+
 **界面**：正文页的章节栏可收起 —— 场景皮肤在目录页右上角、原版/赤月戏在面板底部「收起章节栏」，另有 `更多 → 收起目录栏`；收起后左缘留 22px 竖排细轨（「章节」），点一下即恢复，正文因此多出约 230px 宽。偏好写进 appconfig（`sidePanelOpen`），大纲模块沿用自有的 `outlineSideOpen` 不受影响；面板窗口（`inPanel`）与独立正文窗（`navigation-only`）不显示该控件。桌面版与插件版共用同一份前端代码，两边行为一致。
 
 ## 数据层进度

@@ -1,0 +1,76 @@
+{
+  "date": "2026-11-08",
+  "isolation": "独立Chrome、随机本地源、临时作品库；未连接运行中的宿主",
+  "build": {
+    "entry": "./assets/index-D2c828v0.js",
+    "files": 130,
+    "status": "PASS"
+  },
+  "checks": [
+    {
+      "command": "test:snippets",
+      "status": "PASS",
+      "model": 7,
+      "persistence_history_projection_library": 7
+    },
+    {
+      "command": "test:lore-layout",
+      "status": "PASS",
+      "count": 9
+    },
+    {
+      "command": "test:char-layout",
+      "status": "PASS",
+      "count": 8
+    },
+    {
+      "command": "test:settings",
+      "status": "PASS",
+      "count": 19
+    },
+    {
+      "command": "smoke",
+      "status": "PASS",
+      "count": 82
+    },
+    {
+      "command": "contract",
+      "status": "PASS",
+      "host": "10 tools / 6 skills / 133 exact routes + 1 prefix",
+      "client": "tab 1 / seat 1 / slot 1"
+    }
+  ],
+  "pageAcceptance": [
+    {
+      "run": 1,
+      "checks": 60,
+      "screenshots": 33,
+      "status": "PASS"
+    },
+    {
+      "run": 2,
+      "checks": 60,
+      "screenshots": 33,
+      "status": "PASS"
+    },
+    {
+      "run": 3,
+      "checks": 60,
+      "screenshots": 33,
+      "status": "PASS"
+    }
+  ],
+  "fullRegression": {
+    "status": "PASS",
+    "passed": 1912,
+    "total": 1912,
+    "scenarios": 36,
+    "frozenBuild": "index-l5obYoTz.js",
+    "finalDelta": "只读弹层初始焦点改为关闭按钮；最终构建再经60项专项三轮验证"
+  },
+  "review": {
+    "independentRounds": 1,
+    "mode": "存量界面润色与代码复核，不打分",
+    "findings": "已修正，见REVIEW.md"
+  }
+}

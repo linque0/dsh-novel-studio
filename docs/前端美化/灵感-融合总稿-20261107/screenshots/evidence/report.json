@@ -1,0 +1,231 @@
+[
+  {
+    "file": "page.png",
+    "state": null,
+    "size": "1440x900",
+    "zoom": 1,
+    "animationWaitMs": 14,
+    "issues": [],
+    "lint": [
+      {
+        "rule": "headingSpacing",
+        "label": "标题离上文比离下文还近",
+        "count": 1,
+        "examples": [
+          "h2「雾港纪年」（上 8px，下 19px）"
+        ]
+      }
+    ]
+  },
+  {
+    "file": "page-@2x.png",
+    "state": null,
+    "size": "1440x900",
+    "zoom": 2,
+    "animationWaitMs": 0,
+    "issues": [],
+    "lint": [
+      {
+        "rule": "headingSpacing",
+        "label": "标题离上文比离下文还近",
+        "count": 1,
+        "examples": [
+          "h2「雾港纪年」（上 8px，下 19px）"
+        ]
+      }
+    ]
+  },
+  {
+    "file": "motion-probe-switch",
+    "state": null,
+    "size": "1440x900",
+    "zoom": 1,
+    "group": "switch",
+    "motion": {
+      "load": {
+        "elements": 2,
+        "loops": 0,
+        "maxMove": 6,
+        "maxSize": 0,
+        "maxOpacity": 0.38,
+        "top": [
+          {
+            "el": "div#workspace.workspace",
+            "move": 5,
+            "size": 0,
+            "opacity": 0.38,
+            "loop": false,
+            "sources": [
+              "css:arrive"
+            ]
+          },
+          {
+            "el": "aside#inspector.inspector.glass",
+            "move": 6,
+            "size": 0,
+            "opacity": 0.2,
+            "loop": false,
+            "sources": [
+              "css:inspector-in"
+            ]
+          }
+        ]
+      },
+      "steps": {
+        "elements": 5,
+        "loops": 0,
+        "maxMove": 562,
+        "maxSize": 1,
+        "maxOpacity": 0.66,
+        "top": [
+          {
+            "el": "dialog#action-dialog",
+            "move": 562,
+            "size": 1,
+            "opacity": 0.32,
+            "loop": false,
+            "sources": [
+              "css:panel-in"
+            ]
+          },
+          {
+            "el": "div#view-host.view-host.scroller",
+            "move": 4,
+            "size": 0.269,
+            "opacity": 0.22,
+            "loop": false,
+            "sources": [
+              "waapi"
+            ]
+          },
+          {
+            "el": "i",
+            "move": 55,
+            "size": 0,
+            "opacity": 0,
+            "loop": false,
+            "sources": [
+              "transition:transform"
+            ]
+          },
+          {
+            "el": "div#toast.toast",
+            "move": 6,
+            "size": 0,
+            "opacity": 0.66,
+            "loop": false,
+            "sources": [
+              "css:toast-in"
+            ]
+          },
+          {
+            "el": "aside#inspector.inspector.glass",
+            "move": 5,
+            "size": 0,
+            "opacity": 0.23,
+            "loop": false,
+            "sources": [
+              "css:inspector-in"
+            ]
+          }
+        ]
+      },
+      "hero": {
+        "elements": 0,
+        "loops": 0,
+        "maxMove": 0,
+        "maxSize": 0,
+        "maxOpacity": 0,
+        "top": [],
+        "layers": 0
+      },
+      "scroll": {
+        "elements": 0,
+        "loops": 0,
+        "maxMove": 0,
+        "maxSize": 0,
+        "maxOpacity": 0,
+        "top": [],
+        "scrollable": false
+      }
+    },
+    "issues": []
+  },
+  {
+    "file": "motion-entry-end.jpg",
+    "state": null,
+    "size": "1440x900",
+    "zoom": 1,
+    "group": "entry",
+    "issues": [],
+    "frames": {
+      "start": {
+        "file": "motion-entry-start.jpg",
+        "source": "Page.screencastFrame",
+        "timeMs": 227
+      },
+      "mid": {
+        "file": "motion-entry-mid.jpg",
+        "source": "Page.screencastFrame",
+        "timeMs": 389
+      },
+      "end": {
+        "file": "motion-entry-end.jpg",
+        "source": "Page.captureScreenshot",
+        "timeMs": 1843
+      }
+    },
+    "sampling": {
+      "mode": "entry"
+    },
+    "durationMs": 1843,
+    "consistency": {
+      "status": "matched",
+      "reference": "motion-entry-end.jpg",
+      "different": false,
+      "changedPixels": 0,
+      "maxTilePixels": 0,
+      "pixelRatio": 0
+    }
+  },
+  {
+    "file": "motion-switch-end.jpg",
+    "state": null,
+    "size": "1440x900",
+    "zoom": 1,
+    "group": "switch",
+    "issues": [],
+    "frames": {
+      "start": {
+        "file": "motion-switch-start.jpg",
+        "source": "Page.captureScreenshot",
+        "timeMs": 6528
+      },
+      "mid": {
+        "file": "motion-switch-mid.jpg",
+        "source": "Page.screencastFrame",
+        "timeMs": 6645
+      },
+      "end": {
+        "file": "motion-switch-end.jpg",
+        "source": "Page.captureScreenshot",
+        "timeMs": 8573
+      }
+    },
+    "sampling": {
+      "mode": "action",
+      "step": 15,
+      "action": "click",
+      "raw": "click #journal-tab"
+    },
+    "durationMs": 8573,
+    "consistency": {
+      "status": "matched",
+      "reference": "motion-switch-end.jpg",
+      "different": false,
+      "changedPixels": 0,
+      "maxTilePixels": 0,
+      "pixelRatio": 0
+    }
+  }
+]
