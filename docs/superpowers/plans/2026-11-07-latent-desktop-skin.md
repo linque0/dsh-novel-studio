@@ -8,7 +8,7 @@
 
 **Tech Stack:** 沿用项目现有 Vue 3、Pinia 2、Naive UI 2、Tiptap 2、Dexie 4、Vite 6、Electron 33；复用本地 WebGL2/CPU 流动背景及现有 Node/CDP/Playwright 验证工具，不新增框架。
 
-**Spec:** [接入设计草案](../specs/2026-11-07-latent-desktop-skin-design.md)。状态：建议方案、仅制定计划，尚未实施。
+**Spec:** [接入设计](../specs/2026-11-07-latent-desktop-skin-design.md) 与 [桌面能力及前端适配补充规格](../specs/2026-11-07-latent-desktop-adaptation.md)。本轮修订重点：把拆窗、恍然梦和五类桌面设置从概括性“保留能力”落实为界面布局、状态、窗口路由和逐项验收。尚未实施。
 
 ## Global Constraints
 
@@ -19,6 +19,9 @@
 - 不覆盖目录、不清理已有未提交改动、不安装无关依赖、不以真实用户 profile 运行写入性验收。
 - 默认不升 Dexie schema；不得自动重写旧作品或补造历史日志；不得让皮肤切换决定正文保存算法。
 - 本次计划文件位于插件仓库便于当前会话审阅；实际代码、测试与发布改动进入桌面仓库，插件仓库只读作来源。
+- 用户已明确要求桌面拆窗、恍然梦入口及更多设置项的前端适配；不得只保留 API、把新增入口都塞进更多菜单，或原样沿用插件三类设置。
+- 拆窗模块身份必须与 URL、原生锁一致；禁止复制插件只改本地 spec.type 的跨模块导航。保存失败的窗口保持打开。
+- AI/创作台/预设窗须适配实际输入、列表、工具与浮层；“只接令牌”和“入口存在”不能代替专项视觉/操作验收。
 
 ## Review Focus
 
@@ -46,6 +49,7 @@
 - [ ] 先交付测试脚本兼容表：逐个检查是否纯 Node、是否支持端口/profile 参数、是否固定 dev 数据目录，以及是否存在 killAll、全局进程终止、数据目录迁移/删除。`tools/dataDir-verify.mjs` 当前会固定 dev 并结束其他 Electron/Vite，禁止原样运行；先改为测试专用入口，只操作自己启动的进程和临时目录。`tools/_ai-test-profile.mjs` 的允许列表也需适配测试 profile。复用 settings-startup-verify 的唯一 profile 启动和 getDataLocation 实际路径断言，仅更换 CDP 端口不足以证明隔离。
 - [ ] 在独立测试 profile 运行目标既有构建和相关基线测试，记录现有失败。启动/截图前确认 profile 数据目录不重定向到用户目录。
 - [ ] 采集来源**DSH 宿主内当前构建实际页面**的模块截图、可见按钮与交互清单；记录宿主亮暗/字号和 shim 产生的实际 --ns-* 计算令牌。裸 app 构建不能独立替代来源基线；离线复现注入采集的令牌快照。记录来源构建是否与源码一致，必要时在临时目录构建来源副本，不能覆盖用户的 assets/app。
+- [ ] 将补充规格的桌面差异表转成 `port-map.md` 的覆盖清单：拆窗九类窗口、入梦/浅眠/模块助手/选区发送、五类设置全部项目；每项记录原组件、原 handler、新界面位置、状态、测试和截图。恢复默认范围按桌面外观项固定，不沿用插件仅四项快照。
 - [ ] 交付可复现的 port-map 和基线报告后提交本任务文档。
 
 **Verification:** 目标运行 `npm run build`、`node tools/skin-unit-verify.mjs`、`node tools/original-workspace-unit.test.mjs`。构建输出与测试退出码记录在报告；已有失败不得当成本次已修复。
@@ -88,25 +92,33 @@
 - [ ] 写主题用例：night 为暗，其余为亮；浅色无 data-ns-dark 属性；NConfigProvider 和 teleport 浮层一致；切回四种旧皮肤后 token 和样式与基线一致。
 - [ ] 写背景用例：无 WebGL2、context loss、reduced motion、隐藏/销毁页面、反复换肤后引擎数与监听不增长。先运行失败。
 - [ ] 搬入真实来源资源，核对 hash/字体引用/许可；CSS 保持原有效顺序，所有新通用选择器加皮肤或唯一根作用域。
+- [ ] 明确移除目标迁入样式中插件专属 `.module-agent{display:none}`（来源 dsh.css 约 760–763 行），并审计其他按 dsh 皮肤隐藏 AI/拆窗/纸面控件的选择器。模块助手验证实际尺寸、可见性与点击，不只检查 DOM 存在。
 - [ ] 在 App 根据 active skin 选覆盖，不把桌面 nsPlugin 改 true；不伪造 nsHost，逐条清理宿主专属 CSS 和标记依赖。维护桌面自身主题数据来源和清理权。
 - [ ] 字体加载、亮暗/浮层、GPU/CPU 与退出清理用例通过后提交。
 
 **Verification:** `npm run build`；隔离原生环境 `node tools/latent-theme-verify.mjs`，要求 theme/provider 一致、无 pageerror、切回旧皮肤无新增残留。
 
-## Task 4：书架、统一外壳、正文与全局入口
+## Task 4：桌面动作外壳、拆窗、恍然梦与书架正文
 
-**Files:** Create `src/components/skins/latent/LatentShelf.vue`、`LatentTopbar.vue`、`LatentWorkbench.vue`；Modify `src/components/Bookshelf.vue`、`Workbench.vue`、`EditorPane.vue`、`EditorToolbar.vue`、`RightPanel.vue`、`ChapterTree.vue`、`src/components/StudioWorkspace.vue`（仅必要的激活/焦点边界）、`src/components/PanelHost.vue`；Create `tools/latent-writing-verify.mjs`。
+**Files:** Create `src/components/skins/latent/LatentShelf.vue`、`LatentTopbar.vue`、`LatentWorkbench.vue`、`LatentDesktopActions.vue`、`LatentPanelTopbar.vue`、`src/services/latent/desktop-actions.js`；Modify `src/components/Bookshelf.vue`、`Workbench.vue`、`EditorPane.vue`、`EditorToolbar.vue`、`EditorContextMenu.vue`、`RightPanel.vue`、`ChapterTree.vue`、`src/components/StudioWorkspace.vue`（仅必要的激活/焦点边界）、`src/components/PanelHost.vue`、`src/components/ai/AiAssistantPanel.vue`、`src/components/agent/AgentWorkbench.vue`、`src/components/ai/PresetWindow.vue`（后三者仅外观/布局与入口适配）、`electron/panels.js`、`electron/preload.cjs`；Create `tools/latent-writing-verify.mjs`、`tools/latent-window-verify.mjs`、`tools/latent-ai-ui-verify.mjs`。
 
 **Interfaces:** LatentShelf 沿用来源 works/total/loading/busy/query/openStats/firstChapter/menuOptions props 和 open/menu/create/settings/navigate/select-work 事件；LatentWorkbench 提供 topbar/directory/default/notes/ai slots，接收 module/focusMode/readMode 和 drawer 相关状态，不负责保存业务。
 
+`desktop-actions.js` 导出 `buildDesktopActions({surface,module,hasWork,windowType,lockState,busy}):DesktopAction[]`，`DesktopAction={key,label,disabled,reason?,active?}`；只定义动作描述，不调用生成业务。AI handler 复用 `enterDreamMode/enterLightSleepMode`；窗口动作复用 `popOut/focusPopped/isPopped/panelSetEntity`。新增原生 `panelFocusMain():Promise<{ok:boolean}>` 仅用于前往主窗，不改变当前窗锁或关闭状态。AI 停靠沿用 300–640px 偏好，净中心宽度不足 520px 时转覆盖抽屉，临时形态不写目录/批注偏好。
+
 - [ ] 定义并写入书架空态、单书、环绕、多书筛选后焦点、CRUD 和接续章测试；正文记录编辑器对象身份、Teleport 宿主 DOM 对象身份、撤销历史、选区、滚动与 pending 内容，互切后逐项验证，不能只检查同名 ID 存在。
 - [ ] 写输入法 composition 与正在打开弹层时的切肤测试；切肤不在 composition 结束前销毁输入宿主，局部提交失败保持旧界面。
+- [ ] 先写桌面动作与状态用例：书架只有入梦、工作台双模式、各模块可拆、已拆出转“前往窗口”、重复点击聚焦、保存/移交中禁用、失败保持原界面；窗口身份/实体锁不能因本地模块导航改变。对应 D-01～D-03。
 - [ ] 搬入书架和布局壳，接父层已有动作；用皮肤条件选择布局，不整体复制插件 Bookshelf/Workbench 覆盖桌面逻辑。
 - [ ] 正文共享 EditorPane/Tiptap，只按皮肤修改展示与 toolbar slot；保持 writing-editor-host 等 Teleport 宿主 DOM 身份稳定，不在换壳时删除再创建同名目标。保留纸面选择、章节状态/目标/书签/历史、AI 选区动作、阅读/专注和双向链接。
-- [ ] 新顶栏接完整模块、设置、搜索、更多和恍然梦入口；维护所有 Teleport 目标。以 isLatentSkin 控制外观，以 nsPlugin 控制宿主行为。
+- [ ] 新顶栏以 LatentDesktopActions 提供直接可发现的入梦/浅眠/当前模块独立窗。1080px 放不下时切紧凑模块工具行；更多按本模块/窗口/写作工具/应用分组，不能靠滚动藏关键桌面入口。大纲专用顶栏在 Task 5 复用同一动作模型。
+- [ ] 内容独立窗用 LatentPanelTopbar：作品/实体标题、保存/错误、保存并关闭、聚焦主窗、模块助手。保留类型固定与 panelSetEntity 锁迁移；跨模块操作走原生打开/聚焦目标窗，不只改 spec.type。保存失败不执行 finally-close，普通/系统关闭仍走现有保存拦截。前往主窗和保存关闭使用不同文案。
+- [ ] 恍然梦书架入口接 DreamLaunchDialog，工作台入梦/浅眠分别接既有 entry-modes；已拆出 AI 时浅眠聚焦原窗。模块助手与选区发送保留实际上下文及桌面文案，不能沿用 DSH 聊天桥。
+- [ ] 为 AI 停靠/覆盖抽屉建立可用宽度预算与焦点管理；关闭抽屉/切肤不卸载会话、不取消流式生成。AiAssistantPanel、AgentWorkbench、PresetWindow 保留业务，在隐现下适配模型/预设/功能调整、候选、错误、输入区、列表和所有弹层，不仅改 palette。
+- [ ] 保留完整模块、设置、搜索入口及所有 Teleport 目标。以 isLatentSkin 控制外观，以 nsPlugin 控制宿主行为。跨主窗/内容窗/AI窗适配可见状态，不用 display:none 误藏桌面能力。
 - [ ] 验证单编辑器、无丢字及旧书架/正文回归后提交。
 
-**Verification:** 新 `node tools/latent-writing-verify.mjs`；按脚本环境要求执行既有 `tools/writing-experience-verify.mjs`、`tools/writing-paper-unit-verify.mjs`、`tools/ai-entry-unit-verify.mjs`、`tools/studio-topbar-nav-verify.mjs`。截图主窗 1080/1280/1440；布局补充 380/560/760/900/1180 边界。
+**Verification:** 新 `node tools/latent-writing-verify.mjs`、`node tools/latent-window-verify.mjs`、`node tools/latent-ai-ui-verify.mjs`；按隔离前提执行旧写作/AI entry/多窗口/预设脚本。覆盖 D-01～D-05、D-08～D-09。截图主窗 1080/1280/1440、内容窗 800、AI 窗 380、创作台与预设窗实际最小宽；逐项检查文字、控件、状态和弹层，布局补充 380/560/760/900/1180 边界。
 
 ## Task 5：大纲与完整设定工作区
 
@@ -116,6 +128,7 @@
 
 - [ ] 迁入纯函数 layout/core 测试，新增老作品缺 heading/kind、自定义字段、深层树、重复标题、断链/循环、跨作品引用隔离用例，运行确认新增契约未实现。
 - [ ] 大纲新视图复用共享画布与文本模型；容器展开、选择、缩放、结构栏和详情布局按皮肤启用，不改旧皮肤默认 outlineView。
+- [ ] 大纲专用顶栏复用 Task 4 桌面动作；明确分开画布设置与应用设置，保留入梦/浅眠/拆窗。独立大纲窗不复制插件 outlineNavigate 本地改 type 的行为，跨模块操作走窗口服务；验证大纲窗内不能绕过设定/人物的编辑锁。
 - [ ] 设定迁入新三种视图与引用/预览，局部改造版组件留在 latent/lore；旧 MubuView 等继续给四套皮肤用。补入 work/ui 必需动作时保留旧公开字段及行为。
 - [ ] 默认根节点补齐仅在用户主动操作时执行；读旧树不重排/写回。撤销按作品隔离并保存完整对象；切肤、跨作品、异步加载用 workId/请求序号阻止旧请求写新状态。
 - [ ] 设定局部富文本在离开/切肤/拆窗前提交，失败阻止移交；完成引用跳人物/正文/大纲和回退路径测试。
@@ -140,18 +153,25 @@
 
 ## Task 7：完整桌面设置与全局弹层
 
-**Files:** Create `src/components/skins/latent/settings/`（来源完整 settings 目录，版本适配除外）；Create `src/services/latent/settings-entry.js`；Modify `src/components/SettingsWindow.vue`、`src/App.vue`、`src/components/PanelHost.vue`、`src/stores/ui.js`、`vite.config.mjs`；将桌面 SettingsWindow 原有 AI/预设、数据位置相关内容提取到 `src/components/settings/` 共享组件；必要时 Modify `src/services/exporter.js`；Create `tools/latent-settings-prefs.test.mjs`、`tools/latent-settings-verify.mjs`。
+**Files:** Create `src/components/skins/latent/settings/`（来源完整 settings 目录并扩展为桌面五页）、`src/components/skins/latent/settings/SettingsModelPage.vue`、`SettingsKnowledgePage.vue`、`src/components/settings/DataLocationSettings.vue`、`src/services/latent/settings-entry.js`；Modify `src/components/SettingsWindow.vue`、`src/App.vue`、`src/components/PanelHost.vue`、`src/stores/ui.js`、`src/services/appbus.js`、`src/components/ai/AiAssistantPanel.vue`（定向设置入口）、`src/components/ai/AiSettings.vue`（仅必要响应式适配）、`electron/panels.js`、`vite.config.mjs`；必要时 Modify `src/services/exporter.js`；Create `tools/latent-settings-prefs.test.mjs`、`tools/latent-settings-verify.mjs`、`tools/latent-settings-routing-verify.mjs`、`tools/latent-settings-coverage.test.mjs`。
 
-**Interfaces:** 新旧设置同用 SkinPicker 和 ui.setSkin；新增 applyPref/retryPrefs/saveSettingsUi 等只服务普通设置项，不替换 setSkin 的写成功后显示契约。`openSettings(ui): Promise<boolean>` / `leaveSettings(ui): void` 复用 panelOpen/CloseSelf，保留来处视图。构建版本从目标 package.json 注入 `__NS_VERSION__`。
+**Interfaces:** 新旧设置同用 SkinPicker 和 ui.setSkin；新增 applyPref/retryPrefs/saveSettingsUi 等只服务普通设置项，不替换 setSkin 的写成功后显示契约。`SettingsPage='appearance'|'ai'|'knowledge'|'data'|'about'`；`openSettings(ui,{page,settingId}={}):Promise<boolean>` / `leaveSettings(ui):void` 保留来处视图。模型设置用 AiSettings/useAiStore，知识库用 KnowledgeModelSettings；DataLocationSettings 复用原 fileio/native 动作，不把凭据/路径配置变成通用 appconfig。
 
-- [ ] 写新设置能切出隐现、主题切换、字体/字号失败重试、跨窗口更新不顶走分类、恢复默认/撤销的实际行为测试。恢复默认只改设计指定外观项，不擅自切肤。
-- [ ] 逐项列出桌面旧设置全部动作，映射到新设置对应入口，特别是 AI 服务配置/预设和数据目录；无映射项不算任务完成。
-- [ ] 搬入三页基础外观与数据/关于，新增皮肤/主题控件与桌面专属分区，扩展检索目录；AI 与数据位置内容提取复用，不维护两份业务实现。
+设置统一使用 `{type:'settings',workId:'app',entityId:''}`，`settingsPage/settingId` 作为单独白名单字段经 panelOpen 传递，不参与窗口锁键。新窗在 URL 启动查询中携带定位；既有窗通过定向 `settings:navigate` 消息更新页面并聚焦；补齐 panels.js 的 spec 归一/URL/复用分支，renderer 经现有 app:event 接收。无显式 page 的普通齿轮保留最近分类。构建版本从目标 package.json 注入 `__NS_VERSION__`。
+
+- [ ] 写五页枚举与完整覆盖测试：用补充规格第 5 节的固定项目集合核对导航、settings-catalog、data-setting 定位和旧动作映射；缺一项失败，不能沿用插件三页白名单。
+- [ ] 写新设置能切出隐现、主题/纸面/字体/字号失败重试、偏好广播不顶走分类的测试。恢复默认/撤销扩展为字体/字号/纸面/theme/顶栏的桌面外观项；不改 skin、AI/知识库、作品或目录。
+- [ ] 先写设置首次打开/已有窗/加载中/就地回退的定向路由用例；AI 未就绪、“管理模型”和 go-ai 均落到 ai，普通齿轮不抢页面。补测表单尚未失焦时跳页，提交失败不丢值。
+- [ ] 将插件玻璃侧栏和内容语言扩为外观、模型设置、知识库模型、备份与存储、帮助与关于五类；模型页复用 AiSettings、知识库页复用 KnowledgeModelSettings，不能嵌套旧 SettingsWindow 外壳。模型内容区小于 640px 时供应商/详情改上下排列；仅 appearance 占预览列。
+- [ ] 用五页元数据统一页标题、面包屑、说明、页脚和返回；替换插件仅三类的 breadcrumb/footRight 条件，扩展 settingsPage 合法值、每页滚动记忆与搜索定位；重载偏好不得把 ai/knowledge 回退成 appearance/about。
+- [ ] 按覆盖表接入供应商完整 CRUD/启停、Base URL/API格式/密钥、连接测试、模型列表/逐模型参数、温度/隐私/自动记忆；知识库继承连接、开关/模型/不支持状态/go-ai 不遗漏。供应商预设与写作预设分开，后者进入原 PresetWindow。
+- [ ] 数据页完整接入原生存储管理：当前路径/默认标识、打开目录、更改/迁回默认、保留旧副本选项、旧目录大小/打开/两类清理、失效路径警示与清除记录。提取 DataLocationSettings 与旧设置共用动作，隐现外观重做行和确认框，长路径不盖住操作按钮，迁移显示重启进度并防重复。
+- [ ] 搜索扩展模型/API/向量/纸面/存储/清理等条目，定位真实控件；索引只存静态说明，不含真实密钥/路径。纸面选择与预览保留；页头、侧栏、分组、状态、危险动作和响应式均按隐现设计统一。
 - [ ] 无框设置窗口保留 drag/no-drag 区、关闭键与 panelReady。设置打开失败就地回退时保持 StudioWorkspace 已挂载，返回后选区和位置不变；根组件将 ui.view=settings 映射为 work surface，避免 resolveSkin 意外回落 original。
 - [ ] 导入导出/备份恢复继续调用桌面原生 API；取消保存不能记成功备份或更新时间；全局搜索/回收站/历史/帮助/菜单按新皮肤约束 Teleport 和焦点。
 - [ ] 确认关于页显示桌面真实版本；新设置和旧设置首帧/功能回归通过后提交。
 
-**Verification:** `node tools/latent-settings-prefs.test.mjs`、隔离 `node tools/latent-settings-verify.mjs`、`node tools/settings-startup-verify.mjs`（开发与 `--production` 两种），以及原设置/预设/数据目录相关脚本在各自隔离 profile 中验证。
+**Verification:** `node tools/latent-settings-prefs.test.mjs`、`node tools/latent-settings-coverage.test.mjs`；隔离 `node tools/latent-settings-verify.mjs`、`node tools/latent-settings-routing-verify.mjs`、`node tools/settings-startup-verify.mjs`（开发与 `--production` 两种）；D-05～D-09 均有断言。1000×700 与 800px 设置窗逐页截图及操作，模型表单/预览/长路径/确认框不溢出；数据迁移相关旧脚本先按 Task 0 改造隔离后运行。
 
 ## Task 8：写作速览、分析与历史明细
 
@@ -173,7 +193,7 @@
 
 **Interfaces:** 测试报告记录 profile、构建标识、来源哈希、屏幕尺寸、用例结果、控制台错误、截图路径、源数据前后摘要；任何未通过项不得只用“构建成功”替代。
 
-- [ ] 完成新皮肤所有模块及弹层的按钮动作清单，逐条给出通过证据；AI/创作台/预设窗口使用现有桌面业务，至少令牌统一、入口完整。
+- [ ] 完成新皮肤所有模块及弹层的按钮动作清单，逐条给出通过证据；AI/创作台/预设窗口完成实际工具、表单、输入、列表和浮层适配，不能以令牌统一或入口存在结项。逐条关闭补充规格 D-01～D-09，报告附新桌面区域截图及交互证据。
 - [ ] 执行四个旧皮肤↔隐现的双向切换矩阵，在书架/正文/大纲/设定/人物/灵感/设置/分析中验证；包含未保存输入、输入法、弹层、图谱拖拽和异步保存。
 - [ ] 主窗与正文/大纲/人物/设定/灵感/设置/AI/创作台/预设窗同时打开，验证偏好收敛、首帧、无框拖拽、锁保持、正文只读占位、关闭保存和锁释放。
 - [ ] 以测试数据运行备份恢复、库同步、重启往返；“只切肤”的源表数量和规范化哈希完全一致，appconfig 只发生允许的皮肤偏好写入。
@@ -187,13 +207,13 @@
 
 ## 工作量与实施节奏
 
-估算为单人净工程日，含实现和局部验证，不是工期承诺：基线及基础设施 2–3 日；书架/正文 1–2 日；大纲/设定 2–4 日；人物/灵感 1–2 日；设置/分析 2–3 日；综合回归/打包 2–3 日。合计约 **10–17 个工程日**，Task 0 冻结后按实际差异校正。
+估算为单人净工程日，含实现和局部验证，不是工期承诺：基线及基础设施 2–3 日；书架/正文、桌面动作与 AI/拆窗适配 3–5 日；大纲/设定 2–4 日；人物/灵感 1–2 日；五页设置/分析 2–4 日；综合回归/打包 2–3 日。合计约 **12–21 个工程日**，Task 0 冻结后按实际差异校正。此次较初稿增加的是明确的桌面前端适配与专项验收，不将这些工作视为免费附带。
 
 阶段检查点：
 
 1. 基础设施可切换：完成 0–3，旧四皮肤与数据库基线不退化。
-2. 整体外观可走通：完成 4–6，所有创作模块接入真实数据。
-3. 产品能力完整：完成 7–8，设置能切出、桌面功能与分析齐备。
+2. 桌面创作界面可走通：完成 4–6，所有创作模块接入真实数据，拆窗/入梦/浅眠/模块助手具备新界面及状态反馈。
+3. 产品能力完整：完成 7–8，五页设置逐项映射、定向路由可用，设置能切出、桌面功能与分析齐备。
 4. 可发布：完成 9，通过开发/production、真实 Electron 多窗口和五皮肤回归。
 
 ## 回退与维护
@@ -209,4 +229,4 @@
 - 已明确尚未批准的推荐假设；没有把方案建议表述为用户决定。
 - 新接口与旧接口分开列出；数据格式、统计事务、IME、请求竞态、主题存在性和生命周期都有任务和验收归属。
 - 当前只做源码调查与文档审阅，未执行上面的产品测试，未宣称接入完成或现有测试通过。
-- 独立审阅已完成；已据此补齐远端切肤失败延期策略、真实宿主令牌基线、危险旧验收脚本隔离，以及编辑器/Teleport 双重身份断言。没有遗留必须由用户补答的工程范围问题。
+- 初稿已独立审阅，保留其远端切肤失败延期、真实宿主基线、危险脚本隔离和编辑器/Teleport 身份要求。本轮按用户明确要求补充桌面适配规格并自检：三类专项均有界面位置、状态、原 handler、新组件、失败路径和对应任务/测试，无需重复确认已明确的产品范围。
