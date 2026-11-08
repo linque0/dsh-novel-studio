@@ -55,6 +55,8 @@
     "test:lore-layout": "node scripts/lore-layout.test.mjs",
     "test:char-layout": "node scripts/char-layout.test.mjs",
     "test:settings": "node scripts/settings-prefs.test.mjs",
+    "test:snippets": "node scripts/snippet-model.test.mjs && node --test scripts/snippet-alignment.test.mjs",
+    "verify:snippets": "node scripts/snippet-alignment-release.mjs",
     "smoke": "node scripts/smoke.mjs",
     "copy-app": "node scripts/copy-app.mjs",
     "copy-plugin-app": "node scripts/copy-plugin-app.mjs",

@@ -26,6 +26,7 @@
  */
 import { loreFreeProbe, loreReloadProbe } from './lore-free-probe.mjs'
 import { writingStatsProbe } from './writing-stats-probe.mjs'
+import { snippetsProbe } from './snippets-probe.mjs'
 import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { createServer } from 'node:http'
@@ -35,7 +36,8 @@ import { fileURLToPath } from 'node:url'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const REPO = resolve(HERE, '..')
-const APP_DIR = join(REPO, 'assets', 'app')
+const APP_DIR = process.env.NS_VERIFY_APP_DIR ? resolve(REPO,process.env.NS_VERIFY_APP_DIR) : join(REPO, 'assets', 'app')
+if (!APP_DIR.startsWith(REPO + '\\') && !APP_DIR.startsWith(REPO + '/')) throw new Error('验收构建必须位于本仓库内')
 const OUT_DIR = resolve(REPO, process.env.NS_VERIFY_OUT || '.tmp-verify-app')
 if (!OUT_DIR.startsWith(REPO + '\\') && !OUT_DIR.startsWith(REPO + '/')) throw new Error('验收输出必须位于本仓库内')
 const PROFILE_DIR = join(OUT_DIR, 'chrome-profile-' + process.pid)
@@ -71,7 +73,9 @@ const RUNS = [
   { module: 'characters', width: 1000 },
   { module: 'characters', width: 760 },
   { module: 'characters', width: 380 },
+  { module: 'snippets', width: 1440 },
   { module: 'snippets', width: 1280 },
+  { module: 'snippets', width: 864 },
   { module: 'snippets', width: 760 },
   { module: 'snippets', width: 380 },
   /* 拆窗面板是另一条壳层（PanelHost：没有 .app-topbar、不经书架），主机 iframe 覆盖不到：
@@ -190,6 +194,24 @@ WORKS.forEach(function (w) {
     CHAPTERS.push({ id: w.id + '-c' + i, workId: w.id, volumeId: null, title: cTitle, content: body, wordCount: body.length, sortOrder: i * 1000, createdAt: w.createdAt, updatedAt: w.updatedAt - i * 1000, deletedAt: null });
   }
 });
+/* 灵感种子：与设计稿 docs/前端美化/灵感-融合总稿-20261107/data.json 同一组内容（标题=content 首行）。
+   必须走应用自己的 store 灌（同 seedMubu：raw 建表会被 Dexie v1→v12 升级清空）。
+   关联只指向本 HARNESS 真有的章节（w1-c0 / w2-c0），不制造「目标已不可用」。 */
+var SNIPPETS = [
+  { content: '退潮时，钟声从海底传来\\n\\n港口的人都说，旧钟楼已经沉了三十年。\\n\\n可每逢大潮退去，守夜人还是会听见十三下钟声。', tags: ['场景', '雾港', '伏笔'], links: [{ kind: 'chapter', id: 'w1-c0' }] },
+  { content: '修表的人害怕整点\\n\\n他能修好这座城里每一只走慢的表，却总在整点前的最后一分钟，关上铺门。', tags: ['人物', '秘密'], links: [] },
+  { content: '「你不是来送信的。」\\n\\n「你不是来送信的。」\\n「那我来做什么？」\\n「你只是想知道，还有没有人记得你的名字。」', tags: ['对白', '来信'], links: [] },
+  { content: '没有名字的车票\\n\\n车票的正面没有目的地。\\n翻过来，每张票背面都有一个名字。', tags: ['场景', '车站'], links: [{ kind: 'chapter', id: 'w2-c0' }] },
+  { content: '他从不拆信\\n\\n每逢周四，他都收到一封相同的信。\\n他从不拆开，只把信寄回昨天。', tags: ['人物', '来信'], links: [] },
+  { content: '「海会把人送回来吗？」\\n\\n「海会把人送回来吗？」\\n「会的。」\\n「那为什么你还一直等？」', tags: ['对白', '离别'], links: [] },
+  { content: '雨停在第七级台阶\\n\\n整条长街都湿了，只有通往旧书店的第七级台阶是干的。', tags: ['场景', '雨夜'], links: [] },
+  { content: '一场没有掌声的告别\\n\\n她排练过很多遍，真正离开的时候，却只对门口的猫说了一声再见。', tags: ['人物', '离别'], links: [] },
+  { content: '「你把灯留给谁？」\\n\\n「你把灯留给谁？」\\n「留给那些找不到门的人。」', tags: ['对白', '雾港'], links: [] },
+  { content: '第二把钥匙\\n\\n失物招领处有两把完全相同的钥匙。\\n\\n第一把的主人三年前已经来领过。', tags: [], links: [] },
+  { content: '等下一班潮汐\\n\\n一个关于错过的桥段：他们总在相同的码头，等不同的船。', tags: ['场景', '雾港'], links: [] },
+  { content: '那本没写完的航海日志\\n\\n最后一页被撕去了。\\n留下来的压痕上，反复写着同一个日期。', tags: [], links: [] }
+];
+
 function deleteDb(name) {
   return new Promise(function (res) {
     var r = indexedDB.deleteDatabase(name);
@@ -1207,8 +1229,28 @@ function keyAssert(module, frame, width) {
     /* 2026-11-05 人物工作区同样是面板矩阵：.center-pane 在人物页整块不渲染（Workbench.vue:464 被
        CharactersWorkspace 顶掉），主区改指 .char-pane[data-pane=main]，判据与阈值一个字不动。 */
     var fMainSel = module === 'lore' ? '.lore-pane[data-pane="main"]'
-      : module === 'characters' ? '.char-pane[data-pane="main"]' : '.center-pane';
-    var fGlassTargets = doc.querySelector('.ow-workspace') ? [['侧栏', '.ow-left'], ['主区', '.ow-main']] : [['侧栏', '.side-panel'], ['主区', fMainSel]];
+      : module === 'characters' ? '.char-pane[data-pane="main"]'
+      : module === 'snippets' ? '.snip-main' : '.center-pane';
+    var fGlassTargets = doc.querySelector('.ow-workspace') ? [['侧栏', '.ow-left'], ['主区', '.ow-main']]
+      : module === 'snippets' ? [] : [['侧栏', '.side-panel'], ['主区', fMainSel]];
+    /* 灵感页的外壳透明（流动底直接透上来），玻璃在片段卡上：按设计稿的 0.8~0.99 + blur 正向判一次。 */
+    if (module === 'snippets') {
+      var snipCard = doc.querySelector(fShellSel + ' .snip-note') || doc.querySelector('.snip-note');
+      var snipCs = snipCard ? win.getComputedStyle(snipCard) : null;
+      var snipCol = snipCs ? fColor(snipCs.backgroundColor) : null;
+      var snipA = snipCol ? Math.round(snipCol.a * 1000) / 1000 : -1;
+      var snipBf = snipCs ? String(snipCs.backdropFilter || snipCs.webkitBackdropFilter || 'none') : 'none';
+      ev.flowGlass = { card: snipCs ? { backgroundColor: snipCs.backgroundColor, alpha: snipA, backdropFilter: snipBf } : '未渲染' };
+      need('灵感卡片是暗紫玻璃（半透明+模糊）', !!snipCs && snipA >= 0.8 && snipA <= 0.99 && snipBf.indexOf('blur(') >= 0,
+        snipCs ? 'background-color=' + snipCs.backgroundColor + ' alpha=' + snipA + '（要求 0.8~0.99）backdrop-filter=' + snipBf
+          : '未找到 .snip-note（该档没有卡片：检查 HARNESS 的灵感种子）');
+      var snipShell = doc.querySelector(fShellSel + ' .snip-shell') || doc.querySelector('.snip-shell');
+      var snipShellCs = snipShell ? win.getComputedStyle(snipShell) : null;
+      var snipShellCol = snipShellCs ? fColor(snipShellCs.backgroundColor) : null;
+      var snipShellA = snipShellCol ? Math.round(snipShellCol.a * 1000) / 1000 : -1;
+      need('灵感外壳不铺实底（流动底透上来）', !!snipShell && snipShellA <= 0.8,
+        snipShell ? 'background-color=' + snipShellCs.backgroundColor + ' alpha=' + snipShellA + '（要求<=0.8）' : '未找到 .snip-shell');
+    }
     var fGlassEv = {};
     for (var fgi = 0; fgi < fGlassTargets.length; fgi++) {
       var fGLabel = fGlassTargets[fgi][0];
@@ -1462,6 +1504,7 @@ function keyAssert(module, frame, width) {
   return { items: items, evidence: ev };
 }
 ${writingStatsProbe.toString()}
+${snippetsProbe.toString()}
 ${loreFreeProbe.toString()}
 ${loreReloadProbe.toString()}
 ${settingsProbe.toString()}
@@ -1500,6 +1543,19 @@ function measure(module, frame, width) {
       await loreReloadProbe(frame, o, width);
       o.ok = o.items.every(function (i) { return i.pass; });
       return o;
+    });
+  }
+  /* 灵感（2026-11 融合总稿）：手札/拼板切换、记录、检索、详情编辑与草稿、标签、关联、
+     转为章节、回收站与撤销、窄档抽屉——都要点完再看，故与设定/人物一样走异步探针。 */
+  if (module === 'snippets') {
+    return snippetsProbe(frame, out, width).then(function (o) {
+      o.ok = o.items.every(function (i) { return i.pass; });
+      return o;
+    }, function (e) {
+      /* 探针自身抛错不能变成「页面没就绪」的静默超时：落一条失败证据再收尾。 */
+      out.items.push({ name: '灵感行为探针执行', pass: false, ev: String((e && e.stack) || e).slice(0, 400) });
+      out.ok = false;
+      return out;
     });
   }
   /* 人物面板矩阵（roster | 16 | main | 16 | context）：三列几何 / 页头 / 名录 / 卷宗 / 编辑态 /
@@ -3557,12 +3613,18 @@ function nestedPopoverProbe(frame, out) {
 }
 function done(module, width, frame) {
   if (new URLSearchParams(location.search).has('inspect')) { window.__NS_INSPECT_READY = true; return; }
+  window.__NS_PROGRESS = { stage: 'done-enter' };
   var out;
   try { out = measure(module, frame, width); } catch (e) { out = { module: module, width: width, ok: false, items: [], error: 'measure 失败: ' + String(e && e.message || e) }; }
+  window.__NS_PROGRESS = { stage: 'measured', promise: !!(out && typeof out.then === 'function') };
   Promise.resolve(out).then(function (o) {
+    window.__NS_PROGRESS = { stage: 'resolved', items: o && o.items ? o.items.length : -1 };
     o.module = module;
     o.width = width;
     finish(o);
+    window.__NS_PROGRESS = { stage: 'finished' };
+  }, function (e) {
+    window.__NS_PROGRESS = { stage: 'rejected', ev: String((e && e.message) || e) };
   });
 }
 function ticks(frame, module, width) {
@@ -3571,9 +3633,27 @@ function ticks(frame, module, width) {
       于是正文与四个模块全都卡在「页面没到可测状态」上。） */
   var panelType = module.indexOf('panel-') === 0 ? module.slice(6) : '';
   var tries = 0, opened = false;
+  window.__NS_PROGRESS = { stage: 'start' };
   /* 设定幕布种子只能走应用自己的 store：在 raw IndexedDB 里预建 mubu 表没用 ——
      Dexie 从 v1 升到 v12 时会把未声明的表清空（实测 mubu.length=0）。 */
   var mubuSeeded = false;
+  var snipSeeded = false;
+  function seedSnippets() {
+    if (snipSeeded) return;
+    var ws2 = workStore(frame);
+    if (!ws2 || !ws2.work) return;
+    if (ws2.snippets && ws2.snippets.length) { snipSeeded = true; return; }
+    snipSeeded = true;
+    try {
+      var firstId = null;
+      SNIPPETS.forEach(function (n) {
+        var row = ws2.addSnippet(n.content, { tags: n.tags, links: n.links });
+        if (row && row.id && !firstId) firstId = row.id;
+      });
+      if (ws2.tab !== 'snippets') ws2.tab = 'snippets';
+      if (firstId) ws2.selSnippetId = firstId;
+    } catch (e) { /* 造数失败只影响灵感样例，不影响其余判据 */ }
+  }
   function seedMubu() {
     if (mubuSeeded) return;
     var ws0 = workStore(frame);
@@ -3689,8 +3769,10 @@ function ticks(frame, module, width) {
     /* 「作品已打开」= 工作台外壳在 + 顶栏在。不能拿 .tiptap 当门槛：切到大纲/设定后编辑器已经卸载，
        拿它当门槛会永远等不到下一步。 */
     var openedWork = !!wbShell && !!doc.querySelector('.app-topbar .app-topbar-save');
+    window.__NS_PROGRESS = { stage: 'work', tries: tries, openedWork: openedWork, tab: wbShell.getAttribute('data-module'), want: wantTab };
     if (!openedWork) return;
     seedMubu();
+    if (wantTab === 'snippets') seedSnippets();
     if (wbShell.getAttribute('data-module') !== wantTab) {
       try { var ws = workStore(frame); if (ws) ws.tab = wantTab; } catch (e) { /* 保持默认 tab */ }
       return;
@@ -5002,7 +5084,18 @@ async function runOne(cdp, origin, run) {
       if (r && r.exceptionDetails) throw new Error('页面内求值异常: ' + JSON.stringify(r.exceptionDetails).slice(0, 300))
       if (r && r.result && r.result.value) { payload = r.result.value; break }
     }
-    if (!payload) throw new Error('150s 内没拿到断言结果（页面没就绪，见截图 ' + label + '.png）')
+    if (!payload) {
+      /* 就绪超时：把页面当场状态带出来，否则只剩一句「没就绪」无从下手。 */
+      let diag = null
+      try {
+        const r0 = await send('Runtime.evaluate', {
+          expression: 'JSON.stringify((function(){var f=document.querySelector("iframe");var d=f&&f.contentDocument;var w=d&&d.querySelector(".workbench-shell");return {title:document.title,iframes:document.querySelectorAll("iframe").length,ready:d?d.readyState:null,module:w?w.getAttribute("data-module"):null,shell:!!(d&&d.querySelector(".snip-shell")),cards:d?d.querySelectorAll(".snip-note").length:-1,progress:window.__NS_PROGRESS||null,snipStep:(function(){try{return d.querySelector("#app")?window.frames[0].__SNIP_STEP||null:null}catch(e){return "n/a"}})(),result:window.__NS_VERIFY_RESULT?1:0};})())',
+          returnByValue: true
+        })
+        diag = r0 && r0.result ? r0.result.value : null
+      } catch (e) { diag = 'diag 失败: ' + String(e && e.message || e) }
+      throw new Error('150s 内没拿到断言结果（页面没就绪，见截图 ' + label + '.png）；现场: ' + String(diag))
+    }
     /* 设置场景补一条「无浏览器运行异常」（总稿 tools/verify.mjs:53 同款判据）：
        只算本 target 这一轮新到的 Runtime.exceptionThrown，不看别的场景的历史事件。 */
     if (settingsLike) {
