@@ -28,6 +28,14 @@ pnpm-debug.log*
 .env.*
 !.env.example
 
+# 宣传片制作现场（showcase/）：成品体积以 GB 计，自带独立的 .git，
+# 在插件仓库内只作本地存放，不进本库
+showcase/
+
+# 工具会话状态与扫描缓存
+.mimosa/
+.mimosa-cache/
+
 # editor / OS
 .DS_Store
 Thumbs.db
