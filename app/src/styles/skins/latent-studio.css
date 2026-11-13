@@ -43,7 +43,6 @@ html body[data-skin='dsh'] .latent-studio {
   --ls-radius-sm: 12px;
   --ls-glass-bg: rgb(11 13 18 / .66);
   --ls-glass-fill: linear-gradient(145deg, rgb(255 255 255 / .14), rgb(255 255 255 / .045) 46%, rgb(255 255 255 / .10));
-  --ls-sheen: linear-gradient(118deg, rgb(255 255 255 / .4), rgb(255 255 255 / 0) 26%, rgb(255 255 255 / 0) 64%, rgb(255 255 255 / .2));
   --ls-edge: 1px solid rgb(255 255 255 / .18);
   --ls-elev: 0 26px 60px rgb(0 0 0 / .5), inset 0 1px 0 rgb(255 255 255 / .5);
   /* 正文 17.5px 是 36em 的 em 基准：列宽直接用 px 算，不随祖先字号漂移。 */
@@ -422,7 +421,8 @@ html body[data-skin='dsh'] .latent-studio :is(.side-panel, .right-panel) {
   color: var(--ls-ink);
 }
 .latent-studio :is(.side-panel, .right-panel)::after,
-html body[data-skin='dsh'] .latent-studio :is(.side-panel, .right-panel)::after {
+html body[data-skin='dsh'] .latent-studio :is(.side-panel, .right-panel)::after,
+html body[data-skin='dsh'] .latent-export-dialog.n-modal.n-card::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -431,7 +431,7 @@ html body[data-skin='dsh'] .latent-studio :is(.side-panel, .right-panel)::after 
   pointer-events: none;
   opacity: .55;
   mix-blend-mode: screen;
-  background: var(--ls-sheen);
+  background: linear-gradient(118deg, rgb(255 255 255 / .4), rgb(255 255 255 / 0) 26%, rgb(255 255 255 / 0) 64%, rgb(255 255 255 / .2));
 }
 
 /* 5.1 章节栏外框（宽度由宿主行内 style 给，断点里用 max-width 收，不抢拖拽） */
@@ -898,7 +898,7 @@ html body[data-skin='dsh'] .latent-studio .editor-toolbar .editor-bar-status :is
 html body[data-skin='dsh'] .editor-toolbar .editor-bar-status :is(.n-select, .n-base-selection) {
   min-width: 84px;
 }
-/* 更多格式由 Naive UI teleport 到 body，不能依赖 .latent-studio 祖先。 */
+/* 更多功能由 Naive UI teleport 到 body，不能依赖 .latent-studio 祖先。 */
 html body[data-skin='dsh'] .tb-more-chapter {
   margin-top: 6px;
   padding-top: 10px;
@@ -1232,7 +1232,7 @@ html body[data-skin='dsh'] .latent-studio.is-reading .rich-host,
   html body[data-skin='dsh'] .latent-studio .editor-toolbar :is(.tb, .tb-sep) {
     flex: none;
   }
-  /* 窄栏的按钮去留同样交给模板（搬进「更多格式」弹层）；本皮肤只在 §41 保证正文/H1-H3 可见，
+  /* 窄栏的按钮去留同样交给模板（搬进「更多功能」弹层）；本皮肤只在 §41 保证正文/H1-H3 可见，
    * 不再按 [data-act=…] 全局隐藏，避免连弹层里的同名控件一起藏掉。 */
   .latent-studio .rich-host,
   html body[data-skin='dsh'] .latent-studio .rich-host,
@@ -1390,7 +1390,7 @@ html body[data-skin='dsh'] .latent-studio .editor-toolbar :is(.tb, .tb-sep) {
   flex: none;
 }
 /* 次要按钮（字号/颜色/底色/链接/书签/纸面）不放主行这件事由模板负责——
- * 这里曾经用 [data-act=…] 全局隐藏，会把「更多格式」弹层里的同名控件一起藏掉，已撤除。 */
+ * 这里曾经用 [data-act=…] 全局隐藏，会把「更多功能」弹层里的同名控件一起藏掉，已撤除。 */
 
 /* 16.3 章节行：标题收省略号、字数不换行（.chapter-count 来自 ChapterTree.vue:101 renderSuffix） */
 .latent-studio .side-panel .n-tree .n-tree-node-content,
@@ -2078,8 +2078,8 @@ html body[data-skin='dsh'] .latent-studio .side-panel .side-more:hover {
 }
 
 /* ==== 41（追加修正）· 工具栏可见项对齐设计稿
- * 设计：撤销 重做 │ B I U S │ 正文 H1 H2 H3 │ 更多格式 ⌄ 发送 DSH
- * 「主行不放字号/颜色/底色/链接/书签/纸面」由模板负责搬进「更多格式」弹层；
+ * 设计：撤销 重做 │ B I U S │ 正文 H1 H2 H3 │ 更多功能 ⌄ 发送 DSH
+ * 「主行不放字号/颜色/底色/链接/书签/纸面」由模板负责搬进「更多功能」弹层；
  * 本皮肤不再按 [data-act=…] 或 .n-select 全局隐藏，否则弹层里的同名控件会一起消失。
  * 正文与 H1-H3 在所有宽度都保留。 ==== */
 /* 正文 / H1 / H2 / H3 全宽度可见：本条后置覆盖 §11 在 ≤560 对 h1/h2/h3 的 display:none */
@@ -2101,7 +2101,7 @@ html body[data-skin='dsh'] .latent-studio .editor-toolbar > .tb-sep {
   background-color: rgb(255 255 255 / .12);
 }
 
-/* ==== 42（追加修正）· 「更多格式」弹层 .tb-more 的面板样式
+/* ==== 42（追加修正）· 「更多功能」弹层 .tb-more 的面板样式
  * 类名实锚：EditorToolbar.vue:140 的 <div class="tb-more">，全仓仅此一处。
  * 该弹层由 naive-ui NPopover teleport 到 body 下的 v-binder-follower-container，
  * 已不在 .latent-studio 子树里，所以除了带命名空间那一条，另写 html body[data-skin='dsh'] .tb-more
@@ -2176,7 +2176,7 @@ html body[data-skin='dsh'] .tb-more .paper-menu-trigger {
   border-radius: 8px;
 }
 
-/* ==== 43（追加修正）· 「更多格式」弹层改用裸选择器
+/* ==== 43（追加修正）· 「更多功能」弹层改用裸选择器
  * 43 之前的写法带 html body[data-skin='dsh'] 前缀，而弹层被 naive-ui teleport 到 body 下，
  * 真机 harness 的 html/body 上不一定同时有 data-skin，于是整块没命中、按钮退回 ~26px 行内宽，
  * 中文逐字换行。.tb-more 全仓唯一（EditorToolbar.vue:140），裸选择器不会外溢。
@@ -2992,8 +2992,6 @@ html body[data-skin='dsh'] .latent-studio {
 /* 右键菜单：皮肤下必须不透明（原来 --bg-panel 是半透明层，正文会从菜单底下透出来） */
 html body[data-skin='dsh'] :is(.ctx-menu, .ctx-sub) {
   background-color: rgb(17 19 24 / .985);
-  -webkit-backdrop-filter: blur(18px) saturate(1.15);
-  backdrop-filter: blur(18px) saturate(1.15);
   border: 1px solid rgb(255 255 255 / .14);
   border-radius: 10px;
   box-shadow: 0 24px 60px rgb(0 0 0 / .62), inset 0 1px 0 rgb(255 255 255 / .06);
@@ -3010,14 +3008,14 @@ html body[data-skin='dsh'] .rich-host.paper-texture.writing-paper-surface {
 }
 
 
-/* ==== 45 · 「更多格式」弹层：网格化 + 视口高度上限（2026-11 六改）
- * 症状：小窗口里展开「更多格式」，弹层是一根 200px 宽、16 行 30px 的竖条（≈750px），
+/* ==== 45 · 「更多功能」弹层：网格化 + 视口高度上限（2026-11 六改）
+ * 症状：小窗口里展开「更多功能」，弹层是一根 200px 宽、16 行 30px 的竖条（≈750px），
  * 而 naive 的 .n-popover 在本仓零覆写、也没有任何 max-height —— 于是直接突破视口下沿。
  * 两处一起改：① .tb-more 自己给出上限并在内部滚动；② 给 teleport 出去的那层容器兜一道底线。
  * 去重已经在模板里完成（对齐/列表/引用/清除与右键菜单重合，已删），所以这里只需稳住少量条目。 ==== */
 .tb-more {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  display: flex;
+  flex-direction: column;
   align-items: stretch;
   gap: 2px;
   min-width: 196px;
@@ -3025,12 +3023,6 @@ html body[data-skin='dsh'] .rich-host.paper-texture.writing-paper-surface {
   max-height: min(70vh, 420px);
   overflow-y: auto;
   overscroll-behavior: contain;
-}
-/* 通栏项：分组线、章节状态栏、嵌入的二级触发器与纸面选择器 */
-.tb-more > .tb-sep,
-.tb-more > .tb-more-chapter,
-.tb-more > :is(.n-popover, .tb-paper-in-more) {
-  grid-column: 1 / -1;
 }
 /* grid 里子项默认 align-items:stretch 会把 .tb 拉成整行；按钮自身仍要能收缩到格宽 */
 .tb-more .tb {
@@ -3042,6 +3034,19 @@ html body[data-skin='dsh'] .rich-host.paper-texture.writing-paper-surface {
 .tb-more .tb {
   white-space: nowrap;
   text-overflow: clip;
+}
+/* 「更多功能」是动作列表（带图标 + 文字），不是格状按钮墙：左对齐、给图标留位。
+ * 分组线与纸面选择器的通栏由 §43 的 `.tb-more > *` 兜住，这里不重复。 */
+.tb-more-features .tb {
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 0 10px;
+  height: 30px;
+  font-size: 12.5px;
+}
+.tb-more-features .tb > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 /* 二级选择器（字号 / 颜色 / 底色）：紧凑网格，避免再长出一条竖条 */
 .tb-pick-list {

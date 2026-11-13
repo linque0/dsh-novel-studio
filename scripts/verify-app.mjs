@@ -590,7 +590,7 @@ function keyAssert(module, frame, width) {
     /* 工具栏可见项与设计稿一致：只数 .editor-toolbar 里可见（offsetParent 非空）的 [data-act]。
        需要模板删按钮 + 皮肤隐藏清单两路都落地才绿；多余项按「必须不包含」清单单独列。 */
     if (width === 695 || width === 1280) {
-      var wantActs = ['undo', 'redo', 'bold', 'italic', 'underline', 'strike', 'paragraph', 'h1', 'h2', 'h3', 'more-formats', 'send'];
+      var wantActs = ['undo', 'redo', 'bold', 'italic', 'underline', 'strike', 'paragraph', 'h1', 'h2', 'h3', 'more-features', 'send'];
       var banActs = ['font-size', 'color', 'highlight', 'link', 'bookmark'];
       var actNodes = tb ? tb.querySelectorAll('[data-act]') : [];
       var actSeen = {}, actVisible = [];
@@ -3448,7 +3448,7 @@ function closePopovers(doc, maxA) {
     return null;
   }
   function trigger() {
-    return doc.querySelector('.editor-toolbar [data-act="more-formats"]') || doc.querySelector('[data-act="more-formats"]');
+    return doc.querySelector('.editor-toolbar [data-act="more-features"]') || doc.querySelector('[data-act="more-features"]');
   }
   var n = 0, limit = maxA || 2;
   function step() {
@@ -3505,7 +3505,7 @@ function nestedPopoverProbe(frame, out) {
   var outer = null;
   return wait(40).then(function () {
     try {
-      var more = doc.querySelector('.editor-toolbar [data-act="more-formats"]') || doc.querySelector('[data-act="more-formats"]');
+      var more = doc.querySelector('.editor-toolbar [data-act="more-features"]') || doc.querySelector('[data-act="more-features"]');
       st.moreClicked = !!more;
       if (more) more.click();
     } catch (e) { st.err = String(e && e.message || e); }
@@ -4285,8 +4285,12 @@ async function settingsProbe(frame, out, width) {
     click('.category[data-page="data"]')
     await wait(760)
     const actionRows = qa('.action-row').map((r) => r.getAttribute('data-setting'))
-    need('数据页五行动作齐备', actionRows.join(',') === 'backup,restore,import,export,trash',
-      '实测 [' + actionRows.join(', ') + ']（期望 backup/restore/import/export/trash）')
+    /* 作品库定位接入后数据页新增 storageLocation / changeLocation（revealLocation 视平台能力出现），
+       断言改为「五个基础动作按序齐备」，不锁定总数，避免每加一行都要改脚本。 */
+    const required = ['backup', 'restore', 'import', 'export', 'trash']
+    const requiredInOrder = actionRows.filter((a) => required.includes(a)).join(',') === required.join(',')
+    need('数据页基础动作齐备', requiredInOrder,
+      '实测 [' + actionRows.join(', ') + ']（期望含且按序 ' + required.join('/') + '）')
     const c0 = await idbCounts()
     const libCells = qa('.library-list > div').map((d) => flat(d.querySelector('dd') ? d.querySelector('dd').textContent : ''))
     need('右栏六项与库直读一致', libCells.length === 6

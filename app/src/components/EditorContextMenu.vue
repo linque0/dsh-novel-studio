@@ -16,7 +16,7 @@ const ai = useAiStore()
 const st = reactive({ open: false, x: 0, y: 0, sub: null, subX: 0, subY: 0, linkEdit: false, linkHref: '', dlPicker: false, dlFrom: 0, dlTo: 0, savedFrom: null, savedTo: null, dlQuery: '', noteEdit: false, noteText: '', noteColor: ANNOTATION_KINDS[0].color, noteFrom: 0, noteTo: 0, noteExistingId: null, noteQuote: '' })
 const rootEl = ref(null)
 
-const SIZES = [12, 14, 16, 18, 20, 24, 28, 32]
+const SIZES = [12, 14, 15, 16, 18, 20, 24, 28, 32, 40]
 const COLORS = ['#3c3427', '#8c6f4e', '#c0392b', '#d35400', '#27ae60', '#2980b9', '#8e44ad', '#7f8c8d']
 const HIGHLIGHTS = ['#fff3a3', '#ffd6a5', '#ffa8a8', '#b8f2c9', '#a8d8ff', '#e0c3fc']
 
@@ -213,7 +213,15 @@ async function pastePlain() {
   } catch {
     t = ''
   }
-  if (t) chain().insertContent(t).run()
+  if (t) {
+    /* 纯文本粘贴：字符串直接交给 insertContent 会被当 HTML 解析，正文里的 < 与 & 会被吃掉。
+       按行拆成 paragraph + text 节点，文本走 text 节点就不会再被解析一遍；空行保留为空段落。 */
+    const nodes = t
+      .replace(/\r\n?/g, '\n')
+      .split('\n')
+      .map((line) => ({ type: 'paragraph', content: line ? [{ type: 'text', text: line }] : [] }))
+    chain().insertContent(nodes).run()
+  }
   close()
   refocus()
 }

@@ -25,9 +25,13 @@ const SNIP_FIELD = {
   query: 'snipQuery', selected: 'snipSelectedId', moreTags: 'snipMoreTags', tagOrder: 'snipTagOrder', order: 'snipOrder', inspector: 'snipInspector', scroll: 'snipScroll'
 }
 
-const snippetPersistence = new WeakMap()
+/* 引擎按 store.$id 缓存：dev/devtools 下 Pinia 每次 action 调用都传一个新的 store proxy，
+   this 不恒等，用 store 对象做键会让每次调用都新建引擎（会话与 apply 回调各归各的）。
+   $id 跨调用稳定；apply 固定写第一次拿到的那个 proxy（同一个 reactive store，赋值仍响应）。 */
+const snippetPersistence = new Map()
 function snippetsFor(store) {
-  if(!snippetPersistence.has(store)) {
+  const storeId=store.$id
+  if(!snippetPersistence.has(storeId)) {
     const engine=createSnippetPersistence({
       read:async key=>(await db.appconfig.get(key))?.value,
       write:async(key,value)=>db.appconfig.put({key,value:plainPref(value)}),
@@ -37,10 +41,10 @@ function snippetsFor(store) {
         store.snipDrafts=snapshot.drafts;store.snipPersistence=snapshot.status
       }
     })
-    snippetPersistence.set(store,engine)
+    snippetPersistence.set(storeId,engine)
     registerFlushHook(()=>engine.flushAll())
   }
-  return snippetPersistence.get(store)
+  return snippetPersistence.get(storeId)
 }
 
 /* appconfig 落库前的纯数据降级：Dexie 走结构化克隆，Vue reactive proxy 会抛 DataCloneError

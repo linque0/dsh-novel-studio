@@ -7,6 +7,7 @@ import { nextTick, ref, watch } from 'vue'
 const props = defineProps({
   open: { type: Boolean, default: false },
   title: { type: String, default: '' },
+  closable: { type: Boolean, default: true },
   wide: { type: Boolean, default: false }
 })
 const emit = defineEmits(['update:open'])
@@ -26,7 +27,7 @@ function restoreFocus() {
 }
 
 function close() {
-  if (props.open) emit('update:open', false)
+  if (props.open && props.closable) emit('update:open', false)
 }
 
 watch(
@@ -77,7 +78,7 @@ function onDialogClick(event) {
   >
     <header class="dialog-head">
       <h2 id="settings-dialog-title">{{ title }}</h2>
-      <button type="button" class="icon-btn" data-act="dialog-close" title="关闭弹窗" aria-label="关闭弹窗" @click="close">
+      <button type="button" class="icon-btn" data-act="dialog-close" title="关闭弹窗" aria-label="关闭弹窗" :disabled="!closable" @click="close">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg>
       </button>
     </header>

@@ -3,7 +3,6 @@ import { saveTextFile } from './fileio'
 import { decodeText, htmlToMd, htmlToPlain } from './importers'
 import { autosave } from './autosave'
 import JSZip from 'jszip'
-import { db } from '../db/database'
 
 const stamp = () => {
   const d = new Date()
@@ -11,17 +10,9 @@ const stamp = () => {
   return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`
 }
 
-/* 返回值带上 json 本身（设置页要展示/复用这份快照内容），同时把 saveTextFile 的
-   { canceled } 原样透传——旧调用点 `if (!r?.canceled)` 照旧成立。
-   只有真正写盘成功才记「最近备份时间」：用户在保存对话框里取消不算备份过。
-   时间戳写失败只吞掉，备份文件已经生成，不因为一行配置回滚整件事。 */
 export async function backupAll() {
   const json = await exportBackupJson()
-  const saved = await saveTextFile(`novel-studio-备份-${stamp()}.json`, json)
-  if (!saved?.canceled) {
-    try { await db.appconfig.put({ key: 'settings:lastBackupAt', value: Date.now() }) } catch { /* 备份文件已生成 */ }
-  }
-  return { ...saved, json }
+  return saveTextFile(`novel-studio-备份-${stamp()}.json`, json)
 }
 
 export async function restoreBackup(arrayBuffer) {
@@ -78,26 +69,37 @@ export async function exportChapterRowsSequential(work, volumes, chapters, rows,
   return { exported, canceledAt: null, dir }
 }
 
-/** zip 批量：每章一个文件（NN-章节名.格式，NN 按顺序 01 起）打成一个压缩包 */
+function safeZipName(value, fallback) {
+  const name = String(value || '').replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_').trim()
+    .slice(0, 60).replace(/[. ]+$/, '') || fallback
+  return /^(con|prn|aux|nul|com[1-9¹²³]|lpt[1-9¹²³])(?:\.|$)/i.test(name) ? `_${name}` : name
+}
+
+/** 每章一个文件，卷目录与文件名兼容 Windows 解压。 */
 export async function exportRowsAsZip(work, rows, fmt) {
   const zip = new JSZip()
-  const pad = String(rows.length).length
-  let i = 0
-  let lastVol = null
-  for (const { vol, ch } of rows) {
-    i++
-    if (vol && vol !== lastVol) {
-      zip.folder(safeName(vol.title))
-      lastVol = vol
+  const pad = Math.max(2, String(rows.length).length)
+  const volumeDirs = new Map()
+  const usedDirs = new Set()
+  for (const [index, { vol, ch }] of rows.entries()) {
+    if (vol && !volumeDirs.has(vol.id)) {
+      const base = safeZipName(vol.title, '未命名卷')
+      let dir = base
+      let suffix = 2
+      while (usedDirs.has(dir.toLowerCase())) dir = `${base} (${suffix++})`
+      usedDirs.add(dir.toLowerCase())
+      volumeDirs.set(vol.id, dir)
     }
-    const dir = vol && vol === lastVol ? safeName(vol.title) : ''
-    const label = String(i).padStart(Math.max(2, pad), '0') + '-' + safeName(ch.title)
-    if (fmt === 'txt') zip.file((dir ? dir + '/' : '') + label + '.txt', await chapterText(work, [ch], false))
-    else if (fmt === 'md') zip.file((dir ? dir + '/' : '') + label + '.md', await chapterText(work, [ch], true))
-    else zip.file((dir ? dir + '/' : '') + label + '.docx', await buildBookDocx(work, [], [ch], null), { base64: true })
+    const dir = vol ? `${volumeDirs.get(vol.id)}/` : ''
+    const label = `${String(index + 1).padStart(pad, '0')}-${safeZipName(ch.title, '未命名章节')}`
+    const filename = `${dir}${label}.${FMT_EXT[fmt]}`
+    if (fmt === 'docx') zip.file(filename, await buildBookDocx(work, [], [ch], null), { base64: true })
+    else zip.file(filename, await chapterText(work, [ch], fmt === 'md'))
   }
   const b64 = await zip.generateAsync({ type: 'base64', compression: 'DEFLATE' })
-  return saveTextFile(`${safeName(work.title)}-${rows.length}章.zip`, b64, { isBase64: true })
+  return saveTextFile(`${safeZipName(work.title, '未命名作品')}-${rows.length}章.zip`, b64, {
+    isBase64: true, mime: 'application/zip'
+  })
 }
 
 /** 单章/单批文本（无卷头，仅章节正文） */

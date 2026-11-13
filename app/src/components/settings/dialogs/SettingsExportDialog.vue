@@ -1,12 +1,7 @@
 <script setup>
-/* 导出正文（总稿 app.mjs:53-54,88 showExport/exportChapters/export-confirm）。
- *
- * 只做「选作品 + 选章节 + 选格式」这一层，落盘交给 services/exporter.js 的 exportBookWithFilter：
- * 它在浏览器里触发下载、在 Electron 里弹保存对话框，文件名与卷章顺序都由既有实现决定，
- * 设置页再拼一套只会和正文页导出的文件不一致。
- * 格式第三项 Word 是插件真实能力（exporter.js 的 docx 分支），总稿只有 TXT/Markdown，这里补齐。 */
 import { computed, inject, onMounted, ref, watch } from 'vue'
-import { exportBookWithFilter } from '../../../services/exporter.js'
+import { collectExportChapters } from '../../../db/repo.js'
+import { exportBookWithFilter, exportRowsAsZip } from '../../../services/exporter.js'
 import { countWords, stripTags } from '../../../services/wordcount.js'
 import { loadExportWorks, loadWorkChapters, formatCount } from '../settings-data-actions.js'
 import { SETTINGS_TOAST_KEY } from '../settings-toast.js'
@@ -19,21 +14,22 @@ const toast = inject(SETTINGS_TOAST_KEY, null)
 const visible = ref(false)
 const error = ref('')
 const busy = ref(false)
+const loadingWork = ref(false)
 const works = ref([])
 const volumes = ref([])
 const chapters = ref([])
 const workId = ref('')
 const format = ref('txt')
+const zip = ref(false)
 const picked = ref(new Set())
 
 const FORMATS = [
-  { value: 'txt', label: 'TXT' },
+  { value: 'txt', label: 'TXT 纯文本' },
   { value: 'md', label: 'Markdown' },
   { value: 'docx', label: 'Word' }
 ]
 
-const chapterCount = computed(() => chapters.value.length)
-const canConfirm = computed(() => !busy.value && picked.value.size > 0 && chapterCount.value > 0)
+const canConfirm = computed(() => !busy.value && !loadingWork.value && picked.value.size > 0)
 
 function wordsOf(row) {
   const raw = row?.content == null ? '' : String(row.content)
@@ -52,19 +48,31 @@ function toggleChapter(id, checked) {
 }
 
 async function loadWork(id) {
-  const bundle = await loadWorkChapters(id)
-  volumes.value = bundle.volumes
-  chapters.value = bundle.chapters
-  picked.value = new Set(bundle.chapters.map((row) => row.id))
+  loadingWork.value = true
+  error.value = ''
+  volumes.value = []
+  chapters.value = []
+  picked.value = new Set()
+  try {
+    const bundle = await loadWorkChapters(id)
+    if (id !== workId.value) return
+    volumes.value = bundle.volumes
+    chapters.value = bundle.chapters
+    picked.value = new Set(bundle.chapters.map((row) => row.id))
+  } catch (err) {
+    if (id === workId.value) error.value = String(err?.message || err)
+  } finally {
+    if (id === workId.value) loadingWork.value = false
+  }
 }
 
 async function boot() {
   works.value = await loadExportWorks()
   workId.value = works.value[0]?.id || ''
-  if (workId.value) await loadWork(workId.value)
 }
 
 function close() {
+  if (busy.value) return
   visible.value = false
   setTimeout(() => emit('close'), 0)
 }
@@ -76,19 +84,19 @@ async function confirm() {
   busy.value = true
   error.value = ''
   try {
-    const saved = await exportBookWithFilter(work, volumes.value, chapters.value, format.value, new Set(picked.value))
-    if (saved?.canceled) {
-      close()
-      return
-    }
-    toast?.show('正文文件已生成。')
-    emit('done')
-    close()
+    const saved = zip.value
+      ? await exportRowsAsZip(work, collectExportChapters(volumes.value, chapters.value, picked.value), format.value)
+      : await exportBookWithFilter(work, volumes.value, chapters.value, format.value, picked.value)
+    if (saved?.canceled) return
   } catch (err) {
     error.value = String(err?.message || err)
+    return
   } finally {
     busy.value = false
   }
+  toast?.show(zip.value ? `已导出 ZIP 压缩包（${picked.value.size} 章）。` : '正文文件已生成。')
+  emit('done')
+  close()
 }
 
 watch(workId, (id) => {
@@ -97,32 +105,45 @@ watch(workId, (id) => {
 
 onMounted(async () => {
   visible.value = true
-  await boot()
+  try {
+    await boot()
+  } catch (err) {
+    error.value = String(err?.message || err)
+  }
 })
 </script>
 
 <template>
-  <SettingsDialog :open="visible" title="导出正文" @update:open="close">
+  <SettingsDialog :open="visible" :closable="!busy" title="导出正文" @update:open="close">
     <div class="form-field">
       <label for="export-work">选择作品</label>
-      <select id="export-work" v-model="workId">
+      <select id="export-work" v-model="workId" :disabled="busy || loadingWork">
         <option v-for="row in works" :key="row.id" :value="row.id">{{ row.title || '未命名作品' }}</option>
       </select>
     </div>
 
     <div class="form-field">
       <label>文件格式</label>
-      <div class="radio-row">
-        <label v-for="item in FORMATS" :key="item.value">
-          <input v-model="format" type="radio" name="export-format" :value="item.value" />
-          {{ item.label }}
-        </label>
+      <div class="export-format-row" role="group" aria-label="导出选项">
+        <button
+          v-for="item in FORMATS"
+          :key="item.value"
+          type="button"
+          class="btn small"
+          :class="{ primary: format === item.value }"
+          :disabled="busy"
+          :aria-pressed="format === item.value"
+          @click="format = item.value"
+        >{{ item.label }}</button>
+        <button type="button" class="btn small settings-export-zip" :class="{ primary: zip }" :disabled="busy" :aria-pressed="zip" @click="zip = !zip">ZIP 打包</button>
       </div>
+      <p v-if="zip" class="dialog-note">每章一个 {{ FORMATS.find(item => item.value === format).label }} 文件，按卷分目录。</p>
     </div>
 
     <div class="form-field">
       <label>选择章节</label>
-      <div id="export-chapters">
+      <p v-if="loadingWork" class="dialog-note" role="status">正在读取章节…</p>
+      <div v-else id="export-chapters">
         <label v-for="row in chapters" :key="row.id" class="chapter-pick">
           <!-- 内联复位：皮肤里的 .form-field input{width:100%;padding;border;background} 会命中章节复选框，
                把每一行挤成一列竖排字（总稿截图同样如此）。设置页不能改皮肤，只能就地抵消。 -->
@@ -131,6 +152,7 @@ onMounted(async () => {
             name="export-chapter"
             :value="row.id"
             :checked="chapterChecked(row.id)"
+            :disabled="busy"
             style="width: auto; padding: 0; border: 0; background: none; flex: none"
             @change="toggleChapter(row.id, $event.target.checked)"
           />
@@ -142,9 +164,17 @@ onMounted(async () => {
     </div>
 
     <template #footer>
-      <button type="button" class="btn" data-act="dialog-close" @click="close">取消</button>
-      <button type="button" class="btn primary" data-act="export-confirm" :disabled="!canConfirm" @click="confirm">生成文件</button>
+      <span v-if="busy" role="status">正在导出 {{ picked.size }} 章…</span>
+      <button type="button" class="btn" data-act="dialog-close" :disabled="busy" @click="close">取消</button>
+      <button type="button" class="btn primary" data-act="export-confirm" :disabled="!canConfirm" @click="confirm">
+        {{ zip ? `打包导出 ${picked.size} 章` : '生成文件' }}
+      </button>
     </template>
     <template #error>{{ error }}</template>
   </SettingsDialog>
 </template>
+
+<style scoped>
+.export-format-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.settings-export-zip { margin-inline-start: 4px; }
+</style>

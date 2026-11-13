@@ -5,6 +5,7 @@ import OIcon from './OIcon.vue'
 import { useWorkStore } from '../stores/work'
 import { useUiStore } from '../stores/ui'
 import { autosave } from '../services/autosave'
+import { useChapterSort } from '../composables/useChapterSort'
 
 const work = useWorkStore()
 const ui = useUiStore()
@@ -46,6 +47,26 @@ const filteredTree = computed(() => {
   return out
 })
 
+// NTree 的 default-expand-all 会随 data 重算，显式保留用户折叠的卷。
+const collapsedVolumes = ref(new Set())
+const searchExpandedKeys = ref(null)
+const expandedKeys = computed(() => {
+  const keys = treeData.value.map((volume) => volume.key)
+  if (q.value.trim()) return searchExpandedKeys.value ?? keys
+  return keys.filter((key) => !collapsedVolumes.value.has(key))
+})
+watch(q, () => { searchExpandedKeys.value = null }, { flush: 'sync' })
+watch(() => work.work?.id, () => { collapsedVolumes.value = new Set() })
+function onExpanded(keys, _options, { node, action }) {
+  if (q.value.trim()) {
+    searchExpandedKeys.value = keys
+  } else if (action === 'collapse') {
+    collapsedVolumes.value.add(node.key)
+  } else if (action === 'expand') {
+    collapsedVolumes.value.delete(node.key)
+  }
+}
+
 const selectedKeys = computed(() => {
   const keys = []
   if (work.selChapterId) keys.push('c:' + work.selChapterId)
@@ -75,43 +96,27 @@ const allowDrop = ({ dragNode, node, dropPosition }) => {
   // Naive UI's allowDrop callback supplies the target, not the drag source.
   const source=dragNode||dragging.value
   if(!source)return false
-  if (source.type === 'volume') return node.type === 'volume' && dropPosition !== 'inside' && !!node.id /* 「未分卷」伪节点无 id，不参与卷排序 */
-  return dropPosition === 'inside' ? node.type === 'volume' : true
+  return source.type === 'volume' && node.type === 'volume' && dropPosition !== 'inside' && !!node.id
 }
 
 function onDrop({ node, dragNode, dropPosition }) {
-  if (!dragNode) return
-  if (dragNode.type === 'volume') {
-    if (node.type !== 'volume' || dropPosition === 'inside' || !node.id) return
-    const ids = work.liveVolumes.map((v) => v.id)
-    const from = ids.indexOf(dragNode.id)
-    if (from < 0) return
-    ids.splice(from, 1)
-    let to = ids.indexOf(node.id)
-    if (dropPosition === 'after') to += 1
-    ids.splice(to, 0, dragNode.id)
-    ids.forEach((id, i) => {
-      const v = work.volumes.find((x) => x.id === id)
-      if (v && v.sortOrder !== i * 1000) {
-        v.sortOrder = i * 1000
-        autosave.mark('volumes', v)
-      }
-    })
-    return
-  }
-  const cid = dragNode.id
-  if (dropPosition === 'inside') {
-    /* 「未分卷」伪节点无 id → 按 orphans 语义移入未分卷 */
-    work.moveChapterTo(cid, node.id ?? 'orphans', 'inside')
-  } else if (node.type === 'chapter') {
-    const target = work.chapters.find((c) => c.id === node.id)
-    work.moveChapterTo(cid, target?.volumeId ?? null, dropPosition, node.id)
-  } else {
-    work.moveChapterTo(cid, node.id, 'inside')
-  }
+  if (dragNode?.type !== 'volume' || node.type !== 'volume' || dropPosition === 'inside' || !node.id) return
+  const ids = work.liveVolumes.map((v) => v.id)
+  const from = ids.indexOf(dragNode.id)
+  if (from < 0) return
+  ids.splice(from, 1)
+  let to = ids.indexOf(node.id)
+  if (dropPosition === 'after') to += 1
+  ids.splice(to, 0, dragNode.id)
+  ids.forEach((id, i) => {
+    const v = work.volumes.find((x) => x.id === id)
+    if (v && v.sortOrder !== i * 1000) {
+      v.sortOrder = i * 1000
+      autosave.mark('volumes', v)
+    }
+  })
 }
 
-/* 字数列：卷用「N 章」，章用「N 字」，靠 data-suffix 分款式（class 名沿用 .chapter-count，验收靠它） */
 const renderSuffix = ({ option }) =>
   h('span', { class: 'chapter-count', 'data-suffix': option.type === 'volume' ? 'volume' : 'chapter' }, option.suffix || '')
 /* 卷 / 章同层渲染：data-kind 落在文本 span 上（皮肤选择器与 marquee 检测都靠它）。
@@ -123,6 +128,7 @@ function renderLabel({ option }) {
 
 /* ---------- 溢出检测：章节名超出裁剪盒时加 is-marquee，交给 CSS 自动滚动 ---------- */
 const sideListRef = ref(null)
+const chapterSort = useChapterSort(sideListRef, work, q)
 let marqueeObserver = null
 let marqueeFrame = 0
 
@@ -180,9 +186,6 @@ function openNewVolume(){
 async function addCh() {
   const c=await work.addChapter()
 }
-function moveSel(dir) {
-  if (selNode.value?.type === 'chapter') work.moveChapter(selNode.value.id, dir)
-}
 function openRenameById(s) {
   if (!s) return
   renameComposing.value=false
@@ -196,21 +199,21 @@ function openRenameById(s) {
     rename.value = { show: true, kind: 'chapter', id: s.id, workId:work.work?.id, value: c.title }
   }
 }
-function openRename() {
-  openRenameById(selNode.value)
-}
-const manageOptions=computed(()=>[
-  {label:'上移',key:'up',disabled:selNode.value?.type!=='chapter'},
-  {label:'下移',key:'down',disabled:selNode.value?.type!=='chapter'},
-  {label:'重命名',key:'rename',disabled:!selNode.value},
-  {type:'divider',key:'divider'},
-  {label:'删除',key:'delete',disabled:!selNode.value}
-])
-function manage(key){
-  if(key==='up')moveSel(-1)
-  if(key==='down')moveSel(1)
-  if(key==='rename')openRename()
-  if(key==='delete'&&selNode.value){deleteTarget.value={...selNode.value,workId:work.work?.id};deleteConfirm.value=true}
+/* 章节栏头部的 ⋯ 菜单已整块换成「书签章节」下拉：上移/下移/重命名/删除与章节右键菜单重复，
+ * 排序另有拖拽这条正式路径，因此不再保留第二份入口（功能去重）。
+ * 书签下拉直接从 work.liveBookmarks 取，与齿轮菜单「章节书签」同源，不另建一份状态。 */
+const bookmarkOptions = computed(() => {
+  const list = work.liveBookmarks
+  if (!list.length) return [{ label: '暂无书签：右键章节或工具栏 ☆ 可添加', key: 'none', disabled: true }]
+  return list.map((b) => ({ label: b.title || '（未命名章节）', key: 'bm:' + b.targetId }))
+})
+function openBookmark(key) {
+  if (key === 'none') return
+  const id = key.slice(3)
+  const c = work.chapters.find((x) => x.id === id)
+  if (!c || c.deletedAt) return
+  work.selChapterId = id
+  if (c.volumeId) work.selVolumeId = c.volumeId
 }
 async function confirmDelete(){
   const target=deleteTarget.value
@@ -254,6 +257,9 @@ const ctx = ref({ show: false, x: 0, y: 0, kind: null, id: null, bookmarked: fal
 
 function nodeProps({ option }) {
   return {
+    'data-chapter-sort-chapter': option.type === 'chapter' ? option.id : undefined,
+    'data-chapter-sort-volume': option.type === 'volume' ? option.id ?? 'orphans' : undefined,
+
     /* 双击行改名：只给章节（卷行双击仍归 naive 的展开/收起） */
     onDblclick: (e) => {
       if (option.type !== 'chapter') return
@@ -316,24 +322,27 @@ const renameSaving=ref(false),renameComposing=ref(false)
         <button v-if="q" type="button" title="清除查找" aria-label="清除查找" @click="q = ''">×</button>
       </span>
       <span class="ct-tools">
-        <NDropdown trigger="click" :options="manageOptions" @select="manage">
-          <button type="button" class="side-more" title="章节操作：上移 / 下移 / 重命名 / 删除" aria-label="章节操作">⋯</button>
+        <NDropdown trigger="click" :options="bookmarkOptions" @select="openBookmark">
+          <button type="button" class="side-more side-bookmarks" :title="'书签章节：' + work.liveBookmarks.length + ' 个，点击跳转'" aria-label="书签章节">
+            <OIcon name="star" :size="13" />
+          </button>
         </NDropdown>
         <button v-if="canCollapse" type="button" class="side-fold" title="收起章节栏" aria-label="收起章节栏" aria-controls="writing-directory" aria-expanded="true" @click="emit('collapse')"><OIcon name="caret-right" :size="13" style="transform:rotate(180deg)" /></button>
       </span>
     </div>
-    <div ref="sideListRef" class="side-list">
+    <div ref="sideListRef" class="side-list" @pointerdown="chapterSort.pointerDown" @dragstart.capture="chapterSort.nativeDrag" @click.capture="chapterSort.click">
       <NTree
         :data="filteredTree"
         block-line
         draggable
-        default-expand-all
+        :expanded-keys="expandedKeys"
         :selected-keys="selectedKeys"
         :allow-drop="allowDrop"
         :render-suffix="renderSuffix"
         :render-label="renderLabel"
         :node-props="nodeProps"
         @update:selected-keys="onSelect"
+        @update:expanded-keys="onExpanded"
         @dragstart="({node})=>dragging=node"
         @dragend="dragging=null"
         @drop="onDrop"

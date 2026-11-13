@@ -17,6 +17,7 @@ export const SETTINGS_CATALOG = [
   { id: 'editorLatin', page: 'appearance', title: '西文字体', desc: '英文与数字的字形搭配', terms: '英文 拉丁 Playfair Gothic 字体' },
   { id: 'fontSize', page: 'appearance', title: '正文字号', desc: '在13–24px之间调整阅读与编辑字号', terms: '大小 排版 字号 缩放' },
   { id: 'topbarAutoHide', page: 'appearance', title: '默认隐藏顶栏', desc: '移至顶部展开，让写作空间更安静', terms: '自动收起 导航 沉浸 界面' },
+  { id: 'storageLocation', page: 'data', title: '作品数据存储位置', desc: '把作品库搬到别的文件夹', terms: '路径 目录 移动 迁移 存储位置 数据目录 磁盘 library 备份盘' },
   { id: 'backup', page: 'data', title: '备份全部数据', desc: '下载作品、章节、人物与设定的完整快照', terms: 'JSON 安全 导出' },
   { id: 'restore', page: 'data', title: '恢复备份', desc: '检查备份内容后，替换当前工作区', terms: 'JSON 覆盖 导入' },
   { id: 'import', page: 'data', title: '导入文本作品', desc: '从 TXT、Markdown、Word、PDF、EPUB 或图片导入正文', terms: 'TXT MD DOCX Word PDF EPUB 图片 png jpg 文本 迁入' },

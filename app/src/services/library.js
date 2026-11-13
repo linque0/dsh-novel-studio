@@ -64,3 +64,25 @@ export async function migrateToLibrary({ onProgress } = {}) {
   const verify = unwrap(await native.libraryVerify())
   return { imported: imported.imported, seq: imported.seq, verify }
 }
+
+/* 作品数据存储位置（隐现设置·数据页）：桌面走 IPC，插件走 shim 转 RPC，两边方法名相同。
+ * 插件版的 libraryBrowse / libraryRelocate 由 shim 实现（服务端列目录 + 移动式迁移）。
+ * 三个函数调用前都先确认宿主确实挂了同名方法：纯网页（npm run dev 的桌面仓库）里 bridge()
+ * 有对象却没有这三个通道，unwrap(await undefined) 抛出来的是没有信息量的话。 */
+function libraryChannel(method) {
+  const native = bridge()
+  if (typeof native?.[method] !== 'function') throw new Error('未检测到作品库通道，当前环境不支持更改数据存储位置')
+  return native
+}
+
+export async function libraryLocation() {
+  return unwrap(await libraryChannel('libraryLocation').libraryLocation())
+}
+
+export async function libraryBrowse(dir = '') {
+  return unwrap(await libraryChannel('libraryBrowse').libraryBrowse(dir))
+}
+
+export async function libraryRelocate(dir) {
+  return unwrap(await libraryChannel('libraryRelocate').libraryRelocate(dir))
+}

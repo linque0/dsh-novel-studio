@@ -41,23 +41,39 @@ export function canvasNodeSize(n, density = 'detail') {
   }
 }
 
-/** 形状尺寸加幅：菱形需更大面积容纳文字；节点自定义 w/h 优先（显式拖拽结果，容器作为派生盒下限） */
+/* 非矩形事件形状的设计盒（与 outline-paper.js 的 EVENT_SHAPES 同源）：纸面美术按这套宽高绘制，
+ * .oc-paper 是 background-size:100% 100%，只有盒子同比例时才不会被拉扁。 */
+const SHAPE_SIZE = {
+  para: { w: 254, h: 170 },
+  diamond: { w: 250, h: 210 },
+  ellipse: { w: 210, h: 118 }
+}
+
+/** 形状设计尺寸：paper 密度直接取设计盒，其余密度按该密度的基准宽度等比缩放（比例不变） */
+export function shapeSize(shape, density = 'paper') {
+  const d = SHAPE_SIZE[shape]
+  if (!d) return null
+  if (density === 'paper') return { w: d.w, h: d.h }
+  const k = canvasNodeSize({ kind: 'event' }, density).w / d.w
+  return { w: Math.round(d.w * k), h: Math.round(d.h * k) }
+}
+
+/** 形状尺寸：非矩形按形状设计比例出盒；节点自定义 w/h 优先（显式拖拽结果，容器作为派生盒下限） */
 export function effSize(n, density = 'detail') {
+  const design = n.kind === 'event' ? SHAPE_SIZE[n.shape] : null
   if (n.w != null || n.h != null) {
     const s = canvasNodeSize(n, density)
-    return {
-      w: Math.max(96, n.w != null ? n.w : s.w),
-      h: Math.max(36, n.h != null ? n.h : s.h)
+    let w = Math.max(96, n.w != null ? n.w : s.w)
+    let h = Math.max(36, n.h != null ? n.h : s.h)
+    /* 只手动改过一条边时，另一条边按形状比例补齐，纸面才不会一侧被拉扁 */
+    if (design) {
+      if (n.w == null) w = Math.max(96, Math.round(h * design.w / design.h))
+      else if (n.h == null) h = Math.max(36, Math.round(w * design.h / design.w))
     }
+    return { w, h }
   }
-  if (density === 'paper' && n.kind === 'event') {
-    if (n.shape === 'diamond') return {w:250,h:210}
-    if (n.shape === 'para') return {w:254,h:170}
-    if (n.shape === 'ellipse') return {w:210,h:118}
-  }
-  const s = canvasNodeSize(n, density)
-  if (n.kind === 'event' && n.shape === 'diamond') return { w: s.w + 46, h: s.h + 42 }
-  return s
+  if (design) return shapeSize(n.shape, density)
+  return canvasNodeSize(n, density)
 }
 
 /* ---------- 连线样式（v0.4.1 界面优化）：实线 / 虚线 / 点线 ---------- */

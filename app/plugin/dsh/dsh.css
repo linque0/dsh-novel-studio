@@ -932,7 +932,7 @@ body[data-skin=dsh] [data-module=lore] .ob-relchip,body[data-skin=dsh] [data-mod
 
 /* ==================== 大纲 ==================== */
 
-body[data-skin=dsh] :is([data-module=lore],.om-wrap) .ob-ctx,body[data-skin=dsh] .om-wrap .oc-ctx {
+body[data-skin=dsh] :is([data-module=lore],.om-wrap) .ob-ctx,body[data-skin=dsh] .om-wrap .oc-ctx,body[data-skin=dsh] > .oc-ctx {
   padding:4px;
   border:.5px solid var(--nsx-line, var(--ns-border-2, rgba(255, 255, 255, .12)));
   border-radius:10px;
@@ -941,7 +941,7 @@ body[data-skin=dsh] :is([data-module=lore],.om-wrap) .ob-ctx,body[data-skin=dsh]
   color:var(--ns-label-2, #cfd3d6);
 }
 
-body[data-skin=dsh] :is([data-module=lore],.om-wrap) .ob-ctx .ctx-item,body[data-skin=dsh] .om-wrap .oc-ctx .oc-ctx-item {
+body[data-skin=dsh] :is([data-module=lore],.om-wrap) .ob-ctx .ctx-item,body[data-skin=dsh] .om-wrap .oc-ctx .oc-ctx-item,body[data-skin=dsh] > .oc-ctx .oc-ctx-item {
   height:28px;
   padding:0 8px;
   border-radius:6px;
@@ -949,7 +949,7 @@ body[data-skin=dsh] :is([data-module=lore],.om-wrap) .ob-ctx .ctx-item,body[data
   color:var(--ns-label-2, #cfd3d6);
 }
 
-body[data-skin=dsh] :is([data-module=lore],.om-wrap) .ob-ctx .ctx-item:hover,body[data-skin=dsh] .om-wrap .oc-ctx .oc-ctx-item:hover {
+body[data-skin=dsh] :is([data-module=lore],.om-wrap) .ob-ctx .ctx-item:hover,body[data-skin=dsh] .om-wrap .oc-ctx .oc-ctx-item:hover,body[data-skin=dsh] > .oc-ctx .oc-ctx-item:hover {
   background:var(--ns-hover, rgba(255, 255, 255, .06));
   color:var(--ns-label-1, #f9fafb);
 }

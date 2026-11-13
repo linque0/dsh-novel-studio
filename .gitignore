@@ -35,6 +35,8 @@ showcase/
 # 工具会话状态与扫描缓存
 .mimosa/
 .mimosa-cache/
+.zcode/
+.superpowers/
 
 # editor / OS
 .DS_Store

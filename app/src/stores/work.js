@@ -365,41 +365,42 @@ export const useWorkStore = defineStore('work', {
     },
 
     async moveChapterTo(id, targetVolumeId, mode, refChapterId = null) {
-      const c = this.chapters.find((x) => x.id === id)
-      if (!c) return
-      const oldVol = c.volumeId
-      const volId = targetVolumeId === 'orphans' ? null : targetVolumeId
-      c.volumeId = volId
-      const sibs = () => this.chapters.filter((x) => x.volumeId === volId && !x.deletedAt).sort((a, b) => a.sortOrder - b.sortOrder)
-      if (mode === 'inside' || !refChapterId) {
-        const list = sibs().filter((x) => x.id !== id)
-        const maxSort = list.reduce((m, x) => Math.max(m, x.sortOrder), -1000)
-        c.sortOrder = maxSort + 1000
+      const live = this.liveChapters
+      const chapter = live.find((row) => row.id === id)
+      if (!chapter || !['inside', 'before', 'after'].includes(mode)) return false
+      const volumes = new Set(this.liveVolumes.map((volume) => volume.id))
+      const groupOf = (volumeId) => volumes.has(volumeId) ? volumeId : null
+      const source = groupOf(chapter.volumeId)
+      const destination = groupOf(targetVolumeId)
+      const original = live.filter((row) => groupOf(row.volumeId) === destination)
+      const ordered = original.filter((row) => row.id !== id)
+      let index = ordered.length
+      if (mode === 'inside') {
+        if (targetVolumeId != null && targetVolumeId !== 'orphans' && !volumes.has(targetVolumeId)) return false
       } else {
-        const ref = this.chapters.find((x) => x.id === refChapterId)
-        if (ref) {
-          const list = sibs().filter((x) => x.id !== id)
-          const refIdx = list.findIndex((x) => x.id === refChapterId)
-          const before = mode === 'before' ? refIdx : refIdx + 1
-          // 先放到目标位置附近，再整体重排
-          c.sortOrder = ref.sortOrder + (mode === 'before' ? -500 : 500)
-          void before
-        }
+        const anchor = ordered.findIndex((row) => row.id === refChapterId)
+        if (anchor < 0) return false
+        index = anchor + Number(mode === 'after')
       }
-      autosave.mark('chapters', c)
-      this.reindexVolume(volId)
-      if (oldVol && oldVol !== volId) this.reindexVolume(oldVol)
-    },
+      ordered.splice(index, 0, chapter)
+      if (source === destination && ordered.every((row, i) => row === original[i])) return false
 
-    reindexVolume(vid) {
-      const sibs = this.chapters.filter((x) => x.volumeId === vid && !x.deletedAt).sort((a, b) => a.sortOrder - b.sortOrder)
-      sibs.forEach((c, i) => {
-        const target = i * 1000
-        if (c.sortOrder !== target) {
-          c.sortOrder = target
-          autosave.mark('chapters', c)
-        }
+      if (source !== destination) {
+        chapter.volumeId = destination
+        if (this.selChapterId === id) this.selVolumeId = destination
+      }
+      const saveOrder = (rows) => rows.forEach((row, i) => {
+        const sortOrder = i * 1000
+        const movedVolume = row === chapter && source !== destination
+        if (row.sortOrder === sortOrder && !movedVolume) return
+        row.sortOrder = sortOrder
+        autosave.mark('chapters', row)
       })
+      saveOrder(ordered)
+      if (source !== destination) {
+        saveOrder(live.filter((row) => row.id !== id && groupOf(row.volumeId) === source))
+      }
+      return true
     },
 
     async deleteChapter(id) {
@@ -1259,6 +1260,12 @@ export const useWorkStore = defineStore('work', {
       const n = this.olnodes.find((x) => x.id === id)
       if (!n) return
       n.shape = shape
+      /* 换形状就换几何：没手动定过的边交回 effSize 按形状设计尺寸出盒（矩形以外的形状有各自的
+       * 设计比例，钉死旧宽高会把纸面拉扁、正文内距也错位）；manualW/manualH 的边保留，不能静默丢掉作者拖过的尺寸。 */
+      if (n.kind === 'event') {
+        if (!n.manualW) n.w = null
+        if (!n.manualH) n.h = null
+      }
       autosave.mark('olnodes', n)
     },
 

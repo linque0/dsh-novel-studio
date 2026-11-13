@@ -2542,6 +2542,10 @@ onBeforeUnmount(() => {
       </Teleport>
     </div>
 
+    <!-- 右键操作栏 / 空白菜单 / 连接点菜单统一挂到 body：毛玻璃皮肤的 .ow-main 带 backdrop-filter，
+         它会成为 position:fixed 子元素的包含块，留在画布内会整体偏移 .ow-main 的原点（实测 265,108）。
+         关闭仍由 window 捕获阶段 mousedown + closest('.oc-ctx') 判定，与挂载位置无关。 -->
+    <Teleport to="body">
     <!-- 模块右键操作栏（v0.4.19：mini 工具栏改右键触发，可 Esc / 点空白关闭；fixed 定位须在 transform 层外） -->
     <div v-if="ctxMenu" class="oc-ctx" :style="{ left: ctxMenu.x + 'px', top: ctxMenu.y + 'px' }" @mousedown.stop @contextmenu.prevent.stop>
       <div class="oc-ctx-title">{{ ctxNode?.title || KIND_META[ctxNode?.kind]?.label || '模块' }}</div>
@@ -2580,6 +2584,7 @@ onBeforeUnmount(() => {
         <OIcon name="close" :size="13" /> 删除连接点
       </button>
     </div>
+    </Teleport>
 
     <!-- 多选封装 -->
     <div v-if="wrapOpen" class="oc-modal-backdrop" @mousedown.self="wrapOpen = false">

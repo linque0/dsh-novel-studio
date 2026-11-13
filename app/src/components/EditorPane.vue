@@ -14,7 +14,6 @@ import Link from '@tiptap/extension-link'
 import TextStyle from '@tiptap/extension-text-style'
 import Color from '@tiptap/extension-color'
 import TextAlign from '@tiptap/extension-text-align'
-import Highlight from '@tiptap/extension-highlight'
 import Placeholder from '@tiptap/extension-placeholder'
 import { marked } from 'marked'
 import { NButton, NDrawer, NDrawerContent, NInputNumber, NPopover, NSelect } from 'naive-ui'
@@ -23,7 +22,7 @@ import { useUiStore } from '../stores/ui'
 import { autosave } from '../services/autosave'
 import { db } from '../db/database.js'
 import { fmtNum } from '../services/wordcount'
-import { FontSize } from '../services/richtext'
+import { FontSize, MarkHighlight } from '../services/richtext'
 import { isImageExt } from '../services/fileio'
 import { DlLinkMark } from '../services/doublelinks'
 import { AnnotationMark, setActiveEditor } from '../services/annotations'
@@ -220,7 +219,7 @@ const extensions = [
   TextStyle,
   FontSize,
   Color,
-  Highlight,
+  MarkHighlight,
   DlLinkMark,
   AnnotationMark,
   Link.configure({ openOnClick: false, autolink: true }),

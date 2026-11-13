@@ -1,5 +1,6 @@
 /* UI 侧 RPC：界面（DSH 右栏原生面板与完整界面 iframe）用它与作品库对话（不碰 DSH 内部 API）。 */
 import { createView } from '../../core/view.js';
+import { describeLocation, browseDirectory, relocateLibrary } from '../../core/location.js';
 
 const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'content-type': 'application/json; charset=utf-8' } });
 const failure = (code, message) => ({ ok: false, error: { code, message } });
@@ -30,6 +31,27 @@ export function createRpcHandler({ library, version = '0.0.0', prefix = '/api/no
       return { ok: true, value: result };
     },
     'plugin.info': async () => ({ ok: true, value: { version, library: library.dir } }),
+
+    /* 存储位置（作品库目录，与桌面版共用同一个指针）：
+     * 插件进程在 apply() 里一次性 openLibrary，改指针不会热生效，
+     * 所以这里只回 restartHint，不做任何热切换。 */
+    'storage.info': async () => {
+      if (!library) throw coded('LIBRARY_UNAVAILABLE', '作品库不可用');
+      return {
+        ok: true,
+        value: {
+          ...describeLocation({ current: library.dir }),
+          revealAvailable: false,
+          restartHint: 'dsh',
+        },
+      };
+    },
+    'storage.browse': async (args) => ({ ok: true, value: await browseDirectory(args.dir) }),
+    'storage.relocate': async (args) => {
+      if (!library) throw coded('LIBRARY_UNAVAILABLE', '作品库不可用');
+      const result = await relocateLibrary(library.dir, args.dir);
+      return { ok: true, value: { ...result, restartHint: 'dsh' } };
+    },
 
     /* 界面数据层（书架 / 新建 / 打开 / 单章）：只读组装在 core/view.js，这里只做转发与错误码映射。 */
     'shelf.list': viaView((v) => v.shelf()),

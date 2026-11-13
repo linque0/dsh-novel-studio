@@ -34,6 +34,11 @@
     librarySnapshot: function () { return rpc('library.snapshot'); },
     libraryPull: function (after) { return rpc('sync.pull', { after: after || 0 }); },
     librarySubmit: function (payload) { return rpc('sync.submit', payload || {}); },
+    /* 作品库存储位置（与桌面版同名）。插件版没有原生框，故不定义 pickLibraryDir：
+     * 界面按 typeof pickLibraryDir === 'function' 区分两版入口。 */
+    libraryLocation: function () { return rpc('storage.info'); },
+    libraryBrowse: function (dir) { return rpc('storage.browse', { dir: dir || '' }); },
+    libraryRelocate: function (dir) { return rpc('storage.relocate', { dir: dir || '' }); },
 
     /* 事件总线：插件版不再跨进程广播 */
     appBroadcast: function (payload) {

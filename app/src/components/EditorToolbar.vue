@@ -1,38 +1,25 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { NButton, NSelect, NPopover, NColorPicker } from 'naive-ui'
+import { NPopover } from 'naive-ui'
 import OIcon from './OIcon.vue'
 import { useWorkStore } from '../stores/work'
 import { useAiStore } from '../stores/ai'
+import { useUiStore } from '../stores/ui'
 
-const nsPlugin = __NS_PLUGIN__
 const props = defineProps({ editor: { type: Object, required: true }, compact: { type: Boolean, default: false },paperControls:{type:Boolean,default:false},bookmarkControl:{type:Boolean,default:true} })
 const toolbar=ref(null),toolbarWidth=ref(0)
 const isCompact=computed(()=>props.compact||props.paperControls&&toolbarWidth.value<1100)
-/* 插件版不提供纸面切换（DSH 里纸面由皮肤决定），选择器整块不进弹层 */
-const paperInMore=computed(()=>!nsPlugin&&props.paperControls&&toolbarWidth.value<720)
+const moreShow = ref(false)
 let widthObserver
 const work = useWorkStore()
 const ai = useAiStore()
+const ui = useUiStore()
 
 const tick = ref(0)
 const onTr = () => tick.value++
 props.editor.on('transaction', onTr)
 onBeforeUnmount(() => props.editor.off('transaction', onTr))
 onBeforeUnmount(()=>widthObserver?.disconnect())
-
-const SIZES = ['12', '14', '15', '16', '18', '20', '24', '28', '32', '40'].map((s) => ({ label: s + ' 号', value: s }))
-const HIGHLIGHTS = ['#fff3a3', '#ffd6a5', '#ffa8a8', '#b8f2c9', '#a8d8ff', '#e0c3fc']
-const COLORS = ['#3c3427', '#8c6f4e', '#c0392b', '#d35400', '#27ae60', '#2980b9', '#8e44ad', '#7f8c8d']
-
-const sizeVal = computed(() => {
-  void tick.value
-  return String(props.editor.getAttributes('textStyle')?.fontSize || '')
-})
-const curColor = computed(() => {
-  void tick.value
-  return props.editor.getAttributes('textStyle')?.color || '#3c3427'
-})
 
 /* 不带 focus() 的命令链（失焦确定性）；点击后由 refocus 恢复编辑器光标 */
 const chain = () => props.editor.chain()
@@ -42,11 +29,6 @@ function refocus() {
   } catch {
     /* 后台窗口下允许失败 */
   }
-}
-
-function applySize(v) {
-  if (!v) chain().unsetFontSize().run()
-  else chain().setFontSize(Number(v)).run()
 }
 
 /* 书签（当前章节） */
@@ -61,12 +43,21 @@ function toggleBm() {
   window.$msg?.success(added ? '已加入书签' : '已移除书签')
 }
 
-/* 超链接 */
-const showLink = ref(false)
-const linkHref = ref('https://')
-function openLink() {
-  linkHref.value = props.editor.getAttributes('link')?.href || 'https://'
-  showLink.value = true
+function enterReading() {
+  if (!work.activeChapter) return
+  moreShow.value = false
+  ui.readMode = true
+}
+
+function openImport() {
+  moreShow.value = false
+  ui.importOpen = true
+}
+
+function openExport() {
+  if (!work.work) return window.$msg?.warning('请先打开一部作品')
+  moreShow.value = false
+  ui.exportOpen = true
 }
 
 /* 发送给 DSH（方案 §五.1）：锚点 = 当前章，编辑器有选中文本时一并作为补充指令透传 */
@@ -84,33 +75,6 @@ onMounted(() => {
   if(props.paperControls){widthObserver=new ResizeObserver(entries=>{toolbarWidth.value=entries[0].contentRect.width});widthObserver.observe(toolbar.value)}
   if (!ai.loaded) ai.loadSettings() // 保障入口置灰判定基于已装载的配置（幂等）
 })
-function applyLink() {
-  const href = linkHref.value.trim()
-  let ok = false
-  try {
-    const u = new URL(href)
-    const h = u.hostname.toLowerCase()
-    const privateHost =
-      h === 'localhost' ||
-      h === '0.0.0.0' ||
-      h === '::1' ||
-      /^127\.|^10\.|^192\.168\.|^169\.254\.|^172\.(1[6-9]|2\d|3[01])\./.test(h)
-    ok = (u.protocol === 'http:' || u.protocol === 'https:') && !privateHost
-  } catch {
-    ok = false
-  }
-  if (!ok) {
-    window.$msg?.warning('仅支持公网 http/https 链接')
-    return
-  }
-  chain().extendMarkRange('link').setLink({ href, target: '_blank', rel: 'noopener noreferrer' }).run()
-  showLink.value = false
-}
-function removeLink() {
-  chain().extendMarkRange('link').unsetLink().run()
-  showLink.value = false
-}
-
 const isActive = (name, attrs) => {
   void tick.value
   return props.editor.isActive(name, attrs)
@@ -135,73 +99,11 @@ const isActive = (name, attrs) => {
     <button class="tb" data-act="h3" :class="{ on: isActive('heading', { level: 3 }) }" title="标题三" @click="chain().toggleHeading({ level: 3 }).run()">H3</button>
     <span class="tb-sep" />
 
-    <NPopover trigger="click" :show-arrow="false" placement="bottom-start">
+    <NPopover trigger="click" :show-arrow="false" placement="bottom-start" v-model:show="moreShow">
       <template #trigger>
-        <button class="tb" data-act="more-formats" title="更多格式：字号、颜色、底色、链接、书签、章节状态与历史">更多格式 ⌄</button>
+        <button class="tb" data-act="more-features" title="更多功能：书签、阅读模式、导入与导出正文、章节状态与历史">更多功能 ⌄</button>
       </template>
-      <div class="tb-more">
-        <!-- 去重：对齐 / 列表 / 引用 / 清除格式 与右键菜单完全重合（EditorContextMenu.vue:442-544），不再重复一遍。
-             这里只留右键需要多展开一级、或右键根本没有的条目。 -->
-        <NPopover trigger="click" :show-arrow="false" placement="right-start">
-          <template #trigger>
-            <button class="tb" :class="{ on: !!sizeVal }" data-act="font-size" title="字号">字号{{ sizeVal ? ' · ' + sizeVal : '' }} ⌄</button>
-          </template>
-          <div class="tb-pick-list">
-            <button
-              v-for="s in SIZES"
-              :key="s.value"
-              class="tb"
-              :class="{ on: sizeVal === s.value }"
-              @click="applySize(s.value)"
-            >{{ s.label }}</button>
-            <button class="tb" title="恢复默认字号" @click="applySize(null)">默认</button>
-          </div>
-        </NPopover>
-        <NPopover trigger="click" :show-arrow="false">
-          <template #trigger>
-            <button class="tb" data-act="color" title="字体颜色">
-              <span :style="{ borderBottom: '3px solid ' + curColor, lineHeight: '13px' }">A</span>
-            </button>
-          </template>
-          <div class="tb-pick-swatches">
-            <button
-              v-for="c in COLORS"
-              :key="c"
-              class="tb tb-swatch"
-              :style="{ background: c }"
-              :title="'文字色 ' + c"
-              @click="chain().setColor(c).run()"
-            />
-            <button class="tb tb-swatch-clear" title="恢复默认文字色" @click="chain().unsetColor().run()">默认</button>
-          </div>
-        </NPopover>
-        <NPopover trigger="click" :show-arrow="false">
-          <template #trigger>
-            <button class="tb" data-act="highlight" :class="{ on: isActive('highlight') }" title="突出显示">底色</button>
-          </template>
-          <div class="tb-pick-swatches">
-            <button
-              v-for="c in HIGHLIGHTS"
-              :key="c"
-              class="tb tb-swatch"
-              :style="{ background: c }"
-              data-act="highlight"
-              :title="'底色 ' + c"
-              @click="chain().setHighlight({ color: c }).run()"
-            />
-            <button class="tb tb-swatch-clear" title="清除底色" @click="chain().unsetHighlight().run()"><OIcon name="close" :size="11" /></button>
-          </div>
-        </NPopover>
-        <NPopover trigger="click" :show-arrow="false" :show="showLink" @update:show="(v) => (showLink = v)">
-          <template #trigger>
-            <button class="tb" data-act="link" :class="{ on: isActive('link') }" title="超链接" @click="openLink"><OIcon name="link" :size="14" /></button>
-          </template>
-          <div class="tb-pick-link">
-            <input v-model="linkHref" class="rp-input" placeholder="https://…" style="flex: 1" @keyup.enter="applyLink" />
-            <NButton size="small" type="primary" @click="applyLink">确定</NButton>
-            <NButton v-if="isActive('link')" size="small" @click="removeLink">移除</NButton>
-          </div>
-        </NPopover>
+      <div class="tb-more tb-more-features">
         <button
           class="tb"
           v-if="bookmarkControl"
@@ -210,8 +112,13 @@ const isActive = (name, attrs) => {
           :class="{ on: bmOn }"
           :title="bmOn ? '移除书签' : '收藏本书签'"
           @click="toggleBm"
-        ><OIcon :name="bmOn ? 'star-filled' : 'star'" :size="14" /></button>
-        <span v-if="paperInMore" class="tb-paper-in-more" @click.stop><slot name="paper" /></span>
+        ><OIcon :name="bmOn ? 'star-filled' : 'star'" :size="14" /><span>{{ bmOn ? '移除书签' : '收藏书签' }}</span></button>
+        <!-- 阅读模式：工具栏在阅读态整体隐藏，这里只作「进入」入口；
+             退出走 Esc 与齿轮菜单的「退出阅读」，不在弹层里重复一份够不着的按钮。 -->
+        <button class="tb tb-read" data-act="reading-mode" title="阅读模式：隐藏工具栏与侧栏，限宽只读" @click="enterReading"><OIcon name="books" :size="14" /><span>阅读模式</span></button>
+        <span class="tb-sep" />
+        <button class="tb" data-act="import" @click="openImport"><OIcon name="upload" :size="14" /><span>导入正文…</span></button>
+        <button class="tb" data-act="export" @click="openExport"><OIcon name="download" :size="14" /><span>导出正文…</span></button>
         <div v-if="$slots['more-end']" class="tb-more-chapter" @click.stop @mousedown.stop>
           <slot name="more-end" />
         </div>

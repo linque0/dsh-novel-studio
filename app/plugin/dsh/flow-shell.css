@@ -66,7 +66,8 @@ html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] .st-lay
 }
 
 /* ---- 3. 玻璃：侧栏/批注栏 62%、主区 52%，都留得下流动底；--ns-layer-1 深色回退 #232324 ---- */
-html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] :is(.side-panel, .right-panel) {
+html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] :is(.side-panel, .right-panel),
+html body[data-skin='dsh'] .latent-export-dialog.n-modal.n-card {
   background-color: color-mix(in srgb, var(--ns-layer-1, #232324) 62%, transparent);
   /* 材质表还给侧栏铺了 --ls-glass-fill 渐变，留着会把 62% 又拉回实底 */
   background-image: none;
@@ -121,4 +122,10 @@ html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow][data-mo
  * 内容面自己不再铺底，地面交给 .center-pane 的 52% 玻璃，与人物/灵感同档；文字色沿用宿主令牌。 */
 html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow][data-module='outline'] .outline-text-body {
   background: transparent;
+}
+
+/* 浮起的章节沿用宿主底色，让浅色宿主的深色文字也清晰。 */
+body[data-skin='dsh'][data-ns-host='dsh'] [data-chapter-sort-ghost] {
+  background: color-mix(in srgb, var(--ns-layer-1, #232324) 94%, var(--ns-label-1, #f9fafb));
+  color: var(--ns-label-1, #f9fafb);
 }
