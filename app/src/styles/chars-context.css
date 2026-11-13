@@ -40,16 +40,13 @@
 /* ---------- 滚动区（studio.css .context-scroll：0 20px 24px） ---------- */
 .char-context .context-scroll {
   flex: 1; min-height: 0; overflow: auto; padding: 0 20px 24px;
-  scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent;
 }
 .char-inspector .inspector-scroll {
   flex: 1; min-height: 0; overflow: auto;
-  scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent;
 }
 
-/* ---------- 小型关系网（fusion.css:4 的 profile 原型值：高 65 / 下距 13） ----------
-   260x65 视窗内的纯 SVG：中心方块 = 当前人物，周围圆点 = 一度邻居（最多 6 个），细线相连。 */
-.char-context .mini-network { display: block; width: 100%; height: 65px; margin: 0 0 13px; overflow: visible; }
+/* ---------- 小型关系网 ---------- */
+.char-context .mini-network { display: block; width: 100%; height: 120px; margin: 0 0 16px; }
 .char-context .mini-network line { stroke: var(--border-strong); stroke-width: 1; }
 .char-context .mini-network .net-center { fill: var(--bg-hover); stroke: var(--border-strong); stroke-width: 1; }
 .char-context .mini-network .net-initial {
@@ -57,11 +54,12 @@
   text-anchor: middle; dominant-baseline: central;
 }
 .char-context .mini-network .net-node { cursor: pointer; }
-.char-context .mini-network .net-node circle { fill: var(--bg-panel); stroke: var(--accent); stroke-width: 1.2; transition: fill .16s; }
-.char-context .mini-network .net-node:hover circle,
-.char-context .mini-network .net-node:focus-visible circle { fill: var(--accent-soft); }
+.char-context .mini-network .net-node .net-hit { fill: transparent; }
+.char-context .mini-network .net-node circle:not(.net-hit) { fill: var(--bg-panel); stroke: var(--accent); stroke-width: 1.2; transition: fill .16s; }
+.char-context .mini-network .net-node:hover circle:not(.net-hit),
+.char-context .mini-network .net-node:focus-visible circle:not(.net-hit) { fill: var(--accent-soft); }
 .char-context .mini-network .net-node:focus-visible { outline: none; }
-.char-context .mini-network .net-node:focus-visible circle { stroke-width: 2; }
+.char-context .mini-network .net-node:focus-visible circle:not(.net-hit) { stroke-width: 2; }
 
 /* ---------- 分区（fusion.css:6：23 / 20；边界线沿用 studio.css .context-section+） ---------- */
 .char-context .context-section + .context-section {

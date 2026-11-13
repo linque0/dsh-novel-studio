@@ -1,0 +1,123 @@
+/* Shared Latent main header. The capsule samples the flowing backdrop through a clear shell. */
+html body[data-skin='dsh'] .app-topbar-shell .app-topbar[data-topbar-page]:not([data-topbar-page='settings']) {
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(10px, 1vw, 18px);
+  margin: 0;
+  padding: 0 clamp(14px, 2.4vw, 40px);
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+
+  & .app-topbar-brand {
+    grid-area: 1 / 1;
+    justify-self: start;
+    min-width: 0;
+  }
+
+  & .app-topbar-brand-text { display: inline-flex; }
+  & .app-topbar-narrow-title { display: none; }
+
+  & .app-topnav {
+    grid-area: 1 / 2;
+    justify-self: center;
+    position: static;
+    transform: none;
+    width: max-content;
+    max-width: 100%;
+    margin: 0;
+    padding: 6px;
+    gap: 4px;
+    border: 1px solid rgb(255 255 255 / .16);
+    border-radius: 999px;
+    background: rgb(255 255 255 / .10);
+    box-shadow: 0 10px 34px rgb(0 0 0 / .16);
+    -webkit-backdrop-filter: blur(24px) saturate(1.6);
+    backdrop-filter: blur(24px) saturate(1.6);
+  }
+
+  & .app-topnav-item {
+    height: 36px;
+    padding: 0 clamp(11px, 1.2vw, 21px);
+    color: rgb(255 255 255 / .88);
+  }
+
+  & .app-topnav-item.active {
+    background: #fff;
+    color: #17181c;
+  }
+
+  & .app-topnav-item:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+
+  & .app-topbar-controls {
+    grid-area: 1 / 3;
+    display: flex;
+    align-items: center;
+    justify-self: end;
+    gap: 8px;
+  }
+
+  & .app-topbar-actions { flex: none; overflow: visible; }
+  & .app-topbar-actions:empty { display: none; }
+  & .app-topbar-actions > .app-topbar-exit-focus { display: inline-flex; }
+
+  & .app-topbar-search-panel {
+    display: flex;
+    right: clamp(14px, 2.4vw, 40px);
+    width: min(268px, calc(100% - 28px));
+    background: rgb(25 22 32 / .88);
+  }
+
+  & .app-topbar-search-panel:is(.is-open, :focus-within) {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+  }
+
+  & .app-topbar-search-panel input { color: #fff; }
+
+  @media (max-width: 1199px) {
+    & .dream-mode-entries button { width: 34px; padding: 0; }
+    & .dream-mode-entries button span { display: none; }
+  }
+
+  @media (max-width: 899px) {
+    & .app-topbar-save-text { display: none; }
+  }
+
+  @media (max-width: 879px) {
+    height: auto;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: 38px auto;
+    gap: 6px;
+    padding-block: 6px;
+
+    & .app-topbar-brand-text { font-size: 15px; }
+    & .app-topbar-current, & .writing-stats-mobile-wrap, & .app-topbar-save { display: none; }
+    & .app-topbar-controls { grid-area: 1 / 2; gap: 6px; }
+    & .app-topbar-cluster, & .app-topbar-actions { display: flex; gap: 4px; }
+    & .app-topbar-actions:empty { display: none; }
+    & .app-topbar-round, & .dream-mode-entries button { width: 30px; height: 30px; min-height: 30px; }
+    & .app-topnav {
+      grid-area: 2 / 1 / 3 / -1;
+      display: flex;
+      width: 100%;
+      gap: 2px;
+      padding: 4px;
+    }
+    & .app-topnav-item { flex: 1 0 auto; height: 32px; padding: 0 6px; }
+  }
+
+  @media (max-width: 380px) {
+    & .app-topbar-brand-text small { display: none; }
+  }
+}

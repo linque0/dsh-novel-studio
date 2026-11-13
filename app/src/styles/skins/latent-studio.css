@@ -198,10 +198,6 @@ html body[data-skin='dsh'] .latent-studio .app-topbar .app-topnav {
   gap: 4px;
   border: 1px solid rgb(255 255 255 / .16);
   border-radius: 999px;
-  background: rgb(255 255 255 / .1);
-  box-shadow: none;
-  -webkit-backdrop-filter: blur(24px);
-  backdrop-filter: blur(24px);
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;

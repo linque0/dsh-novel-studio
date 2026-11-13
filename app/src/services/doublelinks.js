@@ -232,6 +232,13 @@ export function previewFor(target) {
 }
 
 /* ---------- 跳转 ---------- */
+export function jumpToOutlineCitation(target) {
+  if (!target) return false
+  if (target.kind === 'character') return useWorkStore().jumpToCharGraph(target.id)
+  if (target.kind === 'olnode') useWorkStore().outlineView = 'canvas'
+  return jumpTo(target)
+}
+
 export function jumpTo(target) {
   if (!target) return false
   const work = useWorkStore()

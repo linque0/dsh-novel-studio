@@ -447,6 +447,7 @@ async function clearGoal() {
               @update:value="(v) => work.setChapterStatus(work.activeChapter.id, v)"
             />
             <NButton size="tiny" quaternary @click.stop="openHistory" @mousedown.stop>历史</NButton>
+            <NButton v-if="!ui.focusMode" size="tiny" quaternary @click.stop="ui.focusMode = true">沉浸写作</NButton>
           </div>
         </template>
       </EditorToolbar>

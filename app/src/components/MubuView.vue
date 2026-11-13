@@ -1,4 +1,5 @@
 <script setup>
+import { useLoreSort } from '../composables/useLoreSort.js'
 import { cleanLoreHtml, loreText, loreCaret, setLoreCaret, splitLoreSelection } from '../services/lore-editor-dom.js'
 import LoreLinkComposer from './lore/LoreLinkComposer.vue'
 import TaskLauncher from './ai/TaskLauncher.vue'
@@ -26,6 +27,7 @@ const props = defineProps({
   focusNodeId: { type: String, default: '' },
 })
 const rootEl = ref(null)
+const loreEditor = ref(null)
 const mobileToolsOpen = ref(false)
 const ver = ref(0)
 const rows = ref([])
@@ -42,7 +44,6 @@ function popLore() {
   popOut(work, 'lore', '', `${work.work?.title || ''} · 设定`)
 }
 const pending = reactive({ key: null, offset: 'end' })
-const drag = reactive({ key: null, hintKey: null, zone: null })
 const focusedId = ref(null)
 const ctx = reactive({ open: false, x: 0, y: 0, rowId: null, folded: false, hasChildren: false, linkSearch: false, linkSpan: null })
 const clip = ref(null)
@@ -50,8 +51,6 @@ const cutId = ref(null)
 const undoStack = computed(() => work.mubuHistory().past)
 const redoStack = computed(() => work.mubuHistory().future)
 let lastSnap = 0
-let expandTimer = null
-let expandTarget = null
 
 const COLORS = ['#3c3427', '#8c6f4e', '#c0392b', '#d35400', '#27ae60', '#2980b9', '#8e44ad', '#7f8c8d']
 const HIGHLIGHTS = ['#fff3a3', '#ffd6a5', '#ffa8a8', '#b8f2c9', '#a8d8ff', '#e0c3fc']
@@ -649,66 +648,9 @@ function onBackspace(row) {
 }
 
 /* ---------- 拖拽（三区指示 + 悬停自动展开 + FLIP） ---------- */
-function onDragStart(row, e) {
-  drag.key = row.node.key
-  e.dataTransfer.effectAllowed = 'move'
-  e.dataTransfer.setData('text/plain', row.node.id)
-}
-function containsKey(node, key) {
-  if (node.key === key) return true
-  return node.children.some((c) => containsKey(c, key))
-}
-function onDragOver(row, e) {
-  if (!drag.key || drag.key === row.node.key) return
-  const src = visible.value.find((r) => r.node.key === drag.key)
-  if (!src || containsKey(src.node, row.node.key)) return
-  const r = e.currentTarget.getBoundingClientRect()
-  const y = (e.clientY - r.top) / Math.max(1, r.height)
-  drag.hintKey = row.node.key
-  drag.zone = y < 0.28 ? 'before' : y > 0.72 ? 'after' : 'inside'
-  if (row.node.fold && row.node.hasChildren) {
-    if (expandTarget !== row.node.key) {
-      clearTimeout(expandTimer)
-      expandTarget = row.node.key
-      expandTimer = setTimeout(() => {
-        if (drag.key && drag.hintKey === row.node.key) {
-          work.mubuToggleFold(row.node.id)
-          ver.value++
-        }
-      }, 600)
-    }
-  } else if (expandTarget) {
-    clearTimeout(expandTimer)
-    expandTarget = null
-  }
-}
-function onDrop(row) {
-  clearTimeout(expandTimer)
-  if (!drag.key || !drag.hintKey) return clearDrag()
-  const src = visible.value.find((r) => r.node.key === drag.key)
-  if (!src) return clearDrag()
-  pushUndo()
-  commit(() => work.mubuMove(src.node.id, row.node.id, drag.zone), src.node.key, 'end')
-  clearDrag()
-}
-function onDropRoot() {
-  clearTimeout(expandTimer)
-  if (!drag.key) return clearDrag()
-  const n = work.mubu.find((x) => x.id === drag.key.slice(2))
-  const rootId = contentRootId.value
-  if (!n || !rootId || n.id === rootId) return clearDrag()
-  pushUndo()
-  /* 拖到空白处 = 移到当前内容根的一级条目 */
-  work.mubuMove(n.id, rootId, 'inside')
-  ver.value++
-  nextTick(() => flashNode(n.id))
-  clearDrag()
-}
-function clearDrag() {
-  drag.key = null
-  drag.hintKey = null
-  drag.zone = null
-}
+const loreSort = useLoreSort(loreEditor, work, () => [
+  contentRootId.value, ui.mubuQuery, ui.loreScope, ui.loreRootId, ui.mubuSelectedId
+], () => ver.value++)
 
 /* ---------- 导入 MD / TXT ---------- */
 async function importMd() {
@@ -1035,7 +977,6 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', onWinKeyDown)
   window.removeEventListener('wheel', onWinWheel)
   window.removeEventListener('resize', closeCtx)
-  clearTimeout(expandTimer)
   clearTimeout(relPopTimer)
 })
 
@@ -1116,7 +1057,7 @@ defineExpose({
       <small class="ob-count">{{ nodeCount }} / {{ entryTotal }} 条目</small>
     </div>
 
-    <div class="ob-editor" @scroll="rememberPosition" @dragover.prevent @drop.prevent="onDropRoot">
+    <div ref="loreEditor" class="ob-editor" @scroll="rememberPosition" @pointerdown="loreSort.pointerDown" @dragstart.capture="loreSort.nativeDrag" @click.capture="loreSort.click">
       <section class="write-surface">
       <template v-for="blk in blocks" :key="blk.id || 'flat'">
         <!-- 集头（设计稿 .mubu-set-head：图标 + 集名 + 条目数 + 悬停「＋」；整条吸顶由样式单负责）。
@@ -1150,28 +1091,22 @@ defineExpose({
         class="ob-row"
         :data-depth="row.depth"
         :data-node="row.node.key"
+        :data-lore-sort-row="row.node.id"
         :style="{ '--depth': row.depth }"
         :class="{
           ['heading-' + row.node.heading]: !!row.node.heading,
           'has-children': row.node.hasChildren,
           'ns-row-on': ui.mubuSelectedId === row.node.id,
-          'drop-before': drag.hintKey === row.node.key && drag.zone === 'before',
-          'drop-after': drag.hintKey === row.node.key && drag.zone === 'after',
-          'drop-inside': drag.hintKey === row.node.key && drag.zone === 'inside'
         }"
-        @dragover.prevent="onDragOver(row, $event)"
-        @drop.prevent.stop="onDrop(row)"
-        @dragend="clearDrag"
 
         @contextmenu="onRowCtx(row, $event)"
       >
         <span v-for="d in row.depth" :key="d" class="ob-guide" :style="{ left: (d - 1) * 22 + 12 + 'px' }" />
-        <button class="ob-drag-handle" :draggable="true" title="拖动整个分支" :aria-label="'移动' + row.node.text" @dragstart="onDragStart(row, $event)"><OIcon name="grip" :size="12" /></button>
         <button class="ob-fold-toggle" :class="{ folded: row.node.fold, empty: !row.node.hasChildren }" :disabled="!row.node.hasChildren" :aria-expanded="!row.node.fold" :aria-label="row.node.fold ? '展开子节点' : '折叠子节点'" @click="toggleFold(row)"><OIcon name="caret-right" :size="12" /></button>
         <button
           class="ob-bullet"
           :class="{ 'has-children': row.node.hasChildren, folded: row.node.fold }"
-          :title="'进入' + row.node.text"
+          :title="'单击进入，按住拖动：' + row.node.text"
           :aria-label="'进入' + row.node.text"
           @click="enterNode(row.node.id)"
         />

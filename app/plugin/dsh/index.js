@@ -5,6 +5,7 @@ import './dsh.css'
 import './language.css'
 /* 流动背板的外壳（主窗口 + 拆窗面板）同样排在 language.css 之后：压 dsh.css 的实底与玻璃靠的是后写为胜。 */
 import './flow-shell.css'
+import './topbar.css'
 import './outline-fusion.css'
 import './characters-fusion.css'
 import './settings-fusion.css'

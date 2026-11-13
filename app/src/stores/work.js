@@ -1,3 +1,4 @@
+import { planLoreMove } from '../services/lore-move.js'
 import { lorePath, validLoreMove, createLoreHistory, checkpointLore, stepLoreHistory } from '../services/lore-core.js'
 import { initialExpandedContainers } from '../components/outline/outline-layout.js'
 import { normalizeCanvasOpacity } from '../services/canvas-appearance.js'
@@ -955,6 +956,21 @@ export const useWorkStore = defineStore('work', {
       const walk = (pid) => this.mubuChildren(pid).forEach((n) => (out.push(n), walk(n.id)))
       walk(id)
       return out
+    },
+
+    mubuDrop(id, targetId, mode, checkpoint = () => this.mubuCheckpoint(), placement) {
+      const nodes = this.liveMubu()
+      const changes = planLoreMove(nodes, id, targetId, mode, placement)
+      if (!changes.length) return false
+      const byId = new Map(nodes.map(node => [node.id, node]))
+      checkpoint()
+      for (const { id, parentId, sortOrder } of changes) {
+        const node = byId.get(id)
+        Object.assign(node, { parentId, sortOrder })
+        autosave.mark('mubu', node)
+      }
+      this.mubuRevision++
+      return true
     },
 
     mubuMove(id, targetId, zone) {

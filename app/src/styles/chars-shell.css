@@ -16,6 +16,37 @@
 
 .char-shell-host { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; }
 
+body[data-skin='dsh'] .char-shell [data-char-scroll] {
+  --char-scroll-thumb: var(--ns-scroll-thumb, color-mix(in srgb, #a18aa8 68%, transparent));
+  --char-scroll-thumb-hover: var(--ns-scroll-thumb-hover, color-mix(in srgb, #b49abc 86%, transparent));
+  /* Chromium ignores the pseudo-element styling when either standard scrollbar property is set. */
+  scrollbar-width: auto;
+  scrollbar-color: auto;
+}
+body[data-skin='dsh'] .char-shell [data-char-scroll]::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+body[data-skin='dsh'] .char-shell [data-char-scroll]::-webkit-scrollbar-track,
+body[data-skin='dsh'] .char-shell [data-char-scroll]::-webkit-scrollbar-corner {
+  background: transparent;
+}
+body[data-skin='dsh'] .char-shell [data-char-scroll]::-webkit-scrollbar-thumb {
+  min-height: 32px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--char-scroll-thumb);
+  background-clip: padding-box;
+}
+body[data-skin='dsh'] .char-shell [data-char-scroll]::-webkit-scrollbar-thumb:hover {
+  background-color: var(--char-scroll-thumb-hover);
+}
+body[data-skin='dsh'] .char-shell [data-char-scroll]::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 /* 三列网格（宽档）：列宽来自 JS，全文件唯一一处留白 */
 .char-shell {
   --char-pane-line: var(--border, #e0d6bf);

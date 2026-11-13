@@ -3,7 +3,9 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, useSlots, watch } 
 import { NDropdown } from 'naive-ui'
 import AutoHideTopbar from './AutoHideTopbar.vue'
 import { useUiStore } from '../stores/ui'
-import { APP_NAVIGATION } from './app-navigation'
+import { useWorkStore } from '../stores/work'
+import { popOut } from '../services/panelwindows'
+import { APP_NAVIGATION, WORK_NAVIGATION } from './app-navigation'
 import DreamModeEntries from './agent/DreamModeEntries.vue'
 import WritingStatsEntry from './stats/WritingStatsEntry.vue'
 
@@ -12,12 +14,14 @@ const props = defineProps({
   busy: Boolean,
   hasWork: Boolean,
   targetTitle: { type: String, default: '' },
+  targetWorkId: { type: String, default: '' },
   actions: { type: Array, default: () => [] },
   /* 窄栏保存态（<560）：顶栏动作整条隐藏后，只剩这个非交互状态点告诉作者存没存 */
   saveState: { type: String, default: 'saved' }
 })
 const emit = defineEmits(['navigate', 'create', 'action'])
 const ui = useUiStore()
+const work = useWorkStore()
 const nsPlugin = __NS_PLUGIN__
 /* 导航胶囊只放六个模块：「设置」改由右簇的齿轮圆钮承担（emit navigate:settings），
    导航里不再重复第七项。 */
@@ -44,10 +48,14 @@ const moreOptions = computed(() => [
       .map(item => ({ label: item.label, key: 'nav:' + item.key, disabled: disabled(item.key) }))
   },
   /* 窄档（≤559）顶栏只留「作品名 + 当前模块名 + ⋯」，锁定键收进这里，保证窄栏也能锁/解锁。 */
-  { type: 'group', label: '顶栏', key: 'group-topbar', children: [{ label: pinLabel.value, key: 'pin:toggle' }] }
+  { type: 'group', label: '顶栏', key: 'group-topbar', children: [
+    { label: pinLabel.value, key: 'pin:toggle' },
+    ...(props.active === 'shelf' ? [{ label: '搜索作品', key: 'search:shelf' }] : [])
+  ] }
 ])
 function onSelect(key) {
   if (key === 'pin:toggle') return togglePin()
+  if (key === 'search:shelf') return toggleSearch()
   if (typeof key === 'string' && key.startsWith('nav:')) return navigate(key.slice(4))
   emit('action', key)
 }
@@ -56,15 +64,53 @@ function onSelect(key) {
    直接打开全局搜索浮层，与工作台自己的「搜索」按钮同一个入口。 */
 const slots = useSlots()
 const searchOpen = ref(false)
+const searchPanel = ref(null)
 function toggleSearch() {
   if (!slots.search) { ui.searchOpen = true; return }
   searchOpen.value = !searchOpen.value
+  if (searchOpen.value) nextTick(() => searchPanel.value?.querySelector('input')?.focus())
+}
+function closeSearch(event) {
+  searchOpen.value = false
+  event.target.blur()
 }
 const nav = ref(null)
 const disabled = key => props.busy || (!props.hasWork && !['shelf', 'settings'].includes(key))
 function navigate(key) {
   if (!disabled(key)) emit('navigate', key)
 }
+const splitMenu = ref(null)
+const mainWindow = !new URLSearchParams(location.search).has('panel')
+function canSplit(key) {
+  return mainWindow && !!window.native?.panelOpen && !disabled(key)
+    && !!(props.active === 'shelf' ? props.targetWorkId : work.work?.id)
+    && WORK_NAVIGATION.some(item => item.key === key)
+}
+function showSplitMenu(event, item) {
+  if (!canSplit(item.key)) return
+  event.preventDefault()
+  const button = event.currentTarget
+  const keyboard = event.type === 'keydown' || (!event.clientX && !event.clientY)
+  const bounds = button.getBoundingClientRect()
+  splitMenu.value = { item, x: keyboard ? bounds.left : event.clientX, y: keyboard ? bounds.bottom : event.clientY }
+}
+async function confirmSplit() {
+  const item = splitMenu.value?.item
+  splitMenu.value = null
+  if (!item || !canSplit(item.key)) return
+  const type = item.key === 'chapters' ? 'chapter' : item.key
+  const fromShelf = props.active === 'shelf'
+  const source = fromShelf ? { work: { id: props.targetWorkId, title: props.targetTitle } } : work
+  const entity = fromShelf ? '' : {
+    chapter: work.selChapterId,
+    characters: work.selCharacterId,
+    snippets: work.selSnippetId
+  }[type]
+  const opened = await popOut(source, type, entity, `${source.work.title} · ${item.label}`)
+  if (opened) window.$msg?.success('已在独立窗口打开')
+}
+watch(() => [props.active, props.targetWorkId], () => { splitMenu.value = null })
+
 function title(item) {
   if (props.active !== 'shelf' || ['shelf', 'settings'].includes(item.key)) return item.label
   return props.hasWork ? `打开《${props.targetTitle}》的${item.label}` : '请先创建或选择作品'
@@ -80,7 +126,7 @@ function measureNav() {
   if (!el || measuring || !el.clientWidth) return
   measuring = true
   try {
-    if (nsPlugin) {
+    if (nsPlugin && props.active === 'settings') {
       const header = el.parentElement.getBoundingClientRect()
       const brand = el.parentElement.querySelector('.app-topbar-brand')?.getBoundingClientRect()
       const cluster = el.parentElement.querySelector('.app-topbar-cluster')?.getBoundingClientRect()
@@ -134,16 +180,21 @@ watch(() => [props.active, ui.skin], async () => {
 
 <template>
   <AutoHideTopbar class="app-topbar-shell" :auto-hide="ui.topbarAutoHide" @update:auto-hide="value => ui.setPref('topbarAutoHide', value)">
-    <header class="app-topbar">
+    <header class="app-topbar" :data-topbar-page="active">
       <button type="button" class="app-topbar-brand" title="返回书架" aria-label="小说工坊，返回书架" :disabled="busy" @click="navigate('shelf')">
         <span class="app-topbar-brand-text">小说工坊<small>LATENT</small></span>
         <span class="app-topbar-narrow-title" :title="narrowTitle">{{ narrowTitle }}</span>
       </button>
       <nav ref="nav" class="app-topnav" aria-label="功能模块" :data-ovf="navOvf || null" :style="navBudget ? {maxWidth:navBudget+'px'} : undefined" @wheel="onNavWheel" @scroll="measureNav">
-        <button v-for="item in navItems" :key="item.key" type="button" class="app-topnav-item" :data-nav="item.key" :class="{ active: active === item.key }" :aria-current="active === item.key ? 'page' : undefined" :disabled="disabled(item.key)" :title="title(item)" @click="navigate(item.key)">{{ item.label }}</button>
+        <button v-for="item in navItems" :key="item.key" type="button" class="app-topnav-item" :data-nav="item.key" :class="{ active: active === item.key }" :aria-current="active === item.key ? 'page' : undefined" :aria-haspopup="canSplit(item.key) ? 'menu' : undefined" :disabled="disabled(item.key)" :title="title(item) + (canSplit(item.key) ? '（右键拆窗）' : '')" @click="navigate(item.key)" @contextmenu="showSplitMenu($event, item)" @keydown.shift.f10="showSplitMenu($event, item)">{{ item.label }}</button>
       </nav>
+      <NDropdown v-if="mainWindow" trigger="manual" placement="bottom-start"
+        :show="!!splitMenu" :x="splitMenu?.x ?? 0" :y="splitMenu?.y ?? 0"
+        :options="splitMenu ? [{ key: 'split', label: '在独立窗口打开' + splitMenu.item.label }] : []"
+        @select="confirmSplit" @clickoutside="splitMenu = null" @update:show="value => { if (!value) splitMenu = null }" />
       <span class="app-topbar-current" aria-hidden="true">{{ currentLabel }}</span>
       <button v-if="nsPlugin && active === 'shelf'" type="button" class="app-topbar-create" aria-label="新书上架" @click="emit('create')">＋新书上架</button>
+      <div class="app-topbar-controls">
       <div class="app-topbar-cluster">
         <span class="app-topbar-save" :data-save-state="saveState" role="img" :aria-label="saveLabel" :title="saveLabel">
           <svg class="app-topbar-save-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
@@ -153,7 +204,6 @@ watch(() => [props.active, ui.skin], async () => {
           <button type="button" class="app-topbar-round app-topbar-search-toggle" aria-label="搜索" title="搜索" :aria-expanded="$slots.search ? (searchOpen ? 'true' : 'false') : undefined" @click="toggleSearch">
             <svg class="app-topbar-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4.5 4.5" /></svg>
           </button>
-          <div v-if="$slots.search" class="app-topbar-search" data-topbar-search><slot name="search" /></div>
         </div>
         <WritingStatsEntry v-if="nsPlugin" class="app-topbar-round" :library="active==='shelf'" :disabled="busy" />
         <button v-if="nsPlugin" type="button" class="app-topbar-round app-topbar-settings" aria-label="设置" title="设置" @click="navigate('settings')">
@@ -168,13 +218,16 @@ watch(() => [props.active, ui.skin], async () => {
         </button>
       </div>
       <span v-if="nsPlugin" class="writing-stats-mobile-wrap"><WritingStatsEntry :library="active==='shelf'" :disabled="busy" /></span>
-      <span class="app-topbar-more-wrap"><NDropdown trigger="click" placement="bottom-end" :options="moreOptions" @select="onSelect"><button type="button" class="app-topbar-more" aria-label="更多模块" :title="'更多模块（当前：' + currentLabel + '）'">⋯</button></NDropdown></span>
+      <span v-if="active === 'settings'" class="app-topbar-more-wrap"><NDropdown trigger="click" placement="bottom-end" scrollable style="max-height:calc(100dvh - 90px)" :options="moreOptions" @select="onSelect"><button type="button" class="app-topbar-more" aria-label="更多" :title="'更多（当前：' + currentLabel + '）'">⋯</button></NDropdown></span>
       <div class="app-topbar-actions"><DreamModeEntries v-if="!nsPlugin && active==='shelf'" shelf :disabled="busy" @dream="ui.dreamLauncherOpen=true" /><slot name="actions" /></div>
+      </div>
+      <div v-if="$slots.search" ref="searchPanel" class="app-topbar-search app-topbar-search-panel" :class="{ 'is-open': searchOpen }" data-topbar-search @keydown.esc.stop="closeSearch"><slot name="search" /></div>
     </header>
   </AutoHideTopbar>
 </template>
 
 <style>
+.app-topbar-controls { display: contents; }
 .app-topbar-shell {
   --topbar-bg: var(--bg-panel);
   --topbar-text: var(--text);

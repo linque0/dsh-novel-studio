@@ -2,7 +2,7 @@
   "name": "dsh-novel-studio-app",
   "private": true,
   "type": "module",
-  "version": "0.2.7",
+  "version": "0.3.0",
   "description": "小说工坊插件版前端工程（由桌面仓库 fork，独立构建到 assets/app）",
   "dependencies": {
     "@tiptap/extension-color": "^2.27.2",

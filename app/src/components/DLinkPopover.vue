@@ -3,7 +3,7 @@
      不随鼠标移开消失，× / Esc 关闭）；会话内记忆停靠偏移（后续浮窗停在上次位置），双击标题恢复跟随鼠标。 -->
 <script setup>
 import { reactive, ref, nextTick, onMounted, onBeforeUnmount } from 'vue'
-import { parseTarget, targetById, findByTitle, previewFor, jumpTo, KIND_LABEL, tokenAtPoint } from '../services/doublelinks'
+import { parseTarget, targetById, findByTitle, previewFor, jumpTo, jumpToOutlineCitation, KIND_LABEL, tokenAtPoint } from '../services/doublelinks'
 
 const pop = ref(null)
 const st = reactive({ show: false, x: 0, y: 0, view: null, target: null, pinned: false, dragging: false })
@@ -52,6 +52,7 @@ function resolveByEl(el) {
   const title = el.getAttribute('data-dl-title') || resolved?.title || ''
   if (resolved) return { view: previewFor(resolved) || missingView(title, parsed.kind), target: resolved }
   if (parsed) return { view: missingView(title, parsed.kind), target: null }
+  if (el.hasAttribute('data-outline-citation')) return { view: missingView(title, parsed?.kind), target: null }
   const byTitle = findByTitle(title)
   return byTitle ? { view: previewFor(byTitle), target: byTitle } : { view: missingView(title, parsed?.kind), target: null }
 }
@@ -148,7 +149,11 @@ function onMouseMove(e) {
     cancelHide() // 鼠标移入浮窗：保持显示
     return
   }
-  const linkEl = e.target?.closest?.('.dl-link')
+  const linkEl = e.target?.closest?.('.dl-link, [data-outline-citation]')
+  if (linkEl?.hasAttribute('data-outline-citation') && e.buttons) {
+    if (st.show) delayHide()
+    return
+  }
   if (linkEl) {
     cancelHide()
     if (linkEl === curEl && st.show) return
@@ -184,7 +189,15 @@ function onMouseMove(e) {
 }
 
 function onJump() {
-  if (st.target) jumpTo(st.target)
+  if (curEl?.hasAttribute('data-outline-citation')) {
+    const { view, target } = resolveByEl(curEl)
+    if (!target) {
+      st.view = view
+      st.target = null
+      return
+    }
+    jumpToOutlineCitation(target)
+  } else if (st.target) jumpTo(st.target)
   hide()
 }
 

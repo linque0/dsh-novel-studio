@@ -1,12 +1,11 @@
 <script setup>
 import { computed, ref, provide, onMounted, onBeforeUnmount, watch } from 'vue'
-import { NButton, NDropdown, useMessage } from 'naive-ui'
+import { NButton, useMessage } from 'naive-ui'
 import { useWorkStore } from '../stores/work'
 import { useUiStore } from '../stores/ui'
 import { useAiStore } from '../stores/ai'
 import OIcon from './OIcon.vue'
 import AppTopbar from './AppTopbar.vue'
-import OutlineTopbar from './outline/OutlineTopbar.vue'
 import DreamModeEntries from './agent/DreamModeEntries.vue'
 import {enterDreamMode,enterLightSleepMode} from '../services/ai/entry-modes.js'
 import { WORK_NAVIGATION } from './app-navigation'
@@ -66,66 +65,11 @@ async function enterAiMode(mode){
   }catch(e){msg.error(e.message)}finally{entryBusy.value=false}
 }
 
-/* ---------- 书签（章节快捷收藏） ---------- */
-const bookmarkOptions = computed(() => {
-  const list = work.liveBookmarks
-  return list.length
-    ? list.map((b) => ({ label: b.title || '（空）', key: b.id }))
-    : [{ label: '暂无书签（编辑器工具栏或章节右键添加）', key: 'none', disabled: true }]
-})
-function onBookmarkSelect(key) {
-  const b = work.bookmarks.find((x) => x.id === key)
-  if (!b) return
-  selectTab('chapters')
-  work.selChapterId = b.targetId
-  const c = work.chapters.find((x) => x.id === b.targetId)
-  if (c) work.selVolumeId = c.volumeId
-}
-
 const tabs = WORK_NAVIGATION
 function selectTab(key) {
   work.tab = key
 }
 
-const moreOptions = computed(() => [
-  { label: '拆出独立窗口', key: 'split', children: splitOptions.value.map(o => ({ ...o, key: 'split:' + o.key })) },
-  { label: '章节书签', key: 'bookmarks', children: bookmarkOptions.value.map(o => ({ ...o, key: 'bookmark:' + o.key })) },
-  { label: dirVisible.value ? '收起目录栏' : '展开目录栏', key: 'dir' },
-  { label: ui.focusMode ? '退出沉浸' : '沉浸写作', key: 'focus' },
-  ...(work.tab === 'chapters' ? [{ label: ui.readMode ? '退出阅读' : '阅读模式', key: 'read' }] : [])
-])
-function onMore(key) {
-  if (key.startsWith('split:')) return onSplit(key.slice(6))
-  if (key.startsWith('bookmark:')) return onBookmarkSelect(key.slice(9))
-  if (key === 'dir' && nsPlugin && work.tab==='outline') return window.dispatchEvent(new CustomEvent('outline-command',{detail:{command:'toggle-structure'}}))
-  if (key === 'dir') return toggleDirectory()
-  if (key === 'focus') ui.focusMode = !ui.focusMode
-  if (key === 'read') ui.readMode = !ui.readMode
-  if (key === 'settings') openSettings()
-}
-
-/* 窄栏（<560）顶栏动作全收进 ⋯：搜索 / 章节历史 / 批注 / 更多（子菜单复用工作台「更多」）。
- * 与 APP_NAVIGATION 分两区，模块导航不受影响。 */
-const narrowActions = computed(() => [
-  { label: '搜索', key: 'search' },
-  { label: '章节历史', key: 'history', disabled: !(work.tab === 'chapters' && work.activeChapter) },
-  { label: chapterNotes.value.length ? `批注 (${chapterNotes.value.length})` : '批注', key: 'notes', disabled: !chapterNotes.value.length },
-  { label: '更多', key: 'more', children: moreOptions.value }
-])
-function onTopbarAction(key) {
-  if (key === 'search') return (ui.searchOpen = true)
-  if (key === 'history') {
-    if (work.tab !== 'chapters' || !work.activeChapter) return
-    return (ui.revisionsCtx = { id: work.activeChapter.id, title: work.activeChapter.title })
-  }
-  if (key === 'notes') return openNotesDrawer()
-  onMore(key)
-}
-
-/* 窄栏批注抽屉：<560 时右批注栏改由 ⋯「动作 → 批注」打开，覆盖式从右滑出；
- * ≥560 由 dsh 皮肤恢复常驻三栏，这里的开关不落盘、不写 ui.rightPanelOpen。 */
-const narrowNotesOpen = ref(false)
-let narrowMq = null
 let narrowMq1180 = null
 let tinyMq = null
 let wideMq = null
@@ -140,18 +84,6 @@ function collapseDirectoryOnTiny(event) {
 function collapseNotesOnWide(event) {
   if (event.matches && ui.rightPanelOpen) ui.setPref('rightPanelOpen', false)
 }
-const chapterNotes = computed(() => (work.activeChapter ? work.annotationsForChapter(work.activeChapter.id) : []))
-function openNotesDrawer() {
-  if (!chapterNotes.value.length) return
-  /* 宽屏没有抽屉：同一入口退回「展开常驻批注栏」，不让这个菜单项在桌面版变成死键 */
-  if (!window.matchMedia('(max-width: 899px)').matches) return ui.setPref('rightPanelOpen', true)
-  narrowNotesOpen.value = true
-}
-function syncNarrowView(event) {
-  if (!event.matches) narrowNotesOpen.value = false
-}
-watch(() => work.tab, () => { narrowNotesOpen.value = false })
-watch(() => work.activeChapter?.id, () => { if (!chapterNotes.value.length) narrowNotesOpen.value = false })
 
 const fmtTime = (t) => {
   const d = new Date(t)
@@ -178,21 +110,9 @@ function onKeydown(e) {
     e.preventDefault()
     ui.searchOpen = true
   }
-  if (e.key === 'Escape' && narrowNotesOpen.value) {
-    narrowNotesOpen.value = false
-    e.preventDefault()
-  }
 }
 
 /* ---------- 功能面板拆窗（9.2-W5：面板 = 完整模块界面，预选中当前实体） ---------- */
-const splitOptions = computed(() => [
-  { label: '⧉ 正文', key: 'chapter', disabled: false },
-  { label: '⧉ 大纲', key: 'outline', disabled: false },
-  { label: '⧉ 人物', key: 'characters', disabled: false },
-  { label: '⧉ 设定', key: 'lore', disabled: false },
-  { label: '⧉ 灵感', key: 'snippets', disabled: false },
-  { label: '⧉ 恍然梦', key: 'ai', disabled: false }
-])
 async function onSplit(key) {
   const titles = {
     chapter: () => `${work.work?.title || ''} · 正文`,
@@ -356,8 +276,6 @@ watch(() => work.work?.id, () => { applyFlowPalette() })
 
 onMounted(() => {
   window.addEventListener('keydown', onKeydown)
-  narrowMq = window.matchMedia('(max-width: 899px)')
-  narrowMq.addEventListener('change', syncNarrowView)
   narrowMq1180 = window.matchMedia('(max-width: 1180px)')
   narrowMq1180.addEventListener('change', syncNarrowWidth)
   tinyMq = window.matchMedia('(max-width: 560px)')
@@ -384,7 +302,6 @@ watch(
 )
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown)
-  narrowMq?.removeEventListener('change', syncNarrowView)
   narrowMq1180?.removeEventListener('change', syncNarrowWidth)
   tinyMq?.removeEventListener('change', collapseDirectoryOnTiny)
   wideMq?.removeEventListener('change', collapseNotesOnWide)
@@ -396,20 +313,19 @@ onBeforeUnmount(() => {
   <div ref="shell" class="workbench-shell" :class="{ 'is-focus': ui.focusMode, 'is-reading': ui.readMode, 'latent-studio': work.tab === 'chapters', 'outline-strict': nsPlugin && work.tab==='outline' }" :data-module="work.tab" :data-flow="'on'" style="display: flex; flex-direction: column; height: 100%">
     <div class="st-backdrop-wrap"><canvas class="st-backdrop" ref="flowCanvas"></canvas><div class="st-layer dots"></div><div class="st-layer vignette"></div><div class="st-layer grain"></div></div>
 
-    <OutlineTopbar v-if="nsPlugin && work.tab==='outline'" :actions="moreOptions" @navigate="key=>key==='shelf'?returnToShelf():key==='settings'?openSettings():selectTab(key)" @action="onMore"/>
-    <AppTopbar v-else :active="work.tab" :has-work="!!work.work" :target-title="work.work?.title" :save-state="saveState" @navigate="key => key === 'shelf' ? returnToShelf() : key === 'settings' ? openSettings() : selectTab(key)" :actions="narrowActions" @action="onTopbarAction">
+    <AppTopbar :active="work.tab" :has-work="!!work.work" :target-title="work.work?.title" :save-state="saveState" @navigate="key => key === 'shelf' ? returnToShelf() : key === 'settings' ? openSettings() : selectTab(key)">
       <template #actions>
+        <button v-if="ui.focusMode" type="button" class="app-topbar-round app-topbar-exit-focus" aria-label="退出沉浸" title="退出沉浸" @click="ui.focusMode = false">×</button>
         <span class="save-badge"><span class="save-dot" :class="badgeClass"></span>{{ badgeText }}</span>
         <NButton size="small" quaternary aria-label="搜索" @click="ui.searchOpen = true"><OIcon name="search" :size="16" /> 搜索</NButton>
         <div id="studio-task-actions"></div>
         <DreamModeEntries v-if="!nsPlugin" :disabled="entryBusy" :active="ui.aiDrawerOpen?'light':''" @dream="enterAiMode('dream')" @light="enterAiMode('light')" />
-        <NDropdown trigger="click" :options="moreOptions" @select="onMore"><NButton size="small" quaternary title="拆窗、书签、沉浸、阅读与皮肤">更多 <OIcon name="caret-down" :size="11" /></NButton></NDropdown>
       </template>
     </AppTopbar>
 
     <div class="wb-body">
       <div v-if="showDirectory && dirVisible" id="writing-directory" v-show="work.tab !== 'outline' || ui.outlineSideOpen" class="side-panel" aria-label="目录与资料" :style="sidePanelStyle">
-        <ChapterTree v-if="work.tab === 'chapters'" @read="onMore('read')" @window="onSplit('chapter')" @collapse="closeDirectory()" />
+        <ChapterTree v-if="work.tab === 'chapters'" @read="ui.readMode = !ui.readMode" @window="onSplit('chapter')" @collapse="closeDirectory()" />
         <OutlineSidebar v-else-if="work.tab === 'outline'" />
       </div>
       <div
@@ -476,11 +392,8 @@ onBeforeUnmount(() => {
         <span class="rp-rail-text">批注</span>
       </button>
 
-      <button v-if="narrowNotesOpen" type="button" class="ns-notes-scrim" aria-label="关闭批注栏" tabindex="-1" @click="narrowNotesOpen = false"></button>
-      <RightPanel v-if="showNotes && (ui.rightPanelOpen || narrowNotesOpen)" v-show="ui.rightPanelOpen || narrowNotesOpen" :class="{ 'ns-notes-drawer': narrowNotesOpen }" aria-label="批注与资料" />
+      <RightPanel v-if="showNotes && ui.rightPanelOpen" aria-label="批注与资料" />
 
-      <!-- 窄栏批注抽屉的关闭键：不能进 RightPanel（那里只加条件类名不改结构），锚在抽屉右上角 -->
-      <button v-if="narrowNotesOpen" type="button" class="ns-notes-close" aria-label="关闭批注栏" title="关闭批注栏" @click="narrowNotesOpen = false">×</button>
 
 
       <!-- 非模态覆盖层：开合与拖宽不参与正文排版；隐藏时保留输入与生成状态。 -->

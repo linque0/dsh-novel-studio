@@ -1,6 +1,6 @@
 <!-- 卷宗视图·右列「关系与设定」：小型关系网 / 人物关系 CRUD / 关联设定跳转。
      设计真值 docs/前端美化/人物-融合总稿-20261105/app.mjs:38 的非 graph 分支；
-     外观度量见 chars-context.css（mini-network 65 / relation-row 50 出自 fusion.css:4-5）。
+     外观度量见 chars-context.css。
      外壳只读：select 切人物、setView 进关系剧场、backToMain 回卷宗；
      窄档三段工具条走可选的 shell.setBar（D1 补齐前由页头返回键兜底）。 -->
 <script setup>
@@ -28,13 +28,17 @@ const rels = computed(() => {
 const lore = computed(() => (current.value ? work.loreLinksOf('character', current.value.id) : []))
 const candidates = computed(() => work.liveCharacters.filter((c) => c.id !== current.value?.id))
 
-/* 关系网：260x65 视窗内椭圆布点，最多 6 个一度邻居（原型为中心方块 + 周围小圆点 + 细线） */
+const networkCenter = { x: 130, y: 60 }
+/* 左右分布两点，三个及以上时沿椭圆布点，给中心卡片留出空间。 */
 const net = computed(() => {
   const list = rels.value.slice(0, 6)
   const step = 360 / Math.max(list.length, 1)
   return list.map((r, i) => {
-    const a = ((-90 + step * i) * Math.PI) / 180
-    return { id: r.other.id, name: r.other.name || '未命名', x: 130 + 104 * Math.cos(a), y: 32.5 + 21 * Math.sin(a) }
+    const a = (((list.length > 2 ? -90 : 0) + step * i) * Math.PI) / 180
+    return {
+      key: r.id, id: r.other.id, name: r.other.name || '未命名',
+      x: networkCenter.x + 103 * Math.cos(a), y: networkCenter.y + 38 * Math.sin(a)
+    }
   })
 })
 const centerInitial = computed(() => (current.value?.name || '人').slice(0, 1))
@@ -153,11 +157,12 @@ watchEffect(() => {
 
     <div class="context-scroll" data-char-scroll="context">
       <template v-if="current">
-        <svg class="mini-network" viewBox="0 0 260 65" role="img" :aria-label="current.name + '的一度关系'">
-          <line v-for="p in net" :key="'l' + p.id" :x1="130" :y1="32.5" :x2="p.x" :y2="p.y" />
-          <rect class="net-center" x="113" y="15.5" width="34" height="34" rx="7" />
-          <text class="net-initial" x="130" y="32.5">{{ centerInitial }}</text>
-          <g v-for="p in net" :key="p.id" class="net-node" role="button" tabindex="0" @click="pick(p.id)" @keydown.enter.prevent="pick(p.id)">
+        <svg class="mini-network" viewBox="0 0 260 120" role="group" :aria-label="current.name + '的一度关系'">
+          <line v-for="p in net" :key="'l' + p.key" :x1="networkCenter.x" :y1="networkCenter.y" :x2="p.x" :y2="p.y" />
+          <rect class="net-center" :x="networkCenter.x - 17" :y="networkCenter.y - 17" width="34" height="34" rx="7" />
+          <text class="net-initial" :x="networkCenter.x" :y="networkCenter.y">{{ centerInitial }}</text>
+          <g v-for="p in net" :key="p.key" class="net-node" role="button" tabindex="0" :aria-label="p.name" @click="pick(p.id)" @keydown.enter.prevent="pick(p.id)" @keydown.space.prevent="pick(p.id)">
+            <circle class="net-hit" :cx="p.x" :cy="p.y" r="10" />
             <circle :cx="p.x" :cy="p.y" r="4.5" />
             <title>{{ p.name }}</title>
           </g>

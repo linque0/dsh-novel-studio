@@ -320,7 +320,7 @@ onBeforeUnmount(() => {
       <div class="ls-layer grain"></div>
     </div>
 
-    <AppTopbar active="shelf" :busy="busy || loading" :has-work="!!focused" :target-title="focused?.title" @navigate="onTopbarNavigate" @create="emit('create')">
+    <AppTopbar active="shelf" :busy="busy || loading" :has-work="!!focused" :target-title="focused?.title" :target-work-id="focused?.id" @navigate="onTopbarNavigate" @create="emit('create')">
       <template #search>
         <input ref="searchEl" class="ls-search" type="search" :value="query" placeholder="搜索书名 / 作者" aria-label="搜索作品" @input="emit('update:query', $event.target.value)" />
       </template>
