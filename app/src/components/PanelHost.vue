@@ -22,6 +22,7 @@ import CharactersWorkspace from './characters/CharactersWorkspace.vue'
 import LoreWorkspace from './lore/LoreWorkspace.vue'
 import SnippetsWorkspace from './snippets/SnippetsWorkspace.vue'
 import RightPanel from './RightPanel.vue'
+import WritingSidePanels from './writing-layout/WritingSidePanels.vue'
 import DLinkPopover from './DLinkPopover.vue'
 import RevisionsModal from './RevisionsModal.vue'
 import SettingsWindow from './SettingsWindow.vue'
@@ -48,6 +49,7 @@ watch(
 )
 
 const spec = ref(null) // { type, workId, entityId }
+const writingLayout = computed(() => spec.value?.type === 'chapter')
 const status = ref('loading') // loading | ready | error
 const errMsg = ref('')
 
@@ -238,7 +240,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="shell" class="app-root panel-host latent-studio" :data-flow="'on'" :class="['theme-' + ui.theme,{'outline-strict': nsPlugin && spec?.type==='outline'}]" :data-skin="resolveSkin(ui.skin, 'panel').id" :data-module="work.tab" :style="ui.rootStyle" style="height: 100vh; display: flex; flex-direction: column">
+  <div ref="shell" class="app-root panel-host latent-studio" :data-flow="'on'" :class="['theme-' + ui.theme,{ 'is-focus': writingLayout && ui.focusMode, 'is-reading': writingLayout && ui.readMode, 'outline-strict': nsPlugin && spec?.type === 'outline' }]" :data-skin="resolveSkin(ui.skin, 'panel').id" :data-module="work.tab" :style="ui.rootStyle" style="height: 100vh; display: flex; flex-direction: column">
     <div v-if="status === 'error'" class="empty-shelf" style="padding-top: 18vh">
       <div class="big">面板无法打开</div>
       <p>{{ errMsg }}</p>
@@ -268,12 +270,21 @@ onBeforeUnmount(() => {
         <div v-if="spec.type === 'ai'" class="ai-win">
           <AiAssistantPanel v-if="!nsPlugin" />
         </div>
-        <div v-if="spec.type !== 'ai'" class="panel-body">
-          <div v-if="!(nsPlugin && spec.type === 'outline') && spec.type !== 'lore' && spec.type !== 'characters' && spec.type !== 'snippets'" v-show="(spec.type !== 'outline' || ui.outlineSideOpen) && (spec.type !== 'chapter' || (!ui.readMode && !ui.focusMode))" class="side-panel" aria-label="目录与资料" :style="{ width: ui.sideWidth + 'px' }">
+        <div v-if="spec.type !== 'ai'" class="panel-body" :class="{ 'writing-layout-host': writingLayout }">
+          <WritingSidePanels v-if="writingLayout && !ui.focusMode && !ui.readMode" directory :notes="!!work.activeChapter"
+            directory-id="writing-directory" notes-id="writing-notes">
+            <template #directory>
+              <div class="side-panel" aria-label="章节栏">
+                <ChapterTree in-panel collapsible-panel @read="ui.readMode=true" @collapse="ui.setPref('sidePanelOpen', false)" />
+              </div>
+            </template>
+            <template #notes><RightPanel aria-label="批注与资料" /></template>
+          </WritingSidePanels>
+          <div v-if="!writingLayout && !(nsPlugin && spec.type === 'outline') && spec.type !== 'lore' && spec.type !== 'characters' && spec.type !== 'snippets'" v-show="(spec.type !== 'outline' || ui.outlineSideOpen) && (spec.type !== 'chapter' || (!ui.readMode && !ui.focusMode))" class="side-panel" aria-label="目录与资料" :style="{ width: ui.sideWidth + 'px' }">
             <ChapterTree v-if="spec.type === 'chapter'" in-panel @read="ui.readMode=true" />
             <OutlineSidebar v-else-if="spec.type === 'outline'" />
           </div>
-          <div v-if="!(nsPlugin && spec.type === 'outline') && spec.type !== 'lore' && spec.type !== 'characters' && spec.type !== 'snippets'" v-show="(spec.type !== 'outline' || ui.outlineSideOpen) && (spec.type !== 'chapter' || (!ui.readMode && !ui.focusMode))" class="side-resizer" title="拖拽调整侧栏宽度（双击恢复默认）" @mousedown="startSideResize" @dblclick="ui.setPref('sideWidth', 252)"></div>
+          <div v-if="!writingLayout && !(nsPlugin && spec.type === 'outline') && spec.type !== 'lore' && spec.type !== 'characters' && spec.type !== 'snippets'" v-show="(spec.type !== 'outline' || ui.outlineSideOpen) && (spec.type !== 'chapter' || (!ui.readMode && !ui.focusMode))" class="side-resizer" title="拖拽调整侧栏宽度（双击恢复默认）" @mousedown="startSideResize" @dblclick="ui.setPref('sideWidth', 252)"></div>
           <button
             v-if="!nsPlugin && spec.type === 'outline' && !ui.outlineSideOpen"
             class="ol-side-rail"
@@ -295,7 +306,6 @@ onBeforeUnmount(() => {
             <EditorPane v-if="spec.type === 'chapter'" />
             <OutlineCenter v-else-if="spec.type === 'outline'" style="flex: 1; min-height: 0" />
           </div>
-          <RightPanel v-if="spec.type === 'chapter'" aria-label="批注与资料" />
         </div>
         <DLinkPopover />
         <RevisionsModal />

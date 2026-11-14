@@ -21,8 +21,10 @@ import CharactersWorkspace from './characters/CharactersWorkspace.vue'
 import LoreWorkspace from './lore/LoreWorkspace.vue'
 import SnippetsWorkspace from './snippets/SnippetsWorkspace.vue'
 import RightPanel from './RightPanel.vue'
+import WritingSidePanels from './writing-layout/WritingSidePanels.vue'
 import AiAssistantPanel from './ai/AiAssistantPanel.vue'
 const nsPlugin = __NS_PLUGIN__
+const writingLayout = computed(() => work.tab === 'chapters')
 import DLinkPopover from './DLinkPopover.vue'
 import { popOut, isPopped, focusPopped } from '../services/panelwindows'
 import { mountFlowBackdrop } from '../services/latent/flow.js'
@@ -323,13 +325,22 @@ onBeforeUnmount(() => {
       </template>
     </AppTopbar>
 
-    <div class="wb-body">
-      <div v-if="showDirectory && dirVisible" id="writing-directory" v-show="work.tab !== 'outline' || ui.outlineSideOpen" class="side-panel" aria-label="目录与资料" :style="sidePanelStyle">
+    <div class="wb-body" :class="{ 'writing-layout-host': writingLayout }">
+      <WritingSidePanels v-if="writingLayout && (showDirectory || showNotes)" :directory="showDirectory" :notes="showNotes"
+        directory-id="writing-directory" notes-id="writing-notes">
+        <template #directory>
+          <div class="side-panel" aria-label="章节栏">
+            <ChapterTree @read="ui.readMode = !ui.readMode" @window="onSplit('chapter')" @collapse="closeDirectory()" />
+          </div>
+        </template>
+        <template #notes><RightPanel aria-label="批注与资料" /></template>
+      </WritingSidePanels>
+      <div v-if="!writingLayout && showDirectory && dirVisible" id="writing-directory" v-show="work.tab !== 'outline' || ui.outlineSideOpen" class="side-panel" aria-label="目录与资料" :style="sidePanelStyle">
         <ChapterTree v-if="work.tab === 'chapters'" @read="ui.readMode = !ui.readMode" @window="onSplit('chapter')" @collapse="closeDirectory()" />
         <OutlineSidebar v-else-if="work.tab === 'outline'" />
       </div>
       <div
-        v-if="!(nsPlugin && work.tab === 'outline') && work.tab !== 'characters' && !ui.focusMode && !ui.readMode && !modulePopped && dirVisible"
+        v-if="!writingLayout && !(nsPlugin && work.tab === 'outline') && work.tab !== 'characters' && !ui.focusMode && !ui.readMode && !modulePopped && dirVisible"
         v-show="work.tab !== 'outline' || ui.outlineSideOpen"
         class="side-resizer"
         title="拖拽调整侧栏宽度（双击恢复默认）"
@@ -338,7 +349,7 @@ onBeforeUnmount(() => {
       ></div>
 
       <button
-        v-if="showDirectory && !dirVisible && work.tab !== 'outline' && !ui.focusMode && !ui.readMode"
+        v-if="!writingLayout && showDirectory && !dirVisible && work.tab !== 'outline' && !ui.focusMode && !ui.readMode"
         class="ol-side-rail"
         type="button"
         title="展开目录栏"
@@ -384,7 +395,7 @@ onBeforeUnmount(() => {
 
       <!-- 批注栏收起后的右缘细轨：点击重新展开（仅正文页显示，与批注栏同条件） -->
       <button
-        v-if="!ui.focusMode && !ui.readMode && !modulePopped && work.tab === 'chapters' && !ui.rightPanelOpen"
+        v-if="!writingLayout && !ui.focusMode && !ui.readMode && !modulePopped && work.tab === 'chapters' && !ui.rightPanelOpen"
         class="rp-rail"
         title="展开批注栏"
         @click="ui.setPref('rightPanelOpen', true)"
@@ -392,7 +403,7 @@ onBeforeUnmount(() => {
         <span class="rp-rail-text">批注</span>
       </button>
 
-      <RightPanel v-if="showNotes && ui.rightPanelOpen" aria-label="批注与资料" />
+      <RightPanel v-if="!writingLayout && showNotes && ui.rightPanelOpen" aria-label="批注与资料" />
 
 
 

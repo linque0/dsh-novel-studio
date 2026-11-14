@@ -376,15 +376,18 @@ function drawOrbits(ctx, planets, view, camera, state) {
   for (const planet of planets) tracks.set(planet.orbitId, planet)
   const orbits = []
   for (const planet of tracks.values()) {
+    // During a merge preview the destination already draws the shared line.
+    if (state.mergeOrbit && state.activeOrbit === planet.orbitId) continue
     const radius = planet.orbitRadius
     const points = Array.from({ length: 97 }, (_, i) =>
       camera.project(orbitPoint(radius, i / 96 * TAU).applyQuaternion(view)))
-    const active = state.activeOrbit === planet.orbitId || state.hoverOrbit === planet.orbitId
-    ctx.strokeStyle = active ? TUNING.relation : '#b9a7bf'
+    const merging = state.mergeOrbit === planet.orbitId
+    const active = merging || state.activeOrbit === planet.orbitId || state.hoverOrbit === planet.orbitId
+    ctx.strokeStyle = merging ? TUNING.bridge : active ? TUNING.relation : '#b9a7bf'
     ctx.globalAlpha = active ? .85 : state.orbitEditing ? .34 : .075
-    ctx.lineWidth = active ? 1.6 : .65
+    ctx.lineWidth = merging ? 2.2 : active ? 1.6 : .65
     strokePoints(ctx, points)
-    orbits.push({ id: planet.orbitId, radius, envelope: planet.orbitEnvelope, points })
+    orbits.push({ id: planet.orbitId, radius, points })
   }
   return orbits.sort((a, b) => a.radius - b.radius)
 }

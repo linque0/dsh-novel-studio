@@ -9,9 +9,9 @@ import { useChapterSort } from '../composables/useChapterSort'
 
 const work = useWorkStore()
 const ui = useUiStore()
-const props=defineProps({inPanel:Boolean,navigationOnly:Boolean})
+const props=defineProps({inPanel:Boolean,navigationOnly:Boolean,collapsiblePanel:Boolean})
 const emit=defineEmits(['read','window','collapse'])
-const canCollapse=computed(()=>!props.inPanel&&!props.navigationOnly)
+const canCollapse=computed(()=>(!props.inPanel||props.collapsiblePanel)&&!props.navigationOnly)
 const deleteConfirm=ref(false)
 const deleteTarget=ref(null)
 /* 查找：只过滤喂给 NTree 的数据，key 不变，拖拽 / 右键 / 定位语义照旧。 */

@@ -1,0 +1,128 @@
+.writing-float-layer {
+  position: absolute;
+  inset: 4px 12px 8px;
+  z-index: 32;
+  pointer-events: none;
+}
+.writing-float-panel {
+  position: absolute;
+  pointer-events: auto;
+  box-sizing: border-box;
+}
+html body[data-skin='dsh'] .latent-studio .writing-float-panel > :is(.side-panel, .right-panel),
+.latent-studio .writing-float-panel > :is(.side-panel, .right-panel) {
+  position: absolute;
+  display: flex;
+  inset: 0;
+  z-index: auto;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  max-width: none;
+  max-height: none;
+  box-sizing: border-box;
+  border: var(--ls-edge);
+  border-radius: var(--ls-radius);
+}
+.writing-float-chrome {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.writing-layout-handle {
+  position: absolute;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  pointer-events: auto;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--ls-ink, currentColor);
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+.writing-layout-handle::after {
+  content: '';
+  border-radius: 100px;
+  background: currentColor;
+  opacity: 0;
+}
+.writing-layout-handle:is(:hover, :focus-visible, .is-adjusting)::after { opacity: .72; }
+.writing-layout-handle[data-axis='x'] {
+  top: 18px;
+  bottom: 18px;
+  right: -4px;
+  width: 10px;
+  cursor: ew-resize;
+}
+.writing-float-panel:has(> .right-panel) .writing-layout-handle[data-axis='x'] { left: -4px; right: auto; }
+.writing-layout-handle[data-axis='x']::after { width: 3px; height: 34px; max-height: 80%; }
+.writing-layout-handle[data-axis='y'] {
+  left: 17px;
+  right: 17px;
+  bottom: -4px;
+  height: 10px;
+  cursor: ns-resize;
+}
+.writing-layout-handle[data-axis='y']::after,
+.writing-float-chrome .writing-layout-handle[data-axis='move']::after { width: 32px; height: 3px; }
+.writing-float-chrome .writing-layout-handle[data-axis='move'] {
+  width: 58px;
+  height: 12px;
+  top: -4px;
+  left: calc(50% - 29px);
+}
+.writing-float-chrome .writing-layout-handle[data-axis='move']:not(:hover, :focus-visible, .is-adjusting)::after { opacity: .22; }
+.writing-float-capsule {
+  align-content: center;
+  gap: 3px;
+  letter-spacing: .12em;
+  font-size: 12px;
+  border: var(--ls-edge);
+  border-radius: 999px;
+  background: var(--ls-glass-fill), var(--ls-glass-bg);
+  backdrop-filter: blur(18px) saturate(1.5);
+  box-shadow: inset 0 1px rgb(255 255 255 / .1);
+}
+.writing-capsule-text { writing-mode: vertical-rl; }
+.writing-capsule-count {
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0;
+  color: var(--ls-ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.writing-float-capsule::after { position: absolute; inset: 0; background: currentColor; }
+.writing-float-capsule:is(:hover, :focus-visible, .is-adjusting)::after { opacity: .09; }
+.writing-layout-handle.is-adjusting[data-axis='move'] { cursor: grabbing; }
+.writing-layout-handle:focus-visible { outline: 1px solid currentColor; outline-offset: -2px; }
+
+.latent-studio :is(.wb-body, .panel-body).writing-layout-host { position: relative; }
+.writing-layout-host > .center-pane { min-width: 0; }
+.writing-paper-frame { display: contents; }
+.latent-studio .writing-paper-frame {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: var(--ls-page-w, 100%);
+  flex: 1;
+  margin: 0 auto 12px;
+}
+.latent-studio .writing-paper-frame[data-custom-height] { flex: 0 1 var(--writing-paper-height); }
+html body[data-skin='dsh'] .latent-studio .writing-paper-frame > .rich-host,
+.latent-studio .writing-paper-frame > .rich-host {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  margin: 0;
+}
+html body[data-skin='dsh'] .latent-studio .editor-wrap[data-paper-adjustable] :is(.editor-head, .editor-toolbar, .module-agent) {
+  max-width: var(--ls-page-w, 100%);
+}
+html body[data-skin='dsh'] .latent-studio .editor-wrap[data-paper-adjustable] .editor-toolbar { overflow-x: auto; scrollbar-width: none; }
+.latent-studio :is(.read-mode, [data-paper-quiet='true']) .writing-paper-frame { width: min(var(--ls-col-wide), calc(100% - 64px)); }

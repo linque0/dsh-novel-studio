@@ -25,8 +25,11 @@ const framingPositions = shallowRef(props.initialPositions)
 const spacingBySystem = shallowRef(props.initialSpacing)
 const orbitSettings = shallowRef(props.initialOrbitSettings)
 const layoutOpen = ref(false), layoutButton = ref(null)
-const orbitEditing = ref(false), activeOrbit = ref(''), speedBodyId = ref('')
-let hoverOrbit = ''
+const orbitEditing = ref(false), activeOrbit = ref('')
+const orbitPreview = shallowRef(null)
+const hoverOrbit = ref('')
+const speedMenu = ref(null)
+const speedPanel = ref(null)
 const stage = ref(null), canvas = ref(null), searchBox = ref(null)
 const setId = ref(''), nodeId = ref(''), bridgeId = ref('')
 const paused = ref(false), reduced = ref(false), zoom = ref(1)
@@ -36,9 +39,11 @@ const spacing = computed(() => spacingValue(spacingBySystem.value[setId.value]))
 const currentOrbitSettings = computed(() => orbitSettings.value[setId.value] || {})
 const system = computed(() => {
   const current = model.value.system(setId.value)
-  return { ...current, planets: spacePlanets(current.planets, framingPositions.value, spacing.value, currentOrbitSettings.value) }
+  return {
+    ...current,
+    planets: spacePlanets(current.planets, framingPositions.value, spacing.value, currentOrbitSettings.value)
+  }
 })
-const speedBody = computed(() => system.value.planets.find(body => body.id === speedBodyId.value) || system.value.planets[0])
 const activeTrack = computed(() => system.value.planets.find(body => body.orbitId === activeOrbit.value))
 const activeSet = computed(() => system.value.center)
 const selected = computed(() => model.value.byBody.get(nodeId.value))
@@ -88,6 +93,7 @@ watch(system, (next, previous) => {
 let tween = null, glide = null, lastClick = null
 let ctx, observer, motion, frame, painted, gesture, previousFrame
 let flight = null
+let orbitFraming = null
 let size = { width: 0, height: 0 }, hoverId = '', lastFrame = 0
 let idleSince = performance.now(), idleSpeed = 0, keyboardFocus = false
 const pointers = new Map()
@@ -103,13 +109,19 @@ function draw() {
     pan: scene.pan.clone().multiplyScalar(arrival),
     offset: scene.offset.clone().multiplyScalar(arrival)
   } : scene
-  painted = paintNetwork(ctx, size, system.value, camera, {
+  const data = system.value
+  const preview = orbitPreview.value
+  const display = preview ? {
+    ...data, planets: data.planets.map(body => body.orbitId === activeOrbit.value
+      ? { ...body, orbitRadius: preview.radius } : body)
+  } : data
+  painted = paintNetwork(ctx, size, display, camera, {
     positions: positions.value, framingPositions: framingPositions.value, names, now,
     nodeId: nodeId.value, bridgeId: bridgeId.value, hoverId,
     workTitle: props.workTitle, reduced: reduced.value, satelliteId: satelliteId.value,
     motionPhases, orbitEditing: orbitEditing.value, activeOrbit: orbitEditing.value ? activeOrbit.value : '',
-    hoverOrbit: orbitEditing.value ? hoverOrbit : '',
-    framingData: gesture?.kind === 'orbit' ? gesture.framing : undefined
+    hoverOrbit: orbitEditing.value ? hoverOrbit.value : '',
+    mergeOrbit: preview?.target, framingData: orbitFraming
   })
   if (previousFrame && flight) {
     const { x, y, scale } = flight
@@ -132,12 +144,14 @@ function draw() {
 
 function measure() {
   const { clientWidth: width, clientHeight: height } = stage.value
+  if (gesture?.kind === 'orbit' && (width !== size.width || height !== size.height)) cancelGesture()
   if (flight && (width !== size.width || height !== size.height)) interact()
   const ratio = Math.min(devicePixelRatio || 1, 2)
   size = { width, height }
   canvas.value.width = Math.round(width * ratio)
   canvas.value.height = Math.round(height * ratio)
   ctx?.setTransform(ratio, 0, 0, ratio, 0, 0)
+  positionSpeedMenu()
   draw()
 }
 
@@ -225,8 +239,10 @@ function enterPlanet(id, fly = false, anchor) {
   lastClick = null
   layoutOpen.value = false
   orbitEditing.value = false
-  hoverOrbit = ''
-  activeOrbit.value = speedBodyId.value = ''
+  hoverOrbit.value = ''
+  activeOrbit.value = ''
+  speedMenu.value = null
+  orbitFraming = null
   setId.value = id
   bridgeId.value = ''
   clearSelection()
@@ -331,6 +347,8 @@ async function reportSave(result, success, failure) {
 }
 
 function adjustSpacing(value, save = false) {
+  if (gesture?.kind === 'orbit') cancelGesture()
+  orbitFraming = null
   interact()
   const next = { ...spacingBySystem.value }
   if (value == null) delete next[setId.value]
@@ -340,13 +358,13 @@ function adjustSpacing(value, save = false) {
   draw()
 }
 
-function updateOrbitSetting(group, id, value, save = true) {
+function updateOrbitSetting(group, id, value) {
   const current = currentOrbitSettings.value
   const entries = { ...current[group] }
   if (value == null) delete entries[id]
   else entries[id] = value
   orbitSettings.value = { ...orbitSettings.value, [setId.value]: { ...current, [group]: entries } }
-  if (save) saveOrbitSettings()
+  saveOrbitSettings()
   draw()
 }
 
@@ -354,25 +372,127 @@ function saveOrbitSettings() {
   reportSave(props.onOrbitSettingsChange?.(orbitSettings.value), '', '当前无法保存轨道设置')
 }
 
-function changeSpeed(kind, event) {
-  const value = event.target.valueAsNumber
-  const body = speedBody.value
-  if (!body || !Number.isFinite(value)) return
-  const speed = clamp(value, 0, 1000)
-  event.target.value = speed
-  updateOrbitSetting('speeds', body.id, { ...currentOrbitSettings.value.speeds?.[body.id], [kind]: speed })
-}
-
-function toggleOrbitEditing() {
-  interact()
-  orbitEditing.value = !orbitEditing.value
-  hoverOrbit = ''
+function commitOrbits(track) {
+  const current = currentOrbitSettings.value
+  const { radius, target } = orbitPreview.value
+  const before = system.value.planets
+  const radii = { ...current.radii }
+  const joins = { ...current.joins }
+  if (!current.independent) {
+    for (const body of before) {
+      if (body.orbitRadius !== body.defaultOrbitRadius || Object.hasOwn(radii, body.orbitId)) {
+        radii[body.orbitId] = body.orbitRadius
+      }
+    }
+  }
+  if (target) {
+    for (const id of Object.keys(joins)) {
+      if (joins[id] === track.id) joins[id] = target
+    }
+    joins[track.id] = target
+    delete radii[track.id]
+    activeOrbit.value = target
+  } else radii[track.id] = radius
+  orbitPreview.value = null
+  orbitSettings.value = {
+    ...orbitSettings.value, [setId.value]: { speeds: current.speeds, radii, joins, independent: true }
+  }
+  if (target) {
+    spreadJoinedBodies(before, track.id, target)
+    status.value = '已合并轨道'
+  }
+  saveOrbitSettings()
   draw()
 }
 
-function selectSpeedBody(event) {
-  speedBodyId.value = event.target.value
-  activeOrbit.value = speedBody.value?.orbitId || ''
+function spreadJoinedBodies(before, source, target) {
+  const tau = 2 * Math.PI
+  const joined = new Set(before.filter(body => body.orbitId === source).map(body => body.id))
+  const group = system.value.planets.filter(body => body.orbitId === target)
+  const phaseAt = body => body.orbitPhase + body.orbitSpeed * scene.time
+  const angles = group.filter(body => !joined.has(body.id)).map(body =>
+    ((phaseAt(body) + (motionPhases.get(body.id)?.orbit || 0)) % tau + tau) % tau)
+  if (!angles.length) return
+  for (const body of group) {
+    if (!joined.has(body.id)) continue
+    angles.sort((a, b) => a - b)
+    let widest = 0, middle = 0
+    for (const [index, angle] of angles.entries()) {
+      const gap = (angles[index + 1] ?? angles[0] + tau) - angle
+      if (gap <= widest) continue
+      widest = gap
+      middle = (angle + gap / 2) % tau
+    }
+    const phase = motionPhases.get(body.id)
+    if (phase) phase.orbit = middle - phaseAt(body)
+    angles.push(middle)
+  }
+}
+
+function changeSpeed(kind, event) {
+  const value = event.target.valueAsNumber
+  const body = speedMenu.value?.body
+  if (!body) return
+  const speed = Number.isFinite(value) ? clamp(value, 0, 1000) : speedOf(body, kind)
+  event.target.value = speed
+  if (speed === speedOf(body, kind)) return
+  updateOrbitSetting('speeds', body.id, { ...currentOrbitSettings.value.speeds?.[body.id], [kind]: speed })
+}
+
+async function openSpeedMenu(body, event) {
+  if (!body) return
+  event.preventDefault()
+  interact()
+  layoutOpen.value = false
+  const rect = canvas.value.getBoundingClientRect()
+  const anchorX = event.clientX - rect.left
+  const anchorY = event.clientY - rect.top
+  speedMenu.value = { body, anchorX, anchorY, x: anchorX, y: anchorY }
+  activeOrbit.value = body.orbitId || ''
+  draw()
+  await nextTick()
+  positionSpeedMenu()
+  speedPanel.value?.focus({ preventScroll: true })
+}
+
+function positionSpeedMenu() {
+  if (!speedMenu.value || !speedPanel.value) return
+  const { width, height } = speedPanel.value.getBoundingClientRect()
+  speedMenu.value = {
+    ...speedMenu.value,
+    x: clamp(speedMenu.value.anchorX, 8, Math.max(8, size.width - width - 8)),
+    y: clamp(speedMenu.value.anchorY, 8, Math.max(8, size.height - height - 8))
+  }
+}
+
+function closeSpeedMenu(restoreFocus = false) {
+  if (!speedMenu.value) return
+  speedMenu.value = null
+  if (restoreFocus) canvas.value?.focus({ preventScroll: true })
+  draw()
+}
+
+function speedOf(body, kind) {
+  return currentOrbitSettings.value.speeds?.[body?.id]?.[kind] ?? 100
+}
+
+function resetOrbits() {
+  if (gesture?.kind === 'orbit') cancelGesture()
+  orbitSettings.value = { ...orbitSettings.value, [setId.value]: { speeds: currentOrbitSettings.value.speeds } }
+  orbitFraming = null
+  activeOrbit.value = ''
+  saveOrbitSettings()
+  status.value = '已恢复全部轨道半径'
+  draw()
+}
+
+function toggleOrbitEditing() {
+  if (gesture?.kind === 'orbit') cancelGesture()
+  interact()
+  orbitEditing.value = !orbitEditing.value
+  if (!orbitEditing.value) orbitFraming = null
+  hoverOrbit.value = ''
+  speedMenu.value = null
   draw()
 }
 
@@ -431,6 +551,8 @@ function changeZoom(factor) {
   scaleTo(scene.zoom * factor)
 }
 function resetView() {
+  if (gesture?.kind === 'orbit') cancelGesture()
+  orbitFraming = null
   interact()
   scene.offset.set(0, 0, 0)
   cameraTo(overviewView(), 1, scene.zoom, new Vector3())
@@ -448,7 +570,7 @@ function coordinates(e) {
 function orbitAt(point) {
   let closest = null
   let best = 8
-  for (const [index, track] of (painted?.orbits || []).entries()) {
+  for (const track of painted?.orbits || []) {
     for (let i = 1; i < track.points.length; i++) {
       const a = track.points[i - 1], b = track.points[i]
       const dx = b.x - a.x, dy = b.y - a.y
@@ -456,27 +578,34 @@ function orbitAt(point) {
       const distance = Math.hypot(point.x - a.x - dx * fraction, point.y - a.y - dy * fraction)
       if (distance >= best) continue
       best = distance
-      closest = { track, index, angle: (i - 1 + fraction) / (track.points.length - 1) * 2 * Math.PI }
+      closest = { track, angle: (i - 1 + fraction) / (track.points.length - 1) * 2 * Math.PI }
     }
   }
   return closest
 }
 
 function startOrbitDrag(hit, point) {
-  const { track, index, angle } = hit
+  const { track, angle } = hit
   const { camera, orbits } = painted
-  const project = radius => camera.project(orbitPoint(radius, angle).applyQuaternion(scene.view))
-  const a = project(track.radius), b = project(track.radius + Math.max(.01, track.radius * .001))
+  const direction = orbitPoint(1, angle).applyQuaternion(scene.view)
+  const a = camera.project(orbitPoint(0, angle))
+  const b = camera.project(direction)
   const dx = b.x - a.x, dy = b.y - a.y, distance = Math.hypot(dx, dy)
   if (distance < .00001) return
-  const inner = orbits[index - 1], outer = orbits[index + 1]
+  // Camera scale changes with depth. Invert the projected radial distance so
+  // inward and outward drags stay under the pointer at any view angle.
+  const perspective = 1 - a.scale / b.scale
+  const scale = distance * (1 - perspective)
+  const pixels = radius => radius * scale / (1 - radius * perspective)
   activeOrbit.value = track.id
-  hoverOrbit = ''
+  hoverOrbit.value = ''
+  const framing = orbitFraming
+  orbitFraming ||= system.value
   gesture = {
-    kind: 'orbit', start: point, track, framing: system.value, settings: orbitSettings.value,
-    min: (inner ? inner.radius + inner.envelope : TUNING.workRadius + .34) + track.envelope + .03,
-    max: outer ? outer.radius - outer.envelope - track.envelope - .03 : Number.MAX_SAFE_INTEGER,
-    screenX: dx / distance, screenY: dy / distance, units: Math.max(.01, track.radius * .001) / distance
+    kind: 'orbit', start: point, track, framing, pixels,
+    screenX: dx / distance, screenY: dy / distance,
+    radiusAt: projection => projection / Math.max(Number.EPSILON, scale + projection * perspective),
+    targets: orbits.filter(other => other.id !== track.id)
   }
   draw()
 }
@@ -510,6 +639,17 @@ function pinchDistance() {
   return a && b ? Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)) : 1
 }
 
+function onMenu(event) {
+  if (!painted || gesture) return
+  const point = coordinates(event)
+  const hit = hitAt(point)
+  const planetId = hit?.kind === 'planet' ? hit.id
+    : hit?.kind === 'node' ? painted.projected.get(hit.id)?.planetId || '' : ''
+  const body = system.value.planets.find(item => item.id === planetId)
+  if (body) openSpeedMenu(body, event)
+  else if (speedMenu.value) closeSpeedMenu()
+}
+
 function onDown(event) {
   const middle = event.button === 1 && event.pointerType === 'mouse'
   if ((!middle && event.button !== 0) || pointers.size >= 2 || gesture?.kind === 'pan'
@@ -517,6 +657,7 @@ function onDown(event) {
   if (middle) event.preventDefault()
   if (!painted) return
   layoutOpen.value = false
+  closeSpeedMenu()
   const wasFlying = !!flight
   interact()
   if (wasFlying) draw()
@@ -578,8 +719,8 @@ function onMove(event) {
     hoverLabel.value = item ? { title: item.title, x: hit.x, y: hit.y - hit.radius - 9 } : null
     const track = orbitEditing.value && !hit ? orbitAt(point) : null
     const nextOrbit = track?.track.id || ''
-    if (hoverOrbit !== nextOrbit) {
-      hoverOrbit = nextOrbit
+    if (hoverOrbit.value !== nextOrbit) {
+      hoverOrbit.value = nextOrbit
       draw()
     }
     canvas.value.style.cursor = hover ? 'pointer' : track ? 'ew-resize' : 'grab'
@@ -588,12 +729,21 @@ function onMove(event) {
   pointers.set(event.pointerId, point)
   if (gesture?.kind === 'pinch') return scaleTo(gesture.scale * pinchDistance() / gesture.distance)
   if (gesture?.kind === 'orbit') {
-    const { start, track, screenX, screenY, units, min, max } = gesture
+    const { start, track, screenX, screenY, pixels, radiusAt, targets } = gesture
     const dx = point.x - start.x, dy = point.y - start.y
     if (!gesture.moved && Math.hypot(dx, dy) < TUNING.dragThreshold) return
     dragActive.value = gesture.moved = true
-    const radius = clamp(track.radius + (dx * screenX + dy * screenY) * units, min, Math.max(min, max))
-    updateOrbitSetting('radii', track.id, radius, false)
+    const projection = pixels(track.radius) + dx * screenX + dy * screenY
+    let nearest = null
+    let threshold = 8
+    for (const other of targets) {
+      const distance = Math.abs(projection - pixels(other.radius))
+      if (distance >= threshold) continue
+      nearest = other
+      threshold = distance
+    }
+    orbitPreview.value = { radius: nearest?.radius ?? Math.max(TUNING.workRadius + .34, radiusAt(projection)), target: nearest?.id }
+    draw()
     return
   }
   if (gesture?.kind === 'pan') {
@@ -635,7 +785,8 @@ function onMove(event) {
 function cancelGesture() {
   if (gesture?.original) positions.value = gesture.original
   if (gesture?.kind === 'pan') scene.offset.copy(gesture.offset)
-  if (gesture?.kind === 'orbit') orbitSettings.value = gesture.settings
+  if (gesture?.kind === 'orbit') orbitFraming = gesture.framing
+  orbitPreview.value = null
   const ids = [...pointers.keys()]
   gesture = null
   pointers.clear()
@@ -661,8 +812,8 @@ function onUp(event) {
   idleSince = performance.now()
   if (current.kind === 'orbit') {
     lastClick = null
-    if (current.moved) saveOrbitSettings()
-    draw()
+    if (current.moved) commitOrbits(current.track)
+    else { orbitFraming = current.framing; draw() }
     return
   }
   if (current.kind === 'pan') {
@@ -691,6 +842,7 @@ function onKey(event) {
   if (event.key === 'Escape') {
     if (gesture) cancelGesture()
     else if (flight) { interact(); draw() }
+    else if (speedMenu.value) closeSpeedMenu(true)
     else if (layoutOpen.value) closeLayout()
     else if (orbitEditing.value) toggleOrbitEditing()
     else if (searching.value) { searching.value = false; event.target.blur() }
@@ -718,7 +870,7 @@ function onFocus(event) {
   }
 }
 function onBlur() { keyboardFocus = false; idleSince = performance.now() }
-function onLeave() { hoverId = ''; hoverOrbit = ''; hoverLabel.value = null; idleSince = performance.now(); draw() }
+function onLeave() { hoverId = ''; hoverOrbit.value = ''; hoverLabel.value = null; idleSince = performance.now(); draw() }
 function changeMotion() {
   reduced.value = motion.matches
   if (tween) {
@@ -731,6 +883,8 @@ function changeMotion() {
 }
 
 watch(model, () => {
+  if (gesture?.kind === 'orbit') cancelGesture()
+  orbitFraming = null
   if (satelliteId.value && !satellite.value) satelliteId.value = ''
   if (setId.value && !activeSet.value) enterPlanet('')
   if (nodeId.value && !selected.value) clearSelection()
@@ -806,11 +960,27 @@ onBeforeUnmount(() => {
             @pointerdown="onDown" @pointermove="onMove" @pointerup="onUp" @pointercancel="cancelGesture"
             @lostpointercapture="event => { if (pointers.has(event.pointerId)) cancelGesture() }" @pointerleave="onLeave"
             @wheel.prevent="changeZoom(Math.exp(-$event.deltaY * .0015))"
+            @contextmenu.prevent="onMenu"
             @mousedown="event => { if (event.button === 1) event.preventDefault() }"
             @auxclick="event => { if (event.button === 1) event.preventDefault() }" />
           <span v-if="hoverLabel" class="lpn-node-hover"
             :data-edge="hoverLabel.x < 108 ? 'left' : hoverLabel.x > size.width - 108 ? 'right' : undefined"
             :style="{ left: clamp(hoverLabel.x, 10, size.width - 10) + 'px', top: Math.max(34, hoverLabel.y) + 'px' }">{{ hoverLabel.title }}</span>
+          <div v-if="speedMenu" ref="speedPanel" class="lpn-speed-menu" role="dialog" tabindex="-1" :aria-label="speedMenu.body.title + ' 运动设置'"
+            :style="{ left: speedMenu.x + 'px', top: speedMenu.y + 'px' }" @contextmenu.prevent>
+            <header class="lpn-speed-menu-header">
+              <p class="lpn-speed-menu-head" :title="speedMenu.body.title">{{ speedMenu.body.title }}</p>
+              <button type="button" class="lpn-speed-close" aria-label="关闭运动设置" @click="closeSpeedMenu(true)">×</button>
+            </header>
+            <label v-for="(label, kind) in { orbit: '公转速度', spin: '自转速度' }" :key="kind" class="lpn-speed-setting">
+              <span>{{ label }}</span>
+              <span class="lpn-speed-value"><input type="number" min="0" max="1000" step="any" :aria-label="label"
+                :value="speedOf(speedMenu.body, kind)" @change="changeSpeed(kind, $event)" @keydown.enter.prevent="changeSpeed(kind, $event)"><span aria-hidden="true">%</span></span>
+            </label>
+            <div class="lpn-speed-menu-actions">
+              <button type="button" class="lpn-pill" @click="updateOrbitSetting('speeds', speedMenu.body.id, null)">恢复默认</button>
+            </div>
+          </div>
           <div v-if="activeSet && !activeSet.entries.length" class="lpn-empty">还没有下级条目</div>
           <div v-else-if="!system.planets.length" class="lpn-empty">还没有设定集</div>
           <div class="lpn-legend" aria-hidden="true">
@@ -819,7 +989,7 @@ onBeforeUnmount(() => {
             <span><i class="lpn-key-cross"></i>{{ activeSet ? '星体间关系' : '跨集关系' }}</span>
             <span v-if="model.bySatellite.size"><i class="lpn-key-satellite"></i>关联对象</span>
           </div>
-          <p class="lpn-stage-hint">{{ orbitEditing ? '拖动轨道线改变半径 · Esc 退出轨道编辑' : '左键拖动空白旋转 · 中键拖动平移' }}</p>
+          <p class="lpn-stage-hint" :class="{ 'lpn-merge-hint': orbitPreview?.target }">{{ orbitPreview?.target ? '松手合并轨道' : orbitEditing ? '向内或向外拖动轨道 · Esc 退出轨道编辑' : '左键拖动空白旋转 · 中键拖动平移' }}</p>
         </div>
 
         <aside v-if="selected || bridge || satellite || indexOpen" class="lpn-inspector" aria-label="关系摘要">
@@ -910,18 +1080,8 @@ onBeforeUnmount(() => {
                   {{ orbitEditing ? '退出轨道编辑' : '拖拽轨道半径' }}
                 </button>
                 <output v-if="activeTrack" class="lpn-orbit-radius">当前轨道半径 {{ activeTrack.orbitRadius.toFixed(2) }}</output>
-                <button v-if="activeTrack && currentOrbitSettings.radii?.[activeTrack.orbitId] != null" type="button" class="lpn-pill"
-                  @click="updateOrbitSetting('radii', activeTrack.orbitId, null)">恢复该轨道半径</button>
-                <label class="lpn-speed-body">星体<select :value="speedBody?.id" @change="selectSpeedBody">
-                  <option v-for="body in system.planets" :key="body.id" :value="body.id">{{ body.title }}</option>
-                </select></label>
-                <label v-for="(label, kind) in { orbit: '公转速度', spin: '自转速度' }" :key="kind" class="lpn-speed-setting">
-                  {{ label }}
-                  <span class="lpn-setting-value"><input type="number" min="0" max="1000" step="any" :aria-label="label"
-                    :value="currentOrbitSettings.speeds?.[speedBody?.id]?.[kind] ?? 100" @change="changeSpeed(kind, $event)">%</span>
-                </label>
-                <button v-if="currentOrbitSettings.speeds?.[speedBody?.id]" type="button" class="lpn-pill"
-                  @click="updateOrbitSetting('speeds', speedBody.id, null)">恢复该星体速度</button>
+                <p class="lpn-orbit-tip">拖动轨道线调整半径，重合时松手即可合并。右键星体可设置速度。</p>
+                <button v-if="currentOrbitSettings.radii" type="button" class="lpn-pill" @click="resetOrbits">恢复默认轨道</button>
               </div>
             </div>
           </div>

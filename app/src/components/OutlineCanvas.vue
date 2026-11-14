@@ -2278,7 +2278,7 @@ onBeforeUnmount(() => {
           :key="n.id"
           class="oc-node"
           :data-node-id="n.id"
-          :class="['oc-' + n.kind, 'sh-' + (n.shape || 'process'), { node:!!outlineWorkspace && !['container','textbox'].includes(n.kind), event:!!outlineWorkspace && n.kind==='event', note:!!outlineWorkspace && n.kind==='note', cite:!!outlineWorkspace && n.kind==='cite', anchor:!!outlineWorkspace && n.kind==='anchor', selected:!!outlineWorkspace && work.selOlnodeId===n.id, sel: work.selOlnodeId === n.id, flash: flashIds.has(n.id), pinned: n.pin, resizing: resizing === n.id, 'oc-small-card': n.kind !== 'container' && rectOf(n).h < 92, 'resize-smooth': resizeSmooth && resizing === n.id, editing: editText && editText.id === n.id, 'drop-target': miniDrag && miniDrag.moved && miniDrag.targetId === n.id }]"
+          :class="['oc-' + n.kind, 'sh-' + (n.shape || 'process'), { node:!!outlineWorkspace && !['container','textbox'].includes(n.kind), event:!!outlineWorkspace && n.kind==='event', note:!!outlineWorkspace && n.kind==='note', cite:!!outlineWorkspace && n.kind==='cite', anchor:!!outlineWorkspace && n.kind==='anchor', selected:!!outlineWorkspace && work.selOlnodeId===n.id, sel: work.selOlnodeId === n.id, flash: flashIds.has(n.id), pinned: n.pin, resizing: resizing === n.id, 'oc-small-card': n.kind !== 'container' && (rectOf(n)?.h ?? Infinity) < 92, 'resize-smooth': resizeSmooth && resizing === n.id, editing: editText && editText.id === n.id, 'drop-target': miniDrag && miniDrag.moved && miniDrag.targetId === n.id }]"
           :style="nodeStyle(n)"
           :data-outline-citation="n.kind === 'cite' && n.refId ? '' : null"
           :data-dl-target="n.kind === 'cite' && n.refId ? n.refId : null"

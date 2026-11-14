@@ -200,16 +200,31 @@ export function spacePlanets(bodies, positions, spacing = 100, settings = {}) {
     do {
       band.push(chronological[index++])
     } while (band.length < capacity && index < chronological.length && terminal(chronological[index]))
-    for (const planet of band) {
-      planet.orbitId = first.id
-      planet.orbitRadius = radius
-      planet.orbitSpeed = tau / TUNING.orbitPeriod * (2.5 / radius) ** 1.25
-      planet.spinSpeed = tau / TUNING.spinPeriod * .75 / planet.radius
-      planet.spinPhase = stablePhase(planet.id)
-      planet.orbitSlots = band.length
-    }
     tracks.push({ id: first.id, radius, envelope, band })
     edge = radius + envelope
+  }
+  const byTrack = new Map(tracks.map(track => [track.id, track]))
+  // Previous saves kept one anchor and derived neighbouring radii from it.
+  const legacyRadii = !settings.independent && Object.keys(settings.radii || {}).length
+    ? legacyOrbitRadii(tracks, settings.radii, settings.pin) : null
+  const groups = new Map()
+  for (const [index, track] of tracks.entries()) {
+    const target = byTrack.get(settings.joins?.[track.id]) || track
+    const group = groups.get(target.id) || []
+    group.push(...track.band)
+    groups.set(target.id, group)
+    const requested = settings.radii?.[target.id]
+    const radius = legacyRadii?.[index] ?? (Number.isFinite(requested)
+      ? Math.max(TUNING.workRadius + .34, requested) : target.radius)
+    for (const planet of track.band) {
+      const speed = settings.speeds?.[planet.id]
+      planet.orbitId = target.id
+      planet.orbitRadius = radius
+      planet.defaultOrbitRadius = target.radius
+      planet.orbitSpeed = tau / TUNING.orbitPeriod * (2.5 / radius) ** 1.25 * (speed?.orbit ?? 100) / 100
+      planet.spinSpeed = tau / TUNING.spinPeriod * .75 / planet.radius * (speed?.spin ?? 100) / 100
+      planet.spinPhase = stablePhase(planet.id)
+    }
   }
   const placed = new Set()
   const bandPhases = new Map()
@@ -218,12 +233,12 @@ export function spacePlanets(bodies, positions, spacing = 100, settings = {}) {
       planet: byId.get(bridge.a.id === planet.id ? bridge.b.id : bridge.a.id), weight: bridge.links.length
     })).filter(item => placed.has(item.planet))
     let bestCost = Infinity
-    const bandPhase = bandPhases.get(planet.orbitRadius)
-    const slots = bandPhase === undefined ? 72 : planet.orbitSlots
+    const bandPhase = bandPhases.get(planet.orbitId)
+    const slots = bandPhase === undefined ? 72 : groups.get(planet.orbitId).length
     const seed = bandPhase ?? (placed.size ? stablePhase(planet.id) : 2.8)
     for (let i = 0; i < slots; i++) {
       const phase = seed + i * tau / slots
-      if ([...placed].some(p => p.orbitRadius === planet.orbitRadius && Math.abs(p.orbitPhase - phase) < .001)) continue
+      if ([...placed].some(p => p.orbitId === planet.orbitId && Math.abs(p.orbitPhase - phase) < .001)) continue
       const cost = neighbors.reduce((sum, n) => sum + (1 - Math.cos(phase - n.planet.orbitPhase)) * n.weight, 0)
         + [...placed].reduce((sum, p) => {
           const cosine = Math.cos(phase - p.orbitPhase)
@@ -236,23 +251,40 @@ export function spacePlanets(bodies, positions, spacing = 100, settings = {}) {
       bestCost = cost
       planet.orbitPhase = phase
     }
-    if (bandPhase === undefined) bandPhases.set(planet.orbitRadius, planet.orbitPhase)
+    if (bandPhase === undefined) bandPhases.set(planet.orbitId, planet.orbitPhase)
     placed.add(planet)
   }
-  let innerEdge = TUNING.workRadius + .34
-  for (const track of tracks) {
-    const requested = settings.radii?.[track.id]
-    const radius = Math.max(innerEdge + track.envelope + .03, Number.isFinite(requested) ? requested : track.radius)
-    innerEdge = radius + track.envelope
-    for (const planet of track.band) {
-      const speed = settings.speeds?.[planet.id]
-      planet.orbitRadius = radius
-      planet.orbitEnvelope = track.envelope
-      planet.orbitSpeed = tau / TUNING.orbitPeriod * (2.5 / radius) ** 1.25 * (speed?.orbit ?? 100) / 100
-      planet.spinSpeed *= (speed?.spin ?? 100) / 100
-    }
-  }
   return planets
+}
+
+function legacyOrbitRadii(tracks, manual, pin) {
+  const clearance = .05
+  const floor = []
+  let edge = TUNING.workRadius + .34
+  for (const track of tracks) {
+    const radius = edge + track.envelope
+    floor.push(radius)
+    edge = radius + track.envelope + clearance
+  }
+  const gap = index => tracks[index - 1].envelope + tracks[index].envelope + clearance
+  const radii = tracks.map((track, index) => {
+    const value = manual?.[track.id]
+    return Math.max(floor[index], Number.isFinite(value) ? value : track.radius)
+  })
+  const anchor = tracks.findIndex(track => track.id === pin)
+  if (anchor < 0) {
+    for (let index = 1; index < radii.length; index++) {
+      radii[index] = Math.max(radii[index], radii[index - 1] + gap(index))
+    }
+    return radii
+  }
+  for (let index = anchor - 1; index >= 0; index--) {
+    radii[index] = Math.max(floor[index], Math.min(radii[index], radii[index + 1] - gap(index + 1)))
+  }
+  for (let index = anchor + 1; index < radii.length; index++) {
+    radii[index] = Math.max(radii[index], radii[index - 1] + gap(index))
+  }
+  return radii
 }
 
 function weight(planet) {

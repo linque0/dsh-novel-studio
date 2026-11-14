@@ -4,6 +4,9 @@ const chapterControlSlot = nsPlugin ? 'more-end' : 'bar-end'
 import TaskLauncher from './ai/TaskLauncher.vue'
 import WritingPaperPicker from './WritingPaperPicker.vue'
 import ChapterTitleField from './ChapterTitleField.vue'
+import WritingLayoutHandle from './writing-layout/WritingLayoutHandle.vue'
+import { useWritingPaperLayout } from './writing-layout/useWritingPaperLayout.js'
+import './writing-layout/writing-layout.css'
 import '../styles/writing-paper.css'
 import '../styles/studio-writing.css'
 import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount, onMounted } from 'vue'
@@ -119,6 +122,12 @@ async function bindWritingPosition(ed, chapter, position) {
 const handoffTokens=new Set(),handoffPending=ref(false)
 function prepareHandoff(e){if(e.detail?.pending)handoffTokens.add(e.detail.token);else handoffTokens.delete(e.detail?.token);handoffPending.value=handoffTokens.size>0}
 const chapterPopped = computed(() => !!work.activeChapter && isPopped(work, 'chapter', work.activeChapter.id))
+const paperEnabled = computed(() => nsPlugin && !ui.readMode && !ui.focusMode && !chapterPopped.value && !!work.activeChapter)
+const {
+  editorWrap, paperFrame, actual: paperSize, minimum: paperMin, limits: paperLimits,
+  wrapStyle: paperWrapStyle, frameStyle: paperFrameStyle, begin: beginPaper,
+  move: movePaper, end: endPaper, cancel: cancelPaper, nudge: nudgePaper, reset: resetPaper
+} = useWritingPaperLayout(ui, paperEnabled)
 let refreshGeneration=0,refreshingEditor=false,remoteRefreshNeeded=false
 watch([chapterPopped, () => ui.readMode, handoffPending], async ([popped, reading, handing], [wasPopped, wasReading]) => {
   if(wasPopped&&!popped)remoteRefreshNeeded=true
@@ -383,7 +392,7 @@ async function clearGoal() {
 
 <template>
   <TaskLauncher v-if="!nsPlugin && !ui.readMode" module="chapters" />
-  <div class="editor-wrap" :data-writing-paper="ui.writingPaperStyle" :data-paper-skin="ui.skin" :data-paper-theme="ui.theme" :data-paper-quiet="ui.readMode || ui.focusMode" :class="{ 'read-mode': ui.readMode }">
+  <div ref="editorWrap" class="editor-wrap" :data-paper-adjustable="paperEnabled || undefined" :style="paperWrapStyle" :data-writing-paper="ui.writingPaperStyle" :data-paper-skin="ui.skin" :data-paper-theme="ui.theme" :data-paper-quiet="ui.readMode || ui.focusMode" :class="{ 'read-mode': ui.readMode }">
     <div class="editor-head" v-if="work.activeChapter && !ui.readMode">
       <ChapterTitleField
         :key="work.activeChapter.id"
@@ -434,6 +443,7 @@ async function clearGoal() {
         <template #paper><WritingPaperPicker /></template>
         <!-- 插件主行按设计只保留格式与发送；状态/历史仍可从更多格式访问。 -->
         <template #[chapterControlSlot]>
+          <NButton v-if="nsPlugin" size="tiny" quaternary @click.stop="ui.saveLatentWritingLayout()">恢复默认布局</NButton>
           <div class="editor-bar-status" @click.stop @mousedown.stop>
             <NSelect
               size="tiny"
@@ -451,7 +461,8 @@ async function clearGoal() {
           </div>
         </template>
       </EditorToolbar>
-      <div v-show="!chapterPopped" class="rich-host paper-texture writing-paper-surface" @mousedown.capture="onMouseDownCapture" @contextmenu.capture="onContextMenu">
+      <div ref="paperFrame" v-show="!chapterPopped" class="writing-paper-frame" :data-custom-height="paperFrameStyle ? true : undefined" :style="paperFrameStyle">
+      <div class="rich-host paper-texture writing-paper-surface" @mousedown.capture="onMouseDownCapture" @contextmenu.capture="onContextMenu">
         <div class="ed-read-col">
           <!-- 阅读模式专用头（v1.0.26）：巨排章号 + 章题下划短线；随正文滚动，不进入文档模型 -->
           <header v-show="ui.readMode" class="ed-read-head">
@@ -461,6 +472,14 @@ async function clearGoal() {
           </header>
           <div id="regular-writing-editor" style="display:contents"></div>
         </div>
+      </div>
+        <WritingLayoutHandle v-for="axis in paperEnabled ? ['x', 'y'] : []" :key="axis" :axis="axis"
+          :label="axis === 'x' ? '调整正文写作面宽度' : '调整正文写作面高度'"
+          :value="axis === 'x' ? paperSize.w : paperSize.h"
+          :min="axis === 'x' ? Math.min(paperMin.w, paperSize.w) : Math.min(paperMin.h, paperSize.h)"
+          :max="axis === 'x' ? Math.max(0, paperLimits.w - 24) : paperLimits.h"
+          @start="beginPaper(axis)" @move="movePaper" @end="endPaper" @cancel="cancelPaper"
+          @nudge="nudgePaper(axis, $event)" @reset="resetPaper(axis)" />
       </div>
       <!-- 正文宿主只有一个：多挂一份会让切换时新挂载的编辑器被卸载 -->
       <Teleport defer to="#regular-writing-editor">
