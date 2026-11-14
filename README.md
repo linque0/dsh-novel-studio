@@ -4,6 +4,43 @@
 
 当前进度：**M0 骨架**（作品库核心 + 静态托管 + RPC + 3 个只读工具 + iframe 客户端）。
 
+## 界面一览
+
+六张图取自本仓库 `docs/` 下的插件版验收现场（`docs/前端美化/` 与 `docs/验收/` 中最新一轮产出），压缩后放在 `assets/screenshots/`，声明在 `screenshots.json`。
+
+**书架 · 流动封面** —— 满屏流动底 + 玻璃封面流转图，聚焦书名、底部 dock 与「继续写作 / 打开工作台」：
+
+![书架 · 流动封面](assets/screenshots/01-shelf.webp)
+
+**正文 · 伏案静水** —— 左章节栏 + 中编辑区（半透明玻璃、行宽 ≤36em）+ 右「批注与资料」，顶部工具栏带「发给 DSH」：
+
+![正文 · 伏案静水](assets/screenshots/02-writing.webp)
+
+**故事大纲** —— 事件卡画布、容器展开与右侧事件详情（情节梗概 / 关联章节 / 故事关系）：
+
+![大纲](assets/screenshots/03-outline.webp)
+
+**人物 · 关系剧场** —— 拖动排布的人物关系图 + 人物名录 + 右侧人物档案（身份、标签、人物小传）：
+
+![人物 · 关系剧场](assets/screenshots/04-characters.webp)
+
+**写作分析 · 稿件案卷** —— 分卷目录、章节字数分布、完成度标记与「章节结构 / 改稿轨迹」切换：
+
+![写作分析](assets/screenshots/05-analysis.webp)
+
+**灵感 · 窄屏** —— 380px 宽档下的手机布局：手札/拼板切换、检索、记一条，记录卡带标签与关联数：
+
+![灵感 · 窄屏](assets/screenshots/06-ideas-mobile.webp)
+
+这一份界面背后由 DSH 的 Agent 能力支撑（详见下文「能力清单」）：
+
+- 只读：`studio_works`（书目/目录）、`studio_outline`（章节目录+字数）、`studio_read`（正文/人物/设定分页）、`studio_search`（子串检索）、`studio_preset`（作者预设）。
+- 审稿：`studio_review` 每条意见必须在正文里唯一 quote，引用设定/人物作证据会反查 verified；`studio_recheck` 必须恰好覆盖全部原问题。
+- 写入：`studio_propose` 只出候选、不落库；`studio_apply {confirm:true}` 在作者同意后落库，带 `requestId` 幂等与 `expectedRevision` 前置校验；`studio_undo` 回退到应用前版本。
+- 界面模块齐全：书架 / 正文 / 大纲 / 设定 / 人物 / 灵感 / 设置 / 图谱 / 统计 / 回收站 / 导入导出，桌面版与插件版读写同一份作品库。
+- 6 个技能（project / write / plan / memory / revise / review）渐进披露，project 为共享段。
+- 顶栏三档高度（≥900 / 560–899 / <560），窄栏 <560px 时章节栏折成竖排细轨、批注栏改右侧抽屉；宿主主题令牌经 shim 映射，界面跟随 DSH 的深浅色与字号。
+
 ## 结构
 
     dsh-novel-studio/
