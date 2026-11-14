@@ -61,6 +61,15 @@ const ui = useUiStore()
 const cardDensity = computed(() => work.canvasPrefs.density === 'compact' ? 'compact' : outlineWorkspace ? 'draft' : 'paper')
 const canvasEl = ref(null)
 const { zoom, tx, ty, innerStyle, onWheel, onPanStart, centerOn } = usePanZoom(canvasEl)
+const dotsVisible = computed(() => work.canvasPrefs.showDots !== false)
+const dotGridStyle = computed(() => {
+  const base = 24 * zoom.value
+  const spacing = base < 12 ? base * 2 : base > 48 ? base / 2 : base
+  return {
+    backgroundSize: `${spacing}px ${spacing}px`,
+    backgroundPosition: `${tx.value % spacing - spacing / 2}px ${ty.value % spacing - spacing / 2}px`
+  }
+})
 
 const dragPos = reactive(new Map()) // 拖动中的临时坐标（mouseup 统一落库）
 const dragSize = reactive(new Map()) // 拖拽调整大小时的临时尺寸
@@ -71,8 +80,37 @@ const edgeEdit = ref(null) // { ownerId, relId, mx, my } 边编辑浮层
 const citePick = ref(null) // { nodeId } 引用卡目标选择浮层
 const editTitle = ref(null) // { id, value } 容器标题原位编辑
 const drawerId = ref(null)
-const settingsOpen=ref(false)
-function outlineCommand(e){if(e.detail?.command==='settings')settingsOpen.value=!settingsOpen.value;else if(e.detail?.command==='toggle-structure')outlineWorkspace?.toggle('left')}
+const settingsOpen = ref(false)
+const settingsTrigger = ref(null)
+const settingsPanel = ref(null)
+const settingsPosition = ref({})
+function positionSettings() {
+  const panel = settingsPanel.value
+  const anchor = settingsTrigger.value?.getBoundingClientRect()
+  if (!panel || !anchor) return
+  const width = panel.offsetWidth
+  const height = panel.offsetHeight
+  const left = Math.max(12, Math.min(anchor.right - width, innerWidth - width - 12))
+  const below = anchor.bottom + 8
+  const above = anchor.top - height - 8
+  const preferredTop = below + height <= innerHeight - 12 ? below : above
+  const top = Math.max(12, Math.min(preferredTop, innerHeight - height - 12))
+  settingsPosition.value = { left: left + 'px', top: top + 'px' }
+}
+function updateSettings(open) {
+  if (open === settingsOpen.value) return
+  settingsOpen.value = open
+  if (open) searchOpen.value = false
+  nextTick(() => {
+    if (open) positionSettings()
+    const target = open ? settingsPanel.value : settingsTrigger.value
+    target?.focus({ preventScroll: true })
+  })
+}
+function outlineCommand(e) {
+  if (e.detail?.command === 'settings') updateSettings(!settingsOpen.value)
+  else if (e.detail?.command === 'toggle-structure') outlineWorkspace?.toggle('left')
+}
 const draftTotals=computed(()=>scopeStats(live.value,scopeId.value))
 function relsFor(n){return relationEntries.value.filter(e=>(e.owner?.id===n.id||e.rel.toId===n.id)&&nodeById(e.owner?.id===n.id?e.rel.toId:e.owner?.id)?.kind!=='anchor')}
 function draftStatus(n){return ({done:'已完成',writing:'进行中',planned:'待展开',revise:'待修改'})[n.status]||'待展开'}
@@ -89,6 +127,10 @@ const picked = reactive(new Set())
 const searchQuery = ref('')
 const searchOpen = ref(false)
 const searchEl = ref(null)
+function selectSearchResult(id) {
+  if (outlineWorkspace) searchOpen.value = false
+  revealNode(id)
+}
 const groupDetailsOpen = ref(false)
 const flashIds = reactive(new Set())
 const STATUS_LABEL = { draft: '草稿', done: '完成', revise: '待修改' }
@@ -1292,6 +1334,12 @@ function createAt(kind) {
 }
 /* Delete 键删除选中模块（输入态不劫持） */
 function onKey(e) {
+  if (e.defaultPrevented) return
+  if (settingsOpen.value && e.key === 'Escape') {
+    e.preventDefault()
+    updateSettings(false)
+    return
+  }
   if (e.key === 'Escape') {
     placement.cancel()
     cancelGesture?.()
@@ -1307,14 +1355,15 @@ function onKey(e) {
     return
   }
   const t = e.target
-  if (t && (t.matches?.('input, textarea, [contenteditable="true"]') || t.isContentEditable)) return
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+    if (t !== searchEl.value && (t?.matches?.('input:not([type="range"]), textarea') || t?.isContentEditable)) return
     e.preventDefault()
-    if(outlineWorkspace)settingsOpen.value=true
-    nextTick(()=>searchEl.value?.focus())
+    updateSettings(false)
     searchOpen.value = true
+    nextTick(() => searchEl.value?.focus())
     return
   }
+  if (t?.closest?.('.latent-canvas-settings') || (t && (t.matches?.('input, textarea, [contenteditable="true"]') || t.isContentEditable))) return
   if (e.key === 'Delete' || e.key === 'Backspace') {
     if (editTitle.value || editText.value || edgeEdit.value || connecting.value || citePick.value) return
     if (selectedEdge.value) {e.preventDefault();deleteSelectedEdge();return}
@@ -1729,7 +1778,9 @@ function closeFloaters() {
   editTitle.value = null
 }
 function onWinDown(e) {
-  if (e.target.closest?.('.ow-resizer,.ow-rail,.ow-mobile-controls,.draft-canvas-head,.creation,.draft-zoom')) return
+  if (settingsOpen.value && !e.target.closest?.('.latent-canvas-settings,.draft-settings-toggle')) updateSettings(false)
+  if (searchOpen.value && !e.target.closest?.('.oc-search-wrap')) searchOpen.value = false
+  if (e.target.closest?.('.ow-resizer,.ow-rail,.ow-mobile-controls,.draft-canvas-head,.creation,.draft-zoom,.latent-canvas-settings')) return
   if (!e.target.closest?.('.oc-edge-hit,.oc-elabel,.oc-route-handle,.oc-endpoint,.oc-endpoint-control,.oc-edge-tools,.oc-eedit,.oc-apt,.oc-junc')) {selectedEdgeKey.value=null;flowMode.value='idle'}
   /* 浮层与其落点数据（edgeCtx）同生共死：点浮层/连线外即一并关闭 */
   if (edgeEdit.value && !e.target.closest?.('.oc-eedit, .oc-edge-hit, .oc-elabel')) {
@@ -1738,7 +1789,6 @@ function onWinDown(e) {
   }
   if (citePick.value && !e.target.closest?.('.oc-pick')) citePick.value = null
   if (editTitle.value && !e.target.closest?.('.oc-title-edit')) commitTitle()
-  if (searchOpen.value && !e.target.closest?.('.oc-search-wrap')) searchOpen.value = false
   if (groupDetailsOpen.value && !e.target.closest?.('.oc-relations-panel, .oc-group-inspector, .oc-edge-hit, .oc-elabel')) groupDetailsOpen.value = false
   if (drawerId.value && !e.target.closest?.('.oc-drawer, .oc-node, .oc-mini, .oc-ctx')) drawerId.value = null
   if (ctxMenu.value && !e.target.closest?.('.oc-ctx')) ctxMenu.value = null
@@ -1988,7 +2038,7 @@ watch(scopeId, (id) => {
 
 /* ---------- 键盘 / 生命周期 ---------- */
 onMounted(() => {
-  if(outlineWorkspace)outlineWorkspace.actions.value={add:startPlacement,settings:()=>settingsOpen.value=true}
+  if(outlineWorkspace)outlineWorkspace.actions.value={add:startPlacement,settings:()=>updateSettings(true)}
   window.addEventListener('outline-command',outlineCommand)
   if (!ai.loaded) ai.loadSettings() // 保障入口置灰判定基于已装载的配置（幂等）
   migrateSides()
@@ -2016,10 +2066,13 @@ onMounted(() => {
   }
   window.addEventListener('keydown', onKey)
   window.addEventListener('mousedown', onWinDown, true)
+  window.addEventListener('resize', positionSettings)
   juncFlashTimer = setInterval(() => juncFlashTick.value++, 400)
   if (live.value.length) nextTick(() => { if (!restoreCamera(scopeId.value)) fitLayer(true) })
 })
 watch(() => work.work?.id, () => {
+  settingsOpen.value = false
+  searchOpen.value = false
   cancelGesture?.()
   routeCache.clear()
   selectedEdgeKey.value=null
@@ -2037,6 +2090,7 @@ onBeforeUnmount(() => {
   routeCache.clear()
   window.removeEventListener('keydown', onKey)
   window.removeEventListener('mousedown', onWinDown, true)
+  window.removeEventListener('resize', positionSettings)
   clearInterval(juncFlashTimer)
 })
 </script>
@@ -2053,7 +2107,31 @@ onBeforeUnmount(() => {
        <button type="button" class="btn light" @click="startPlacement('event')"><Glyph name="plus" :size="13"/>新建事件</button>
        <button type="button" class="btn" @click="tidyAll"><Glyph name="tidy" :size="13"/>整理</button>
        <button type="button" class="btn" @click="overview"><Glyph name="expand" :size="13"/>总览</button>
-       <button type="button" class="btn draft-settings-toggle" :aria-expanded="settingsOpen" @click="settingsOpen = !settingsOpen"><Glyph name="gear" :size="13"/>画布设置</button>
+       <button ref="settingsTrigger" type="button" class="btn draft-settings-toggle" aria-haspopup="dialog" :aria-expanded="settingsOpen" @click="updateSettings(!settingsOpen)"><Glyph name="gear" :size="13"/>画布设置</button>
+       <Teleport to="body">
+         <section v-if="settingsOpen" ref="settingsPanel" class="latent-canvas-settings" :style="settingsPosition" role="dialog" aria-label="画布设置" tabindex="-1">
+           <header><h2>画布设置</h2><button type="button" class="latent-canvas-settings-close" aria-label="关闭画布设置" @click="updateSettings(false)"><Glyph name="close" :size="16"/></button></header>
+           <div class="latent-canvas-settings-row">
+             <span>连线形状</span>
+             <div class="latent-canvas-settings-segment" role="group" aria-label="连线形状">
+               <button type="button" :aria-pressed="work.canvasPrefs.edgeStyle !== 'ortho'" @click="setPref('edgeStyle', 'bezier')">曲线</button>
+               <button type="button" :aria-pressed="work.canvasPrefs.edgeStyle === 'ortho'" @click="setPref('edgeStyle', 'ortho')">折线</button>
+             </div>
+           </div>
+           <label class="latent-canvas-settings-range">
+             <span>连线粗细</span><output>{{ edgeWidthModel.toFixed(1) }} px</output>
+             <input v-model.number="edgeWidthModel" type="range" min="0.8" max="5" step="0.2" aria-label="连线粗细">
+           </label>
+           <label class="latent-canvas-settings-range">
+             <span>箭头大小</span><output>{{ arrowSizeModel.toFixed(1) }}×</output>
+             <input v-model.number="arrowSizeModel" type="range" min="0.5" max="3" step="0.1" aria-label="箭头大小">
+           </label>
+           <div class="latent-canvas-settings-row">
+             <span>显示点阵</span>
+             <button type="button" class="latent-canvas-settings-switch" role="switch" aria-label="显示点阵" :aria-checked="dotsVisible" @click="setPref('showDots', !dotsVisible)"></button>
+           </div>
+         </section>
+       </Teleport>
        <div class="viewtoggle"><button type="button" class="on">画布</button><button type="button" @click="work.outlineView='text'">文本</button></div>
      </div>
     </div>
@@ -2064,15 +2142,15 @@ onBeforeUnmount(() => {
     </template>
 
     <div v-if="!outlineWorkspace" class="oc-workspace-head"><div><div class="oc-eyebrow">OUTLINE · 故事大纲</div><h1>{{ scopeTitle }}<small v-if="scopeId">容器内部</small></h1><p>{{ scopeMetaText }}</p></div><div class="oc-head-actions"><button type="button" @click="overview">总览</button><button type="button" @click="expandAllDeep">展开全部</button><button type="button" @click="collapseAllDeep">收起全部</button><button type="button" @click="tidyAll">整理布局</button><button type="button" @click="work.outlineView='text'">文本视图</button><TaskLauncher module="outline" /></div></div>
-    <div v-show="!outlineWorkspace||settingsOpen" class="oc-scopebar" :class="{'draft-scope-settings':outlineWorkspace}">
-      <button v-if="scopeId" class="oc-back" type="button" title="返回上一级" @click="goBack"><OIcon name="back" :size="12" /> 上一级</button>
-      <nav class="oc-crumbs" aria-label="大纲层级">
+    <div v-if="!outlineWorkspace || searchOpen" :class="outlineWorkspace ? 'draft-canvas-search' : 'oc-scopebar'">
+      <button v-if="!outlineWorkspace && scopeId" class="oc-back" type="button" title="返回上一级" @click="goBack"><OIcon name="back" :size="12" /> 上一级</button>
+      <nav v-if="!outlineWorkspace" class="oc-crumbs" aria-label="大纲层级">
         <template v-for="(c, i) in scopeCrumbsList" :key="c.id || 'root'">
           <i v-if="i">›</i>
           <button type="button" :aria-current="c.id === scopeId ? 'page' : undefined" @click="focusScope(c.id)">{{ c.title }}</button>
         </template>
       </nav>
-      <span class="oc-scope-meta">{{ scopeMetaText }}</span>
+      <span v-if="!outlineWorkspace" class="oc-scope-meta">{{ scopeMetaText }}</span>
       <div class="oc-scope-tools">
         <div class="oc-search-wrap">
           <label class="oc-search">
@@ -2081,7 +2159,7 @@ onBeforeUnmount(() => {
             <kbd>Ctrl K</kbd>
           </label>
           <div v-if="searchOpen && searchQuery.trim()" class="oc-search-results">
-            <button v-for="r in searchResults" :key="r.node.id" type="button" class="oc-search-item" @click="revealNode(r.node.id)">
+            <button v-for="r in searchResults" :key="r.node.id" type="button" class="oc-search-item" @click="selectSearchResult(r.node.id)">
               <span class="oc-kind-tag">{{ r.kind }}</span>
               <span style="min-width:0"><b>{{ r.node.title || '（未命名）' }}</b><small>{{ r.path }}</small></span>
             </button>
@@ -2090,7 +2168,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </div>
-    <div v-show="!outlineWorkspace||settingsOpen" class="om-toolbar oc-toolbar" :class="{'draft-settings-panel':outlineWorkspace}"><button v-if="outlineWorkspace" type="button" class="draft-settings-close" aria-label="关闭画布设置" @click="settingsOpen=false">关闭画布设置 ×</button>
+    <div v-if="!outlineWorkspace" class="om-toolbar oc-toolbar">
       <div class="oc-module-tools">
         <template v-for="tool in ADD_TOOLS" :key="tool.kind">
           <NDropdown v-if="tool.kind === 'anchor' || tool.kind === 'volume'" trigger="click" :options="tool.kind === 'anchor' ? anchorMenuOptions : volumeMenuOptions" @select="onModuleSelect(tool.kind, $event)">
@@ -2149,7 +2227,8 @@ onBeforeUnmount(() => {
       >
         <span class="oc-placement-hint" role="status">点击画布放置 · Esc 取消</span>
       </div>
-      <div class="oc-canvas-surface" :style="{ opacity: canvasOpacity / 100 }" aria-hidden="true"></div>
+      <div v-if="!outlineWorkspace" class="oc-canvas-surface" :style="{ opacity: canvasOpacity / 100 }" aria-hidden="true"></div>
+      <div v-else-if="dotsVisible" class="draft-canvas-dots" :style="dotGridStyle" aria-hidden="true"></div>
       <div class="om-inner" :style="innerStyle">
         <OutlinePlacementGhost
           v-if="placementGhost"

@@ -1,6 +1,6 @@
 {
   "name": "@linque0/dsh-novel-studio",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "小说工坊 DSH 插件版：把作品库接进 DSH，由 DSH Agent 代替恍然梦做建议、审稿与编辑。",
   "icon": "./assets/icon.svg",
   "type": "module",

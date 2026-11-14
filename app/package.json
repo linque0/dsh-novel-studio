@@ -2,7 +2,7 @@
   "name": "dsh-novel-studio-app",
   "private": true,
   "type": "module",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "小说工坊插件版前端工程（由桌面仓库 fork，独立构建到 assets/app）",
   "dependencies": {
     "@tiptap/extension-color": "^2.27.2",
@@ -26,6 +26,7 @@
     "pdfjs-dist": "^4.10.38",
     "pinia": "^2.3.0",
     "seedrandom": "^3.0.5",
+    "three": "0.186.1",
     "vue": "^3.5.13"
   }
 }

@@ -62,7 +62,7 @@ export const useWorkStore = defineStore('work', {
     outlineView: __NS_PLUGIN__ ? 'canvas' : 'text', // 插件以编排画布进入，仍可切换文本
     selOlnodeId: null,
     canvasFocusTick: 0, // 侧边栏请求画布居中定位的信号
-    canvasPrefs: { snap: true, density: 'detail', edgeStyle: 'bezier', edgeWidth: 1.8, arrowSize: 1 }, // 画布偏好（appconfig 按作品隔离）
+    canvasPrefs: { snap: true, density: 'detail', edgeStyle: 'bezier', edgeWidth: 1.8, arrowSize: 1, showDots: true }, // 画布偏好（appconfig 按作品隔离）
     wordGoal: 0, // 每章字数目标（0 = 未设；appconfig wordgoal:<workId> 按作品隔离）
     mubuTagMeta: {}, // 设定标签创建时间 { [name]: createdAt }（appconfig mubutagmeta:<workId>；标签面板选择栏排序依据）
     lorelinks: [], // 条目级关联关系（关系链接）：设定↔设定 / 设定↔人物（Dexie v12 lorelinks 表，随作品全量载入）
@@ -1366,6 +1366,7 @@ export const useWorkStore = defineStore('work', {
         arrowSize: 1,
         textures: true,
         canvasOpacity: 100,
+        showDots: true,
         scopeId: null,
         expanded: [],
         cameras: {}

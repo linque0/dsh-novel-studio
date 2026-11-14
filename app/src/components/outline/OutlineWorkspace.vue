@@ -66,8 +66,20 @@ function escape(e){
 watch(activeDrawer,async(side,previous)=>{await nextTick();if(side)drawerControls()[0]?.focus();else if(previous&&returnFocus?.isConnected&&returnFocus.getClientRects().length)returnFocus.focus()})
 watch(narrow,()=>{cleanupDrag?.(true);activeDrawer.value=null})
 watch(hasDetails,()=>{activeDrawer.value=null})
-onMounted(()=>{width.value=root.value.clientWidth;observer=new ResizeObserver(entries=>{width.value=root.value.clientWidth});observer.observe(root.value);window.addEventListener('keydown',escape,true)})
-onBeforeUnmount(()=>{cleanupDrag?.(true);observer?.disconnect();window.removeEventListener('keydown',escape,true)})
+function measureWorkspace() { if (root.value) width.value = root.value.clientWidth }
+onMounted(() => {
+  measureWorkspace()
+  observer = new ResizeObserver(measureWorkspace)
+  observer.observe(root.value)
+  window.addEventListener('resize', measureWorkspace)
+  window.addEventListener('keydown', escape, true)
+})
+onBeforeUnmount(() => {
+  cleanupDrag?.(true)
+  observer?.disconnect()
+  window.removeEventListener('resize', measureWorkspace)
+  window.removeEventListener('keydown', escape, true)
+})
 </script>
 
 <template>

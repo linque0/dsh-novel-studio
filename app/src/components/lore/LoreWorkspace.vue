@@ -4,7 +4,7 @@
      状态唯一真源在 ui store：loreView / loreActiveId / loreMapMode / loreNavWidth… / loreNavClosed… / loreScope。
      ≤1099 不再有顶部移动栏：窄档默认是完整正文页，「条目列表」入口在 LoreDetail 的
      return-tools 里（仅窄档渲染），点它才切到 list 屏；宽档不渲染。
-     A 条目编写（MubuView：整棵森林）/ B 设定详情（LoreEntryList + LoreDetail）/ C 视觉导图（LoreTreeMap / LoreGraph + LoreInspector）。 -->
+     A 条目编写（MubuView：整棵森林）/ B 设定详情（LoreEntryList + LoreDetail）/ C 视觉导图（LoreTreeMap + LoreInspector / LoreGalaxy）。 -->
 <script setup>
 import '../../styles/lore-free-tree.css'
 import { autosave } from '../../services/autosave'
@@ -19,7 +19,7 @@ import LoreReferences from './LoreReferences.vue'
 import LorePeek from './LorePeek.vue'
 import LoreHead from './LoreHead.vue'
 import LoreEntryList from '../LoreEntryList.vue'
-import LoreGraph from '../LoreGraph.vue'
+import LoreGalaxy from './planets/LoreGalaxy.vue'
 import LoreTreeMap from './LoreTreeMap.vue'
 import LoreInspector from './LoreInspector.vue'
 import LoreDivider from './LoreDivider.vue'
@@ -33,15 +33,13 @@ const ui = useUiStore()
 
 const mubu = ref(null) // A 视图实例：新建 / 定位 / 滚动
 const treeMap = ref(null) // C 层级导图实例：缩放 / 适应 / 聚焦
-const graphRef = ref(null) // C 关系网络实例：缩放 / 适应
-const hoverLink = ref(null)
 const drawer = ref(false) // ≤1099：nav 变抽屉（原型 drawer）
 const screen = ref('main') // ≤1099 两屏流程：main | list | insp（宽档不生效）
 const innerWidth = ref(typeof window === 'undefined' ? 1440 : window.innerWidth)
 
 /* ---------- 面板矩阵的列宽（纯函数算，结果写成 CSS 变量） ---------- */
 const widths = computed(() => loreWidths({
-  view: ui.loreView,
+  view: ui.loreView === 'map' && ui.loreMapMode === 'relations' ? 'write' : ui.loreView,
   innerWidth: innerWidth.value,
   navWidth: ui.loreNavWidth,
   listWidth: ui.loreListWidth,
@@ -156,77 +154,20 @@ const mapMode = computed(() => ui.loreMapMode)
 const mapSetId = computed(() => ui.loreRootId || work.currentMubuRoot()?.id || null)
 /* 层级导图的范围：'all' 画全部设定集（多根），否则只画当前集 */
 const mapSetIds = computed(() => (ui.loreScope === 'all' ? work.mubuRoots().map((r) => r.id) : [work.currentMubuRoot()?.id].filter(Boolean)))
-const relCount = (id) => (id ? work.loreLinksOf('mubu', id).length : 0)
-/** 列表里关系最多的节点：单次扫描取首个最大值（同数取列表靠前者，列表已按 sortOrder 排） */
-function busiest(list) {
-  let hit = null
-  let best = 0
-  for (const n of list) {
-    const c = relCount(n.id)
-    if (c > best) {
-      best = c
-      hit = n
-    }
-  }
-  return hit
-}
-/** 关系网络中心择优：当前条目有关系就用它；否则当前集子树里关系最多的；再否则全库关系最多的；
-    全库零关系才退回旧规则（当前条目 / 集内第一个子条目 / 当前集），保证空库时仍有中心卡片。 */
-const graphCenterId = computed(() => {
-  if (ui.loreActiveId && relCount(ui.loreActiveId) > 0) return ui.loreActiveId
-  const root = work.currentMubuRoot()
-  const inSet = root ? busiest([root, ...work.mubuDescendants(root.id)]) : null
-  if (inSet) return inSet.id
-  const anywhere = busiest([...work.mubuRoots(), ...work.liveMubu()])
-  if (anywhere) return anywhere.id
-  return ui.loreActiveId || work.mubuChildren(mapSetId.value)[0]?.id || mapSetId.value || ''
-})
-const graphEntries = computed(() => (graphCenterId.value && work.mubu.find((n) => n.id === graphCenterId.value) ? work.loreLinksOf('mubu', graphCenterId.value) : []))
-const mapContext = computed(() => {
-  if (mapMode.value === 'hierarchy') return ui.loreScope === 'all' ? '全部设定 · 层级' : '条目层级'
-  const t = graphCenterId.value ? (work.mubu.find((n) => n.id === graphCenterId.value) || {}).text || '' : ''
-  return `${(t || '未命名').slice(0, 18)} · 一跳关系`
-})
-const zoomPercent = computed(() => {
-  const z = mapMode.value === 'hierarchy' ? treeMap.value?.zoom : graphRef.value?.zoom
-  return Math.round((Number(z) || 1) * 100)
-})
-function zoomIn() {
-  if (mapMode.value === 'hierarchy') treeMap.value?.zoomIn()
-  else graphRef.value?.zoomIn()
-}
-function zoomOut() {
-  if (mapMode.value === 'hierarchy') treeMap.value?.zoomOut()
-  else graphRef.value?.zoomOut()
-}
-function zoomReset() {
-  if (mapMode.value === 'hierarchy') treeMap.value?.zoomReset()
-  else graphRef.value?.zoomReset()
-}
-function zoomFit() {
-  if (mapMode.value === 'hierarchy') treeMap.value?.fitAll()
-  else graphRef.value?.fitView()
-}
-function zoomFocus() {
-  if (mapMode.value === 'hierarchy') treeMap.value?.focusActive()
-  else graphRef.value?.fitView()
-}
+const mapContext = computed(() => ui.loreScope === 'all' ? '全部设定 · 层级' : '条目层级')
+const zoomPercent = computed(() => Math.round((Number(treeMap.value?.zoom) || 1) * 100))
 function setMapMode(mode) {
+  resetScreen()
   ui.setLoreMapMode(mode)
 }
-function onHoverRel(e) {
-  hoverLink.value = e ? e.linkId : null
-}
-/** 关系网络空态「去建立关联关系」→ 打开全局关系设置面板（ui.loreRelationPanel 单例；无当前中心时退回当前集） */
-function openRelPanel() {
-  const id = graphCenterId.value || ui.loreActiveId || mapSetId.value || ''
+function openRelPanel(id) {
   if (!id) return
   ui.loreRelationPanel = { kind: 'mubu', id, x: Math.max(8, window.innerWidth / 2 - 170), y: 110 }
 }
-function onGraphPick(e) {
-  if (!e) return
-  if (e.otherKind === 'mubu') return selectNode(e.otherId)
-  jumpTo({ kind: 'character', id: e.otherId })
+function openGalaxyTarget(target) {
+  const resolved = targetById(target.kind, target.id)
+  if (!resolved) return
+  jumpTo(resolved)
 }
 
 /* ---------- 会话恢复：按作品记视图/条目/模式（刷新后回来还是走到的位置） ---------- */
@@ -321,7 +262,7 @@ watch(() => ui.loreRestoreTick, () => nextTick(() => {
 
 <template>
   <div class="lore-shell-wrap" @click.capture="onLinkClick" @scroll.capture="rememberReading">
-    <div class="lore-shell" :data-view="ui.loreView" :data-screen="screen" :data-drawer="drawer ? 'nav' : null" :data-narrow="narrow ? 'true' : null" :style="shellStyle">
+    <div class="lore-shell" :data-view="ui.loreView" :data-map-mode="ui.loreMapMode" :data-screen="screen" :data-drawer="drawer ? 'nav' : null" :data-narrow="narrow ? 'true' : null" :style="shellStyle">
       <aside class="lore-pane" data-pane="nav" :data-closed="ui.loreNavClosed ? 'true' : null" @click="onNavClick">
         <MubuTree />
       </aside>
@@ -379,10 +320,10 @@ watch(() => ui.loreRestoreTick, () => nextTick(() => {
           <div class="lore-map-subbar">
             <div class="lore-map-modes" role="tablist" aria-label="导图模式">
               <button type="button" role="tab" :class="{ on: mapMode === 'hierarchy' }" :aria-selected="mapMode === 'hierarchy'" @click="setMapMode('hierarchy')">层级导图</button>
-              <button type="button" role="tab" :class="{ on: mapMode === 'relations' }" :aria-selected="mapMode === 'relations'" @click="setMapMode('relations')">关系网络</button>
+              <button type="button" role="tab" :class="{ on: mapMode === 'relations' }" :aria-selected="mapMode === 'relations'" @click="setMapMode('relations')">关系星系</button>
             </div>
-            <span class="lore-map-context">{{ mapContext }}</span>
-            <button class="lore-mobile-back" type="button" @click="toScreen('insp')">摘要</button>
+            <span v-if="mapMode === 'hierarchy'" class="lore-map-context">{{ mapContext }}</span>
+            <button v-if="mapMode === 'hierarchy'" class="lore-mobile-back" type="button" @click="toScreen('insp')">摘要</button>
           </div>
           <div class="lore-map-stage">
             <LoreTreeMap
@@ -394,36 +335,22 @@ watch(() => ui.loreRestoreTick, () => nextTick(() => {
               @select="selectNode"
               @open="openDetail"
             />
-            <div v-else class="lore-map-graph">
-              <LoreGraph
-                v-if="graphCenterId"
-                ref="graphRef"
-                :node-id="graphCenterId"
-                :entries="graphEntries"
-                height="100%"
-                :node-w="156"
-                :node-h="88"
-                :center-w="198"
-                :center-h="116"
-                @pick="onGraphPick"
-                @hover="onHoverRel"
-                @empty-action="openRelPanel"
-              />
-            </div>
+            <LoreGalaxy v-else @select="selectNode" @open-entry="openDetail"
+              @open-target="openGalaxyTarget" @edit-relations="openRelPanel" />
           </div>
-          <div class="lore-map-foot">
+          <div v-if="mapMode === 'hierarchy'" class="lore-map-foot">
             <span class="lore-map-legend">
               <i />
-              {{ mapMode === 'hierarchy' ? '父子层级' : '设定与人物关系' }}
-              <span>{{ mapMode === 'hierarchy' ? '点击圆点展开' : '拖动节点编排' }}</span>
+              父子层级
+              <span>点击圆点展开</span>
             </span>
             <div class="lore-zoom">
-              <button type="button" title="缩小" @click="zoomOut">−</button>
-              <button type="button" title="恢复 100%" @click="zoomReset">{{ zoomPercent }}%</button>
-              <button type="button" title="放大" @click="zoomIn">+</button>
+              <button type="button" title="缩小" @click="treeMap?.zoomOut()">−</button>
+              <button type="button" title="恢复 100%" @click="treeMap?.zoomReset()">{{ zoomPercent }}%</button>
+              <button type="button" title="放大" @click="treeMap?.zoomIn()">+</button>
               <i />
-              <button type="button" title="适应当前内容" @click="zoomFit">适应</button>
-              <button type="button" title="聚焦当前条目" @click="zoomFocus">聚焦</button>
+              <button type="button" title="适应当前内容" @click="treeMap?.fitAll()">适应</button>
+              <button type="button" title="聚焦当前条目" @click="treeMap?.focusActive()">聚焦</button>
             </div>
           </div>
         </div>
@@ -431,7 +358,7 @@ watch(() => ui.loreRestoreTick, () => nextTick(() => {
       </main>
       <LorePeek @link-click="onLinkClick" />
 
-      <template v-if="ui.loreView === 'map'">
+      <template v-if="ui.loreView === 'map' && mapMode === 'hierarchy'">
         <LoreDivider size="detail" />
         <aside class="lore-pane" data-pane="detail" :data-closed="ui.loreDetailClosed ? 'true' : null">
           <LoreInspector @open="openDetail" @locate="locate" @back="toScreen('main')" />
@@ -452,4 +379,7 @@ watch(() => ui.loreRestoreTick, () => nextTick(() => {
 /* 面板矩阵的纵向容器：外壳原本是父级 flex 列的直接子项（.lore-shell 自带 flex:1），
    多隔一层后由本容器承担同一个 flex:1，继续让外壳撑满可用高度。 */
 .lore-shell-wrap { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; }
+:global(.lore-shell[data-view='map'][data-map-mode='relations']) {
+  grid-template-columns: var(--lore-nav-w, 220px) 16px minmax(0, 1fr);
+}
 </style>
