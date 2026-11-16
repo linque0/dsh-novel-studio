@@ -45,17 +45,26 @@ const overrides = {}
 /* M1-C2：插件构建下 naive 主题跟 iframe 根上的 data-ns-dark 走（预览窗口与宿主同亮暗）；
  * 桌面版 __NS_PLUGIN__ 为 false，两个表达式原样落回 naiveTheme / overrides。 */
 const nsPlugin = __NS_PLUGIN__
-const dshThemeState = nsPlugin ? useDshOverrides() : null
+const dshThemeState = nsPlugin ? useDshOverrides(() => ui.panelTheme) : null
 const dshNaiveTheme = computed(() => (dshThemeState && dshThemeState.value.dark ? darkTheme : null))
 const dshOverrides = computed(() => (dshThemeState ? dshThemeState.value.overrides : {}))
 
 watch(activeSkin, skin => { document.body.dataset.skin = skin.id }, { immediate: true })
+const effectiveTheme = computed(() => {
+  if (!nsPlugin) return ui.theme
+  return dshThemeState.value.dark ? 'night' : 'xuan'
+})
+
+watch([effectiveTheme, () => ui.panelTheme], ([theme, preference]) => {
+  document.body.dataset.nsPanelTheme = theme === 'night' ? 'dark' : 'light'
+  document.body.dataset.nsPanelSource = nsPlugin && preference === 'host' ? 'host' : 'local'
+}, { immediate: true })
 
 /* 主题类镜像到 body：naive 的 popover/modal 等浮层 teleport 到 body 下，
    继承不到 .app-root 上的主题变量——var(--bg-panel) 等会整条声明失效
    （设置面板变全透明、帮助手册回落默认白板的根因）。body 挂同类即可继承。 */
 watch(
-  () => ui.theme,
+  effectiveTheme,
   (t) => {
     document.body.classList.remove('theme-xuan', 'theme-parchment', 'theme-night')
     document.body.classList.add('theme-' + t)
@@ -118,7 +127,7 @@ async function seedDevVerifyBooks() {
       <NDialogProvider>
         <PrefBridge />
         <PanelHost v-if="panelMode && prefsReady" />
-        <div v-else-if="!panelMode || ui.dbError" class="app-root" :class="'theme-' + ui.theme" :data-skin="activeSkin.id" :style="ui.rootStyle">
+        <div v-else-if="!panelMode || ui.dbError" class="app-root" :class="'theme-' + effectiveTheme" :data-skin="activeSkin.id" :style="ui.rootStyle">
           <div v-if="ui.dbError" class="empty-shelf" style="padding-top: 16vh">
             <div class="big">数据的另一扇门被占用了</div>
             <p>

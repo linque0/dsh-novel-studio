@@ -14,11 +14,29 @@ const descOf = (id) => SETTINGS_CATALOG.find((item) => item.id === id)?.desc || 
 const active = ref(null)
 
 const SHORTCUTS = [
-  { label: '在控件间移动', keys: 'Tab' },
-  { label: '返回上一个控件', keys: 'Shift + Tab' },
-  { label: '关闭弹窗或分类', keys: 'Esc' },
-  { label: '微调选中的字号滑块', keys: '← / →' },
-  { label: '立即保存当前偏好', keys: 'Ctrl / ⌘ + S' }
+  { title: '书架与查找', items: [
+    ['切换书架选中的作品', '← / →'],
+    ['打开选中的作品', 'Enter'],
+    ['作品内搜索正文与资料', 'Ctrl + Shift + F']
+  ] },
+  { title: '正文写作', items: [
+    ['立即保存正文', 'Ctrl + S'],
+    ['撤销 / 重做正文编辑', 'Ctrl + Z / Y'],
+    ['加粗选中文字', 'Ctrl + B']
+  ] },
+  { title: '大纲画布', items: [
+    ['搜索并定位节点', 'Ctrl + K'],
+    ['移动选中节点', '方向键'],
+    ['加大移动步长', 'Shift + 方向键'],
+    ['删除选中节点或连线', 'Delete'],
+    ['撤销 / 重做画布操作', 'Ctrl + Z / Y']
+  ] },
+  { title: '设置与导航', items: [
+    ['立即保存设置偏好', 'Ctrl + S'],
+    ['跳转下一个 / 上一个控件', 'Tab / Shift + Tab'],
+    ['微调有焦点的滑块', '← / →'],
+    ['退出弹窗或设置', 'Esc']
+  ] }
 ]
 </script>
 
@@ -34,6 +52,10 @@ const SHORTCUTS = [
           </div>
         </div>
         <p class="about-intro">面向长篇创作的本地写作空间。<br />让正文、大纲、设定与人物在同一部作品中相连。</p>
+        <a class="project-repository" href="https://github.com/linque0/dsh-novel-studio" target="_blank" rel="noopener noreferrer">
+          <span><strong>项目仓库</strong><small>github.com/linque0/dsh-novel-studio</small></span>
+          <span class="repo-mark" aria-hidden="true">↗</span>
+        </a>
       </section>
 
       <section class="action-group">
@@ -60,10 +82,13 @@ const SHORTCUTS = [
 
     <aside class="keyboard-panel">
       <h3>手边的快捷键</h3>
-      <div v-for="item in SHORTCUTS" :key="item.keys" class="shortcut">
-        <span>{{ item.label }}</span>
-        <kbd>{{ item.keys }}</kbd>
-      </div>
+      <section v-for="group in SHORTCUTS" :key="group.title" class="shortcut-group">
+        <h4>{{ group.title }}</h4>
+        <div v-for="[label, keys] in group.items" :key="label" class="shortcut">
+          <span>{{ label }}</span>
+          <kbd>{{ keys }}</kbd>
+        </div>
+      </section>
       <p class="section-note">设置改动会自动保存；遇到保存失败时，也可手动重试。</p>
     </aside>
 
@@ -71,3 +96,15 @@ const SHORTCUTS = [
     <SettingsStatsDialog v-if="active === 'stats'" @close="active = null" />
   </div>
 </template>
+
+<style scoped>
+.shortcut-group { padding: 10px 0 12px; border-top: 1px solid var(--set-line, #ffffff20); }
+.shortcut-group h4 { margin: 0 0 4px; font-size: 12px; font-weight: 700; color: var(--set-ink, currentColor); }
+.keyboard-panel .shortcut-group .shortcut { padding: 6px 0; }
+.shortcut-group kbd { flex-shrink: 0; }
+.about-layout .project-repository { display: flex; align-items: center; gap: 10px; padding: 11px 13px; border: 1px solid #a0cfff35; border-radius: 10px; background: rgb(13 25 44 / .40); color: #a9d9ff; text-decoration: none; overflow-wrap: anywhere; }
+.about-layout .project-repository:hover { border-color: #a9d9ff90; background: rgb(13 25 44 / .62); }
+.about-layout .project-repository strong, .project-repository small { display: block; }
+.about-layout .project-repository small { font-size: 11px; line-height: 1.4; }
+.about-layout .project-repository .repo-mark { margin-left: auto; flex: none; }
+</style>

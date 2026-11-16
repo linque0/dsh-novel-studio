@@ -3,6 +3,7 @@
  * 所有改动只走 ui.applyPref——它先写内存再落库，写库失败也保住当前选择（setPref 会 reject）。 */
 import { useUiStore } from '../../stores/ui'
 import { CJK_FONTS, LATIN_FONTS } from './settings-prefs.js'
+import FlowSpeedSetting from './FlowSpeedSetting.vue'
 import SettingsPreview from './SettingsPreview.vue'
 
 const ui = useUiStore()
@@ -79,8 +80,24 @@ function toggleTopbar() {
       </section>
 
       <section class="setting-group">
+        <div class="section-title"><h2>流动背景</h2></div>
+        <FlowSpeedSetting />
+      </section>
+
+      <section class="setting-group">
         <div class="section-title">
           <h2>写作空间</h2>
+        </div>
+        <div class="setting-row" data-setting="panelTheme">
+          <label class="setting-copy" for="panel-theme">
+            <strong>面板明暗</strong>
+            <span class="panel-theme-note">可跟随宿主，也可为小说工坊单独选择明暗。</span>
+          </label>
+          <select id="panel-theme" class="select panel-theme-select" :value="ui.panelTheme" @change="pick('panelTheme', $event.target.value)">
+            <option value="host">跟随宿主</option>
+            <option value="light">浅色</option>
+            <option value="dark">深色</option>
+          </select>
         </div>
         <div class="setting-row" data-setting="topbarAutoHide">
           <div class="setting-copy">

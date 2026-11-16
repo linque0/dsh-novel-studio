@@ -3,6 +3,8 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch 
 import { Vector3 } from 'three'
 import { clamp, ease, localPosition, networkModel, orbitPoint, rotation, spacePlanets, spacingValue, TUNING } from './planet-scene.js'
 import { paintNetwork } from './draw-planets.js'
+import { advanceCenterGlow, CENTER_GLOW_COLOR_MODES, CENTER_GLOW_EFFECTS, hasCenterColorModes, normalizeCenterGlow } from './center-glow.js'
+import { entryRadiusLimit, MIN_ENTRY_RADIUS } from './entry-circles.js'
 import './planet-network.css'
 
 const props = defineProps({
@@ -12,16 +14,21 @@ const props = defineProps({
   satellites: { type: Array, default: () => [] },
   initialSpacing: { type: Object, default: () => ({}) },
   initialOrbitSettings: { type: Object, default: () => ({}) },
+  initialCenterGlow: { type: Object, default: () => ({}) },
+  initialEntryRadii: { type: Object, default: () => ({}) },
   embedded: Boolean,
+  location: { type: Object, required: true },
   onLayoutChange: Function, onSpacingChange: Function, onOpenEntry: Function,
-  onOpenTarget: Function, onEditRelations: Function, onOrbitSettingsChange: Function
+  onOpenTarget: Function, onEditRelations: Function, onOrbitSettingsChange: Function, onCenterGlowChange: Function, onEntryRadiusChange: Function
 })
-const emit = defineEmits(['open-entry', 'open-target', 'edit-relations', 'select'])
+const emit = defineEmits(['open-entry', 'open-target', 'edit-relations', 'navigate', 'heading'])
 const model = computed(() => networkModel(props.sets, props.nodes, props.links, props.satellites))
 const satelliteId = ref('')
 const satellite = computed(() => model.value.bySatellite.get(satelliteId.value))
 const positions = shallowRef(props.initialPositions)
 const framingPositions = shallowRef(props.initialPositions)
+const entryRadii = shallowRef(props.initialEntryRadii)
+const entryResize = shallowRef(null)
 const spacingBySystem = shallowRef(props.initialSpacing)
 const orbitSettings = shallowRef(props.initialOrbitSettings)
 const layoutOpen = ref(false), layoutButton = ref(null)
@@ -30,10 +37,15 @@ const orbitPreview = shallowRef(null)
 const hoverOrbit = ref('')
 const speedMenu = ref(null)
 const speedPanel = ref(null)
-const stage = ref(null), canvas = ref(null), searchBox = ref(null)
+const stage = ref(null), canvas = ref(null)
 const setId = ref(''), nodeId = ref(''), bridgeId = ref('')
-const paused = ref(false), reduced = ref(false), zoom = ref(1)
-const query = ref(''), searching = ref(false), indexOpen = ref(false)
+const centerMenu = ref(null), centerPanel = ref(null)
+const centerGlowSettings = shallowRef(props.initialCenterGlow)
+const centerSaveErrors = shallowRef({})
+const centerSaves = new Map()
+const centerGlow = computed(() => normalizeCenterGlow(centerGlowSettings.value[setId.value]))
+let centerGlowTime = 0
+const reduced = ref(false), zoom = ref(1)
 const entryPreview = ref(false), status = ref(''), dragActive = ref(false)
 const spacing = computed(() => spacingValue(spacingBySystem.value[setId.value]))
 const currentOrbitSettings = computed(() => orbitSettings.value[setId.value] || {})
@@ -60,14 +72,13 @@ function ancestors(item) {
   return path
 }
 const breadcrumb = computed(() => ancestors(activeSet.value))
-const entryPath = node => ancestors(node).map(item => item.title).join(' / ')
-const searchResults = computed(() => {
-  const term = query.value.trim().toLocaleLowerCase()
-  if (!term) return []
-  const matches = [...model.value.byBody.values()].filter(n =>
-    [entryPath(n), n.title, n.summary].join(' ').toLocaleLowerCase().includes(term))
-  const rank = n => n.title.toLocaleLowerCase() === term ? 0 : n.title.toLocaleLowerCase().includes(term) ? 1 : 2
-  return matches.sort((a, b) => rank(a) - rank(b)).slice(0, 10)
+const heading = computed(() => {
+  const center = activeSet.value
+  const path = center ? [...breadcrumb.value, center] : []
+  const stats = center
+    ? `${center.entries.length} 个直属条目 · ${internalCount.value} 条可见关系`
+    : `${system.value.planets.length} 个设定集 · ${model.value.byNode.size} 个条目 · ${system.value.bridges.filter(item => !item.withinBody).length} 组跨集关系`
+  return { path: path.map(({id, title}) => ({ id, title })), title: center?.title || '设定集总览', stats }
 })
 const depth = computed(() => canEditDepth.value ? localPosition(selected.value, positions.value).length() : TUNING.detailRadius)
 const overviewView = () => rotation(.24, -.15)
@@ -95,7 +106,7 @@ let ctx, observer, motion, frame, painted, gesture, previousFrame
 let flight = null
 let orbitFraming = null
 let size = { width: 0, height: 0 }, hoverId = '', lastFrame = 0
-let idleSince = performance.now(), idleSpeed = 0, keyboardFocus = false
+let idleSince = performance.now(), idleSpeed = 0
 const pointers = new Map()
 
 function draw() {
@@ -117,8 +128,10 @@ function draw() {
   } : data
   painted = paintNetwork(ctx, size, display, camera, {
     positions: positions.value, framingPositions: framingPositions.value, names, now,
+    entryRadii: entryRadii.value, entryResize: entryResize.value,
     nodeId: nodeId.value, bridgeId: bridgeId.value, hoverId,
     workTitle: props.workTitle, reduced: reduced.value, satelliteId: satelliteId.value,
+    centerGlow: centerGlow.value, centerGlowTime,
     motionPhases, orbitEditing: orbitEditing.value, activeOrbit: orbitEditing.value ? activeOrbit.value : '',
     hoverOrbit: orbitEditing.value ? hoverOrbit.value : '',
     mergeOrbit: preview?.target, framingData: orbitFraming
@@ -131,8 +144,6 @@ function draw() {
     const shiftX = (size.width / 2 - x) * focus + x * (1 - magnify)
     const shiftY = (size.height / 2 - y) * focus + y * (1 - magnify)
     ctx.globalAlpha = 1 - ease(clamp((progress - .48) / .42, 0, 1))
-    ctx.fillStyle = '#302736'
-    ctx.fillRect(0, 0, size.width, size.height)
     ctx.drawImage(previousFrame, shiftX, shiftY, size.width * magnify, size.height * magnify)
     ctx.globalAlpha = 1
   } else if (previousFrame && tween) {
@@ -144,7 +155,7 @@ function draw() {
 
 function measure() {
   const { clientWidth: width, clientHeight: height } = stage.value
-  if (gesture?.kind === 'orbit' && (width !== size.width || height !== size.height)) cancelGesture()
+  if ((gesture?.kind === 'orbit' || gesture?.kind === 'resize') && (width !== size.width || height !== size.height)) cancelGesture()
   if (flight && (width !== size.width || height !== size.height)) interact()
   const ratio = Math.min(devicePixelRatio || 1, 2)
   size = { width, height }
@@ -152,6 +163,7 @@ function measure() {
   canvas.value.height = Math.round(height * ratio)
   ctx?.setTransform(ratio, 0, 0, ratio, 0, 0)
   positionSpeedMenu()
+  positionCenterMenu()
   draw()
 }
 
@@ -187,12 +199,15 @@ function animate(now) {
     glide.y *= decay
     if (Math.hypot(glide.x, glide.y) < .008) glide = null
     draw()
-  } else if (!paused.value && !reduced.value && !pointers.size && !hoverId && !searching.value
-      && !indexOpen.value && !layoutOpen.value && !orbitEditing.value && !keyboardFocus && !nodeId.value && !bridgeId.value && !satelliteId.value
+  } else if (centerMenu.value && !reduced.value && !document.hidden && centerGlow.value.speed > 0) {
+    centerGlowTime = advanceCenterGlow(centerGlowTime, dt, centerGlow.value.speed)
+    draw()
+  } else if (!reduced.value && !pointers.size && !layoutOpen.value && !orbitEditing.value && !speedMenu.value && !centerMenu.value
       && !document.hidden && now - idleSince >= TUNING.idleDelay) {
     idleSpeed = Math.min(1, idleSpeed + dt / 1100)
     const step = dt * idleSpeed
     scene.time += step
+    centerGlowTime = advanceCenterGlow(centerGlowTime, step, centerGlow.value.speed)
     draw()
   } else if (painted?.labelsPending && !document.hidden) draw()
   frame = requestAnimationFrame(animate)
@@ -225,13 +240,13 @@ function capturePreviousView() {
 
 function enterPlanet(id, fly = false, anchor) {
   if (id === setId.value || (id && !model.value.byBody.has(id))) return
-  if (gesture?.kind === 'orbit') cancelGesture()
+  if (gesture?.kind === 'orbit' || gesture?.kind === 'resize') cancelGesture()
   if (flight) { interact(); draw() }
   const target = fly && (anchor || painted?.projected.get(id) || painted?.bodyPoints.get(id))
   interact()
   capturePreviousView()
   poses.set(setId.value, {
-    view: scene.view.clone(), zoom: scene.zoom, time: scene.time, pan: scene.pan.clone(), offset: scene.offset.clone(), motionPhases
+    view: scene.view.clone(), zoom: scene.zoom, time: scene.time, pan: scene.pan.clone(), offset: scene.offset.clone(), motionPhases, centerGlowTime
   })
   hoverId = ''
   hoverLabel.value = null
@@ -242,6 +257,7 @@ function enterPlanet(id, fly = false, anchor) {
   hoverOrbit.value = ''
   activeOrbit.value = ''
   speedMenu.value = null
+  centerMenu.value = null
   orbitFraming = null
   setId.value = id
   bridgeId.value = ''
@@ -249,6 +265,7 @@ function enterPlanet(id, fly = false, anchor) {
   const pose = poses.get(id)
   motionPhases = pose?.motionPhases || new Map()
   scene.time = pose?.time ?? 0
+  centerGlowTime = pose?.centerGlowTime ?? 0
   scene.view.copy(pose?.view || overviewView())
   scene.pan.copy(pose?.pan || new Vector3())
   scene.offset.copy(pose?.offset || new Vector3())
@@ -266,18 +283,37 @@ function enterPlanet(id, fly = false, anchor) {
   cameraTo(scene.view.clone(), scale, scale)
 }
 
-function selectNode(node, focus = false, keepSystem = false) {
+function reportLocation() {
+  emit('navigate', { rootId: setId.value || null, activeId: nodeId.value || setId.value || null })
+}
+
+function goToPlanet(id, fly = false, anchor) {
+  if (id === setId.value) return
+  enterPlanet(id, fly, anchor)
+  reportLocation()
+}
+
+function applyLocation() {
+  const { rootId, activeId } = props.location
+  const center = rootId || ''
+  const target = activeId && activeId !== rootId ? model.value.byBody.get(activeId) : null
+  if (center === setId.value && (target?.id || '') === nodeId.value) return
+  if (center !== setId.value) enterPlanet(center)
+  if (target) selectNode(target, true, true, false)
+  else closeDetails(false)
+}
+
+function selectNode(node, focus = false, keepSystem = false, notify = true) {
   if (!node) return
   satelliteId.value = ''
   bridgeId.value = ''
-  const isVisible = painted?.projected.has(node.id) || painted?.bodyPoints.has(node.id)
-  if (!keepSystem || !isVisible) {
+  if (!keepSystem) {
     const home = node.parent?.parent?.id || ''
     if (home !== setId.value) enterPlanet(home)
     else interact()
   } else interact()
   nodeId.value = node.id
-  emit('select', node.id)
+  if (notify) reportLocation()
   entryPreview.value = false
   const point = painted?.projected.get(node.id) || painted?.bodyPoints.get(node.id)
   if (focus && point) cameraTo(scene.view.clone(), Math.max(2, scene.zoom), scene.zoom, point.world)
@@ -288,11 +324,12 @@ function clearSelection() {
   satelliteId.value = ''
   nodeId.value = ''
   entryPreview.value = false
-  emit('select', null)
 }
 
-function closeDetails() {
+function closeDetails(notify = true) {
+  const hadSelection = !!nodeId.value
   clearSelection()
+  if (notify && hadSelection) reportLocation()
   bridgeId.value = ''
   interact()
   draw()
@@ -300,19 +337,21 @@ function closeDetails() {
 
 function showBridge(id) {
   interact()
+  const hadSelection = !!nodeId.value
   clearSelection()
-  indexOpen.value = false
   bridgeId.value = id
+  if (hadSelection) reportLocation()
   draw()
 }
 
 function showSatellite(id) {
   if (!model.value.bySatellite.has(id)) return
   interact()
+  const hadSelection = !!nodeId.value
   clearSelection()
   bridgeId.value = ''
-  indexOpen.value = false
   satelliteId.value = id
+  if (hadSelection) reportLocation()
   draw()
 }
 
@@ -320,15 +359,6 @@ function openEntry() {
   if (!selected.value) return
   if (props.onOpenEntry) emit('open-entry', selected.value.id)
   else entryPreview.value = true
-}
-
-function chooseResult(node) {
-  if (!node) return
-  searching.value = false
-  query.value = ''
-  searchBox.value?.querySelector('input')?.blur()
-  indexOpen.value = false
-  selectNode(node, true)
 }
 
 function persist(next) {
@@ -344,6 +374,15 @@ async function reportSave(result, success, failure) {
     if (await result === false) status.value = failure
     else if (success) status.value = success
   } catch { status.value = failure }
+}
+
+function saveEntryRadius(id, radius) {
+  const next = { ...entryRadii.value }
+  if (radius === null) delete next[id]
+  else next[id] = radius
+  entryRadii.value = next
+  reportSave(props.onEntryRadiusChange?.(id, radius), '条目大小已保存', '当前无法保存条目大小')
+  draw()
 }
 
 function adjustSpacing(value, save = false) {
@@ -439,9 +478,74 @@ function changeSpeed(kind, event) {
   updateOrbitSetting('speeds', body.id, { ...currentOrbitSettings.value.speeds?.[body.id], [kind]: speed })
 }
 
+function updateCenterGlow(field, value) {
+  centerGlowSettings.value = {
+    ...centerGlowSettings.value,
+    [setId.value]: normalizeCenterGlow({ ...centerGlow.value, [field]: value })
+  }
+  draw()
+}
+
+function restoreCenterGlow() {
+  const next = { ...centerGlowSettings.value }
+  delete next[setId.value]
+  centerGlowSettings.value = next
+  draw()
+  void saveCenterGlow()
+}
+
+async function saveCenterGlow() {
+  const id = setId.value
+  const attempt = Symbol()
+  centerSaves.set(id, attempt)
+  const error = { ...centerSaveErrors.value }
+  delete error[id]
+  centerSaveErrors.value = error
+  try {
+    const result = await props.onCenterGlowChange?.(id, centerGlowSettings.value[id] || null)
+    if (result === false) throw new Error('Center glow could not be saved')
+  } catch {
+    if (centerSaves.get(id) === attempt) centerSaveErrors.value = { ...centerSaveErrors.value, [id]: true }
+  } finally {
+    if (centerSaves.get(id) === attempt) centerSaves.delete(id)
+  }
+}
+
+async function openCenterMenu(point) {
+  if (!point) return
+  interact()
+  closeSpeedMenu()
+  layoutOpen.value = false
+  centerMenu.value = { anchorX: point.x, anchorY: point.y, x: point.x, y: point.y }
+  draw()
+  await nextTick()
+  positionCenterMenu()
+  centerPanel.value?.focus({ preventScroll: true })
+}
+
+function positionCenterMenu() {
+  if (!centerMenu.value || !centerPanel.value) return
+  const { width, height } = centerPanel.value.getBoundingClientRect()
+  const { anchorX, anchorY } = centerMenu.value
+  centerMenu.value = {
+    anchorX, anchorY,
+    x: clamp(anchorX, 8, Math.max(8, size.width - width - 8)),
+    y: clamp(anchorY, 8, Math.max(8, size.height - height - 8))
+  }
+}
+
+function closeCenterMenu(restoreFocus = false) {
+  if (!centerMenu.value) return
+  centerMenu.value = null
+  if (restoreFocus) canvas.value?.focus({ preventScroll: true })
+  idleSince = performance.now()
+  draw()
+}
+
 async function openSpeedMenu(body, event) {
   if (!body) return
   event.preventDefault()
+  closeCenterMenu()
   interact()
   layoutOpen.value = false
   const rect = canvas.value.getBoundingClientRect()
@@ -546,7 +650,7 @@ function scaleTo(value) {
 }
 
 function changeZoom(factor) {
-  if (gesture?.kind === 'orbit') return
+  if (gesture?.kind === 'orbit' || gesture?.kind === 'resize') return
   interact()
   scaleTo(scene.zoom * factor)
 }
@@ -634,6 +738,13 @@ function hitAt(point) {
   return hits.filter(hit => hit.kind === 'planet' && covers(hit)).at(-1)
 }
 
+function resizeAt(point, hit) {
+  if (orbitEditing.value || (hit && !hit.resizable)) return null
+  const candidates = hit ? [hit] : [...(painted?.hits || [])].reverse()
+  return candidates.find(({ x, y, radius, resizable }) => resizable
+    && Math.abs(Math.hypot(point.x - x, point.y - y) - radius) <= Math.min(5, radius * .32))
+}
+
 function pinchDistance() {
   const [a, b] = pointers.values()
   return a && b ? Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)) : 1
@@ -643,8 +754,15 @@ function onMenu(event) {
   if (!painted || gesture) return
   const point = coordinates(event)
   const hit = hitAt(point)
+  const center = painted.work
+  if (center && Math.hypot(point.x - center.x, point.y - center.y) <= center.radius
+    && (!hit || (hit.kind === 'node' && hit.id === setId.value))) {
+    void openCenterMenu(point)
+    return
+  }
+  closeCenterMenu()
   const planetId = hit?.kind === 'planet' ? hit.id
-    : hit?.kind === 'node' ? painted.projected.get(hit.id)?.planetId || '' : ''
+    : hit?.kind === 'node' ? painted.projected.get(hit.id)?.planetId || hit.planetId || '' : ''
   const body = system.value.planets.find(item => item.id === planetId)
   if (body) openSpeedMenu(body, event)
   else if (speedMenu.value) closeSpeedMenu()
@@ -653,11 +771,12 @@ function onMenu(event) {
 function onDown(event) {
   const middle = event.button === 1 && event.pointerType === 'mouse'
   if ((!middle && event.button !== 0) || pointers.size >= 2 || gesture?.kind === 'pan'
-    || gesture?.kind === 'orbit' || (middle && pointers.size)) return
+    || gesture?.kind === 'orbit' || gesture?.kind === 'resize' || (middle && pointers.size)) return
   if (middle) event.preventDefault()
   if (!painted) return
   layoutOpen.value = false
   closeSpeedMenu()
+  closeCenterMenu()
   const wasFlying = !!flight
   interact()
   if (wasFlying) draw()
@@ -681,6 +800,12 @@ function onDown(event) {
     return
   }
   const hit = hitAt(point)
+  const rim = resizeAt(point, hit)
+  if (rim) {
+    gesture = { kind: 'resize', hit: rim, node: model.value.byNode.get(rim.id),
+      startDistance: Math.hypot(point.x - rim.x, point.y - rim.y) }
+    return
+  }
   if (orbitEditing.value && !hit) {
     const orbit = orbitAt(point)
     if (orbit) {
@@ -707,27 +832,39 @@ function onMove(event) {
   if (!pointers.has(event.pointerId)) {
     if (flight) return
     const hit = hitAt(point)
-    const hover = hit?.id || ''
+    const rim = resizeAt(point, hit)
+    const activeHit = hit || rim
+    const hover = activeHit?.id || ''
     if (hover !== hoverId) {
       hoverId = hover
       if (hover) interact()
       else idleSince = performance.now()
       draw()
     }
-    const item = hit?.kind === 'node' ? model.value.byBody.get(hover)
-      : hit?.kind === 'satellite' ? model.value.bySatellite.get(hover)?.target : null
-    hoverLabel.value = item ? { title: item.title, x: hit.x, y: hit.y - hit.radius - 9 } : null
+    const item = activeHit?.kind === 'node' ? model.value.byBody.get(hover)
+      : activeHit?.kind === 'satellite' ? model.value.bySatellite.get(hover)?.target : null
+    hoverLabel.value = item ? { title: item.title, x: activeHit.x, y: activeHit.y - activeHit.radius - 9 } : null
     const track = orbitEditing.value && !hit ? orbitAt(point) : null
     const nextOrbit = track?.track.id || ''
     if (hoverOrbit.value !== nextOrbit) {
       hoverOrbit.value = nextOrbit
       draw()
     }
-    canvas.value.style.cursor = hover ? 'pointer' : track ? 'ew-resize' : 'grab'
+    canvas.value.style.cursor = rim ? 'ew-resize' : hover ? 'pointer' : track ? 'ew-resize' : 'grab'
     return
   }
   pointers.set(event.pointerId, point)
   if (gesture?.kind === 'pinch') return scaleTo(gesture.scale * pinchDistance() / gesture.distance)
+  if (gesture?.kind === 'resize') {
+    const { id, x, y, radius } = gesture.hit
+    const delta = Math.hypot(point.x - x, point.y - y) - gesture.startDistance
+    if (!entryResize.value && Math.abs(delta) < TUNING.dragThreshold) return
+    dragActive.value = true
+    entryResize.value = { id, x, y,
+      radius: clamp(Math.round(radius + delta), MIN_ENTRY_RADIUS, entryRadiusLimit(size.width, size.height)) }
+    draw()
+    return
+  }
   if (gesture?.kind === 'orbit') {
     const { start, track, screenX, screenY, pixels, radiusAt, targets } = gesture
     const dx = point.x - start.x, dy = point.y - start.y
@@ -787,6 +924,7 @@ function cancelGesture() {
   if (gesture?.kind === 'pan') scene.offset.copy(gesture.offset)
   if (gesture?.kind === 'orbit') orbitFraming = gesture.framing
   orbitPreview.value = null
+  entryResize.value = null
   const ids = [...pointers.keys()]
   gesture = null
   pointers.clear()
@@ -807,9 +945,16 @@ function onUp(event) {
     return
   }
   const current = gesture
+  const resized = entryResize.value
+  entryResize.value = null
   gesture = null
   dragActive.value = false
   idleSince = performance.now()
+  if (resized) {
+    lastClick = null
+    saveEntryRadius(resized.id, resized.radius)
+    return
+  }
   if (current.kind === 'orbit') {
     lastClick = null
     if (current.moved) commitOrbits(current.track)
@@ -823,11 +968,11 @@ function onUp(event) {
   if (current.moved) {
     lastClick = null
     if (current.local) persist(positions.value)
-    else if (!paused.value && !reduced.value && performance.now() - current.time < 80) glide = { x: current.vx, y: current.vy }
+    else if (!reduced.value && performance.now() - current.time < 80) glide = { x: current.vx, y: current.vy }
     return
   }
   const hit = current.hit
-  if (hit?.kind === 'planet') enterPlanet(hit.id, true, painted.bodyPoints.get(hit.id) || hit)
+  if (hit?.kind === 'planet') goToPlanet(hit.id, true, painted.bodyPoints.get(hit.id) || hit)
   else if (hit?.kind === 'bridge') showBridge(hit.id)
   else if (hit?.kind === 'satellite') showSatellite(hit.id)
   else if (hit?.kind === 'node') {
@@ -839,21 +984,25 @@ function onUp(event) {
 }
 
 function onKey(event) {
+  if (event.target === canvas.value && event.shiftKey && event.key === 'F10' && painted?.work) {
+    event.preventDefault()
+    void openCenterMenu(painted.work)
+    return
+  }
   if (event.key === 'Escape') {
     if (gesture) cancelGesture()
     else if (flight) { interact(); draw() }
+    else if (centerMenu.value) closeCenterMenu(true)
     else if (speedMenu.value) closeSpeedMenu(true)
     else if (layoutOpen.value) closeLayout()
     else if (orbitEditing.value) toggleOrbitEditing()
-    else if (searching.value) { searching.value = false; event.target.blur() }
-    else if (indexOpen.value) indexOpen.value = false
     else if (selected.value || bridge.value || satellite.value) closeDetails()
-    else if (setId.value) enterPlanet(activeSet.value?.parent?.id || '')
+    else if (setId.value) goToPlanet(activeSet.value?.parent?.id || '')
     else return
     event.preventDefault()
-  } else if (event.target === canvas.value && event.key.startsWith('Arrow')) {
+  } else if (event.target === canvas.value && !event.altKey && !event.ctrlKey && !event.metaKey && event.key.startsWith('Arrow')) {
     event.preventDefault()
-    if (gesture?.kind === 'orbit') return
+    if (gesture?.kind === 'orbit' || gesture?.kind === 'resize') return
     interact()
     turn(event.key === 'ArrowRight' ? 18 : event.key === 'ArrowLeft' ? -18 : 0,
       event.key === 'ArrowDown' ? 18 : event.key === 'ArrowUp' ? -18 : 0)
@@ -861,15 +1010,6 @@ function onKey(event) {
   }
 }
 
-function onFocus(event) {
-  keyboardFocus = event.target.matches(':focus-visible')
-  if (keyboardFocus) {
-    const wasFlying = !!flight
-    interact()
-    if (wasFlying) draw()
-  }
-}
-function onBlur() { keyboardFocus = false; idleSince = performance.now() }
 function onLeave() { hoverId = ''; hoverOrbit.value = ''; hoverLabel.value = null; idleSince = performance.now(); draw() }
 function changeMotion() {
   reduced.value = motion.matches
@@ -885,14 +1025,16 @@ function changeMotion() {
 watch(model, () => {
   if (gesture?.kind === 'orbit') cancelGesture()
   orbitFraming = null
+  if (gesture?.kind === 'resize' && !model.value.byNode.has(gesture.hit.id)) cancelGesture()
   if (satelliteId.value && !satellite.value) satelliteId.value = ''
   if (setId.value && !activeSet.value) enterPlanet('')
   if (nodeId.value && !selected.value) clearSelection()
   if (bridgeId.value && !bridge.value) bridgeId.value = ''
   draw()
 })
-watch(paused, () => { idleSince = performance.now(); idleSpeed = 0; glide = null })
-watch([searching, indexOpen], () => { idleSince = performance.now() })
+watch(() => props.location, applyLocation, { flush: 'post' })
+watch([centerSaveErrors, () => centerGlow.value.effect], positionCenterMenu, { flush: 'post' })
+watch(heading, value => emit('heading', value), { immediate: true })
 
 onMounted(async () => {
   ctx = canvas.value.getContext('2d')
@@ -905,6 +1047,7 @@ onMounted(async () => {
   window.addEventListener('blur', cancelGesture)
   await nextTick()
   measure()
+  applyLocation()
   frame = requestAnimationFrame(animate)
 })
 onBeforeUnmount(() => {
@@ -917,46 +1060,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="lpn" :class="{ 'lpn-embedded': embedded }" aria-label="关系星系" @keydown="onKey" @focusin="onFocus" @focusout="onBlur">
-    <header class="lpn-header">
-      <div v-if="!embedded" class="lpn-brand"><span class="lpn-brand-mark" aria-hidden="true">✦</span><strong>小说工坊</strong><small>LATENT</small></div>
-      <div v-if="!embedded" class="lpn-location">设定 <span> / </span> 视觉导图 <span> / </span> <strong>关系星系</strong></div>
-      <slot name="header-actions" />
-      <button type="button" class="lpn-pill lpn-motion" :aria-pressed="paused || reduced" :disabled="reduced" @click="paused = !paused">
-        <span aria-hidden="true">{{ paused || reduced ? '▶' : 'Ⅱ' }}</span>{{ reduced ? '减少动效' : paused ? '恢复运动' : '暂停运动' }}
-      </button>
-    </header>
-
+  <section class="lpn" :class="{ 'lpn-embedded': embedded }" aria-label="关系星系" @keydown="onKey" :data-galaxy-center="setId" :data-galaxy-selection="nodeId">
     <div class="lpn-shell">
-      <div class="lpn-heading">
-        <div>
-          <nav v-if="activeSet" class="lpn-breadcrumb" aria-label="星系层级">
-            <button type="button" class="lpn-back" @click="enterPlanet('')">{{ workTitle }}</button>
-            <template v-for="item in breadcrumb" :key="item.id">
-              <span aria-hidden="true">/</span>
-              <button type="button" class="lpn-back" @click="enterPlanet(item.id)">{{ item.title }}</button>
-            </template>
-            <span aria-hidden="true">/</span><span aria-current="location">{{ activeSet.title }}</span>
-          </nav>
-          <h1>{{ activeSet?.title || '设定集总览' }}</h1>
-          <p v-if="activeSet">{{ activeSet.entries.length }} 个直属条目 <span>·</span> {{ internalCount }} 条可见关系</p>
-          <p v-else>{{ system.planets.length }} 个设定集 <span>·</span> {{ model.byNode.size }} 个条目 <span>·</span> {{ system.bridges.filter(item => !item.withinBody).length }} 组跨集关系</p>
-          <slot name="source-status" />
-        </div>
-        <div class="lpn-search" ref="searchBox" @focusout="event => { if (!searchBox?.contains(event.relatedTarget)) searching = false }">
-          <label><span aria-hidden="true">⌕</span><input v-model="query" type="search" aria-label="搜索全部设定条目" placeholder="搜索全部设定条目" @focus="searching = true" @input="searching = true" @keydown.enter.prevent="chooseResult(searchResults[0])"></label>
-          <div v-if="searching && query.trim()" class="lpn-results">
-            <button v-for="result in searchResults" :key="result.id" type="button" @click="chooseResult(result)">
-              {{ result.title }}<small>{{ entryPath(result) }}</small>
-            </button>
-            <p v-if="!searchResults.length">没有匹配的条目</p>
-          </div>
-        </div>
-      </div>
-
       <div class="lpn-workspace">
-        <div ref="stage" class="lpn-stage" :class="{ 'is-dragging': dragActive }">
-          <canvas ref="canvas" tabindex="0" aria-label="三维关系画布，方向键旋转，条目列表可用于键盘定位"
+        <div ref="stage" class="lpn-stage" :class="{ 'is-dragging': dragActive, 'is-resizing': entryResize }">
+          <canvas ref="canvas" tabindex="0" aria-label="三维关系画布，方向键旋转，Shift+F10 编辑中心发光，可通过设定目录定位条目，拖动条目圆边缘调整大小"
             @pointerdown="onDown" @pointermove="onMove" @pointerup="onUp" @pointercancel="cancelGesture"
             @lostpointercapture="event => { if (pointers.has(event.pointerId)) cancelGesture() }" @pointerleave="onLeave"
             @wheel.prevent="changeZoom(Math.exp(-$event.deltaY * .0015))"
@@ -966,6 +1074,43 @@ onBeforeUnmount(() => {
           <span v-if="hoverLabel" class="lpn-node-hover"
             :data-edge="hoverLabel.x < 108 ? 'left' : hoverLabel.x > size.width - 108 ? 'right' : undefined"
             :style="{ left: clamp(hoverLabel.x, 10, size.width - 10) + 'px', top: Math.max(34, hoverLabel.y) + 'px' }">{{ hoverLabel.title }}</span>
+          <div v-if="centerMenu" ref="centerPanel" class="lpn-speed-menu lpn-center-menu" role="dialog" tabindex="-1"
+            aria-label="中心发光" :style="{ left: centerMenu.x + 'px', top: centerMenu.y + 'px' }" @contextmenu.prevent>
+            <header class="lpn-speed-menu-header">
+              <div><p class="lpn-speed-menu-head">中心发光</p><small>{{ activeSet?.title || workTitle }}</small></div>
+              <button type="button" class="lpn-speed-close" aria-label="关闭中心发光" @click="closeCenterMenu(true)">×</button>
+            </header>
+            <label class="lpn-center-setting">
+              <span>发光颜色</span>
+              <input type="color" :value="centerGlow.color"
+                @input="updateCenterGlow('color', $event.target.value)" @change="saveCenterGlow">
+            </label>
+            <label class="lpn-center-setting">
+              <span>动效</span>
+              <select aria-label="动效" :value="centerGlow.effect" @change="updateCenterGlow('effect', $event.target.value); saveCenterGlow()">
+                <option v-for="(label, id) in CENTER_GLOW_EFFECTS" :key="id" :value="id">{{ label }}</option>
+              </select>
+            </label>
+            <label v-if="hasCenterColorModes(centerGlow.effect)" class="lpn-center-setting">
+              <span>配色方式</span>
+              <select aria-label="配色方式" :value="centerGlow.colorMode"
+                @change="updateCenterGlow('colorMode', $event.target.value); saveCenterGlow()">
+                <option v-for="(label, id) in CENTER_GLOW_COLOR_MODES" :key="id" :value="id">{{ label }}</option>
+              </select>
+            </label>
+            <label v-for="(label, field) in { brightness: '发光亮度', speed: '动效速度' }" :key="field" class="lpn-center-setting lpn-center-slider">
+              <span>{{ label }}</span><output>{{ centerGlow[field] }}%</output>
+              <input type="range" min="0" :max="field === 'brightness' ? 150 : 200" step="5"
+                :aria-label="label" :value="centerGlow[field]"
+                @input="updateCenterGlow(field, $event.target.valueAsNumber)" @change="saveCenterGlow">
+            </label>
+            <p v-if="centerSaveErrors[setId]" class="lpn-center-save-error" role="alert">
+              中心样式未保存。<button type="button" class="lpn-pill" @click="saveCenterGlow">重试</button>
+            </p>
+            <div class="lpn-speed-menu-actions">
+              <button type="button" class="lpn-pill" @click="restoreCenterGlow">恢复默认</button>
+            </div>
+          </div>
           <div v-if="speedMenu" ref="speedPanel" class="lpn-speed-menu" role="dialog" tabindex="-1" :aria-label="speedMenu.body.title + ' 运动设置'"
             :style="{ left: speedMenu.x + 'px', top: speedMenu.y + 'px' }" @contextmenu.prevent>
             <header class="lpn-speed-menu-header">
@@ -989,32 +1134,15 @@ onBeforeUnmount(() => {
             <span><i class="lpn-key-cross"></i>{{ activeSet ? '星体间关系' : '跨集关系' }}</span>
             <span v-if="model.bySatellite.size"><i class="lpn-key-satellite"></i>关联对象</span>
           </div>
-          <p class="lpn-stage-hint" :class="{ 'lpn-merge-hint': orbitPreview?.target }">{{ orbitPreview?.target ? '松手合并轨道' : orbitEditing ? '向内或向外拖动轨道 · Esc 退出轨道编辑' : '左键拖动空白旋转 · 中键拖动平移' }}</p>
+          <p class="lpn-stage-hint" :class="{ 'lpn-merge-hint': orbitPreview?.target }">{{ orbitPreview?.target ? '松手合并轨道' : orbitEditing ? '向内或向外拖动轨道 · Esc 退出轨道编辑' : '拖动圆边调整大小 · 左键拖动空白旋转 · 中键拖动平移' }}</p>
         </div>
 
-        <aside v-if="selected || bridge || satellite || indexOpen" class="lpn-inspector" aria-label="关系摘要">
+        <aside v-if="selected || bridge || satellite" class="lpn-inspector" aria-label="关系摘要">
           <div class="lpn-inspector-head">
-            <span>{{ indexOpen ? activeSet ? '条目列表' : '设定集列表' : satellite ? '关联对象' : bridge ? '关系明细' : entryPreview ? '条目预览' : '条目摘要' }}</span>
-            <button type="button" class="lpn-icon" aria-label="关闭摘要" @click="indexOpen ? indexOpen = false : closeDetails()">×</button>
+            <span>{{ satellite ? '关联对象' : bridge ? '关系明细' : entryPreview ? '条目预览' : '条目摘要' }}</span>
+            <button type="button" class="lpn-icon" aria-label="关闭摘要" @click="closeDetails()">×</button>
           </div>
-          <template v-if="indexOpen">
-            <div class="lpn-list">
-              <button v-for="item in system.planets" :key="item.id" type="button"
-                @click="indexOpen = false; activeSet ? selectNode(item, true, true) : enterPlanet(item.id, true)">
-                {{ item.title }}<small>{{ item.entries.length }} 个下级条目</small>
-              </button>
-              <p v-if="activeSet && !activeSet.entries.length">还没有下级条目</p>
-            </div>
-            <template v-if="system.bridges.length">
-              <h3>关系分组</h3>
-              <div class="lpn-list">
-                <button v-for="connection in system.bridges" :key="connection.id" type="button" @click="showBridge(connection.id)">
-                  {{ connection.a.title }} / {{ connection.b.title }}<small>{{ connection.links.length }} 条</small>
-                </button>
-              </div>
-            </template>
-          </template>
-          <template v-else-if="satellite">
+          <template v-if="satellite">
             <h2>{{ satellite.target.title }}</h2>
             <p class="lpn-summary">{{ satellite.target.kind === 'character' ? '人物' : satellite.target.kindLabel || '关联对象' }} · {{ satellite.label || '关联' }}</p>
             <p v-if="satellite.description" class="lpn-summary">{{ satellite.description }}</p>
@@ -1032,8 +1160,10 @@ onBeforeUnmount(() => {
                 <input type="range" min=".2" :max="TUNING.maxNodeRadius" step=".05" :value="depth" @input="changeDepth" @change="changeDepth">
               </label>
               <div class="lpn-entry-actions">
-                <button v-if="selected.entries.length && selected.id !== activeSet?.id" type="button" class="lpn-pill lpn-primary" @click="enterPlanet(selected.id, true)">进入下一级</button>
+                <button v-if="selected.entries.length && selected.id !== activeSet?.id" type="button" class="lpn-pill lpn-primary" @click="goToPlanet(selected.id, true)">进入下一级</button>
                 <button type="button" class="lpn-pill" :class="{ 'lpn-primary': !selected.entries.length }" @click="openEntry">打开条目</button>
+                <button v-if="selected.id !== setId && Number.isFinite(entryRadii[selected.id])" type="button"
+                  class="lpn-pill" @click="saveEntryRadius(selected.id, null)">恢复自动大小</button>
               </div>
             </template>
             <p v-if="entryPreview && !selected?.summary" class="lpn-summary">该条目暂无摘要</p>
@@ -1063,9 +1193,8 @@ onBeforeUnmount(() => {
 
       <footer class="lpn-footer">
         <div class="lpn-footer-left">
-          <button type="button" class="lpn-pill" :aria-expanded="indexOpen" @click="indexOpen = !indexOpen">{{ activeSet ? '条目列表' : '设定集列表' }}</button>
           <div v-if="system.planets.length" class="lpn-layout" @focusout="event => { if (!event.currentTarget.contains(event.relatedTarget)) layoutOpen = false }">
-            <button ref="layoutButton" type="button" class="lpn-pill" :aria-expanded="layoutOpen" @click="layoutOpen = !layoutOpen">布局</button>
+            <button ref="layoutButton" type="button" class="lpn-pill" :aria-expanded="layoutOpen" @click="closeCenterMenu(); layoutOpen = !layoutOpen">布局</button>
             <div v-if="layoutOpen" class="lpn-layout-panel" aria-label="当前星系布局">
               <label class="lpn-depth">
                 <span>星体间距</span>

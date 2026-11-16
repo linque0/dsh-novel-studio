@@ -1526,7 +1526,7 @@ html body[data-skin=dsh] {
   --ns-topbar-h: calc(var(--nsx-topbar-h) + 16px);
 }
 
-html[data-ns-dark] body[data-skin=dsh] {
+html body[data-ns-panel-theme='dark'][data-skin=dsh] {
   --nsx-glass-1: color-mix(in srgb, var(--ns-layer-1, #232324) 88%, transparent);
   --nsx-glass-2: color-mix(in srgb, var(--ns-layer-1, #232324) 70%, transparent);
   --nsx-glass-3: color-mix(in srgb, var(--ns-layer-1, #232324) 50%, transparent);

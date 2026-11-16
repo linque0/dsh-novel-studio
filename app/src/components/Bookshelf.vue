@@ -20,17 +20,9 @@ const msg = useMessage()
 const GENRES = ['玄幻', '仙侠', '都市', '科幻', '历史', '悬疑', '言情', '游戏', '其他']
 const STATUS = ['构思', '连载', '完结', '搁置']
 /* 封面六款式（G 同构造）：平涂单色 + 衬线书名 + 作者圆印，仅换色 */
-const KINDS = [
-  { label: '虚构 · 克莱因蓝', value: 'novel' },
-  { label: '非虚构 · 象牙白', value: 'note' },
-  { label: '文集 · 松绿', value: 'cedar' },
-  { label: '诗辑 · 藤紫', value: 'violet' },
-  { label: '别藏 · 绛红', value: 'claret' },
-  { label: '特殊 · 墨黑', value: 'ink' }
-]
 
 const showCreate = ref(false)
-const form = ref({ title: '', author: '', genre: '其他', status: '构思', intro: '', withVolume: true, kind: 'novel' })
+const form = ref({ title: '', author: '', genre: '其他', status: '构思', intro: '', withVolume: true })
 const editing = ref(null)
 const q = ref('')
 const opening = ref(false)
@@ -63,12 +55,12 @@ watch(resumeWorkId, (id, _previous, onCleanup) => {
 
 function openCreate() {
   editing.value = null
-  form.value = { title: '', author: '', genre: '其他', status: '构思', intro: '', withVolume: true, kind: 'novel' }
+  form.value = { title: '', author: '', genre: '其他', status: '构思', intro: '', withVolume: true }
   showCreate.value = true
 }
 function openEdit(w) {
   editing.value = w
-  form.value = { title: w.title, author: w.author, genre: w.genre, status: w.status, intro: w.intro, withVolume: false, kind: w.kind || 'novel' }
+  form.value = { title: w.title, author: w.author, genre: w.genre, status: w.status, intro: w.intro, withVolume: false }
   showCreate.value = true
 }
 async function submitCreate() {
@@ -82,8 +74,7 @@ async function submitCreate() {
       author: form.value.author.trim(),
       genre: form.value.genre,
       status: form.value.status,
-      intro: form.value.intro,
-      kind: form.value.kind
+      intro: form.value.intro
     })
     msg.success('已保存')
   } else {
@@ -164,7 +155,7 @@ async function onCardMenu(key, w) {
         </div>
         <div style="display: flex; gap: 10px">
           <NSelect v-model:value="form.status" :options="STATUS.map((s) => ({ label: s, value: s }))" style="width: 130px" />
-          <NSelect v-model:value="form.kind" :options="KINDS" style="flex: 1" />
+          <span v-if="!editing" class="cover-color-note">封面自动搭配颜色</span>
         </div>
         <NInput v-model:value="form.intro" type="textarea" placeholder="简介" :rows="3" />
         <NCheckbox v-if="!editing" v-model:checked="form.withVolume">默认创建「第一卷」</NCheckbox>
@@ -184,3 +175,4 @@ async function onCardMenu(key, w) {
 .shelf-toolbar .shelf-search { margin:0; }
 @media(max-width:850px) { .shelf-toolbar { flex-wrap:wrap; padding:24px 16px 0; gap:12px; } .shelf-toolbar h1 { width:100%; } .shelf-toolbar .shelf-search { flex:1; min-width:120px; max-width:none; } }
 </style>
+.cover-color-note { align-self: center; font-size: 12px; color: var(--text-dim, currentColor); }

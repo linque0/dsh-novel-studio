@@ -1,6 +1,8 @@
 import { Vector3 } from 'three'
 import { clamp, fitOverviewZoom, localPosition, makeCamera, orbitPoint, orbitPosition, overviewExtent, rotation, TUNING } from './planet-scene.js'
+import { entryCircleGlyphs, entryCircleRadius, entryRadiusLimit, layoutEntryCircleText, MIN_ENTRY_RADIUS } from './entry-circles.js'
 import { relationPath, trimProjected } from './relation-path.js'
+import { DEFAULT_CENTER_GLOW, centerGlowEdge, centerGlowPulse, centerGlowSample, centerGlowWave, glowHue, glowRgb, hasCenterColorModes } from './center-glow.js'
 
 const TAU = 2 * Math.PI
 const overviewFraming = new WeakMap()
@@ -28,6 +30,15 @@ export function paintNetwork(ctx, size, data, scene, state) {
   const nodeList = []
   const leafPoints = []
   const satellites = []
+  const radiusLimit = entryRadiusLimit(width, height)
+  const resize = state.entryResize
+  function entryGeometry(node, base) {
+    if (resize?.id === node.id) return { x: resize.x, y: resize.y, radius: resize.radius, manual: true, resizing: true }
+    const saved = state.entryRadii?.[node.id]
+    if (Number.isFinite(saved)) return { radius: clamp(saved, MIN_ENTRY_RADIUS, radiusLimit), manual: true }
+    return { radius: Math.min(radiusLimit, entryCircleRadius(base, node.glyphCount || 0)), manual: false }
+  }
+
   const origin = new Vector3()
   const work = camera.project(origin)
   work.radius = Math.max(width < 540 ? 18 : 29, TUNING.workRadius * work.scale)
@@ -39,7 +50,7 @@ export function paintNetwork(ctx, size, data, scene, state) {
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
   const orbits = drawOrbits(ctx, data.planets, scene.view, camera, state)
-  drawWork(ctx, work, data.center?.title || state.workTitle, scene.time, state.reduced)
+  drawWork(ctx, work, data.center?.title || state.workTitle, state.centerGlow || DEFAULT_CENTER_GLOW, state.reduced ? 0 : (state.centerGlowTime || 0) / 1000, state.reduced)
 
   const bodies = data.planets.map(planet => {
     const phase = state.motionPhases?.get(planet.id)
@@ -59,18 +70,20 @@ export function paintNetwork(ctx, size, data, scene, state) {
       const point = camera.project(world)
       const facing = (world.z - center.z) / radius
       const front = facing >= 0
-      const priority = node.id === state.nodeId ? 4 : node.id === state.hoverId ? 3 : front ? 1 : 0
-      const entry = { ...point, world, center, orientation, facing, front, priority, node, onWeave, planetId: planet.id, sphereRadius: radius,
-        radius: clamp(point.scale * (data.center ? .34 : .22) * (.76 + .24 * clamp(facing / .3, -1, 1)), ...limits) }
+      const priority = node.id === state.nodeId || node.id === resize?.id ? 4 : node.id === state.hoverId ? 3 : front ? 1 : 0
+      const natural = clamp(point.scale * (data.center ? .34 : .22) * (.76 + .24 * clamp(facing / .3, -1, 1)), ...limits)
+      const entry = { ...point, ...entryGeometry(node, natural), world, center, orientation, facing, front,
+        priority, node, onWeave, planetId: planet.id, sphereRadius: radius }
       projected.set(node.id, entry)
       nodeList.push(entry)
     }
     const leaf = !planet.entries.length && !!planet.parent
-    const markerRadius = leaf ? clamp(radius * pos.scale, 10, 20) : Math.max(radius * pos.scale + 6, 16)
-    const anchor = { ...pos, world: center, center, planetId: planet.id, front: true, radius: markerRadius }
+    const geometry = leaf ? entryGeometry(planet, clamp(radius * pos.scale, 10, 20))
+      : { radius: Math.max(radius * pos.scale + 6, 16) }
+    const anchor = { ...pos, ...geometry, world: center, center, planetId: planet.id, front: true }
     if (leaf) leafPoints.push(anchor)
     bodyPoints.set(planet.id, anchor)
-    hits.push({ ...anchor, kind: leaf ? 'node' : 'planet', id: planet.id })
+    hits.push({ ...anchor, kind: leaf ? 'node' : 'planet', id: planet.id, resizable: leaf })
   }
   spaceNodeCircles(nodeList, [work, ...leafPoints], width, height)
   for (const body of bodies) drawWeave(ctx, body, camera, projected)
@@ -144,12 +157,12 @@ export function paintNetwork(ctx, size, data, scene, state) {
     const bottom = Math.max(pos.y + radius * pos.scale, ...members.map(point => point.y + point.radius))
     ctx.font = '600 12px "Microsoft YaHei", sans-serif'
     if (leaf) {
-      const emphasized = planet.id === state.nodeId || planet.id === state.hoverId
+      const emphasized = planet.id === state.nodeId || planet.id === state.hoverId || planet.id === resize?.id
       circle(ctx, marker, marker.radius, emphasized ? '#3e544f' : '#292832', 1)
       ctx.strokeStyle = emphasized ? '#e0fff3' : planet.color
       ctx.lineWidth = .9
       ctx.stroke()
-      const name = measureName(ctx, state.names, planet, marker.radius * 1.76)
+      const name = measureName(ctx, state.names, planet, marker)
       drawName(ctx, marker, name, 1)
       continue
     }
@@ -183,7 +196,7 @@ export function paintNetwork(ctx, size, data, scene, state) {
   const labelsPending = updateNames(ctx, nodes, occupied, scene.zoom, state)
   for (const point of [...nodes].sort((a, b) => (a.priority >= 3 ? a.priority : 0) - (b.priority >= 3 ? b.priority : 0) || a.z - b.z)) {
     drawNode(ctx, point, state.names.get(point.node.id), point.node.color)
-    hits.push({ kind: 'node', id: point.node.id, x: point.x, y: point.y, z: point.z, radius: point.radius })
+    hits.push({ kind: 'node', id: point.node.id, x: point.x, y: point.y, z: point.z, radius: point.radius, resizable: true })
   }
   for (const hit of hits) {
     if (hit.kind !== 'bridge' || !hit.radius) continue
@@ -232,7 +245,7 @@ function updateNames(ctx, nodes, occupied, zoom, { names, now, reduced }) {
       occupied.push(point)
       remaining--
     }
-    if (name.alpha) measureName(ctx, names, node, radius * 1.76)
+    if (name.alpha) measureName(ctx, names, node, point)
   }
   return pending
 }
@@ -243,10 +256,16 @@ function overlaps(a, b) {
 
 function spaceNodeCircles(nodes, placed, width, height) {
   const rank = p => p.priority >= 3 ? p.priority : 0
-  for (const point of [...nodes].sort((a, b) => rank(b) - rank(a) || b.z - a.z)) {
-    for (const neighbor of placed) {
-      const clearance = Math.hypot(point.x - neighbor.x, point.y - neighbor.y) - neighbor.radius - 3
-      point.radius = Math.max(2.5 + clamp(point.facing, -1, 1) * .7, Math.min(point.radius, clearance))
+  for (const point of [...nodes].sort((a, b) => Number(!!b.resizing) - Number(!!a.resizing) || rank(b) - rank(a) || b.z - a.z)) {
+    if (point.resizing) {
+      placed.push(point)
+      continue
+    }
+    if (!point.manual) {
+      for (const neighbor of placed) {
+        const clearance = Math.hypot(point.x - neighbor.x, point.y - neighbor.y) - neighbor.radius - 3
+        point.radius = Math.max(2.5 + clamp(point.facing, -1, 1) * .7, Math.min(point.radius, clearance))
+      }
     }
     const startX = point.x, startY = point.y
     for (let pass = 0; pass < 3; pass++) {
@@ -383,48 +402,120 @@ function drawOrbits(ctx, planets, view, camera, state) {
       camera.project(orbitPoint(radius, i / 96 * TAU).applyQuaternion(view)))
     const merging = state.mergeOrbit === planet.orbitId
     const active = merging || state.activeOrbit === planet.orbitId || state.hoverOrbit === planet.orbitId
-    ctx.strokeStyle = merging ? TUNING.bridge : active ? TUNING.relation : '#b9a7bf'
-    ctx.globalAlpha = active ? .85 : state.orbitEditing ? .34 : .075
-    ctx.lineWidth = merging ? 2.2 : active ? 1.6 : .65
+    ctx.save()
+    ctx.strokeStyle = '#14131d'
+    ctx.globalAlpha = .12
+    ctx.lineWidth = active ? 3.6 : 2.4
     strokePoints(ctx, points)
+    ctx.strokeStyle = '#fff'
+    ctx.globalAlpha = active ? .21 : .10
+    ctx.lineWidth = active ? 4 : 3
+    ctx.stroke()
+    ctx.strokeStyle = merging ? TUNING.bridge : active ? TUNING.relation : '#fff'
+    ctx.globalAlpha = active ? .9 : state.orbitEditing ? .53 : .32
+    ctx.lineWidth = merging ? 2.2 : active ? 1.6 : .9
+    ctx.stroke()
+    ctx.restore()
     orbits.push({ id: planet.orbitId, radius, points })
   }
   return orbits.sort((a, b) => a.radius - b.radius)
 }
 
-function drawWork(ctx, center, title, elapsed, reduced) {
-  const t = reduced ? 0 : elapsed / 1000
+function drawWork(ctx, center, title, glow, t, reduced) {
+  const { brightness, color, effect } = glow
   const base = center.radius
+  const light = brightness / 100
+  const mode = hasCenterColorModes(effect) ? glow.colorMode : 'solid'
+  const zoned = mode === 'zones'
+  const rainbow = effect === 'rainbow'
+  const colored = rainbow || mode !== 'solid'
+  const hue = colored ? glowHue(glowRgb(color)) : 0
+  const whole = centerGlowSample(effect, mode, t)
+  const tintFor = (sample, angle) => {
+    if (rainbow) return `hsl(${hue + angle / TAU * 360 - t * 46} 70% 73%)`
+    return colored ? `hsl(${hue + sample.hueOffset} 55% 72%)` : color
+  }
+  const wholeTint = zoned || rainbow ? color : tintFor(whole, 0)
+  const breathing = effect === 'breathe'
+  const pulsing = effect === 'pulse'
+  const amplitude = effect === 'ripple' ? 1 : .32
   const point = angle => {
-    const ripple = .026 * Math.sin(angle * 3 + t * .59) + .018 * Math.sin(angle * 7 - t * .37)
-    const radius = base * (1 + ripple)
+    const ripple = .052 * Math.sin(angle * 3 + t * 1.9) + .031 * Math.sin(angle * 7 - t * 1.2)
+    const radius = base * (1 + amplitude * ripple)
     return { x: center.x + Math.cos(angle) * radius, y: center.y + Math.sin(angle) * radius }
   }
+
   ctx.save()
-  const outer = base * (1.58 + .06 * Math.sin(t * .47))
-  const halo = ctx.createRadialGradient(center.x, center.y, base * .75, center.x, center.y, outer)
-  halo.addColorStop(0, 'transparent')
-  halo.addColorStop(.26, '#edb56d42')
-  halo.addColorStop(.57, '#df9f5d23')
-  halo.addColorStop(1, 'transparent')
-  circle(ctx, center, outer, halo, .9)
+  if (light > 0) {
+    const outer = base * 1.95
+    const halo = ctx.createRadialGradient(center.x, center.y, base * .7, center.x, center.y, outer)
+    halo.addColorStop(0, 'transparent')
+    halo.addColorStop(.25, wholeTint)
+    halo.addColorStop(1, 'transparent')
+    const breath = breathing && !zoned ? centerGlowPulse(whole.phase) : .8
+    circle(ctx, center, outer, halo, Math.min(.65, .43 * light * breath))
+  }
+  if (pulsing && light > 0 && !reduced) {
+    if (zoned) {
+      const steps = 72
+      for (let i = 0; i < steps; i++) {
+        const from = i / steps * TAU
+        const to = (i + 1) / steps * TAU
+        const points = [from, to].map(angle => {
+          const { phase } = centerGlowSample(effect, mode, t, angle)
+          const radius = base * (1.05 + .93 * phase)
+          return { x: center.x + Math.cos(angle) * radius, y: center.y + Math.sin(angle) * radius }
+        })
+        const angle = (from + to) / 2
+        const sample = centerGlowSample(effect, mode, t, angle)
+        if (sample.phase > .82 || Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y) > base * .2) continue
+        drawPulseStroke(ctx, tintFor(sample, angle), light * centerGlowWave(sample.phase), () => strokePoints(ctx, points))
+      }
+    } else {
+      const radius = base * (1.05 + .93 * whole.phase)
+      ctx.beginPath()
+      ctx.arc(center.x, center.y, radius, 0, TAU)
+      drawPulseStroke(ctx, wholeTint, light * centerGlowWave(whole.phase), () => ctx.stroke())
+    }
+  }
   for (let i = 0; i < 48; i++) {
-    const angle = i / 48 * TAU
-    const lift = (1 + Math.sin(angle * 5 - t * .73) * Math.cos(angle * 3 + t * .46)) / 2
-    const arc = Array.from({ length: 5 }, (_, j) => point(angle + j * TAU / 192))
-    ctx.globalAlpha = .12 + lift * .23
-    ctx.strokeStyle = '#d29b63'
-    ctx.lineWidth = 2 + lift * 4
-    strokePoints(ctx, arc)
-    ctx.globalAlpha = .4 + lift * .5
-    ctx.strokeStyle = '#f7dba4'
-    ctx.lineWidth = .65 + lift * .75
+    const start = i / 48 * TAU
+    const angle = start + TAU / 96
+    const sample = zoned ? centerGlowSample(effect, mode, t, angle) : whole
+    const tint = tintFor(sample, angle)
+    const lift = centerGlowEdge(effect, angle, t)
+    const phaseGain = breathing ? centerGlowPulse(sample.phase) : pulsing ? .65 + .35 * centerGlowPulse(sample.phase) : 1
+    const intensity = light * phaseGain
+    const arc = Array.from({ length: 5 }, (_, j) => point(start + j * TAU / 192))
+    if (light > 0) {
+      ctx.globalAlpha = Math.min(1, (.11 + lift * .42) * intensity)
+      ctx.strokeStyle = tint
+      ctx.lineWidth = 2.6 + lift * 4.4
+      strokePoints(ctx, arc)
+    }
+    ctx.globalAlpha = clamp((.24 + lift * .76) * intensity, .16, 1)
+    ctx.strokeStyle = `color-mix(in srgb, ${tint} ${colored ? 80 : 64}%, white)`
+    ctx.lineWidth = .7 + lift * 1.1
     strokePoints(ctx, arc)
   }
   ctx.restore()
   ctx.globalAlpha = 1
   ctx.font = `600 ${clamp(base * .42, 8, 18)}px "Microsoft YaHei", sans-serif`
+  ctx.save()
+  ctx.shadowColor = 'rgb(24 18 22 / .95)'
+  ctx.shadowBlur = 3.5
   textAt(ctx, center.x, center.y, fitText(ctx, title, base * 1.72), '#f5dfbc')
+  ctx.restore()
+}
+
+function drawPulseStroke(ctx, tint, intensity, stroke) {
+  ctx.strokeStyle = tint
+  ctx.globalAlpha = Math.min(.32, intensity * .38)
+  ctx.lineWidth = 7
+  stroke()
+  ctx.globalAlpha = Math.min(.75, intensity)
+  ctx.lineWidth = 1.45
+  stroke()
 }
 
 function drawOutsideLink(ctx, camera, link, point, elapsed, moving, active) {
@@ -453,27 +544,34 @@ function drawNode(ctx, point, name, color = TUNING.mesh) {
   drawName(ctx, point, name, name.alpha)
 }
 
-function measureName(ctx, names, node, available) {
+function measureName(ctx, names, node, point) {
   const name = names.get(node.id) || {}
-  // Leave room for small projection changes before reconsidering the abbreviation.
-  if (!name.budget || name.width > available || available > name.budget + 6 || name.title !== node.title) {
-    ctx.font = '500 8px "Microsoft YaHei", sans-serif'
-    name.budget = available
-    name.title = node.title
-    name.text = fitText(ctx, node.title, Math.max(0, available - 2.5))
-    name.width = ctx.measureText(name.text).width
+  const text = node.summary || node.title
+  const radius = Math.floor(point.radius * 2) / 2
+  if (name.radius !== radius || name.text !== text || name.manual !== point.manual) {
+    const scale = !point.manual && node.glyphCount > 10 ? .33 : .52
+    const fontSize = Math.min(12, Math.max(7, Math.floor(radius * scale)))
+    const font = `500 ${fontSize}px "Microsoft YaHei", sans-serif`
+    const lineHeight = fontSize * 1.2
+    ctx.font = font
+    name.text = text
+    name.radius = radius
+    name.manual = point.manual
+    name.lines = layoutEntryCircleText(value => ctx.measureText(value).width,
+      node.glyphs || entryCircleGlyphs(text), radius, point.manual, lineHeight, fontSize)
+    name.font = font
+    name.lineHeight = lineHeight
     names.set(node.id, name)
   }
   return name
 }
 
 function drawName(ctx, point, name, alpha) {
-  if (alpha && name.text && name.width <= point.radius * 1.76) {
-    const fontSize = Math.min(clamp(point.radius * .62, 8, 13), point.radius * 1.76 * 8 / name.width)
-    ctx.font = `500 ${fontSize}px "Microsoft YaHei", sans-serif`
-    ctx.globalAlpha = alpha
-    textAt(ctx, point.x, point.y, name.text, TUNING.ink)
-  }
+  if (!alpha || !name.lines?.length) return
+  ctx.font = name.font
+  ctx.globalAlpha = alpha
+  const top = point.y - (name.lines.length - 1) / 2 * name.lineHeight
+  for (const [i, line] of name.lines.entries()) textAt(ctx, point.x, top + i * name.lineHeight, line, TUNING.ink)
 }
 
 function fitText(ctx, text, available) {

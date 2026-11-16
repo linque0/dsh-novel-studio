@@ -145,8 +145,8 @@ const openedText = computed(() => {
 })
 
 /* ---------- 背景：GPU 优先、退化走 CPU 底；引擎在 flow.js，主窗口各页共用同一份 ---------- */
-const reduceMotion = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-  && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+const flowMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')
+const onFlowMotionChange = event => backdrop?.setReducedMotion(event.matches)
 const canvasEl = ref(null)
 const flatCovers = ref(false)
 let backdrop = null
@@ -159,15 +159,16 @@ function paintPalette() {
   const work = focused.value
   if (!work) return
   backdrop?.setPalette?.(paletteOf(work), { duration: 300, seed: (hashString(work.id) % 997) / 997 })
-  backdrop?.pulse?.(0.9)
 }
 /* 切页回来重挂时引擎自己换画布：碰过 WebGL 的画布取不到 2D 上下文。 */
+watch(() => ui.effectiveFlowSpeed, speed => backdrop?.setSpeed(speed))
 function buildBackdrop() {
   backdrop?.dispose?.()
   backdrop = mountFlowBackdrop(canvasEl.value, {
-    reducedMotion: reduceMotion,
-    simWidth: simWidth(),
-    maxEdge: viewWidth.value < 900 ? 1280 : 1600
+    palette: focused.value ? paletteOf(focused.value) : null,
+    speed: ui.effectiveFlowSpeed,
+    reducedMotion: Boolean(flowMotion?.matches),
+    simWidth: simWidth()
   })
 }
 
@@ -282,6 +283,7 @@ watch(() => list.value.map((w) => w.id).join('|'), () => {
 }, { flush: 'post' })
 
 onMounted(() => {
+  flowMotion?.addEventListener('change', onFlowMotionChange)
   window.addEventListener('keydown', onKeydown)
   window.addEventListener('resize', onResize)
   buildBackdrop()
@@ -296,6 +298,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  flowMotion?.removeEventListener('change', onFlowMotionChange)
   window.removeEventListener('keydown', onKeydown)
   window.removeEventListener('resize', onResize)
   /* 只撤自己那面旗：切到主窗口时钩子已被 Workbench 接管 */
@@ -315,9 +318,7 @@ onBeforeUnmount(() => {
   <section class="latent-shelf">
     <div class="ls-backdrop-wrap" aria-hidden="true">
       <canvas ref="canvasEl" class="ls-backdrop"></canvas>
-      <div class="ls-layer dots"></div>
       <div class="ls-layer vignette"></div>
-      <div class="ls-layer grain"></div>
     </div>
 
     <AppTopbar active="shelf" :busy="busy || loading" :has-work="!!focused" :target-title="focused?.title" :target-work-id="focused?.id" @navigate="onTopbarNavigate" @create="emit('create')">
@@ -360,8 +361,6 @@ onBeforeUnmount(() => {
               <span class="ls-glyph-foot"><span class="ls-colophon"></span><span class="ls-colophon-char">记</span><span class="ls-rule"></span><span class="ls-glyph-author">{{ work.author || '未署名' }}</span></span>
             </span>
           </span>
-          <h3>{{ work.title }}</h3>
-          <p>{{ work.author || '未署名' }} · {{ captionCount(work) }} 章</p>
         </button>
       </div>
       <div v-else class="ls-empty">

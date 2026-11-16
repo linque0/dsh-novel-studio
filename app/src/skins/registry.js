@@ -1,8 +1,8 @@
 // A skin describes supported surfaces; unsupported surfaces retain the user's original theme.
 // audience: 'desktop' = 桌面版可见；'plugin' = 仅插件构建由 installDshSkin() 强制，不进桌面选择器。
-/* R1 唯一外观：桌面皮肤已全部收敛删除，SKINS 只剩「隐现」一项。 */
+/* R1 唯一外观：桌面皮肤已全部收敛删除，SKINS 只剩「幻流」一项。 */
 export const SKINS = Object.freeze([
-  { id: 'dsh', label: '隐现', description: '流动底、玻璃封面与胶囊顶栏（插件版唯一外观）', surfaces: ['shelf', 'work', 'panel'], palette: null, audience: 'plugin' }
+  { id: 'dsh', label: '幻流', description: '流动底、玻璃封面与胶囊顶栏（插件版唯一外观）', surfaces: ['shelf', 'work', 'panel'], palette: null, audience: 'plugin' }
 ])
 
 /* 按受众取皮肤：省略 audience 时只给桌面皮肤（向后兼容旧调用）。 */

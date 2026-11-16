@@ -343,20 +343,21 @@ body[data-skin='dsh'] .n-modal-container:has(.latent-export-dialog) > .n-modal-m
 }
 
 body[data-skin='dsh'] .latent-export-dialog.n-modal.n-card {
-  --export-list: rgb(10 11 15 / .19);
-  --export-list-head: rgb(30 28 27 / .58);
-  --export-wash: rgb(255 249 240 / .07);
-  --export-line: rgb(255 249 240 / .15);
-  --export-control-line: rgb(244 239 230 / .54);
-  --export-scroll: rgb(224 212 196 / .42);
-  --export-ink: var(--nsx-ink-1, #f9fafb);
-  --export-quiet: var(--nsx-ink-2, #d9d2c6);
-  --export-accent: #bdd8c8;
-  --export-accent-wash: rgb(189 216 200 / .15);
-  --export-check: #bdd8c8;
-  --export-check-mark: #24362f;
-  --export-primary: #eee6da;
-  --export-on-primary: #262321;
+  transition-property: opacity, transform, box-shadow;
+  --export-list: var(--panel-hover);
+  --export-list-head: var(--panel-base);
+  --export-wash: var(--panel-hover);
+  --export-line: var(--panel-line);
+  --export-control-line: var(--panel-control);
+  --export-scroll: var(--panel-control);
+  --export-ink: var(--panel-ink);
+  --export-quiet: var(--panel-quiet);
+  --export-accent: var(--panel-accent);
+  --export-accent-wash: var(--panel-active);
+  --export-check: var(--panel-accent);
+  --export-check-mark: var(--panel-base);
+  --export-primary: var(--panel-accent);
+  --export-on-primary: var(--panel-base);
   --n-close-icon-color: var(--export-quiet) !important;
   --n-close-icon-color-hover: var(--export-ink) !important;
   --n-close-icon-color-pressed: var(--export-ink) !important;
@@ -364,20 +365,6 @@ body[data-skin='dsh'] .latent-export-dialog.n-modal.n-card {
   --n-close-color-pressed: var(--export-accent-wash) !important;
   max-height: calc(100dvh - 28px);
   overflow: hidden;
-}
-/* 浅色宿主的玻璃取浅底令牌，选中态和控件描边也随之加深。 */
-html:not([data-ns-dark]) body[data-skin='dsh'][data-ns-host='dsh'] .latent-export-dialog {
-  --export-list-head: color-mix(in srgb, var(--ns-layer-1, #fafafa) 78%, transparent);
-  --export-list: rgb(42 45 50 / .08);
-  --export-line: rgb(42 45 50 / .2);
-  --export-control-line: rgb(42 45 50 / .54);
-  --export-scroll: rgb(42 45 50 / .4);
-  --export-accent: #284f43;
-  --export-accent-wash: rgb(40 79 67 / .16);
-  --export-check: #355c50;
-  --export-check-mark: #fff;
-  --export-primary: #34342f;
-  --export-on-primary: #faf6ed;
 }
 /* 控件放在与侧栏共用的反光层上方。 */
 .latent-export-dialog > :is(.n-card-header, .n-card-content, .n-card__footer) {

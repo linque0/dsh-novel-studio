@@ -8,11 +8,11 @@
  */
 
 /* ---------- 设置工作区 · 私有令牌（总稿 :root 改为模块作用域，不重定义全局令牌） ---------- */
-body[data-skin=dsh] .settings-shell{--set-ink:#f4eef7;--set-muted:#c9bed3;--set-faint:#b5a7c2;--set-line:rgb(255 255 255/.12);--set-wash:rgb(255 255 255/.055);--set-accent:#bdd8c8;--set-serif:'Noto Serif SC','Songti SC',serif}
+body[data-skin=dsh] .settings-shell{--set-serif:'Noto Serif SC','Songti SC',serif}
 
 /* ---------- 设置工作区 · 外壳（总稿 html,body 重置 + .workspace） ---------- */
 body[data-skin=dsh] .settings-workspace{display:flex;flex:1;flex-direction:column;min-height:0;min-width:0}
-body[data-skin=dsh] .settings-shell{position:relative;z-index:20;flex:1;min-height:0;min-width:0;margin:16px 28px 24px;display:grid;grid-template-columns:236px minmax(0,1fr);grid-template-rows:minmax(0,1fr);gap:16px;color-scheme:dark;font:14px/1.65 'Microsoft YaHei','PingFang SC',sans-serif;color:var(--set-ink);-webkit-font-smoothing:antialiased}
+body[data-skin=dsh] .settings-shell{position:relative;z-index:20;flex:1;min-height:0;min-width:0;margin:16px 28px 24px;display:grid;grid-template-columns:236px minmax(0,1fr);grid-template-rows:minmax(0,1fr);gap:16px;color-scheme:var(--panel-scheme);font:14px/1.65 'Microsoft YaHei','PingFang SC',sans-serif;color:var(--set-ink);-webkit-font-smoothing:antialiased}
 body[data-skin=dsh] .settings-shell,body[data-skin=dsh] .settings-shell *{box-sizing:border-box}
 body[data-skin=dsh] .settings-shell :is(button,input,select,textarea){font:inherit;color:inherit}
 body[data-skin=dsh] .settings-shell button{cursor:pointer;background:none;border:0;transition:background .16s,border-color .16s,color .16s}
@@ -27,15 +27,15 @@ body[data-skin=dsh] .settings-shell :is(button,a,input,select){touch-action:mani
 body[data-skin=dsh] .settings-shell [hidden]{display:none!important}
 
 /* ---------- 设置工作区 · 分类栏（总稿 .pane / .nav-head / .search-box / .category / .nav-foot） ---------- */
-body[data-skin=dsh] .settings-shell .pane{min-width:0;min-height:0;border:1px solid rgb(255 255 255/.17);border-radius:20px;overflow:hidden;display:flex;flex-direction:column;background:rgb(29 25 39/.68);backdrop-filter:blur(24px) saturate(1.25)}
-body[data-skin=dsh] .settings-shell .main-pane{background:rgb(33 27 44/.55)}
+body[data-skin=dsh] .settings-shell .pane{min-width:0;min-height:0;border:1px solid var(--panel-line);border-radius:20px;overflow:hidden;display:flex;flex-direction:column;background:var(--panel-glass);backdrop-filter:blur(24px) saturate(1.25)}
+body[data-skin=dsh] .settings-shell .main-pane{background:var(--panel-glass)}
 body[data-skin=dsh] .settings-shell .nav-head{padding:26px 23px 21px;display:flex;justify-content:space-between;align-items:flex-start}
 body[data-skin=dsh] .settings-shell .nav-head h2{font:500 23px/1.5 var(--set-serif)}
 body[data-skin=dsh] .settings-shell .nav-head p{font-size:12px;color:var(--set-faint);margin-top:6px}
 body[data-skin=dsh] .settings-shell .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;flex:none;color:var(--set-muted)}
-body[data-skin=dsh] .settings-shell .icon-btn:hover{background:#ffffff12}
+body[data-skin=dsh] .settings-shell .icon-btn:hover{background:var(--panel-line)}
 body[data-skin=dsh] .settings-shell .nav-head .icon-btn{display:none}
-body[data-skin=dsh] .settings-shell .search-box{display:flex;gap:8px;align-items:center;border:1px solid var(--set-line);border-radius:10px;padding:9px 10px;background:var(--set-wash);color:var(--set-faint)}
+body[data-skin=dsh] .settings-shell .search-box{display:flex;gap:8px;align-items:center;border:1px solid var(--panel-control);border-radius:10px;padding:9px 10px;background:var(--set-wash);color:var(--set-faint)}
 body[data-skin=dsh] .settings-shell .search-box input{border:0;background:none;min-width:0;width:100%;font-size:12px;line-height:1.7}
 body[data-skin=dsh] .settings-shell .search-box input::placeholder{color:var(--set-faint)}
 body[data-skin=dsh] .settings-shell .side-search{margin:0 16px 25px}
@@ -43,13 +43,13 @@ body[data-skin=dsh] .settings-shell .side-search .icon-btn{width:19px;height:22p
 body[data-skin=dsh] .settings-shell .nav-caption{font-size:11px;color:var(--set-faint);padding:0 24px 11px}
 body[data-skin=dsh] .settings-shell .category-nav{padding:0 12px;display:flex;flex-direction:column;gap:6px}
 body[data-skin=dsh] .settings-shell .category{display:flex;align-items:center;gap:11px;width:100%;text-align:left;border:1px solid transparent;border-radius:10px;padding:14px 12px;min-height:74px}
-body[data-skin=dsh] .settings-shell .category:hover{background:#ffffff08}
-body[data-skin=dsh] .settings-shell .category.active{background:#e6d9ef19;border-color:#ffffff12}
-body[data-skin=dsh] .settings-shell .category>svg{color:#bdadc9}
+body[data-skin=dsh] .settings-shell .category:hover{background:var(--panel-hover)}
+body[data-skin=dsh] .settings-shell .category.active{background:var(--panel-active);border-color:var(--panel-line)}
+body[data-skin=dsh] .settings-shell .category>svg{color:var(--panel-muted)}
 body[data-skin=dsh] .settings-shell .category>span{flex:1;min-width:0}
 body[data-skin=dsh] .settings-shell .category strong{font-size:14px;font-weight:500;display:block}
 body[data-skin=dsh] .settings-shell .category small{display:block;font-size:11px;color:var(--set-faint);margin-top:4px}
-body[data-skin=dsh] .settings-shell .category>svg:last-child{width:12px;color:#cfbfd9;opacity:0}
+body[data-skin=dsh] .settings-shell .category>svg:last-child{width:12px;color:var(--panel-accent);opacity:0}
 body[data-skin=dsh] .settings-shell .category.active>svg:last-child{opacity:1}
 /* 页脚高度靠容器 strut：themes.css 的裸规则 .nav-foot{font-size:10px} 会泄漏进本模块，把 strut 从总稿
    继承的 14px/1.65（23.1px）压到 10px/1.65（16.5px），两行行盒各矮一点、整块矮 3px（对稿 84 而非 87）。
@@ -59,24 +59,24 @@ body[data-skin=dsh] .settings-shell .nav-foot strong{font-size:12px;font-weight:
 body[data-skin=dsh] .settings-shell .nav-foot p{margin-top:5px;font-size:11px;color:var(--set-faint)}
 
 /* ---------- 设置工作区 · 页头页脚与按钮（总稿 .page-head / .btn / .content-scroll / .page-foot） ---------- */
-body[data-skin=dsh] .settings-shell .page-head{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:25px 34px 24px;border-bottom:1px solid #ffffff14;min-height:119px;flex:none}
+body[data-skin=dsh] .settings-shell .page-head{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:25px 34px 24px;border-bottom:1px solid var(--panel-hover);min-height:119px;flex:none}
 body[data-skin=dsh] .settings-shell .breadcrumbs{font-size:11px;color:var(--set-faint);display:flex;gap:8px;align-items:center;margin-bottom:9px}
 body[data-skin=dsh] .settings-shell .breadcrumbs>svg{width:10px;height:10px}
 body[data-skin=dsh] .settings-shell .page-head h1{font:500 28px/1.45 var(--set-serif);letter-spacing:.025em}
 body[data-skin=dsh] .settings-shell .page-head .sub{color:var(--set-muted);font-size:12px;margin-top:7px}
 body[data-skin=dsh] .settings-shell .head-actions{display:flex;gap:9px;align-items:center;flex:none}
-body[data-skin=dsh] .settings-shell .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;border:1px solid #ffffff28;border-radius:999px;background:#ffffff09;padding:6px 13px;min-height:33px;font-size:12px;line-height:1.6}
-body[data-skin=dsh] .settings-shell .btn:hover{background:#ffffff17}
-body[data-skin=dsh] .settings-shell .btn.primary{background:#eee9f2;border-color:#eee9f2;color:#302638}
-body[data-skin=dsh] .settings-shell .btn.primary:hover{background:#fff}
+body[data-skin=dsh] .settings-shell .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;border:1px solid var(--panel-control);border-radius:999px;background:var(--panel-hover);padding:6px 13px;min-height:33px;font-size:12px;line-height:1.6}
+body[data-skin=dsh] .settings-shell .btn:hover{background:var(--panel-hover)}
+body[data-skin=dsh] .settings-shell .btn.primary{background:var(--panel-active);border-color:var(--panel-active);color:var(--panel-ink)}
+body[data-skin=dsh] .settings-shell .btn.primary:hover{background:var(--panel-raised)}
 body[data-skin=dsh] .settings-shell .btn.soft{background:none;border-color:transparent;color:var(--set-muted)}
-body[data-skin=dsh] .settings-shell .btn.danger{color:#ffbdc6;border-color:#a06b7b77}
+body[data-skin=dsh] .settings-shell .btn.danger{color:var(--panel-danger);border-color:var(--panel-danger)}
 body[data-skin=dsh] .settings-shell .btn.small{font-size:11px;padding:4px 10px;min-height:28px}
 body[data-skin=dsh] .settings-shell .content-scroll{flex:1;min-height:0;overflow:auto;scrollbar-width:thin;scrollbar-color:#91819d55 transparent}
-body[data-skin=dsh] .settings-shell .page-foot{border-top:1px solid #ffffff12;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 32px;min-height:53px;flex:none;font-size:11px;color:var(--set-faint)}
+body[data-skin=dsh] .settings-shell .page-foot{border-top:1px solid var(--panel-line);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 32px;min-height:53px;flex:none;font-size:11px;color:var(--set-faint)}
 body[data-skin=dsh] .settings-shell .page-foot>span{display:flex;align-items:center;gap:7px}
-body[data-skin=dsh] .settings-shell .page-foot>span:first-child{color:#c5daca}
-body[data-skin=dsh] .settings-shell .page-foot.error>span:first-child{color:#ffbdc6}
+body[data-skin=dsh] .settings-shell .page-foot>span:first-child{color:var(--panel-success)}
+body[data-skin=dsh] .settings-shell .page-foot.error>span:first-child{color:var(--panel-danger)}
 body[data-skin=dsh] .settings-shell .mobile-tools>button,body[data-skin=dsh] .settings-shell :is(.scrim,.mobile-preview-toggle){display:none}
 
 /* ---------- 设置工作区 · 外观页（总稿 .appearance-layout / .setting-row / .select / .switch / .size-*） ---------- */
@@ -86,25 +86,25 @@ body[data-skin=dsh] .settings-shell .section-title h2{font:500 18px/1.5 var(--se
 body[data-skin=dsh] .settings-shell .section-title small{font-size:11px;color:var(--set-faint)}
 body[data-skin=dsh] .settings-shell .section-note{font-size:12px;color:var(--set-faint);line-height:1.85;margin-top:8px}
 body[data-skin=dsh] .settings-shell .setting-group+.setting-group{margin-top:28px}
-body[data-skin=dsh] .settings-shell .setting-row{display:flex;align-items:center;gap:20px;justify-content:space-between;padding:21px 0;border-bottom:1px solid #ffffff10;min-height:90px;scroll-margin-top:20px}
+body[data-skin=dsh] .settings-shell .setting-row{display:flex;align-items:center;gap:20px;justify-content:space-between;padding:21px 0;border-bottom:1px solid var(--panel-line);min-height:90px;scroll-margin-top:20px}
 body[data-skin=dsh] .settings-shell .setting-row:last-child{border:0}
 body[data-skin=dsh] .settings-shell .setting-copy{flex:1;min-width:0}
 body[data-skin=dsh] .settings-shell .setting-copy :is(label,strong){font-size:14px;font-weight:500;display:block}
 body[data-skin=dsh] .settings-shell .setting-copy p{font-size:12px;color:var(--set-faint);line-height:1.85;margin-top:5px}
-body[data-skin=dsh] .settings-shell .select{border:1px solid #ffffff28;border-radius:8px;background:#393042;padding:9px 11px;width:186px;font-size:13px;min-width:0;flex:none;cursor:pointer}
+body[data-skin=dsh] .settings-shell .select{border:1px solid var(--panel-control);border-radius:8px;background:var(--panel-raised);padding:9px 11px;width:186px;font-size:13px;min-width:0;flex:none;cursor:pointer}
 body[data-skin=dsh] .settings-shell .font-size-setting{align-items:flex-start;flex-wrap:wrap}
-body[data-skin=dsh] .settings-shell .size-stepper{display:flex;align-items:center;border:1px solid #ffffff2a;border-radius:999px;padding:3px;background:#211c2c44;flex:none}
+body[data-skin=dsh] .settings-shell .size-stepper{display:flex;align-items:center;border:1px solid var(--panel-control);border-radius:999px;padding:3px;background:var(--panel-hover);flex:none}
 body[data-skin=dsh] .settings-shell .size-stepper button{width:32px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%}
-body[data-skin=dsh] .settings-shell .size-stepper button:hover:not(:disabled){background:#ffffff14}
+body[data-skin=dsh] .settings-shell .size-stepper button:hover:not(:disabled){background:var(--panel-hover)}
 body[data-skin=dsh] .settings-shell .size-stepper output{min-width:65px;text-align:center;font-size:13px;font-variant-numeric:tabular-nums}
 body[data-skin=dsh] .settings-shell .size-stepper output small{font-size:11px;color:var(--set-faint);margin-left:2px}
 body[data-skin=dsh] .settings-shell .size-range-row{width:100%;display:flex;align-items:center;gap:13px;margin-top:2px}
 body[data-skin=dsh] .settings-shell .size-range-row>span{font-size:11px;color:var(--set-faint);font-variant-numeric:tabular-nums}
-body[data-skin=dsh] .settings-shell .size-range-row input{min-width:0;width:100%;accent-color:#bfd5c6;cursor:pointer;height:18px}
-body[data-skin=dsh] .settings-shell .switch{width:40px;height:23px;border:1px solid #ffffff2a;border-radius:999px;background:#ffffff16;padding:3px;position:relative;flex:none}
-body[data-skin=dsh] .settings-shell .switch>i{display:block;width:15px;height:15px;border-radius:50%;background:#e5dae9;transition:transform .18s}
-body[data-skin=dsh] .settings-shell .switch[aria-checked=true]{background:#bdd7c5;border-color:#bdd7c5}
-body[data-skin=dsh] .settings-shell .switch[aria-checked=true]>i{transform:translateX(16px);background:#302b36}
+body[data-skin=dsh] .settings-shell .size-range-row input{min-width:0;width:100%;accent-color:var(--panel-accent);cursor:pointer;height:18px}
+body[data-skin=dsh] .settings-shell .switch{width:40px;height:23px;border:1px solid var(--panel-control);border-radius:999px;background:var(--panel-hover);padding:3px;position:relative;flex:none}
+body[data-skin=dsh] .settings-shell .switch>i{display:block;width:15px;height:15px;border-radius:50%;background:var(--panel-ink);transition:transform .18s}
+body[data-skin=dsh] .settings-shell .switch[aria-checked=true]{background:var(--panel-accent);border-color:var(--panel-accent)}
+body[data-skin=dsh] .settings-shell .switch[aria-checked=true]>i{transform:translateX(16px);background:var(--panel-base)}
 body[data-skin=dsh] .settings-shell .setting-row.target{animation:dsh-set-target 1.2s ease-out}
 body[data-skin=dsh] .settings-shell .reset-inline-note{display:flex;gap:8px;align-items:flex-start;color:var(--set-faint);font-size:11px;margin-top:15px;line-height:1.8}
 body[data-skin=dsh] .settings-shell .reset-inline-note>svg{margin-top:2px}
@@ -114,30 +114,30 @@ body[data-skin=dsh] .settings-shell .preview-column{padding-left:29px;border-lef
 body[data-skin=dsh] .settings-shell .preview-label{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--set-muted);font-size:12px;margin:0 0 17px}
 body[data-skin=dsh] .settings-shell .preview-label>span{display:flex;gap:7px;align-items:center}
 body[data-skin=dsh] .settings-shell .preview-label small{font-size:11px;color:var(--set-faint)}
-body[data-skin=dsh] .settings-shell .preview-window{border:1px solid #ffffff19;border-radius:13px;overflow:hidden;background:#221d2c99}
-body[data-skin=dsh] .settings-shell .preview-chrome{height:35px;padding:0 16px;border-bottom:1px solid #ffffff10;display:flex;align-items:center;justify-content:space-between;color:#b6a6c3;font-size:11px;background:#ffffff03;transition:height .2s,padding .2s,opacity .2s;overflow:hidden}
+body[data-skin=dsh] .settings-shell .preview-window{border:1px solid var(--panel-line);border-radius:13px;overflow:hidden;background:var(--panel-paper)}
+body[data-skin=dsh] .settings-shell .preview-chrome{height:35px;padding:0 16px;border-bottom:1px solid var(--panel-line);display:flex;align-items:center;justify-content:space-between;color:var(--panel-quiet);font-size:11px;background:#ffffff03;transition:height .2s,padding .2s,opacity .2s;overflow:hidden}
 body[data-skin=dsh] .settings-shell .preview-window.is-hidden .preview-chrome{height:6px;padding:0 16px;font-size:0;opacity:.4}
 body[data-skin=dsh] .settings-shell .preview-paper{padding:30px 29px 25px;max-height:470px;overflow:auto;scrollbar-width:thin;scrollbar-color:#7d6b8b55 transparent}
-body[data-skin=dsh] .settings-shell .preview-running{display:flex;align-items:center;gap:8px;color:#ab9ab8;font-size:11px;margin-bottom:21px}
+body[data-skin=dsh] .settings-shell .preview-running{display:flex;align-items:center;gap:8px;color:var(--panel-quiet);font-size:11px;margin-bottom:21px}
 body[data-skin=dsh] .settings-shell .preview-paper h3{font:500 22px/1.55 var(--set-serif);letter-spacing:.025em;margin:0 0 20px}
-body[data-skin=dsh] .settings-shell .preview-copy{font-size:var(--preview-size,17px);font-family:var(--preview-font,var(--set-serif));line-height:1.95;letter-spacing:.015em;color:#ede3f2;overflow-wrap:anywhere}
+body[data-skin=dsh] .settings-shell .preview-copy{font-size:var(--preview-size,17px);font-family:var(--preview-font,var(--set-serif));line-height:1.95;letter-spacing:.015em;color:var(--panel-ink);overflow-wrap:anywhere}
 body[data-skin=dsh] .settings-shell .preview-copy p{margin:0 0 15px;text-indent:2em}
-body[data-skin=dsh] .settings-shell .preview-copy .latin-line{font-size:.9em;text-indent:0;color:#d0bdde;margin:21px 0 4px}
+body[data-skin=dsh] .settings-shell .preview-copy .latin-line{font-size:.9em;text-indent:0;color:var(--panel-muted);margin:21px 0 4px}
 body[data-skin=dsh] .settings-shell .preview-meta{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;color:var(--set-faint);font-size:11px;line-height:1.8;margin-top:15px}
 body[data-skin=dsh] .settings-shell .preview-meta>span:last-child{white-space:nowrap;font-variant-numeric:tabular-nums}
-body[data-skin=dsh] .settings-shell .preview-context{font-size:11px;color:#b8a7c6;line-height:1.9;margin-top:21px}
+body[data-skin=dsh] .settings-shell .preview-context{font-size:11px;color:var(--panel-quiet);line-height:1.9;margin-top:21px}
 body[data-skin=dsh] .settings-shell .preview-mode-buttons{display:none}
 
 /* ---------- 设置工作区 · 数据页（总稿 .data-layout / .action-row / .data-aside / .library-list） ---------- */
 body[data-skin=dsh] .settings-shell .data-layout{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:42px;padding:32px 34px 36px;align-items:start}
 body[data-skin=dsh] .settings-shell .action-group+.action-group{margin-top:29px}
-body[data-skin=dsh] .settings-shell .action-row{display:flex;align-items:center;gap:14px;padding:17px 0;border-bottom:1px solid #ffffff12;min-height:80px}
+body[data-skin=dsh] .settings-shell .action-row{display:flex;align-items:center;gap:14px;padding:17px 0;border-bottom:1px solid var(--panel-line);min-height:80px}
 body[data-skin=dsh] .settings-shell .action-row:last-child{border-bottom:0}
-body[data-skin=dsh] .settings-shell .action-row>.icon{color:#bcacc8}
+body[data-skin=dsh] .settings-shell .action-row>.icon{color:var(--panel-muted)}
 body[data-skin=dsh] .settings-shell .action-row>div{min-width:0;flex:1}
 body[data-skin=dsh] .settings-shell .action-row strong{font-size:14px;font-weight:500;display:block}
 body[data-skin=dsh] .settings-shell .action-row p{color:var(--set-faint);font-size:12px;line-height:1.85;margin-top:5px}
-body[data-skin=dsh] .settings-shell .action-row.danger strong{color:#efb4c0}
+body[data-skin=dsh] .settings-shell .action-row.danger strong{color:var(--panel-danger)}
 body[data-skin=dsh] .settings-shell .action-row .btn{font-size:11px;min-width:75px}
 body[data-skin=dsh] .settings-shell .action-note{font-size:11px;color:var(--set-faint);line-height:1.9;margin-top:13px}
 body[data-skin=dsh] .settings-shell .data-aside{padding-left:26px;border-left:1px solid #ffffff13;position:sticky;top:30px}
@@ -149,41 +149,41 @@ body[data-skin=dsh] .settings-shell .library-list dd{margin:0;color:var(--set-in
 body[data-skin=dsh] .settings-shell .device-note{font-size:12px;color:var(--set-muted);line-height:1.9;padding-top:22px;margin-top:18px;border-top:1px solid #ffffff13}
 body[data-skin=dsh] .settings-shell .device-note strong{display:flex;align-items:center;gap:7px;font-weight:500;margin-bottom:7px}
 body[data-skin=dsh] .settings-shell .device-note p{font-size:11px;color:var(--set-faint);overflow-wrap:anywhere}
-body[data-skin=dsh] .settings-shell .backup-time{color:#c6dccd;font-size:12px;margin-top:10px;line-height:1.8}
+body[data-skin=dsh] .settings-shell .backup-time{color:var(--panel-success);font-size:12px;margin-top:10px;line-height:1.8}
 body[data-skin=dsh] .settings-shell .library-count{color:var(--set-faint);font-size:11px;margin-top:7px}
 
 /* ---------- 设置工作区 · 数据页「存储位置」与迁移弹窗（当前位置行 / 徽章 / 回退告警 / 目录浏览） ---------- */
-body[data-skin=dsh] .settings-shell .action-row .loc-path{font-size:11px;color:#c3b4ce;line-height:1.7;font-family:ui-monospace,'Cascadia Mono',Consolas,monospace;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body[data-skin=dsh] .settings-shell .action-row .loc-path{font-size:11px;color:var(--panel-muted);line-height:1.7;font-family:ui-monospace,'Cascadia Mono',Consolas,monospace;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 body[data-skin=dsh] .settings-shell .loc-badge{flex:none;border:1px solid #ffffff22;border-radius:999px;padding:2px 9px;font-size:10px;line-height:1.7;color:var(--set-faint);white-space:nowrap}
-body[data-skin=dsh] .settings-shell .loc-badge.custom{border-color:#8fb79b77;background:#8fb79b1f;color:#bfdcc7}
-body[data-skin=dsh] .settings-shell .loc-warn{font-size:11px;line-height:1.9;color:#f0c9a0;background:#8a61341f;border:1px solid #d9a87733;border-radius:8px;padding:9px 12px;margin-top:11px}
+body[data-skin=dsh] .settings-shell .loc-badge.custom{border-color:#8fb79b77;background:#8fb79b1f;color:var(--panel-success)}
+body[data-skin=dsh] .settings-shell .loc-warn{font-size:11px;line-height:1.9;color:var(--panel-warning);background:#8a61341f;border:1px solid #d9a87733;border-radius:8px;padding:9px 12px;margin-top:11px}
 body[data-skin=dsh] .settings-shell .loc-browse-head{display:flex;align-items:center;gap:12px;margin-bottom:13px}
 body[data-skin=dsh] .settings-shell .loc-crumb{flex:1;min-width:0;font-family:ui-monospace,'Cascadia Mono',Consolas,monospace;font-size:11px;color:var(--set-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 body[data-skin=dsh] .settings-shell .loc-dir-list{max-height:230px;overflow:auto;padding:5px 0;border-top:1px solid #ffffff13;border-bottom:1px solid #ffffff13}
 body[data-skin=dsh] .settings-shell .loc-dir-list.loading{opacity:.55}
 body[data-skin=dsh] .settings-shell .loc-dir-row{display:flex;align-items:center;gap:9px;width:100%;padding:8px 7px;border-radius:7px;text-align:left;font-size:13px;color:var(--set-muted)}
 body[data-skin=dsh] .settings-shell .loc-dir-row:hover{background:var(--set-wash);color:var(--set-ink)}
-body[data-skin=dsh] .settings-shell .loc-dir-row>svg{color:#bcacc8}
+body[data-skin=dsh] .settings-shell .loc-dir-row>svg{color:var(--panel-muted)}
 body[data-skin=dsh] .settings-shell .loc-dir-row>span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 body[data-skin=dsh] .settings-shell .loc-path-field{margin-top:15px}
 body[data-skin=dsh] .settings-shell .loc-path-field>label{display:block;font-size:12px;color:var(--set-muted);margin-bottom:7px}
 body[data-skin=dsh] .settings-shell .loc-path-field>div{display:flex;gap:8px}
-body[data-skin=dsh] .settings-shell .loc-path-field input{flex:1;min-width:0;background:#221d2e77;border:1px solid #ffffff2b;border-radius:8px;padding:8px 11px;font-size:12px;font-family:ui-monospace,'Cascadia Mono',Consolas,monospace}
-body[data-skin=dsh] .settings-shell .loc-reason{font-size:11px;color:#f2c99d;line-height:1.8;margin-top:10px}
-body[data-skin=dsh] .settings-shell .loc-target{font-family:ui-monospace,'Cascadia Mono',Consolas,monospace;font-size:12px;color:#dbeadf;background:#ffffff0a;border:1px solid #ffffff1f;border-radius:8px;padding:10px 12px;margin-top:9px;overflow-wrap:anywhere}
+body[data-skin=dsh] .settings-shell .loc-path-field input{flex:1;min-width:0;background:var(--panel-hover);border:1px solid #ffffff2b;border-radius:8px;padding:8px 11px;font-size:12px;font-family:ui-monospace,'Cascadia Mono',Consolas,monospace}
+body[data-skin=dsh] .settings-shell .loc-reason{font-size:11px;color:var(--panel-warning);line-height:1.8;margin-top:10px}
+body[data-skin=dsh] .settings-shell .loc-target{font-family:ui-monospace,'Cascadia Mono',Consolas,monospace;font-size:12px;color:var(--panel-ink);background:#ffffff0a;border:1px solid #ffffff1f;border-radius:8px;padding:10px 12px;margin-top:9px;overflow-wrap:anywhere}
 
 /* ---------- 设置工作区 · 关于页（总稿 .about-layout / .about-brand / .keyboard-panel / kbd） ---------- */
 body[data-skin=dsh] .settings-shell .about-layout{padding:37px 40px;max-width:1040px;display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:55px;min-height:100%}
 body[data-skin=dsh] .settings-shell .about-brand{display:flex;gap:21px;align-items:center;margin-bottom:30px}
-body[data-skin=dsh] .settings-shell .about-mark{width:60px;height:77px;font:400 39px/1 var(--set-serif);color:#d4c2dd;display:flex;align-items:center;justify-content:center;border:1px solid #d3bddb55;border-radius:9px}
+body[data-skin=dsh] .settings-shell .about-mark{width:60px;height:77px;font:400 39px/1 var(--set-serif);color:var(--panel-muted);display:flex;align-items:center;justify-content:center;border:1px solid #d3bddb55;border-radius:9px}
 body[data-skin=dsh] .settings-shell .about-brand h2{font:500 30px/1.5 var(--set-serif);letter-spacing:.035em}
 body[data-skin=dsh] .settings-shell .about-brand p{font-size:12px;color:var(--set-faint);margin-top:5px}
-body[data-skin=dsh] .settings-shell .about-intro{font:400 17px/1.9 var(--set-serif);max-width:28em;color:#dcd0e5;margin-bottom:29px}
-body[data-skin=dsh] .settings-shell .about-summary{margin-top:28px;padding-top:22px;border-top:1px solid #ffffff12;color:var(--set-faint);font-size:12px;line-height:1.9}
+body[data-skin=dsh] .settings-shell .about-intro{font:400 17px/1.9 var(--set-serif);max-width:28em;color:var(--panel-muted);margin-bottom:29px}
+body[data-skin=dsh] .settings-shell .about-summary{margin-top:28px;padding-top:22px;border-top:1px solid var(--panel-line);color:var(--set-faint);font-size:12px;line-height:1.9}
 body[data-skin=dsh] .settings-shell .keyboard-panel{border-left:1px solid #ffffff13;padding-left:26px}
 body[data-skin=dsh] .settings-shell .keyboard-panel h3{font:500 18px/1.5 var(--set-serif);margin-bottom:20px}
 body[data-skin=dsh] .settings-shell .shortcut{display:flex;align-items:center;justify-content:space-between;gap:13px;padding:13px 0;font-size:12px;color:var(--set-muted)}
-body[data-skin=dsh] .settings-shell kbd{font:11px/1.6 'Microsoft YaHei',sans-serif;border:1px solid #ffffff24;box-shadow:0 1px 0 #ffffff15;background:#ffffff06;border-radius:5px;padding:3px 7px;color:#e0d4e8;white-space:nowrap}
+body[data-skin=dsh] .settings-shell kbd{font:11px/1.6 'Microsoft YaHei',sans-serif;border:1px solid #ffffff24;box-shadow:0 1px 0 #ffffff15;background:var(--panel-hover);border-radius:5px;padding:3px 7px;color:var(--panel-ink);white-space:nowrap}
 body[data-skin=dsh] .settings-shell .help-copy{font-size:13px;line-height:1.95;color:var(--set-muted)}
 body[data-skin=dsh] .settings-shell .help-copy h3{font-size:14px;color:var(--set-ink);margin:20px 0 7px;font-weight:500}
 body[data-skin=dsh] .settings-shell .help-copy h3:first-child{margin-top:0}
@@ -191,67 +191,67 @@ body[data-skin=dsh] .settings-shell .help-copy p+p{margin-top:12px}
 
 /* ---------- 设置工作区 · 搜索结果与空态（总稿 .search-results / .search-result / .empty） ---------- */
 body[data-skin=dsh] .settings-shell .search-results{padding:23px 34px 35px}
-body[data-skin=dsh] .settings-shell .search-result{display:flex;align-items:center;gap:15px;width:100%;padding:19px 4px;border-bottom:1px solid #ffffff12;text-align:left}
+body[data-skin=dsh] .settings-shell .search-result{display:flex;align-items:center;gap:15px;width:100%;padding:19px 4px;border-bottom:1px solid var(--panel-line);text-align:left}
 body[data-skin=dsh] .settings-shell .search-result>div{min-width:0;flex:1}
 body[data-skin=dsh] .settings-shell .search-result strong{font-size:15px;font-weight:500}
 body[data-skin=dsh] .settings-shell .search-result p{font-size:12px;color:var(--set-faint);margin-top:5px}
-body[data-skin=dsh] .settings-shell .search-result small{display:block;color:#c4d8c7;font-size:11px;margin-top:6px}
-body[data-skin=dsh] .settings-shell .search-result:hover strong{color:#d3e9db}
+body[data-skin=dsh] .settings-shell .search-result small{display:block;color:var(--panel-accent);font-size:11px;margin-top:6px}
+body[data-skin=dsh] .settings-shell .search-result:hover strong{color:var(--panel-accent)}
 body[data-skin=dsh] .settings-shell .search-result>svg{color:var(--set-faint)}
 body[data-skin=dsh] .settings-shell .empty{padding:40px 24px;color:var(--set-faint);text-align:center;font-size:13px;line-height:1.9}
 body[data-skin=dsh] .settings-shell .empty h2{font:500 25px/1.5 var(--set-serif);color:var(--set-ink);margin:12px 0}
 body[data-skin=dsh] .settings-shell .empty p{margin:10px 0 20px}
-body[data-skin=dsh] .settings-shell .empty .icon{color:#b7a5c6}
+body[data-skin=dsh] .settings-shell .empty .icon{color:var(--panel-muted)}
 
 /* ---------- 设置工作区 · 原生弹窗与提示（总稿 dialog / .form-field / .trash-row / .save-error-banner / .toast） ---------- */
-body[data-skin=dsh] .settings-shell dialog{color:var(--set-ink);background:#302839;border:1px solid #8b739b66;border-radius:18px;padding:0;box-shadow:0 30px 100px #0a061b99;width:min(520px,calc(100vw - 28px));max-height:calc(100dvh - 30px);overflow:auto}
+body[data-skin=dsh] .settings-shell dialog{color:var(--set-ink);background:var(--panel-base);border:1px solid var(--panel-line);border-radius:18px;padding:0;box-shadow:0 30px 100px #0a061b99;width:min(520px,calc(100vw - 28px));max-height:calc(100dvh - 30px);overflow:auto}
 body[data-skin=dsh] .settings-shell dialog.wide{width:min(650px,calc(100vw - 28px))}
 body[data-skin=dsh] .settings-shell dialog::backdrop{background:#100b20a6;backdrop-filter:blur(7px)}
 body[data-skin=dsh] .settings-shell dialog[open]{animation:dsh-set-dialog-in .18s cubic-bezier(.2,.7,.2,1)}
 body[data-skin=dsh] .settings-shell dialog .dialog-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:20px 24px;border-bottom:1px solid var(--set-line)}
 body[data-skin=dsh] .settings-shell dialog .dialog-head h2{font:500 22px/1.5 var(--set-serif)}
-body[data-skin=dsh] .settings-shell dialog .dialog-body{padding:23px 24px;color:#e1d6e8;line-height:1.9;font-size:14px}
+body[data-skin=dsh] .settings-shell dialog .dialog-body{padding:23px 24px;color:var(--panel-muted);line-height:1.9;font-size:14px}
 body[data-skin=dsh] .settings-shell dialog .dialog-body p+p{margin-top:13px}
 body[data-skin=dsh] .settings-shell dialog .dialog-foot{display:flex;justify-content:flex-end;gap:8px;align-items:center;padding:15px 24px;border-top:1px solid var(--set-line)}
 body[data-skin=dsh] .settings-shell dialog .dialog-foot>span{flex:1;color:var(--set-faint);font-size:11px}
 body[data-skin=dsh] .settings-shell .dialog-note{font-size:12px;color:var(--set-faint);line-height:1.9;margin-top:16px}
-body[data-skin=dsh] .settings-shell .dialog-error{font-size:12px;color:#ffbec6;margin-top:13px}
+body[data-skin=dsh] .settings-shell .dialog-error{font-size:12px;color:var(--panel-danger);margin-top:13px}
 body[data-skin=dsh] .settings-shell .form-field{display:flex;flex-direction:column;gap:7px;margin-bottom:19px}
 body[data-skin=dsh] .settings-shell .form-field>label{font-size:12px;color:var(--set-muted)}
-body[data-skin=dsh] .settings-shell .form-field :is(input,select){background:#221d2e77;border:1px solid #ffffff2b;border-radius:8px;padding:9px 11px;width:100%;min-width:0;font-size:14px}
-body[data-skin=dsh] .settings-shell .form-field select{background:#393042}
+body[data-skin=dsh] .settings-shell .form-field :is(input,select){background:var(--panel-hover);border:1px solid #ffffff2b;border-radius:8px;padding:9px 11px;width:100%;min-width:0;font-size:14px}
+body[data-skin=dsh] .settings-shell .form-field select{background:var(--panel-raised)}
 body[data-skin=dsh] .settings-shell .radio-row{display:flex;gap:12px;flex-wrap:wrap}
 body[data-skin=dsh] .settings-shell .radio-row label{font-size:13px;cursor:pointer;display:flex;align-items:center;gap:7px}
-body[data-skin=dsh] .settings-shell :is(.radio-row input,.chapter-pick input){accent-color:#bfd5c6}
-body[data-skin=dsh] .settings-shell .chapter-pick{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #ffffff12;font-size:13px;cursor:pointer}
+body[data-skin=dsh] .settings-shell :is(.radio-row input,.chapter-pick input){accent-color:var(--panel-accent)}
+body[data-skin=dsh] .settings-shell .chapter-pick{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--panel-line);font-size:13px;cursor:pointer}
 body[data-skin=dsh] .settings-shell .chapter-pick span{min-width:0;flex:1;overflow-wrap:anywhere}
 body[data-skin=dsh] .settings-shell .chapter-pick small{font-size:11px;color:var(--set-faint)}
 body[data-skin=dsh] .settings-shell .restore-summary{display:grid;grid-template-columns:1fr 1fr;gap:13px 20px;padding:17px 0;border-top:1px solid #ffffff13;border-bottom:1px solid #ffffff13;margin:17px 0}
 body[data-skin=dsh] .settings-shell .restore-summary>div{display:flex;justify-content:space-between;font-size:12px;color:var(--set-muted)}
 body[data-skin=dsh] .settings-shell .restore-summary strong{color:var(--set-ink);font-weight:500;font-variant-numeric:tabular-nums}
 body[data-skin=dsh] .settings-shell .confirm-line{display:flex;align-items:flex-start;gap:10px;font-size:13px;margin-top:19px;cursor:pointer}
-body[data-skin=dsh] .settings-shell .confirm-line input{margin-top:6px;accent-color:#bdd8c8}
+body[data-skin=dsh] .settings-shell .confirm-line input{margin-top:6px;accent-color:var(--panel-accent)}
 body[data-skin=dsh] .settings-shell .trash-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:17px}
 body[data-skin=dsh] .settings-shell .trash-tabs button{border:1px solid #ffffff22;border-radius:99px;padding:5px 10px;font-size:11px;color:var(--set-muted)}
-body[data-skin=dsh] .settings-shell .trash-tabs .on{background:#f0e9f4;color:#33283c}
-body[data-skin=dsh] .settings-shell .trash-row{display:flex;align-items:center;gap:8px;padding:15px 0;border-bottom:1px solid #ffffff12}
+body[data-skin=dsh] .settings-shell .trash-tabs .on{background:var(--panel-active);color:var(--panel-ink)}
+body[data-skin=dsh] .settings-shell .trash-row{display:flex;align-items:center;gap:8px;padding:15px 0;border-bottom:1px solid var(--panel-line)}
 body[data-skin=dsh] .settings-shell .trash-row>div{flex:1;min-width:0}
 body[data-skin=dsh] .settings-shell .trash-row strong{display:block;font-size:13px;font-weight:500;overflow-wrap:anywhere}
 body[data-skin=dsh] .settings-shell .trash-row small{display:block;color:var(--set-faint);font-size:11px;margin-top:4px}
 body[data-skin=dsh] .settings-shell .trash-row .btn{font-size:11px;padding:4px 9px}
 body[data-skin=dsh] .settings-shell .stats-list{margin:0}
-body[data-skin=dsh] .settings-shell .stats-list>div{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #ffffff12;font-size:14px}
+body[data-skin=dsh] .settings-shell .stats-list>div{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--panel-line);font-size:14px}
 body[data-skin=dsh] .settings-shell .stats-list dt{color:var(--set-muted)}
 body[data-skin=dsh] .settings-shell .stats-list dd{margin:0;font-variant-numeric:tabular-nums}
-body[data-skin=dsh] .settings-shell .save-error-banner{display:flex;align-items:center;gap:15px;padding:12px 32px;color:#ffbec6;background:#71424f26;border-bottom:1px solid #d28c9a33;font-size:12px}
+body[data-skin=dsh] .settings-shell .save-error-banner{display:flex;align-items:center;gap:15px;padding:12px 32px;color:var(--panel-danger);background:#71424f26;border-bottom:1px solid #d28c9a33;font-size:12px}
 body[data-skin=dsh] .settings-shell .save-error-banner>span{flex:1;line-height:1.8}
-body[data-skin=dsh] .settings-shell .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);border:1px solid #8e7a9c66;background:#30283df5;box-shadow:0 8px 35px #11091e55;border-radius:12px;padding:11px 16px;z-index:100;display:flex;align-items:center;gap:15px;max-width:calc(100vw - 24px);font-size:12px;pointer-events:none}
+body[data-skin=dsh] .settings-shell .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);border:1px solid #8e7a9c66;background:var(--panel-base);box-shadow:0 8px 35px #11091e55;border-radius:12px;padding:11px 16px;z-index:100;display:flex;align-items:center;gap:15px;max-width:calc(100vw - 24px);font-size:12px;pointer-events:none}
 body[data-skin=dsh] .settings-shell .toast>span{overflow-wrap:anywhere}
-body[data-skin=dsh] .settings-shell .toast button{color:#cce6d6;text-decoration:underline;text-underline-offset:4px;white-space:nowrap;pointer-events:auto}
+body[data-skin=dsh] .settings-shell .toast button{color:var(--panel-accent);text-decoration:underline;text-underline-offset:4px;white-space:nowrap;pointer-events:auto}
 
 /* ---------- 设置工作区 · 关键帧（总稿 @keyframes 是全局名称，加 dsh-set- 前缀避免与其他模块撞名） ---------- */
 @keyframes dsh-set-dialog-in{from{opacity:.5;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
-@keyframes dsh-set-target{from{background:#bdd8c826}to{background:transparent}}
+@keyframes dsh-set-target{from{background:var(--panel-accent)26}to{background:transparent}}
 
 /* ---------- 设置工作区 · 断点 1100–1320（总稿 @media(min-width:1100px) and (max-width:1320px)） ---------- */
 @media(min-width:1100px) and (max-width:1320px){
@@ -274,7 +274,7 @@ body[data-skin=dsh] .settings-shell .action-row .btn{min-width:67px;padding:5px 
 body[data-skin=dsh] .settings-shell .page-head .breadcrumbs{display:none}
 body[data-skin=dsh] .settings-shell{margin:12px 20px 20px;display:flex;gap:0}
 body[data-skin=dsh] .settings-shell .main-pane{flex:1}
-body[data-skin=dsh] .settings-shell .side-pane{display:none;position:absolute;inset:0 auto 0 0;width:min(300px,100%);z-index:40;background:#2c2539f5}
+body[data-skin=dsh] .settings-shell .side-pane{display:none;position:absolute;inset:0 auto 0 0;width:min(300px,100%);z-index:40;background:var(--panel-base)}
 body[data-skin=dsh] .settings-shell .nav-head .icon-btn{display:inline-flex}
 body[data-skin=dsh] .settings-shell[data-drawer=open] .side-pane{display:flex}
 body[data-skin=dsh] .settings-shell[data-drawer=open] .scrim{display:block;position:absolute;inset:0;z-index:30;border-radius:18px;background:#100a1e99;backdrop-filter:blur(3px)}
@@ -395,7 +395,7 @@ body[data-skin=dsh] .settings-shell .action-row>.btn{position:absolute;right:0;t
 body[data-skin=dsh] .settings-shell .action-row p{margin-top:11px}
 }
 body[data-skin=dsh] .settings-shell .page-foot>span:first-child{color:var(--set-faint)}
-body[data-skin=dsh] .settings-shell .page-foot.error>span:first-child{color:#ffbdc6}
+body[data-skin=dsh] .settings-shell .page-foot.error>span:first-child{color:var(--panel-danger)}
 @media(max-width:1099px){
 body[data-skin=dsh] .settings-shell .preview-mode-buttons{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;margin-bottom:17px}
 body[data-skin=dsh] .settings-shell .preview-mode-buttons .select{width:100%;font-size:13px;padding:8px 10px}
@@ -412,4 +412,4 @@ body[data-skin=dsh] .settings-shell .preview-mode-buttons .select{font-size:12px
 }
 
 /* ---------- 设置工作区 · 顶栏保存态（总稿保存态的错误色；顶栏本身由 AppTopbar 负责，这里只落颜色） ---------- */
-/* 顶栏保存态不在此落色（上面那句「这里只落颜色」按复核裁定作废）：总稿把保存态错误色定为 #ffbec6，裁定不采用——保存态指示灯是全站共享件，已由 dsh.css 统一到宿主错误令牌（--ns-error，回退 #f25a5a）；只为设置页改色会让同一个指示灯跨模块变色。此处原有的一条同目标颜色规则权重压不过 dsh.css 的同名规则、永不生效，已删除，请勿再补。 */
+/* 顶栏保存态不在此落色（上面那句「这里只落颜色」按复核裁定作废）：总稿把保存态错误色定为 var(--panel-danger)，裁定不采用——保存态指示灯是全站共享件，已由 dsh.css 统一到宿主错误令牌（--ns-error，回退 #f25a5a）；只为设置页改色会让同一个指示灯跨模块变色。此处原有的一条同目标颜色规则权重压不过 dsh.css 的同名规则、永不生效，已删除，请勿再补。 */

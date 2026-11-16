@@ -1,7 +1,9 @@
-/* Paper Design 的 MeshGradient + Dithering 着色器，书架的流动底与封面小样共用一套。
-   来源 https://github.com/paper-design/shaders（MIT，见 docs/前端美化/书架-流动封面-20261103/THIRD-PARTY-NOTICES.md）。
-   Paper 原版用 #version 300 es，这里改写成 GLSL 100 以兼容 WebGL1/2；控制点轨迹、distortion、
-   swirl、1/d^3.5 权重、Bayer 表与像素化保持原样。 */
+/* The cover painter keeps its original mesh and parameters. The animated backdrop uses
+   the Paper Shaders 0.0.80 adaptation in flow-shaders.js. */
+import { DEFAULT_FLOW_PALETTE } from './palette.js'
+import { FLOW_MESH_FRAGMENT, FLOW_DITHER_FRAGMENT } from './flow-shaders.js'
+import { advanceFlowTime, flowBufferSize, normalizeFlowSpeed } from './flow-motion.js'
+import { blendFlowStops, flowColorStops } from './flow-color-stops.js'
 
 const VERT = [
   'attribute vec2 aPos;',
@@ -87,47 +89,6 @@ const MESH_FRAG = [
   '}'
 ].join('\n')
 
-/* ---------------- Paper Design: Dithering（2 色 · Bayer · 像素化） ---------------- */
-
-const DITHER_FRAG = [
-  'precision highp float;',
-  'uniform sampler2D u_scene;',
-  'uniform vec2 u_resolution;',
-  'uniform float u_time;',
-  'uniform float u_pxSize;',
-  'uniform float u_pixelRatio;',
-  'uniform vec4 u_colorBack;',
-  'uniform vec4 u_colorFront;',
-  'uniform float u_mix;',
-  'uniform float u_seed;',
-  'varying vec2 v_uv;',
-  'float hash21(vec2 p){ p = fract(p * vec2(0.3183099, 0.3678794)) + 0.1; p += dot(p, p + 19.19); return fract(p.x * p.y); }',
-  'float valueNoise(vec2 st){',
-  '  vec2 i = floor(st); vec2 f = fract(st);',
-  '  float a = hash21(i); float b = hash21(i + vec2(1.0, 0.0));',
-  '  float c = hash21(i + vec2(0.0, 1.0)); float d = hash21(i + vec2(1.0, 1.0));',
-  '  vec2 u = f * f * (3.0 - 2.0 * f);',
-  '  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);',
-  '}',
-  'float bayer2(vec2 a){ a = floor(a); return fract(a.x / 2.0 + a.y * a.y * 0.75); }',
-  'float bayer4(vec2 a){ return bayer2(0.5 * a) * 0.25 + bayer2(a); }',
-  'float bayer8(vec2 a){ return bayer4(0.5 * a) * 0.25 + bayer2(a); }',
-  'void main(){',
-  '  float t = 0.5 * u_time;',
-  '  float pxSize = max(1.0, u_pxSize * u_pixelRatio);',
-  '  vec2 grid = floor(gl_FragCoord.xy / pxSize);',
-  '  vec2 pxUV = grid * pxSize / u_resolution;',
-  '  float bayer = bayer8(grid);',
-  /* 形状：warp（Paper 的 warp/dots 一路），带缓慢流动 */
-  '  float n = valueNoise(grid * 0.012 + vec2(t * 0.06 + u_seed, -t * 0.05));',
-  '  float shape = 0.5 + 0.5 * sin((grid.x + grid.y) * 0.035 + n * 6.0 + t * 0.5);',
-  '  float ink = step(shape, bayer);',
-  '  vec3 ditherColor = mix(u_colorBack.rgb, u_colorFront.rgb, ink);',
-  '  vec3 scene = texture2D(u_scene, pxUV).rgb;',
-  '  gl_FragColor = vec4(mix(scene, ditherColor, clamp(u_mix, 0.0, 1.0)), 1.0);',
-  '}'
-].join('\n')
-
 function compile(gl, type, source) {
   const shader = gl.createShader(type)
   gl.shaderSource(shader, source)
@@ -138,19 +99,24 @@ function compile(gl, type, source) {
 
 function link(gl, fragment) {
   const program = gl.createProgram()
-  gl.attachShader(program, compile(gl, gl.VERTEX_SHADER, VERT))
-  gl.attachShader(program, compile(gl, gl.FRAGMENT_SHADER, fragment))
+  const vertex = compile(gl, gl.VERTEX_SHADER, VERT)
+  const fragmentShader = compile(gl, gl.FRAGMENT_SHADER, fragment)
+  gl.attachShader(program, vertex)
+  gl.attachShader(program, fragmentShader)
   gl.linkProgram(program)
+  gl.deleteShader(vertex)
+  gl.deleteShader(fragmentShader)
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(String(gl.getProgramInfoLog(program) || 'link'))
   return program
 }
 
-function renderer(gl) {
-  const mesh = link(gl, MESH_FRAG)
-  const dither = link(gl, DITHER_FRAG)
+function renderer(gl, background = false) {
+  const mesh = link(gl, background ? FLOW_MESH_FRAGMENT : MESH_FRAG)
+  const dither = background ? link(gl, FLOW_DITHER_FRAGMENT) : null
   const buffer = gl.createBuffer()
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW)
+  if (!background) return { mesh, dither, buffer }
   const target = gl.createTexture()
   gl.bindTexture(gl.TEXTURE_2D, target)
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
@@ -166,7 +132,7 @@ function bindQuad(gl, state) {
   const loc = gl.getAttribLocation(state.mesh, 'aPos')
   gl.enableVertexAttribArray(loc)
   gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0)
-  const loc2 = gl.getAttribLocation(state.dither, 'aPos')
+  const loc2 = state.dither ? gl.getAttribLocation(state.dither, 'aPos') : -1
   if (loc2 >= 0) {
     gl.enableVertexAttribArray(loc2)
     gl.vertexAttribPointer(loc2, 2, gl.FLOAT, false, 0, 0)
@@ -266,11 +232,9 @@ export function createCoverPainter() {
   function dispose() {
     if (disposed) return
     disposed = true
-    gl.deleteTexture(state.target)
-    gl.deleteFramebuffer(state.framebuffer)
     gl.deleteBuffer(state.buffer)
     gl.deleteProgram(state.mesh)
-    gl.deleteProgram(state.dither)
+    gl.getExtension('WEBGL_lose_context')?.loseContext()
     if (liveContexts > 0) liveContexts -= 1
   }
 
@@ -278,7 +242,7 @@ export function createCoverPainter() {
 }
 
 export function createLatentBackdrop(canvas, options = {}) {
-  const settings = { maxEdge: 1600, dprCap: 1.6, scales: [1.5, 1.25, 1, 0.75], ...options }
+  const scales = [1, 0.85, 0.7, 0.55]
   const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, depth: false, powerPreference: 'high-performance' })
     || canvas.getContext('webgl', { antialias: false, alpha: false, depth: false })
   if (!gl) return { supported: false, reason: 'no-webgl' }
@@ -287,25 +251,23 @@ export function createLatentBackdrop(canvas, options = {}) {
   let state
   let shaderLog = ''
   try {
-    state = renderer(gl)
+    state = renderer(gl, true)
     bindQuad(gl, state)
   } catch (error) {
     shaderLog = error.message
-    /* 这条路调用方拿不到 dispose，计数只能当场放回 */
+    gl.getExtension('WEBGL_lose_context')?.loseContext()
     if (liveContexts > 0) liveContexts -= 1
     return { supported: false, reason: 'shader-error', shaderLog }
   }
 
-  const DEFAULT_PALETTE = { a: [0.18, 0.22, 0.5], b: [0.85, 0.4, 0.35], c: [0.06, 0.07, 0.16] }
-  let from = { ...DEFAULT_PALETTE }
-  let to = { ...DEFAULT_PALETTE }
+  let from = flowColorStops(options.palette || DEFAULT_FLOW_PALETTE)
+  let to = from
+  let lastDrawnStops = from
   let blendStart = 0
   let blendDuration = 0
-  let energy = 0
-  let energyTarget = 0
-  let pixelMix = 0.5
-  let reducedMotion = false
-  let time = 0
+  let speed = normalizeFlowSpeed(options.speed)
+  let reducedMotion = Boolean(options.reducedMotion)
+  let time = options.time ?? 0
   let lastFrame = performance.now()
   let running = false
   let scaleIndex = 0
@@ -314,8 +276,9 @@ export function createLatentBackdrop(canvas, options = {}) {
   let raf = 0
   let disposed = false
   let contextLost = false
-
-  const mix3 = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]
+  const maxEdge = Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE), gl.getParameter(gl.MAX_VIEWPORT_DIMS)[0], gl.getParameter(gl.MAX_VIEWPORT_DIMS)[1])
+  let renderRatio = 1
+  let targetReady = false
 
   /* 画布自身尺寸优先：同一个底既可能铺满书架，也可能被嵌进面板，只看 window 会画歪。 */
   function canvasSize() {
@@ -326,24 +289,20 @@ export function createLatentBackdrop(canvas, options = {}) {
   }
 
   function resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, settings.dprCap)
-    const scale = settings.scales[scaleIndex]
     const [baseWidth, baseHeight] = canvasSize()
-    let width = Math.max(1, Math.round(baseWidth * dpr * scale))
-    let height = Math.max(1, Math.round(baseHeight * dpr * scale))
-    const edge = Math.max(width, height)
-    if (edge > settings.maxEdge) {
-      const k = settings.maxEdge / edge
-      width = Math.max(1, Math.round(width * k))
-      height = Math.max(1, Math.round(height * k))
-    }
-    if (canvas.width !== width || canvas.height !== height) {
+    const [width, height] = flowBufferSize(baseWidth, baseHeight, window.devicePixelRatio || 1, scales[scaleIndex], maxEdge)
+    renderRatio = Math.min(width / baseWidth, height / baseHeight)
+    if (!targetReady || canvas.width !== width || canvas.height !== height) {
       canvas.width = width
       canvas.height = height
       gl.viewport(0, 0, width, height)
-      ensureTarget(gl, state, width, height)
+      const complete = ensureTarget(gl, state, width, height)
       gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+      if (!complete) throw new Error('Incomplete flow framebuffer')
+      targetReady = true
+      return true
     }
+    return false
   }
 
   function draw(now) {
@@ -351,28 +310,21 @@ export function createLatentBackdrop(canvas, options = {}) {
     const dt = Math.min(64, now - lastFrame)
     lastFrame = now
 
-    frameTimes.push(dt)
-    if (frameTimes.length > 60) frameTimes.shift()
-    if (frameTimes.length === 60) {
-      const average = frameTimes.reduce((sum, value) => sum + value, 0) / 60
-      avgFrameMs = Number(average.toFixed(2))
-      if (average > 22 && scaleIndex < settings.scales.length - 1) { scaleIndex += 1; frameTimes = []; resize() }
-      else if (average < 12 && scaleIndex > 0) { scaleIndex -= 1; frameTimes = []; resize() }
+    if (running) {
+      frameTimes.push(dt)
+      if (frameTimes.length > 60) frameTimes.shift()
+      if (frameTimes.length === 60) {
+        const average = frameTimes.reduce((sum, value) => sum + value, 0) / 60
+        avgFrameMs = Number(average.toFixed(2))
+        if (average > 22 && scaleIndex < scales.length - 1) { scaleIndex += 1; frameTimes = []; resizeOrFallback() }
+        else if (average < 12 && scaleIndex > 0) { scaleIndex -= 1; frameTimes = []; resizeOrFallback() }
+      }
     }
 
-    if (!reducedMotion) time += dt / 1000
-    energy += (energyTarget - energy) * Math.min(1, dt / 240)
-    energyTarget *= 0.985
-
-    const linear = blendDuration > 0 ? Math.min(1, Math.max(0, (now - blendStart) / blendDuration)) : 1
-    const progress = linear * linear * (3 - 2 * linear)
-    const pal = {
-      a: mix3(from.a, to.a, progress),
-      b: mix3(from.b, to.b, progress),
-      c: mix3(from.c, to.c, progress)
-    }
-    const seed = 0.618
-    const colors = paletteColors(pal)
+    if (contextLost) return
+    if (running) time = advanceFlowTime(time, dt, speed)
+    const colors = blendFlowStops(from, to, now - blendStart, blendDuration)
+    const [, accent, , , shadow, mist] = colors
 
     /* 1) MeshGradient -> 纹理 */
     gl.bindFramebuffer(gl.FRAMEBUFFER, state.framebuffer)
@@ -380,14 +332,13 @@ export function createLatentBackdrop(canvas, options = {}) {
     gl.useProgram(state.mesh)
     bindQuad(gl, state)
     const mu = name => gl.getUniformLocation(state.mesh, name)
-    gl.uniform1f(mu('u_time'), time * (1.0 + 0.6 * energy))
-    gl.uniform1f(mu('u_seed'), seed)
-    gl.uniform1f(mu('u_colorsCount'), colors.count)
-    gl.uniform4fv(mu('u_colors'), colors.data)
-    gl.uniform1f(mu('u_distortion'), 0.6)
-    gl.uniform1f(mu('u_swirl'), 0.5)
-    gl.uniform1f(mu('u_grainMixer'), 0.3)
-    gl.uniform1f(mu('u_grainOverlay'), 0.06)
+    gl.uniform1f(mu('u_time'), time * 0.3)
+    gl.uniform1f(mu('u_colorsCount'), colors.length)
+    gl.uniform4fv(mu('u_colors'), new Float32Array(colors.flatMap(rgb => [...rgb, 1])))
+    gl.uniform1f(mu('u_distortion'), 0.8)
+    gl.uniform1f(mu('u_swirl'), 0.1)
+    gl.uniform1f(mu('u_grainMixer'), 0)
+    gl.uniform1f(mu('u_grainOverlay'), 0.01)
     gl.uniform2f(mu('u_resolution'), canvas.width, canvas.height)
     gl.drawArrays(gl.TRIANGLES, 0, 3)
 
@@ -401,40 +352,69 @@ export function createLatentBackdrop(canvas, options = {}) {
     gl.bindTexture(gl.TEXTURE_2D, state.target)
     gl.uniform1i(du('u_scene'), 0)
     gl.uniform2f(du('u_resolution'), canvas.width, canvas.height)
-    gl.uniform1f(du('u_time'), time)
-    gl.uniform1f(du('u_seed'), 0.618)
-    gl.uniform1f(du('u_pxSize'), 2.0)
-    gl.uniform1f(du('u_pixelRatio'), Math.min(window.devicePixelRatio || 1, settings.dprCap))
-    gl.uniform4fv(du('u_colorBack'), new Float32Array([pal.c[0], pal.c[1], pal.c[2], 1]))
-    gl.uniform4fv(du('u_colorFront'), new Float32Array([pal.b[0], pal.b[1], pal.b[2], 1]))
-    gl.uniform1f(du('u_mix'), pixelMix * 0.62)
+    gl.uniform1f(du('u_time'), time * 0.1)
+    gl.uniform1f(du('u_pixelRatio'), renderRatio)
+    gl.uniform3fv(du('u_colorBack'), shadow)
+    gl.uniform3fv(du('u_colorFront'), mist)
+    gl.uniform3fv(du('u_colorRibbon'), accent)
     gl.drawArrays(gl.TRIANGLES, 0, 3)
+    lastDrawnStops = colors
 
+    if (running) raf = requestAnimationFrame(draw)
+  }
+
+  function start() {
+    if (running || disposed || contextLost || reducedMotion || speed === 0 || document.hidden) return
+    running = true
+    frameTimes = []
+    lastFrame = performance.now()
     raf = requestAnimationFrame(draw)
   }
 
-  function start() { if (running || disposed || contextLost) return; running = true; lastFrame = performance.now(); raf = requestAnimationFrame(draw) }
-  function stop() { running = false; cancelAnimationFrame(raf) }
+  function stop() {
+    running = false
+    cancelAnimationFrame(raf)
+  }
 
-  const onResize = () => resize()
-  /* 三档栏宽切换与窗口高度变化都绕不过父容器，只挂 window resize 会漏掉容器自身的变化。 */
+  function fallback(reason) {
+    if (contextLost || disposed) return
+    contextLost = true
+    stop()
+    options.onFallback?.(reason, { time, stops: lastDrawnStops })
+  }
+
+  function resizeOrFallback() {
+    if (contextLost || disposed) return false
+    try { return resize() } catch { fallback('framebuffer-error'); return false }
+  }
+
+  try { resize() } catch (error) {
+    gl.getExtension('WEBGL_lose_context')?.loseContext()
+    liveContexts -= 1
+    return { supported: false, reason: 'framebuffer-error', shaderLog: error.message }
+  }
+
+  const onResize = () => { if (resizeOrFallback() && !running && !document.hidden) draw(performance.now()) }
   const parent = canvas.parentElement
   const observer = typeof ResizeObserver === 'function' && parent ? new ResizeObserver(onResize) : null
   if (observer) observer.observe(parent)
-
-  const onVisibility = () => (document.hidden ? stop() : start())
+  const onVisibility = () => {
+    if (document.hidden) stop()
+    else {
+      start()
+      if (!running) draw(performance.now())
+    }
+  }
   const onContextLost = event => {
     event.preventDefault()
-    contextLost = true
-    stop()
-    if (typeof settings.onFallback === 'function') settings.onFallback('context-lost')
+    fallback('context-lost')
   }
   window.addEventListener('resize', onResize)
   document.addEventListener('visibilitychange', onVisibility)
   canvas.addEventListener('webglcontextlost', onContextLost, false)
 
-  resize()
-  if (!reducedMotion) start(); else draw(performance.now())
+  draw(performance.now())
+  start()
 
   return {
     supported: true,
@@ -442,29 +422,37 @@ export function createLatentBackdrop(canvas, options = {}) {
     setPalette(palette, opts = {}) {
       /* 从当前正在显示的颜色起跳：连续换书时不会跳回上一次的目标色 */
       const now = performance.now()
-      const prevProgress = blendDuration > 0 ? Math.min(1, (now - blendStart) / blendDuration) : 1
-      const eased = prevProgress * prevProgress * (3 - 2 * prevProgress)
-      from = {
-        a: mix3(from.a, to.a, eased),
-        b: mix3(from.b, to.b, eased),
-        c: mix3(from.c, to.c, eased)
-      }
-      to = { a: [...palette.a], b: [...palette.b], c: [...palette.c] }
-      /* 相位保持不变：跳相位会让整屏图案"闪"一下 */
-      blendDuration = Math.max(0, opts.duration ?? 750)
+      from = lastDrawnStops
+      to = flowColorStops(palette)
+      blendDuration = running ? Math.max(0, opts.duration ?? 750) : 0
       blendStart = now
-      if (!running) draw(blendStart)
+      if (!running && !document.hidden) draw(blendStart)
     },
-    pulse(strength = 1) { energyTarget = Math.max(energyTarget, Math.min(1, strength)) },
-    setPixelMix(value) { pixelMix = Math.min(1, Math.max(0, Number(value) || 0)) },
-    setReducedMotion(value) { reducedMotion = Boolean(value); if (reducedMotion) stop(); else start() },
-    resize,
+    setSpeed(value) {
+      speed = normalizeFlowSpeed(value)
+      if (speed === 0) {
+        stop()
+        blendDuration = 0
+        if (!document.hidden) draw(performance.now())
+      } else start()
+    },
+    setReducedMotion(value) {
+      const next = Boolean(value)
+      if (next === reducedMotion) return
+      reducedMotion = next
+      if (reducedMotion) {
+        stop()
+        blendDuration = 0
+        if (!document.hidden) draw(performance.now())
+      } else start()
+    },
+    resize: onResize,
     stats() {
       return {
         backend: 'gpu',
         renderer: String(gl.getParameter(gl.VERSION) || ''),
         avgFrameMs,
-        scale: settings.scales[scaleIndex],
+        scale: scales[scaleIndex],
         pixels: [canvas.width, canvas.height],
         shaderLog,
         noise: 'paper-mesh+dither',

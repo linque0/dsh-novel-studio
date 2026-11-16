@@ -928,14 +928,14 @@ html body[data-skin='dsh'] .rich-host.paper-texture.writing-paper-surface {
   padding: 56px 64px;
   border: 0;
   border-radius: 24px;
-  background-color: color-mix(in srgb, var(--ls-paper) 46%, transparent) !important;
-  background-image: linear-gradient(150deg, rgb(24 27 33 / .30), rgb(12 14 18 / .42)) !important;
+  background-color: var(--panel-paper) !important;
+  background-image: none !important;
   background-size: auto !important;
   background-repeat: no-repeat !important;
   background-blend-mode: normal !important;
   -webkit-backdrop-filter: blur(26px) saturate(1.15);
   backdrop-filter: blur(26px) saturate(1.15);
-  box-shadow: 0 30px 70px rgb(0 0 0 / .55), inset 0 1px 0 rgb(255 255 255 / .16);
+  box-shadow: var(--panel-shadow);
   color: var(--ls-ink);
   overflow: auto;
   overscroll-behavior: contain;
@@ -1325,12 +1325,6 @@ html body[data-skin='dsh'] .latent-studio > .st-backdrop-wrap > .st-layer.dots {
   mix-blend-mode: overlay;
   background-image: radial-gradient(circle, rgb(255 255 255 / .95) .45px, transparent .8px);
   background-size: 2px 2px;
-}
-.latent-studio > .st-backdrop-wrap > .st-layer.vignette,
-html body[data-skin='dsh'] .latent-studio > .st-backdrop-wrap > .st-layer.vignette {
-  background:
-    radial-gradient(130% 96% at 50% 38%, transparent 40%, rgb(3 4 7 / .3) 100%),
-    linear-gradient(180deg, rgb(3 4 7 / .26) 0%, rgb(3 4 7 / 0) 30%, rgb(3 4 7 / .14) 64%, rgb(3 4 7 / .38) 100%);
 }
 .latent-studio > .st-backdrop-wrap > .st-layer.grain,
 html body[data-skin='dsh'] .latent-studio > .st-backdrop-wrap > .st-layer.grain {
@@ -1951,7 +1945,7 @@ html body[data-skin='dsh'] .rich-host,
 html body[data-skin='dsh'] .rich-host.paper-texture.writing-paper-surface {
   border: 0;
   border-radius: 24px;
-  box-shadow: 0 30px 70px rgb(0 0 0 / .55), inset 0 1px 0 rgb(255 255 255 / .16);
+  box-shadow: var(--panel-shadow);
   padding: 56px 64px;
   margin: 0 auto 12px;
 }
@@ -2987,8 +2981,8 @@ html body[data-skin='dsh'] .latent-studio {
 
 /* 右键菜单：皮肤下必须不透明（原来 --bg-panel 是半透明层，正文会从菜单底下透出来） */
 html body[data-skin='dsh'] :is(.ctx-menu, .ctx-sub) {
-  background-color: rgb(17 19 24 / .985);
-  border: 1px solid rgb(255 255 255 / .14);
+  background-color: var(--panel-base);
+  border: 1px solid var(--panel-line);
   border-radius: 10px;
   box-shadow: 0 24px 60px rgb(0 0 0 / .62), inset 0 1px 0 rgb(255 255 255 / .06);
 }

@@ -37,7 +37,6 @@
 .latent-shelf .ls-backdrop { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 .latent-shelf .ls-layer { position: absolute; inset: 0; pointer-events: none; }
 .latent-shelf .ls-layer.dots { opacity: .03; mix-blend-mode: overlay; background-image: radial-gradient(circle, rgb(255 255 255 / .95) .45px, transparent .8px); background-size: 2px 2px; }
-.latent-shelf .ls-layer.vignette { background: radial-gradient(130% 96% at 50% 38%, transparent 40%, rgb(3 4 7 / .3) 100%), linear-gradient(180deg, rgb(3 4 7 / .26) 0%, rgb(3 4 7 / 0) 30%, rgb(3 4 7 / .14) 64%, rgb(3 4 7 / .38) 100%); }
 .latent-shelf .ls-layer.grain { opacity: .05; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E"); }
 
 /* ---- 顶栏：设计稿里没有底板，胶囊导航本身由 language.css 提供，这里只把外层牌面擦掉。
@@ -107,9 +106,6 @@ html body[data-skin='dsh'] .latent-shelf.latent-shelf :deep(.app-topbar-create),
 .latent-shelf .ls-glyph-author { font-size: 10px; letter-spacing: .2em; color: rgb(255 255 255 / .96); text-shadow: 0 1px 8px rgb(0 0 0 / .55); white-space: nowrap; }
 .latent-shelf .ls-colophon { flex: none; width: 3px; height: 20px; background: #c0483a; box-shadow: 0 0 10px rgb(192 72 58 / .55); }
 
-.latent-shelf .ls-card h3 { margin: 10px 2px 2px; font-size: 14px; font-weight: 700; letter-spacing: -.01em; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: rgb(255 255 255 / .92); text-shadow: 0 2px 12px rgb(0 0 0 / .5); }
-.latent-shelf .ls-card p { margin: 0 2px; font-size: 11.5px; color: var(--ls-ink-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
 .latent-shelf .ls-card.is-focus { transform: translate3d(var(--x, 0), -50%, 0) scale(1); z-index: 3; }
 .latent-shelf .ls-card.is-near { transform: translate3d(var(--x, 0), -50%, 0) scale(.85); opacity: .78; }
 .latent-shelf .ls-card.is-far { transform: translate3d(var(--x, 0), -50%, 0) scale(.79); opacity: .42; }
@@ -143,6 +139,16 @@ html body[data-skin='dsh'] .latent-shelf.latent-shelf :deep(.app-topbar-create),
 .latent-shelf .ls-round:hover { background: var(--ls-glass-strong); transform: translateY(-1px); }
 .latent-shelf .ls-round[aria-disabled='true'] { opacity: .45; cursor: default; }
 .latent-shelf .ls-round[aria-disabled='true']:hover { background: rgb(255 255 255 / .1); transform: none; }
+
+.latent-shelf .ls-dock-line {
+  color: rgb(255 255 255 / .87);
+}
+.latent-shelf :is(.ls-count, .ls-dock, .ls-ghost, .ls-round) {
+  background: rgb(8 10 16 / .72);
+}
+.latent-shelf :is(.ls-ghost, .ls-round):hover {
+  background: rgb(8 10 16 / .84);
+}
 
 /* ---- 空态与骨架屏 ---- */
 .latent-shelf .ls-empty { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 0 24px 48px; text-align: center; }

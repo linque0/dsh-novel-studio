@@ -5,7 +5,8 @@ import { useWorkStore } from '../../../stores/work'
 import LorePlanetNetwork from './LorePlanetNetwork.vue'
 import { lorePlanetData } from './lore-planet-data.js'
 
-const emit = defineEmits(['open-entry', 'open-target', 'edit-relations', 'select'])
+defineProps({ location: { type: Object, required: true } })
+const emit = defineEmits(['open-entry', 'open-target', 'edit-relations', 'navigate', 'heading'])
 const work = useWorkStore()
 const data = computed(() => lorePlanetData(work.liveMubu(), work.liveLoreLinks, work.liveCharacters))
 const workId = computed(() => work.work?.id)
@@ -23,23 +24,38 @@ watch(workId, async (id, _previous, onCleanup) => {
   const initialPositions = saved?.positions || {}
   const initialSpacing = saved?.spacing || {}
   const initialOrbitSettings = saved?.orbitSettings || {}
-  let state = { positions: initialPositions, spacing: initialSpacing, orbitSettings: initialOrbitSettings }
-  function save(patch) {
-    state = { ...state, ...patch }
-    return db.appconfig.put({ key, value: JSON.parse(JSON.stringify(state)) })
+  function save(update) {
+    return db.transaction('rw', db.appconfig, async () => {
+      const previous = (await db.appconfig.get(key))?.value || {}
+      await db.appconfig.put({ key, value: JSON.parse(JSON.stringify(update(previous))) })
+    })
   }
   preferences.value = {
     initialPositions, initialSpacing, initialOrbitSettings,
-    onLayoutChange: positions => save({ positions }),
-    onSpacingChange: spacing => save({ spacing }),
-    onOrbitSettingsChange: orbitSettings => save({ orbitSettings })
+    initialCenterGlow: saved?.centerGlow || {},
+    initialEntryRadii: saved?.entryRadii || {},
+    onLayoutChange: positions => save(previous => ({ ...previous, positions })),
+    onSpacingChange: spacing => save(previous => ({ ...previous, spacing })),
+    onOrbitSettingsChange: orbitSettings => save(previous => ({ ...previous, orbitSettings })),
+    onEntryRadiusChange: (entryId, radius) => save(previous => {
+      const entryRadii = { ...previous.entryRadii }
+      if (radius === null) delete entryRadii[entryId]
+      else entryRadii[entryId] = radius
+      return { ...previous, entryRadii }
+    }),
+    onCenterGlowChange: (centerId, value) => save(previous => {
+      const centerGlow = { ...previous.centerGlow }
+      if (value) centerGlow[centerId] = value
+      else delete centerGlow[centerId]
+      return { ...previous, centerGlow }
+    })
   }
 }, { immediate: true })
 </script>
 
 <template>
   <LorePlanetNetwork v-if="preferences" :key="workId" embedded v-bind="{ ...data, ...preferences }"
-    :work-title="work.work?.title"
+    :work-title="work.work?.title" :location="location"
     @open-entry="emit('open-entry', $event)" @open-target="emit('open-target', $event)"
-    @edit-relations="emit('edit-relations', $event)" @select="emit('select', $event)" />
+    @edit-relations="emit('edit-relations', $event)" @navigate="emit('navigate', $event)" @heading="emit('heading', $event)" />
 </template>

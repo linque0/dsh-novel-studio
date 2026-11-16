@@ -1,15 +1,6 @@
-/* 书封配色只由作品 id 决定：书架允许排序和筛选，颜色若跟着列表下标走，同一本书会换装。 */
+/* 新作品的随机 ID 作为配色种子，已有作品也能稳定获得新配色。 */
 
-export const CLOTH = {
-  novel: ['#2f3f8f', '#1d2a63', '#0d1430'],
-  note: ['#e7dcc6', '#cdbf9f', '#a99c7d'],
-  cedar: ['#356450', '#234437', '#10241d'],
-  violet: ['#6d4a8c', '#4a3168', '#241338'],
-  claret: ['#8b2c40', '#5f1a2b', '#2c0a12'],
-  ink: ['#393b41', '#22242a', '#0d0e11']
-}
-
-export const ACCENTS = ['#fd5c47', '#6a48ff', '#3ec6b0', '#e8b04b', '#5ec8ff', '#ff6fa5', '#8fd06a', '#c58bff']
+import { colorAtTone } from './flow-color-stops.js'
 
 /* FNV-1a 32 位：不依赖数组顺序，跨进程、跨渲染次序都得到同一个数。 */
 export function hashString(str) {
@@ -22,39 +13,43 @@ export function hashString(str) {
   return hash >>> 0
 }
 
-function hexToRgb(hex) {
-  const c = String(hex).replace('#', '')
-  return [parseInt(c.slice(0, 2), 16), parseInt(c.slice(2, 4), 16), parseInt(c.slice(4, 6), 16)]
-}
+// 每组为主色、强调色和带色相的暗部。
+const COVER_PALETTES = [
+  [[59, 88, 138], [118, 174, 215], [33, 48, 84]],  // 靛蓝、晴蓝、墨蓝
+  [[64, 84, 125], [218, 164, 91], [38, 42, 73]],  // 海军蓝、琥珀、蓝墨
+  [[58, 97, 82], [110, 184, 130], [34, 60, 51]],  // 松绿、春苔、墨绿
+  [[48, 98, 109], [92, 191, 173], [31, 57, 67]],  // 深海蓝、海玻璃绿、深青
+  [[119, 69, 82], [219, 143, 132], [75, 37, 55]],  // 莓红、珊瑚、酒红
+  [[93, 75, 133], [176, 151, 220], [54, 41, 83]],  // 鸢尾紫、浅藤、墨紫
+  [[85, 81, 126], [208, 169, 112], [47, 48, 81]],  // 暮蓝、蜜砂、蓝紫
+  [[116, 76, 63], [223, 155, 110], [67, 43, 47]],  // 红陶、杏橙、紫棕
+  [[83, 91, 54], [183, 183, 103], [50, 55, 42]],  // 橄榄、金苔、深灰绿
+  [[57, 88, 115], [211, 142, 180], [36, 49, 75]],  // 岩蓝、烟玫瑰、深靛
+  [[102, 80, 66], [108, 189, 193], [58, 44, 55]],  // 暖棕、水青、深梅
+  [[108, 72, 104], [216, 148, 173], [63, 38, 70]]  // 桑葚、胭脂粉、深紫
+]
 
-function mixHex(a, b, t) {
-  const A = hexToRgb(a)
-  const B = hexToRgb(b)
-  const f = (x, y) => Math.round(x + (y - x) * t).toString(16).padStart(2, '0')
-  return '#' + f(A[0], B[0]) + f(A[1], B[1]) + f(A[2], B[2])
-}
-
-export function clothOf(work) {
-  return CLOTH[work && work.kind] || CLOTH.novel
-}
-
-/* 设计稿按 BOOKS.indexOf 取档位，真实作品库没有稳定序列表，改用 id 哈希取同一档。 */
-export function accentOf(work) {
-  return ACCENTS[hashString(work && work.id) % ACCENTS.length]
-}
+const rgbHex = rgb => '#' + rgb.map(channel => Math.round(channel * 255).toString(16).padStart(2, '0')).join('')
 
 export function paletteOf(work) {
-  const cloth = clothOf(work)
-  const accent = accentOf(work)
-  return {
-    a: hexToRgb(mixHex(cloth[0], '#ffffff', 0.30)).map(v => v / 255),
-    b: hexToRgb(mixHex(accent, cloth[0], 0.35)).map(v => v / 255),
-    c: hexToRgb(mixHex(cloth[1], '#ffffff', 0.06)).map(v => v / 255)
-  }
+  const seed = hashString(work?.id)
+  const [base, accent, shadow] = COVER_PALETTES[seed % COVER_PALETTES.length]
+  // 同组作品小幅变化色度，三档明度和色相关系保持一致。
+  const baseGain = 1.08 + (seed >>> 8 & 255) / 255 * 0.16
+  const accentGain = 1.12 + (seed >>> 16 & 255) / 255 * 0.18
+  const a = colorAtTone(base.map(channel => channel / 255), 0.48, 0.12, baseGain)
+  const b = colorAtTone(accent.map(channel => channel / 255), 0.74, 0.16, accentGain)
+  const c = colorAtTone(shadow.map(channel => channel / 255), 0.31, 0.07, baseGain)
+  return { a, b, c }
 }
 
-/* 无 WebGL 时封面只剩这层布面渐变，色序必须与 paletteOf 的 a/b/c 同源。 */
-export function cssGradientOf(work) {
-  const cloth = clothOf(work)
-  return `linear-gradient(150deg, ${cloth[0]} 0%, ${accentOf(work)} 52%, ${cloth[1]} 100%)`
+export function accentOf(work) {
+  return rgbHex(paletteOf(work).b)
 }
+
+export function cssGradientOf(work) {
+  const { a, b, c } = paletteOf(work)
+  return `linear-gradient(150deg, ${rgbHex(a)} 0%, ${rgbHex(a)} 27%, ${rgbHex(b)} 47%, ${rgbHex(c)} 80%)`
+}
+
+export const DEFAULT_FLOW_PALETTE = { a: [0.18, 0.22, 0.5], b: [0.85, 0.4, 0.35], c: [0.06, 0.07, 0.16] }

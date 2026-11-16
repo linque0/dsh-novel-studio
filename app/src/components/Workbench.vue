@@ -205,7 +205,6 @@ function resetAiWidth() {
 /* ---------- 主窗口流动底（正文/大纲/设定/人物/灵感共用 flow 引擎）：只做挂载与销毁，不含业务逻辑 ---------- */
 const flowCanvas = ref(null)
 let flowApi = null
-let flowRippleAt = 0
 const reduceMotionQuery = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
   ? window.matchMedia('(prefers-reduced-motion: reduce)') : null
 
@@ -229,6 +228,7 @@ function destroyFlow() {
   flowApi = null
 }
 
+watch(() => ui.effectiveFlowSpeed, speed => flowApi?.setSpeed(speed))
 function mountFlow() {
   destroyFlow()
   /* 恍然梦模式下 StudioWorkspace 用 v-show 藏起 Workbench：画布还在 DOM 里，rAF 不会自己停，
@@ -238,33 +238,24 @@ function mountFlow() {
   if (!canvas) return
   const width = window.innerWidth
   flowApi = mountFlowBackdrop(canvas, {
+    speed: ui.effectiveFlowSpeed,
     palette: work.work ? paletteOf(work.work) : null,
     reducedMotion: Boolean(reduceMotionQuery?.matches),
-    simWidth: width < 560 ? 320 : width < 900 ? 480 : 640,
-    maxEdge: width < 900 ? 1280 : 1600
+    simWidth: width < 560 ? 320 : width < 900 ? 480 : 640
   })
 }
 
-/* 打字涟漪：编辑器（ProseMirror 根 .tiptap）输入时 80ms 节流推一次；找不到节点就跳过，不报错 */
-function onStudioInput(event) {
-  if (work.tab !== 'chapters') return
-  const target = event.target
-  if (!target || typeof target.closest !== 'function' || !target.closest('#tiptap, .tiptap')) return
-  const now = performance.now()
-  if (now - flowRippleAt < 80) return
-  flowRippleAt = now
-  try { flowApi?.pulse?.(0.05) } catch { /* 背板已销毁 */ }
-}
+const onFlowMotionChange = event => flowApi?.setReducedMotion(event.matches)
 
 function mountStudioBackdrop() {
+  reduceMotionQuery?.addEventListener('change', onFlowMotionChange)
   window.__nsFlowBackdrop = flowStats
   window.__nsStudioBackdrop = flowStats
-  shell.value?.addEventListener('input', onStudioInput, true)
   mountFlow()
 }
 
 function unmountStudioBackdrop() {
-  shell.value?.removeEventListener('input', onStudioInput, true)
+  reduceMotionQuery?.removeEventListener('change', onFlowMotionChange)
   destroyFlow()
   /* 只撤自己那面旗：回到书架时钩子已被 LatentShelf 接管 */
   if (window.__nsFlowBackdrop === flowStats) delete window.__nsFlowBackdrop
@@ -313,7 +304,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div ref="shell" class="workbench-shell" :class="{ 'is-focus': ui.focusMode, 'is-reading': ui.readMode, 'latent-studio': work.tab === 'chapters', 'outline-strict': nsPlugin && work.tab==='outline' }" :data-module="work.tab" :data-flow="'on'" style="display: flex; flex-direction: column; height: 100%">
-    <div class="st-backdrop-wrap"><canvas class="st-backdrop" ref="flowCanvas"></canvas><div class="st-layer dots"></div><div class="st-layer vignette"></div><div class="st-layer grain"></div></div>
+    <div class="st-backdrop-wrap"><canvas class="st-backdrop" ref="flowCanvas"></canvas><div class="st-layer vignette"></div></div>
 
     <AppTopbar :active="work.tab" :has-work="!!work.work" :target-title="work.work?.title" :save-state="saveState" @navigate="key => key === 'shelf' ? returnToShelf() : key === 'settings' ? openSettings() : selectTab(key)">
       <template #actions>

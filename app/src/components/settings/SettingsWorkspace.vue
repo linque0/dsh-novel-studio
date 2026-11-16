@@ -27,7 +27,7 @@ import SettingsDataPage from './SettingsDataPage.vue'
 import SettingsAboutPage from './SettingsAboutPage.vue'
 import SettingsDialog from './SettingsDialog.vue'
 
-const APPEARANCE_KEYS = ['editorFont', 'editorLatin', 'fontSize', 'topbarAutoHide']
+const APPEARANCE_KEYS = Object.keys(resetAppearancePrefs())
 const NARROW_MAX = 1100
 const TARGET_MS = 1200
 const SCROLL_SAVE_MS = 250
@@ -60,7 +60,7 @@ const footRight = computed(() => {
   if (query.value) return '快速定位工坊偏好'
   if (page.value === 'appearance') return '改动即时生效'
   if (page.value === 'data') return '作品与偏好 · 当前设备'
-  return '小说工坊 · LATENT'
+  return '小说工坊 · 幻流'
 })
 const saveState = computed(() => (ui.prefsSave.error ? 'error' : ui.prefsSave.pending ? 'dirty' : 'saved'))
 
@@ -170,7 +170,7 @@ function togglePreview() {
 const history = createSettingsHistory()
 const resetOpen = ref(false)
 function currentAppearance() {
-  return { editorFont: ui.editorFont, editorLatin: ui.editorLatin, fontSize: ui.fontSize, topbarAutoHide: ui.topbarAutoHide }
+  return Object.fromEntries(APPEARANCE_KEYS.map(key => [key, ui[key]]))
 }
 function resetAppearance() {
   history.checkpoint(currentAppearance())
@@ -293,6 +293,7 @@ function flowStats() {
 function onMotionChange(event) {
   flowApi?.setReducedMotion?.(Boolean(event.matches))
 }
+watch(() => ui.effectiveFlowSpeed, speed => flowApi?.setSpeed(speed))
 function mountFlow() {
   const canvas = flowCanvas.value
   if (!canvas) return
@@ -300,9 +301,9 @@ function mountFlow() {
   /* 引擎起不来不该拖垮整页（PanelHost 同款兜底）：拿不到实例就保持没有底的纯平底 */
   try {
     flowApi = mountFlowBackdrop(canvas, {
+      speed: ui.effectiveFlowSpeed,
       reducedMotion: Boolean(motionQuery?.matches),
-      simWidth: width < 560 ? 320 : width < 900 ? 480 : 640,
-      maxEdge: width < 900 ? 1280 : 1600
+      simWidth: width < 560 ? 320 : width < 900 ? 480 : 640
     })
   } catch {
     flowApi = null
@@ -362,9 +363,7 @@ watch(query, () => scheduleSaveUi())
   <!-- 设置页也坐在共享的流动底上：DOM 与 Workbench 的背板逐字同构，盒子尺寸走内联见脚本注释 -->
   <div class="st-backdrop-wrap" style="position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden">
     <canvas ref="flowCanvas" class="st-backdrop" style="position:absolute;inset:0;display:block;width:100%;height:100%"></canvas>
-    <div class="st-layer dots"></div>
     <div class="st-layer vignette"></div>
-    <div class="st-layer grain"></div>
   </div>
 
   <AppTopbar
@@ -440,7 +439,7 @@ watch(query, () => scheduleSaveUi())
       <!-- 弹窗挂在 main.pane 内（不是 .settings-shell 的直接子元素）：既让 .settings-shell dialog 选择器命中，
            原生 dialog 在 top-layer，不占用内容区高度。 -->
       <SettingsDialog v-model:open="resetOpen" title="恢复默认外观">
-        <p>恢复为思源宋体、跟随中文的西文字体和 17 px 字号，并关闭默认隐藏顶栏。</p>
+        <p>恢复为思源宋体、跟随中文的西文字体和 17 px 字号，关闭默认隐藏顶栏，并将流动速度恢复为 1×。</p>
         <p class="dialog-note">正文内容与作品数据会保留。</p>
         <template #footer>
           <button type="button" class="btn" data-act="dialog-close" @click="resetOpen = false">取消</button>

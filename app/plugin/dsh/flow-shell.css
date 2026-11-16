@@ -22,10 +22,10 @@ html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] :is(.wb
 html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] .panel-topbar {
   position: relative;
   z-index: 40;
-  background-color: color-mix(in srgb, var(--ns-layer-1, #232324) 62%, transparent);
+  background-color: var(--panel-glass);
   -webkit-backdrop-filter: blur(20px) saturate(1.5);
   backdrop-filter: blur(20px) saturate(1.5);
-  border-bottom: 1px solid rgb(255 255 255 / .14);
+  border-bottom: 1px solid var(--panel-line);
 }
 
 /* ---- 2. 背景层：脱流钉满壳层，层级 = 背景 0 < 内容 1 < 顶栏 40（与 latent-studio.css §15 同一套几何）---- */
@@ -54,10 +54,11 @@ html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] .st-lay
   background-image: radial-gradient(circle, rgb(255 255 255 / .95) .45px, transparent .8px);
   background-size: 2px 2px;
 }
-html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] .st-layer.vignette {
-  background:
-    radial-gradient(130% 96% at 50% 38%, transparent 40%, rgb(3 4 7 / .3) 100%),
-    linear-gradient(180deg, rgb(3 4 7 / .26) 0%, rgb(3 4 7 / 0) 30%, rgb(3 4 7 / .14) 64%, rgb(3 4 7 / .38) 100%);
+:is(.ls-backdrop-wrap, .st-backdrop-wrap) > .vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 48%, rgb(3 4 7 / .12) 100%);
 }
 /* 噪声与 latent-shelf.css:41 同一份 data:image/svg+xml：三处背板是同一块底，颗粒感必须同源 */
 html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] .st-layer.grain {
@@ -68,28 +69,28 @@ html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] .st-lay
 /* ---- 3. 玻璃：侧栏/批注栏 62%、主区 52%，都留得下流动底；--ns-layer-1 深色回退 #232324 ---- */
 html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] :is(.side-panel, .right-panel),
 html body[data-skin='dsh'] .latent-export-dialog.n-modal.n-card {
-  background-color: color-mix(in srgb, var(--ns-layer-1, #232324) 62%, transparent);
+  background-color: var(--panel-glass);
   /* 材质表还给侧栏铺了 --ls-glass-fill 渐变，留着会把 62% 又拉回实底 */
   background-image: none;
-  border: 1px solid rgb(255 255 255 / .16);
+  border: 1px solid var(--panel-line);
   border-radius: 20px;
   -webkit-backdrop-filter: blur(20px) saturate(1.5);
   backdrop-filter: blur(20px) saturate(1.5);
-  box-shadow: 0 24px 56px rgb(0 0 0 / .46), inset 0 1px 0 rgb(255 255 255 / .38);
-  color: var(--ns-label-1, #f9fafb);
+  box-shadow: var(--panel-shadow);
+  color: var(--panel-ink);
 }
 /* 主区玻璃只给非正文模块：latent-studio.css:308-312 把 .center-pane 定义成纯布局容器（transparent / border 0），
  * 正文页的设计是「稿纸一块暗牌浮在流动底上」，章头与工具栏直接露背板；沉浸/阅读态（§1017-1027）也靠这条。
  * 大纲/设定/人物/灵感四模块才需要一块玻璃底板托住内容，所以按 data-module 排除正文页。 */
 html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow]:not([data-module='chapters']):not([data-module='chapter']) .center-pane {
-  background-color: color-mix(in srgb, var(--ns-layer-1, #232324) 52%, transparent);
+  background-color: var(--panel-glass);
   background-image: none;
-  border: 1px solid rgb(255 255 255 / .16);
+  border: 1px solid var(--panel-line);
   border-radius: 20px;
   -webkit-backdrop-filter: blur(20px) saturate(1.5);
   backdrop-filter: blur(20px) saturate(1.5);
-  box-shadow: 0 24px 56px rgb(0 0 0 / .46), inset 0 1px 0 rgb(255 255 255 / .38);
-  color: var(--ns-label-1, #f9fafb);
+  box-shadow: var(--panel-shadow);
+  color: var(--panel-ink);
 }
 
 /* ---- 4. 大纲 / 设定两页：宿主在这两个模块里各自多铺了一层不透明地面，52% 玻璃压在它上面，
@@ -113,7 +114,7 @@ html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow][data-mo
   background: transparent;
 }
 html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow][data-module='lore'] .ob-editor {
-  background: color-mix(in srgb, var(--ns-layer-1, #232324) 52%, transparent);
+  background: var(--panel-glass);
   -webkit-backdrop-filter: blur(20px) saturate(1.5);
   backdrop-filter: blur(20px) saturate(1.5);
 }
@@ -127,5 +128,5 @@ html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow][data-mo
 /* 浮起的章节沿用宿主底色，让浅色宿主的深色文字也清晰。 */
 body[data-skin='dsh'][data-ns-host='dsh'] [data-chapter-sort-ghost] {
   background: color-mix(in srgb, var(--ns-layer-1, #232324) 94%, var(--ns-label-1, #f9fafb));
-  color: var(--ns-label-1, #f9fafb);
+  color: var(--panel-ink);
 }

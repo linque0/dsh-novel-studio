@@ -168,7 +168,7 @@ watch(
 const flowCanvas = ref(null)
 let flow = null
 
-/* 画布按 CSS 像素分档（与书架的 simWidth/maxEdge 同档位）：拆窗常有窄窗，没必要按整块屏烧算力 */
+/* 画布按 CSS 像素分档（与书架的 simWidth 同档位）：拆窗常有窄窗，没必要按整块屏烧算力 */
 function flowWidth() {
   return flowCanvas.value?.clientWidth || window.innerWidth || 0
 }
@@ -186,17 +186,17 @@ function paintFlowPalette() {
   flow.setPalette(paletteOf(current), { duration: 600, seed: (hashString(current.id) % 997) / 997 })
 }
 /* 画布在 v-if 分支里：onMounted 时它还没渲染，只能由 canvas ref 出现后再挂引擎 */
+watch(() => ui.effectiveFlowSpeed, speed => flow?.setSpeed(speed))
 function mountEngine() {
   const canvas = flowCanvas.value
   if (!canvas || flow) return
   const width = flowWidth()
   try {
     flow = mountFlowBackdrop(canvas, {
-      reducedMotion: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true,
-      simWidth: width < 560 ? 320 : width < 900 ? 480 : 640,
-      maxEdge: width < 900 ? 1280 : 1600,
-      /* 上下文丢失后引擎会换 CPU 底并清空调色，这里把作品的色补回去 */
-      onFallback: () => paintFlowPalette()
+      speed: ui.effectiveFlowSpeed,
+      palette: work.work ? paletteOf(work.work) : null,
+      reducedMotion: Boolean(flowMotion?.matches),
+      simWidth: width < 560 ? 320 : width < 900 ? 480 : 640
     })
   } catch { flow = null }
   paintFlowPalette()
@@ -205,13 +205,18 @@ function destroyEngine() {
   try { flow?.dispose?.() } catch { /* 已销毁 */ }
   flow = null
 }
+const flowMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')
+const onFlowMotionChange = event => flow?.setReducedMotion(event.matches)
+
 function mountFlow() {
+  flowMotion?.addEventListener('change', onFlowMotionChange)
   /* 旧验收脚本读 __nsStudioBackdrop：拆窗里没有 Workbench，这里补上同一个函数 */
   window.__nsFlowBackdrop = flowStats
   window.__nsStudioBackdrop = flowStats
   mountEngine()
 }
 function unmountFlow() {
+  flowMotion?.removeEventListener('change', onFlowMotionChange)
   destroyEngine()
   delete window.__nsFlowBackdrop
   delete window.__nsStudioBackdrop
@@ -253,7 +258,7 @@ onBeforeUnmount(() => {
       <StudioWorkspace v-else-if="spec.type==='agent'" />
       <template v-else>
         <!-- 与主窗口同构的背景层：.st-backdrop-wrap 必须是 .latent-studio 的直接子项（§15 的脱流规则按这个层级写） -->
-        <div class="st-backdrop-wrap"><canvas ref="flowCanvas" class="st-backdrop"></canvas><div class="st-layer dots"></div><div class="st-layer vignette"></div><div class="st-layer grain"></div></div>
+        <div class="st-backdrop-wrap"><canvas ref="flowCanvas" class="st-backdrop"></canvas><div class="st-layer vignette"></div></div>
         <OutlineTopbar v-if="nsPlugin && spec.type==='outline'" detached @navigate="outlineNavigate" @close="flushAndClose"/>
         <div v-else class="panel-topbar">
           <span class="serif" style="font-weight: 700">{{ work.work?.title }} · {{ panelTitle }}</span>

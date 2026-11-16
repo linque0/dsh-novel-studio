@@ -182,7 +182,7 @@ watch(() => [props.active, ui.skin], async () => {
   <AutoHideTopbar class="app-topbar-shell" :auto-hide="ui.topbarAutoHide" @update:auto-hide="value => ui.setPref('topbarAutoHide', value)">
     <header class="app-topbar" :data-topbar-page="active">
       <button type="button" class="app-topbar-brand" title="返回书架" aria-label="小说工坊，返回书架" :disabled="busy" @click="navigate('shelf')">
-        <span class="app-topbar-brand-text">小说工坊<small>LATENT</small></span>
+        <span class="app-topbar-brand-text">小说工坊<small>幻流</small></span>
         <span class="app-topbar-narrow-title" :title="narrowTitle">{{ narrowTitle }}</span>
       </button>
       <nav ref="nav" class="app-topnav" aria-label="功能模块" :data-ovf="navOvf || null" :style="navBudget ? {maxWidth:navBudget+'px'} : undefined" @wheel="onNavWheel" @scroll="measureNav">

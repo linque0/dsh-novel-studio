@@ -9,6 +9,7 @@ import './topbar.css'
 import './outline-fusion.css'
 import './characters-fusion.css'
 import './settings-fusion.css'
+import './panel-material.css'
 import { getActivePinia } from 'pinia'
 import { useUiStore } from '../../src/stores/ui'
 

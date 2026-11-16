@@ -1,3 +1,5 @@
+import { entryCircleGlyphs } from './entry-circles.js'
+
 const colors = ['#a1c7bb', '#c5adcf', '#d5ac8b', '#a8a7c4', '#b9b2a2']
 
 export function lorePlanetData(entries, relationships, characters) {
@@ -21,7 +23,9 @@ export function lorePlanetData(entries, relationships, characters) {
     if (!setId) continue
     const summary = String(entry.text || '').trim()
     const title = summary.split('\n')[0] || '未命名节点'
-    const item = { id: entry.id, title, summary, createdAt: entry.createdAt }
+    const glyphs = entryCircleGlyphs(summary || title)
+    const glyphCount = glyphs.reduce((count, glyph) => count + Number(glyph !== ' '), 0)
+    const item = { id: entry.id, title, summary, glyphs, glyphCount, createdAt: entry.createdAt }
     if (entry.id === setId) sets.push({ ...item, color: colors[sets.length % colors.length] })
     else nodes.push({ ...item, setId, parentId: entry.parentId })
   }

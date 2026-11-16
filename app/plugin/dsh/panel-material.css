@@ -1,0 +1,197 @@
+/* Roles shared by the desktop and DSH writing surfaces. The canvas keeps its work palette. */
+html body[data-skin='dsh'] {
+  --canvas-glass: rgb(24 23 35 / .32);
+  --canvas-glass-border: 1px solid rgb(255 255 255 / .17);
+  --canvas-glass-radius: 20px;
+  --canvas-glass-filter: blur(24px) saturate(1.35);
+  --canvas-title: #fff;
+  --canvas-muted: #ded4e8;
+  --canvas-control: rgb(255 255 255 / .06);
+  --canvas-control-hover: rgb(255 255 255 / .15);
+  --canvas-selection: rgb(255 255 255 / .92);
+  --canvas-selection-ink: #2f293b;
+
+  --panel-scheme: light;
+  --panel-base: #f9f5ed;
+  --panel-raised: #fffcf6;
+  --panel-glass: rgb(249 245 237 / .88);
+  --panel-paper: rgb(255 252 246 / .93);
+  --panel-ink: #252630;
+  --panel-muted: #464650;
+  --panel-quiet: #51515b;
+  --panel-line: rgb(37 38 48 / .19);
+  --panel-control: #6d6b76;
+  --panel-hover: rgb(37 38 48 / .08);
+  --panel-active: #dce8fa;
+  --panel-accent: #284f8a;
+  --panel-danger: #8e2638;
+  --panel-success: #236044;
+  --panel-warning: #784822;
+  --panel-shadow-color: rgb(28 31 46 / .19);
+  --panel-shadow: 0 16px 44px rgb(28 31 46 / .19);
+  --set-ink: var(--panel-ink);
+  --set-muted: var(--panel-muted);
+  --set-faint: var(--panel-quiet);
+  --set-line: var(--panel-line);
+  --set-wash: var(--panel-hover);
+  --set-accent: var(--panel-accent);
+  color-scheme: var(--panel-scheme);
+}
+
+html body[data-skin='dsh'][data-ns-panel-theme='dark'] {
+  --panel-scheme: dark;
+  --panel-base: #272831;
+  --panel-raised: #33343e;
+  --panel-glass: rgb(30 31 39 / .88);
+  --panel-paper: rgb(25 26 33 / .93);
+  --panel-ink: #f7f4ee;
+  --panel-muted: #dfdce5;
+  --panel-quiet: #cac8d4;
+  --panel-line: rgb(240 239 247 / .19);
+  --panel-control: #a0a4b0;
+  --panel-hover: rgb(240 239 247 / .09);
+  --panel-active: #394b67;
+  --panel-accent: #bbd4ff;
+  --panel-danger: #ffbac2;
+  --panel-success: #b0e3c5;
+  --panel-warning: #f3cb9c;
+  --panel-shadow-color: rgb(0 0 0 / .40);
+  --panel-shadow: 0 16px 44px rgb(0 0 0 / .40);
+}
+
+/* Visual maps use the outline's continuous surface and the theme's utility panels. */
+html body[data-skin='dsh'] .lore-shell[data-view='map'] > .lore-main {
+  background: var(--canvas-glass);
+  border: var(--canvas-glass-border);
+  border-radius: var(--canvas-glass-radius);
+  -webkit-backdrop-filter: var(--canvas-glass-filter);
+  backdrop-filter: var(--canvas-glass-filter);
+}
+
+html body[data-skin='dsh'] .lore-shell[data-view='map'] > .lore-pane:not(.lore-main),
+html body[data-skin='dsh'] .lore-shell[data-view='map'] .lore-reference-pane {
+  --ink: var(--panel-ink);
+  --ink-dim: var(--panel-muted);
+  --ink-faint: var(--panel-quiet);
+  --lore-ink: var(--panel-ink);
+  --lore-ink-strong: var(--panel-ink);
+  --lore-dim: var(--panel-muted);
+  --lore-dim-2: var(--panel-quiet);
+  --lore-line: var(--panel-line);
+  --lore-line-2: var(--panel-line);
+  --lore-tag-on: var(--panel-accent);
+  --lore-btn-bg: var(--panel-hover);
+  --lore-btn-line: var(--panel-line);
+  --lore-hover: var(--panel-hover);
+  color: var(--panel-ink);
+  background: var(--panel-glass);
+  border-color: var(--panel-line);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  backdrop-filter: blur(20px) saturate(1.5);
+}
+
+html body[data-skin='dsh'] .lore-shell[data-view='map'] .lore-map-stage {
+  --lore-grid-dot: rgb(255 255 255 / .085);
+}
+
+html body[data-skin='dsh'] .lore-shell[data-view='map'][data-map-mode='relations'] .lore-map-stage {
+  background-image: none;
+}
+
+html body[data-skin='dsh'] .lore-shell[data-view='map'] .nav-pane
+  :is(.nav-head, .nav-foot, .nav-section-label, .nav-search, .nav-search input, .nav-entry, .category) {
+  color: var(--panel-muted);
+}
+
+html body[data-skin='dsh'] .lore-shell[data-view='map'] .nav-pane
+  :is(.lore-nav-row.current, .category.current) {
+  color: var(--panel-ink);
+  background: var(--panel-active);
+}
+
+html body[data-skin='dsh'] .lore-shell[data-view='map'] .nav-pane .lore-nav-row.current .lore-nav-node {
+  color: inherit;
+}
+
+/* Local appearance uses app-owned aliases. Follow mode inherits the host's original aliases. */
+html body[data-skin='dsh'][data-ns-panel-source='local'] {
+  --ns-bg: var(--panel-base);
+  --ns-layer-1: var(--panel-base);
+  --ns-layer-2: var(--panel-raised);
+  --ns-layer-3: var(--panel-raised);
+  --ns-label-1: var(--panel-ink);
+  --ns-label-2: var(--panel-muted);
+  --ns-label-3: var(--panel-quiet);
+  --ns-caption: var(--panel-quiet);
+  --ns-border-1: var(--panel-line);
+  --ns-border-2: var(--panel-line);
+  --ns-border-3: var(--panel-control);
+  --ns-border-4: var(--panel-control);
+  --ns-hover: var(--panel-hover);
+  --ns-active: var(--panel-active);
+  --ns-accent: var(--panel-accent);
+  --ns-success: var(--panel-success);
+  --ns-warn: var(--panel-warning);
+  --ns-error: var(--panel-danger);
+  --ns-shadow: var(--panel-shadow-color);
+}
+
+html body[data-skin='dsh'] :is(.workbench-shell, .panel-host, .n-modal, .n-popover) :is(button, input, select, textarea, a, [role='button'], [role='switch']):focus-visible {
+  outline: 2px solid var(--panel-accent);
+  outline-offset: 2px;
+}
+
+html body[data-skin='dsh'] :is(.workbench-shell, .panel-host) :is(.side-panel, .right-panel, .rich-host),
+html body[data-skin='dsh'] :is(.ctx-menu, .ctx-sub) {
+  --ls-ink: var(--panel-ink);
+  --ls-ink-2: var(--panel-muted);
+  --ls-ink-3: var(--panel-quiet);
+  --ls-line: var(--panel-line);
+  color: var(--panel-ink);
+}
+
+html body[data-skin='dsh'] :is(.ctx-menu, .ctx-sub) .hint {
+  color: var(--panel-quiet);
+}
+
+html body[data-skin='dsh'] .latent-studio .side-panel .ct-root .n-tree .n-tree-node.n-tree-node--selected {
+  background: var(--panel-active);
+}
+
+html body[data-skin='dsh'][data-ns-panel-theme] .latent-studio .side-panel .ct-root .n-tree .n-tree-node--selected :is(.ct-label, .n-tree-node-content),
+html body[data-skin='dsh'][data-ns-panel-theme] .latent-studio .side-panel .side-head .n-button:hover {
+  color: var(--panel-ink);
+}
+
+html body[data-skin='dsh'] .latent-studio .side-panel .side-head .n-button:hover {
+  background: var(--panel-hover);
+}
+
+html body[data-skin='dsh'] :is(.workbench-shell, .panel-host) .rich-host > .rich-inner {
+  color: var(--panel-ink);
+}
+
+html body[data-skin='dsh'] .settings-shell :is(.panel-theme-select, .select) {
+  max-width: 100%;
+  color: var(--panel-ink);
+}
+
+html body[data-skin='dsh'] .settings-shell .panel-theme-note {
+  display: block;
+  margin-top: 5px;
+  color: var(--set-faint);
+  font-size: 12px;
+}
+
+html body[data-skin='dsh'] .settings-shell .about-layout .project-repository,
+html body[data-skin='dsh'] .settings-shell .app-update-about .project-repository {
+  background: var(--panel-hover);
+  border-color: var(--panel-control);
+  color: var(--panel-accent);
+}
+
+html body[data-skin='dsh'] .settings-shell .about-layout .project-repository:hover,
+html body[data-skin='dsh'] .settings-shell .app-update-about .project-repository:hover {
+  background: var(--panel-active);
+  border-color: var(--panel-accent);
+}

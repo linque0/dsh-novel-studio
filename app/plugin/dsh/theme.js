@@ -10,21 +10,22 @@
  * 主题本身只在这里定义，组件层不写颜色。 */
 
 import { computed, onScopeDispose, ref } from 'vue'
+import { resolvePanelTheme } from '../../src/services/latent/panel-theme.js'
 
 /* 中性色常量：深色（宿主 alias 层）与浅色各一套。 */
 const DARK = {
-  bg: '#151517', layer1: '#232324', layer2: '#2c2c2e',
-  text1: '#f9fafb', text2: '#cfd3d6', text3: '#81858c',
-  border: 'rgba(255,255,255,.12)', accent: '#7aaaff', error: '#f25a5a', success: '#22c55e',
+  bg: '#1e1f27', layer1: '#272831', layer2: '#33343e',
+  text1: '#f7f4ee', text2: '#dfdce5', text3: '#cac8d4',
+  border: 'rgba(240,239,247,.19)', control: '#a0a4b0', accent: '#bbd4ff', error: '#ffbac2', success: '#b0e3c5',
   /* 玻璃面：与 language.css 的 --nsx-glass-1 同色同透明度，面板后面透出页面底色 */
-  glass: '#232324e0'
+  glass: '#1e1f27e0'
 }
 const LIGHT = {
-  bg: '#ffffff', layer1: '#fafafa', layer2: '#ffffff',
-  text1: '#0f1115', text2: '#61666b', text3: '#81858c',
-  border: 'rgba(0,0,0,.10)', accent: '#4176e6', error: '#ec1313', success: '#22c55e',
+  bg: '#f9f5ed', layer1: '#f9f5ed', layer2: '#fffcf6',
+  text1: '#252630', text2: '#464650', text3: '#51515b',
+  border: 'rgba(37,38,48,.19)', control: '#6d6b76', accent: '#284f8a', error: '#8e2638', success: '#236044',
   /* 玻璃面：与 language.css 的 --nsx-glass-1 同色同透明度，面板后面透出页面底色 */
-  glass: '#ffffffd9'
+  glass: '#f9f5ede0'
 }
 
 /* 圆角 10 / 12 / 16：控件 10，容器 12，大面板 16 —— 与 language.css 的胶囊/面板半径同一档。
@@ -94,7 +95,7 @@ function buildOverrides(c) {
       railColor: c.border,
       progressRailColor: c.border,
 
-      borderColor: c.border,
+      borderColor: c.control,
       dividerColor: c.border,
       hoverColor: c.border,
       pressedColor: c.border,
@@ -156,9 +157,9 @@ function buildOverrides(c) {
       textColorPressedPrimary: c.bg,
       textColorFocusPrimary: c.bg,
       textColorDisabledPrimary: c.text3,
-      border: '0.5px solid ' + c.border,
-      borderHover: '0.5px solid ' + c.border,
-      borderPressed: '0.5px solid ' + c.border,
+      border: '1px solid ' + c.control,
+      borderHover: '1px solid ' + c.control,
+      borderPressed: '1px solid ' + c.control,
       borderFocus: '0.5px solid ' + c.accent,
       borderDisabled: '0.5px solid ' + c.border,
       borderPrimary: '0.5px solid ' + c.accent,
@@ -191,7 +192,7 @@ function buildOverrides(c) {
       placeholderColor: c.text3,
       placeholderColorDisabled: c.text3,
       caretColor: c.accent,
-      border: '0.5px solid ' + c.border,
+      border: '1px solid ' + c.control,
       borderHover: '0.5px solid ' + c.text3,
       borderFocus: '0.5px solid ' + c.accent,
       borderDisabled: '0.5px solid ' + c.border,
@@ -234,7 +235,7 @@ function buildOverrides(c) {
       colorEmbedded: c.layer1,
       textColor: c.text1,
       titleTextColor: c.text1,
-      borderColor: c.border,
+      borderColor: c.control,
       borderColorModal: c.border,
       borderColorPopover: c.border,
       borderRadius: RADIUS.md,
@@ -308,7 +309,7 @@ function buildOverrides(c) {
       thTextColor: c.text1,
       thFontWeight: '600',
       thFontSize: FONT.small,
-      borderColor: c.border,
+      borderColor: c.control,
       borderRadius: RADIUS.md,
       fontSize: FONT.base,
       thPaddingMedium: '8px 10px',
@@ -346,7 +347,7 @@ function buildOverrides(c) {
       textColor: c.text2,
       color: c.layer1,
       borderWidth: '0.5px',
-      border: '0.5px solid ' + c.border,
+      border: '1px solid ' + c.control,
       textColorPrimary: c.accent,
       textColorSuccess: c.success,
       textColorError: c.error,
@@ -470,7 +471,7 @@ function readDshDark() {
 
 /* 返回 computed<{ dark, overrides }>：:theme（darkTheme | null）与 :theme-overrides
  * 都从这一个 computed 派生，保证两者永远同源。 */
-export function useDshOverrides() {
+export function useDshOverrides(preference) {
   const dark = ref(readDshDark())
   const sync = () => { dark.value = readDshDark() }
 
@@ -489,5 +490,5 @@ export function useDshOverrides() {
     })
   }
 
-  return computed(() => (dark.value ? DARK_THEME : LIGHT_THEME))
+  return computed(() => resolvePanelTheme(preference(), dark.value) === 'dark' ? DARK_THEME : LIGHT_THEME)
 }

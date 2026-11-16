@@ -15,6 +15,28 @@ export function resolveLoreFocus(nodes, id, ancestors = [], workId) {
   const live = new Set(nodes.filter(n => !n.deletedAt && (!workId || n.workId === workId)).map(n => n.id))
   return [id, ...[...ancestors].reverse()].find(k => live.has(k)) || null
 }
+// The graph shows children and grandchildren of its current center.
+export function resolveLoreGalaxy(nodes, location, workId) {
+  const live = new Map(nodes.filter(node => !node.deletedAt && (!workId || node.workId === workId)).map(node => [node.id, node]))
+  const { rootId, rootPath = [], activeId } = location
+  let center = rootId ? [rootId, ...[...rootPath].reverse()].find(id => live.has(id)) || null : null
+  let active = activeId !== rootId && live.has(activeId) ? activeId : null
+  if (active) {
+    const path = lorePath(live, active).map(node => node.id)
+    const index = center ? path.indexOf(center) : -1
+    const visible = (!center || index >= 0) && path.length - 1 - index <= 2
+    if (!visible) center = path.at(-2) || null
+    if (active === center) active = null
+  }
+  return {
+    rootId: center,
+    rootPath: lorePath(live, center).map(node => node.id),
+    activeId: active || center,
+    selectedId: active || center,
+    scope: active || center ? 'set' : 'all'
+  }
+}
+
 export const createLoreHistory = () => ({ past: [], future: [], group: null, at: 0 })
 export function checkpointLore(history, nodes, { group = null, at = Date.now(), selection = null } = {}) {
   if (!group || group !== history.group || at - history.at > 1200 || !history.past.length) {

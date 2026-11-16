@@ -30,7 +30,7 @@ html body[data-skin='dsh'] {
 }
 
 /* ---- 令牌：暗色分支 ---- */
-html[data-ns-dark] body[data-skin='dsh'] {
+html body[data-ns-panel-theme='dark'][data-skin='dsh'] {
   --nsx-glass-1: color-mix(in srgb, var(--ns-layer-1, #232324) 88%, transparent);
   --nsx-glass-2: color-mix(in srgb, var(--ns-layer-1, #232324) 70%, transparent);
   --nsx-glass-3: color-mix(in srgb, var(--ns-layer-1, #232324) 50%, transparent);
@@ -120,7 +120,7 @@ html body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) .app-to
   background: var(--nsx-ink-1);
   color: #ffffff;
 }
-html[data-ns-dark] body[data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) .app-topnav-item.active {
+html body[data-ns-panel-theme='dark'][data-skin='dsh'] :is(.app-topbar, .original-shelf .app-topbar) .app-topnav-item.active {
   background: #ffffff;
   color: #17181c;
 }
