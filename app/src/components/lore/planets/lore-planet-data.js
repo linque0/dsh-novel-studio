@@ -24,8 +24,7 @@ export function lorePlanetData(entries, relationships, characters) {
     const summary = String(entry.text || '').trim()
     const title = summary.split('\n')[0] || '未命名节点'
     const glyphs = entryCircleGlyphs(summary || title)
-    const glyphCount = glyphs.reduce((count, glyph) => count + Number(glyph !== ' '), 0)
-    const item = { id: entry.id, title, summary, glyphs, glyphCount, createdAt: entry.createdAt }
+    const item = { id: entry.id, title, summary, glyphs, createdAt: entry.createdAt }
     if (entry.id === setId) sets.push({ ...item, color: colors[sets.length % colors.length] })
     else nodes.push({ ...item, setId, parentId: entry.parentId })
   }

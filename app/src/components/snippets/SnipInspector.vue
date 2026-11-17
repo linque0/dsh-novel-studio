@@ -7,30 +7,25 @@ import OIcon from '../OIcon.vue'
 const props = defineProps({
   note: { type: Object, default: null },
   draft: { type: Object, default: null },
-  wide: Boolean,
   busy: Boolean,
   saveError: Boolean,
   conflict: Boolean,
-  board: Boolean,
   workTitle: { type: String, default: '' },
-  knownTags: { type: Array, default: () => [] },
-  linkCount: { type: Number, default: 0 }
+  knownTags: { type: Array, default: () => [] }
 })
-const emit = defineEmits(['close', 'edit', 'save', 'update-draft', 'add-tag', 'untag', 'unlink', 'open-link', 'convert', 'remove', 'restore', 'preview', 'cancel-edit', 'retry', 'resolve-conflict'])
+const emit = defineEmits(['close', 'save', 'update-draft', 'add-tag', 'untag', 'unlink', 'open-link', 'convert', 'remove', 'restore', 'preview', 'cancel-edit', 'retry', 'resolve-conflict'])
 
-// 只有带 editing 标记的草稿才算在编辑：残留草稿（点过编辑但没改）Open 后仍停在阅读态。
-const editing = computed(() => !!props.draft?.editing && !props.note?.deletedAt)
 const draft = computed(() => props.draft || { title: props.note?.title || '', body: props.note?.body || '' })
-const showCopy = computed(() => !!props.note && !editing.value && (!props.wide || props.board))
+const dirty = computed(() => draft.value.title !== props.note?.title || draft.value.body !== props.note?.body)
 const kindLabel = { chapter: '正文', mubu: '设定', character: '人物' }
 const kindIcon = { chapter: 'books', mubu: 'note', character: 'user' }
 
 const composing=ref(false),tagText=ref('')
+watch(()=>props.note?.id,()=>{composing.value=false;tagText.value=''})
 watch(()=>props.note?.tags,()=>{if(props.note?.tags.includes(tagText.value.trim().replace(/^#+/,'')))tagText.value=''})
 function update(form){emit('update-draft',{title:form.elements.title.value,body:form.elements.body.value})}
 function submit(form) {
-  if(composing.value||props.busy)return
-  form=form?.closest?.('form')||form
+  if(composing.value||props.busy||props.conflict||!dirty.value||!form.reportValidity())return
   const fd = new FormData(form)
   const title = String(fd.get('title') || '')
   const body = String(fd.get('body') || '')
@@ -50,7 +45,7 @@ function onTag(form) {
           <span class="snip-eyebrow">{{ note.deletedAt ? '回收站' : '片段整理' }}</span>
           <button type="button" class="snip-round" aria-label="关闭片段详情" @click="emit('close')">×</button>
         </div>
-        <h2>{{ note.title }}</h2>
+        <h2 v-if="note.deletedAt">{{ note.title }}</h2>
       </div>
       <div class="snip-inspect-body">
         <div v-if="saveError" class="snip-save-error" role="alert"><span>保存未完成，内容已保留。</span><button type="button" :disabled="busy" @click="emit('retry')">重试保存</button></div>
@@ -60,10 +55,10 @@ function onTag(form) {
           <p>继续编辑后，下次保存将用草稿更新当前版本。</p>
           <button type="button" class="snip-soft" @click="emit('resolve-conflict')">已核对，继续编辑</button>
         </div>
-        <!-- 编辑态：显式保存 + 未提交草稿（切视图/关面板/刷新都不丢） -->
         <form
-          v-if="editing"
+          v-if="!note.deletedAt"
           class="snip-edit-form"
+          :key="note.id"
           @submit.prevent="submit($event.currentTarget)"
           @input="update($event.currentTarget)"
           @compositionstart="composing = true" @compositionend="composing = false"
@@ -73,21 +68,18 @@ function onTag(form) {
           <label>标题<input name="title" :value="draft.title" required></label>
           <label>正文<textarea name="body" :value="draft.body"></textarea></label>
           <div class="snip-edit-controls">
-            <span class="snip-edit-draft">有未提交修改</span>
-            <button type="button" class="snip-soft" @click="emit('cancel-edit')">取消</button>
-            <button type="submit" class="snip-primary" :disabled="busy">保存修改</button>
+            <span v-if="dirty" class="snip-edit-draft">有未提交修改</span>
+            <button type="button" class="snip-soft" :disabled="busy || (!dirty && !conflict)" @click="emit('cancel-edit')">取消</button>
+            <button type="submit" class="snip-primary" :disabled="busy || conflict || !dirty">保存修改</button>
           </div>
         </form>
 
         <template v-else>
-          <div v-if="showCopy" class="snip-detail-copy">{{ note.body || '还没有正文。' }}</div>
-          <button v-if="!note.deletedAt" type="button" class="snip-soft snip-edit-button" @click="emit('edit', note.id)">
-            <OIcon name="edit" :size="15" />编辑片段
-          </button>
-          <button v-else type="button" class="snip-primary snip-edit-button" @click="emit('restore', note.id)">恢复这条灵感</button>
+          <div class="snip-detail-copy">{{ note.body || '还没有正文。' }}</div>
+          <button type="button" class="snip-primary snip-edit-button" @click="emit('restore', note.id)">恢复这条灵感</button>
         </template>
 
-        <template v-if="!note.deletedAt && !editing">
+        <template v-if="!note.deletedAt">
           <div class="snip-section-title">标签<span>{{ note.tags.length }}</span></div>
           <div class="snip-tags">
             <span v-for="t in note.tags" :key="t" class="snip-edit-tag"># {{ t }}<button type="button" :aria-label="'移除标签' + t" @click="emit('untag', t)">×</button></span>
@@ -123,7 +115,7 @@ function onTag(form) {
             <button type="button" class="snip-soft" @click="emit('convert', 'chapter')"><OIcon name="books" :size="15" />转为章节</button>
             <button type="button" class="snip-soft" @click="emit('convert', 'mubu')"><OIcon name="note" :size="15" />转为设定</button>
           </div>
-          <p class="snip-caption">转换后保留原灵感。</p>
+          <p class="snip-caption">{{ dirty ? '转换使用已保存的内容。' : '转换后保留原灵感。' }}</p>
         </template>
 
         <div class="snip-meta-lines">
@@ -131,7 +123,7 @@ function onTag(form) {
           所属作品　{{ workTitle }}
         </div>
         <button
-          v-if="!note.deletedAt && !editing"
+          v-if="!note.deletedAt"
           type="button"
           class="snip-soft snip-danger snip-delete-button"
           @click="emit('remove', note.id)"
@@ -140,7 +132,7 @@ function onTag(form) {
     </template>
     <div v-else class="snip-inspector-empty">
       <h2>片段整理</h2>
-      <p>选择一条灵感，查看内容、标签和关联。</p>
+      <p>选择一条灵感，编辑内容、标签和关联。</p>
     </div>
   </div>
 </template>

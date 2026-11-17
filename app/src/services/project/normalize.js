@@ -2,6 +2,7 @@ import {snippetReferences} from '../snippet-links.js'
 import { normalizeText, hashContent, rowHash, chapterHash, stableStringify, tokens } from './text.js'
 import { chunkText, paragraphRanges } from './chunker.js'
 import { rolesOf } from '../character-tags.js'
+import { characterBiographyText } from '../character-biographies.js'
 import { outlineConnections } from './outline-connections.js'
 
 export const PROJECTION_VERSION = 4
@@ -56,7 +57,7 @@ export function projectBook(bundle, previous = []) {
     const peers = rels.flatMap((r) => [chars.get(r.fromId), chars.get(r.toId)]).filter(Boolean)
     const text = [c.name, c.aliases && '别名：' + c.aliases, rolesOf(c).length && '角色：' + rolesOf(c).join('、'), (c.tags || []).join('、'),
       ...Object.entries(c.fields || {}).sort(([a],[b]) => a.localeCompare(b)).map(([k,v]) => k + '：' + (typeof v === 'object' ? stableStringify(v) : v)),
-      normalizeText(c.content, c.fmt), ...rels.map((r) => `${chars.get(r.fromId)?.name || r.fromId} → ${chars.get(r.toId)?.name || r.toId}：${r.label || ''}`)].filter(Boolean).join('\n')
+        normalizeText(characterBiographyText(c), c.fmt), ...rels.map((r) => `${chars.get(r.fromId)?.name || r.fromId} → ${chars.get(r.toId)?.name || r.toId}：${r.label || ''}`)].filter(Boolean).join('\n')
     add('character', c, text, ['人物', c.name || '未命名人物'], 'setting', { aliases: c.aliases, role: c.role, tags: c.tags, temporalStatus: 'unknown' }, [...rels.map((r) => versions('relations', r)), ...peers.map((r) => versions('characters', r))])
   }
   for (const r of live('relations')) {

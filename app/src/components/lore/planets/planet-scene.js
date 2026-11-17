@@ -7,7 +7,7 @@ export const TUNING = Object.freeze({
   workRadius: .92, workClearance: .54, orbitGap: .31, orbitInclination: .53,
   surfaceAngle: Math.PI / 3, surfaceTolerance: .045, samples: 24,
   surfaceWave: .04, spaceWave: .16, crossWave: .22,
-  overviewCircle: [3, 18], detailCircle: [4, 26], maxLabels: 28, bodyScale: 1.9,
+  overviewCircle: [3.5, 8], detailCircle: [4.5, 16], bodyScale: 1.9,
   satelliteReach: .66
 })
 
@@ -16,11 +16,43 @@ export const rotation = (x = 0, y = 0) => new Quaternion().setFromEuler(new Eule
 const golden = Math.PI * (3 - Math.sqrt(5))
 const tau = 2 * Math.PI
 export const ease = t => 1 - (1 - t) ** 3
+export const PLANET_SIZE_MIN = 50
+export const PLANET_SIZE_MAX = 200
+
+export function planetSizeValue(value) {
+  return Number.isFinite(value) ? clamp(Math.round(value), PLANET_SIZE_MIN, PLANET_SIZE_MAX) : 100
+}
 
 export function stablePhase(id) {
   let hash = 2166136261
   for (const char of String(id)) hash = Math.imul(hash ^ char.codePointAt(0), 16777619)
   return (hash >>> 0) / 4294967296 * tau
+}
+
+function entryDirections(count) {
+  const ring = (size, point) => Array.from({ length: size }, (_, index) => {
+    const angle = index * tau / size
+    return point(Math.cos(angle), Math.sin(angle))
+  })
+  switch (count) {
+    case 1: return [new Vector3(1, 0, 0)]
+    case 2: return [new Vector3(1, 0, 0), new Vector3(-1, 0, 0)]
+    case 3: return ring(3, (x, y) => new Vector3(x, y, 0))
+    case 4: return [[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]]
+      .map(([x, y, z]) => new Vector3(x, y, z).normalize())
+    case 5:
+    case 6:
+    case 7: return [new Vector3(0, 1, 0), new Vector3(0, -1, 0),
+      ...ring(count - 2, (x, z) => new Vector3(x, 0, z))]
+    case 8: return [-1, 1].flatMap(x => [-1, 1].flatMap(y => [-1, 1]
+      .map(z => new Vector3(x, y, z).normalize())))
+    default: return Array.from({ length: count }, (_, index) => {
+      const y = 1 - 2 * (index + .5) / count
+      const radius = Math.sqrt(1 - y * y)
+      const angle = index * golden
+      return new Vector3(radius * Math.cos(angle), y, radius * Math.sin(angle))
+    })
+  }
 }
 
 export function networkModel(sets, nodes, links, satellites = []) {
@@ -53,13 +85,8 @@ export function networkModel(sets, nodes, links, satellites = []) {
   function prepare(body) {
     body.total = body.entries.reduce((count, item) => count + 1 + prepare(item), 0)
     body.radius = planetRadius(body.total)
-    body.entries.forEach((item, index) => {
-      const y = 1 - 2 * (index + .5) / body.entries.length
-      const r = Math.sqrt(1 - y * y)
-      const angle = index * golden
-      const ripple = 1 + .09 * Math.sin(angle * 2.1 + y * 4) + .055 * Math.cos(angle * .7 - y * 8)
-      item.position = new Vector3(r * Math.cos(angle), y, r * Math.sin(angle)).multiplyScalar(ripple)
-    })
+    const directions = entryDirections(body.entries.length)
+    body.entries.forEach((item, index) => { item.position = directions[index] })
     body.weave = buildWeave(body.entries)
     return body.total
   }
@@ -154,6 +181,12 @@ export function planetEnvelope(planet, positions = {}) {
 }
 
 function buildWeave(entries) {
+  if (entries.length >= 5 && entries.length <= 7) {
+    const [north, south, ...ring] = entries
+    return ring.flatMap((entry, index) => [
+      [north, entry], [south, entry], [entry, ring[(index + 1) % ring.length]]
+    ])
+  }
   const links = new Map()
   entries.forEach((node, index) => {
     const neighbors = entries.map((other, i) => ({ i, distance: node.position.distanceToSquared(other.position) }))
@@ -170,20 +203,30 @@ export function spacingValue(value) {
   return Number.isFinite(value) ? clamp(value, 0, Number.MAX_SAFE_INTEGER) : 100
 }
 
+export function withOrbitSpacingReference(settings, spacing) {
+  if (Number.isFinite(settings.spacingReference) || !Object.values(settings.radii || {}).some(Number.isFinite)) return settings
+  return { ...settings, spacingReference: spacingValue(spacing) }
+}
+
+export function scaleOrbitRadius(radius, fromSpacing, toSpacing) {
+  if (fromSpacing === toSpacing) return radius
+  const factor = spacing => .55 + .45 * spacingValue(spacing) / 100
+  const minimum = TUNING.workRadius + .34
+  return minimum + (radius - minimum) * factor(toSpacing) / factor(fromSpacing)
+}
+
 export function spacePlanets(bodies, positions, spacing = 100, settings = {}) {
   const planets = bodies.map(body => ({ ...body, shellRadius: planetEnvelope(body, positions) }))
   const byId = new Map(planets.map(body => [body.id, body]))
-  const surfaceDensity = Math.max(0, ...planets.map(body =>
-    body.entries.length / Math.max(.5, (body.radius * TUNING.bodyScale) ** 2)))
-  const pressure = Math.max(planets.length / 16, surfaceDensity / 8)
-  const gap = TUNING.orbitGap * clamp(.63 + pressure * .55, .72, 1.65) * spacingValue(spacing) / 100
+  const reference = settings.spacingReference ?? spacing
+  const gap = TUNING.orbitGap * spacingValue(reference) / 100
   const creationTime = set => {
     if (set.createdAt == null || set.createdAt === '') return Infinity
     const time = typeof set.createdAt === 'number' ? set.createdAt : Date.parse(set.createdAt)
     return Number.isFinite(time) ? time : Infinity
   }
   const chronological = [...planets].sort((a, b) => creationTime(a) - creationTime(b) || String(a.id).localeCompare(String(b.id)))
-  let edge = TUNING.workRadius + Math.max(.34, TUNING.workClearance * gap / TUNING.orbitGap)
+  let edge = TUNING.workRadius + TUNING.workClearance
   const terminal = body => body.parent && !body.entries.length
   const tracks = []
   for (let index = 0; index < chronological.length;) {
@@ -214,13 +257,14 @@ export function spacePlanets(bodies, positions, spacing = 100, settings = {}) {
     group.push(...track.band)
     groups.set(target.id, group)
     const requested = settings.radii?.[target.id]
-    const radius = legacyRadii?.[index] ?? (Number.isFinite(requested)
+    const baseRadius = legacyRadii?.[index] ?? (Number.isFinite(requested)
       ? Math.max(TUNING.workRadius + .34, requested) : target.radius)
+    const radius = scaleOrbitRadius(baseRadius, reference, spacing)
     for (const planet of track.band) {
       const speed = settings.speeds?.[planet.id]
       planet.orbitId = target.id
       planet.orbitRadius = radius
-      planet.defaultOrbitRadius = target.radius
+      planet.defaultOrbitRadius = scaleOrbitRadius(target.radius, reference, spacing)
       planet.orbitSpeed = tau / TUNING.orbitPeriod * (2.5 / radius) ** 1.25 * (speed?.orbit ?? 100) / 100
       planet.spinSpeed = tau / TUNING.spinPeriod * .75 / planet.radius * (speed?.spin ?? 100) / 100
       planet.spinPhase = stablePhase(planet.id)
@@ -244,7 +288,7 @@ export function spacePlanets(bodies, positions, spacing = 100, settings = {}) {
           const cosine = Math.cos(phase - p.orbitPhase)
           const a = planet.orbitRadius, b = p.orbitRadius
           const separation = Math.sqrt(a * a + b * b - 2 * a * b * cosine)
-          const clearance = planet.shellRadius + p.shellRadius + gap * 2
+          const clearance = planet.shellRadius + p.shellRadius + TUNING.orbitGap * 2
           return sum + .65 * (1 + cosine) ** 4 + Math.max(0, clearance - separation) ** 2 * 8
         }, 0)
       if (cost >= bestCost) continue
@@ -309,9 +353,9 @@ export function localPosition(node, positions) {
     : node.position.clone().multiplyScalar(TUNING.detailRadius)
 }
 
-export function makeCamera(width, height, zoom, extent = 4, horizontalStretch = 1, focus, offset) {
+export function makeCamera(width, height, zoom, extent = 4, horizontalStretch = 1, focus, offset, depthExtent = extent) {
   const unit = Math.min(width * .45 / horizontalStretch, height * .46) / extent * zoom
-  const distance = Math.max(TUNING.cameraDistance, extent * 2.15)
+  const distance = Math.max(TUNING.cameraDistance, depthExtent * 2.15)
   const focusScale = focus ? unit * distance / (distance - focus.z) : 0
   const cx = width / 2 + ((offset?.x || 0) * unit - (focus?.x || 0) * focusScale) * horizontalStretch
   const cy = height / 2 - ((offset?.y || 0) * unit - (focus?.y || 0) * focusScale)

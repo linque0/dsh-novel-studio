@@ -17,6 +17,7 @@ import { applyProposal, undoApplication } from '../services/ai/application'
 import { useAiStore } from './ai'
 import { chapterHash, plainChapter } from '../services/ai/contracts'
 import { primaryRole } from '../services/character-tags'
+import { characterBiographyText } from '../services/character-biographies.js'
 import { readWritingPosition } from '../services/writing-position.js'
 import { resolveWritingChapter } from '../services/writing-position-core.js'
 import { DEFAULT_MUBU_SETS, kindOf } from '../components/lore/lore-kinds.js'
@@ -1959,8 +1960,9 @@ export const useWorkStore = defineStore('work', {
       }
       if (scopes.characters) {
         for (const c of this.liveCharacters) {
-          if (((c.name || '') + (c.aliases || '') + (c.role || '') + (c.tags || []).join('') + (c.content || '')).toLowerCase().includes(ql)) {
-            push({ type: 'characters', id: c.id, title: c.name + (primaryRole(c) ? `（${primaryRole(c)}）` : ''), hits: grab(c.content).concat(grab(c.aliases, 1)) })
+          const biography = characterBiographyText(c)
+          if (((c.name || '') + (c.aliases || '') + (c.role || '') + (c.tags || []).join('') + biography).toLowerCase().includes(ql)) {
+            push({ type: 'characters', id: c.id, title: c.name + (primaryRole(c) ? `（${primaryRole(c)}）` : ''), hits: grab(biography).concat(grab(c.aliases, 1)) })
           }
         }
       }

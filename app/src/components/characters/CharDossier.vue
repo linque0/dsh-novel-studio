@@ -1,9 +1,8 @@
 <!-- 主区·人物卷宗：外壳 .char-pane[data-pane='main'] 的内容（视图为 profile 时渲染）。
      结构对照设计稿 app.mjs:31 moduleHead()、app.mjs:32 profile()、app.mjs:33 editForm()、app.mjs:37 footer()，
-     滚动位置的存取由外壳按 data-char-scroll="dossier" 负责。
-     数据语义沿用插件既有的即时落库（work.updateCharacter），编辑态只是「显示哪套排版」，取消不回滚已写库内容。 -->
+     滚动位置的存取由外壳按 data-char-scroll="dossier" 负责。 -->
 <script setup>
-import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import OIcon from '../OIcon.vue'
 import DLinkTextMenu from '../DLinkTextMenu.vue'
 import LoreRelRows from '../LoreRelRows.vue'
@@ -14,6 +13,7 @@ import { pickFiles, arrayBufferToBlob, imageMime, IMAGE_EXTS } from '../../servi
 import { jumpTo } from '../../services/doublelinks'
 import { rolesOf, primaryRole, aliasesOf, splitTagString, uniqTags } from '../../services/character-tags'
 import { tagColor } from '../../services/tagcolors'
+import { characterDraftPatch, createCharacterDraft, readCharacterBiographies } from '../../services/character-biographies.js'
 
 const shell = inject('charShell', null)
 const work = useWorkStore()
@@ -24,35 +24,38 @@ const narrow = computed(() => !!shell?.narrow?.value)
 const view = computed(() => shell?.view?.value || (work.charView === 'graph' ? 'graph' : 'profile'))
 const workTitle = computed(() => work.work?.title || '未命名作品')
 
-const editing = ref(false)
+const draft = ref(null)
+const editing = computed(() => !!draft.value)
+const profile = computed(() => draft.value || c.value)
+const saving = ref(false)
+const pendingAvatar = shallowRef(null)
+let originalDraft
 const menuOpen = ref(false)
 const nameEl = ref(null)
 const dlMenu = ref(null)
 
-/* 一句话：插件版没有独立列，存在 fields 里（设计稿同位置用 fields['身份']），编辑器与阅读态共用这一格 */
-const NOTE_KEY = '一句话'
-const fieldsEntries = computed(() => Object.entries(c.value?.fields || {}))
-const note = computed(() => String(c.value?.fields?.[NOTE_KEY] || ''))
-const customFields = computed(() => fieldsEntries.value.filter(([k]) => k !== NOTE_KEY))
-const roles = computed(() => rolesOf(c.value))
+// Keep the retired field in saved character data.
+const LEGACY_NOTE_KEY = '一句话'
+const customFields = computed(() => Object.entries(profile.value?.fields || {}).filter(([key]) => key !== LEGACY_NOTE_KEY))
+const roles = computed(() => rolesOf(profile.value))
 const roleText = computed(() => primaryRole(c.value) || '未定角色')
 const otherRoles = computed(() => roles.value.slice(1).join(' / ') || '人物档案')
 const aliases = computed(() => aliasesOf(c.value))
-const bioParagraphs = computed(() => String(c.value?.content || '').split(/\n{2,}/).map((s) => s.trim()).filter(Boolean))
+const biographies = computed(() => readCharacterBiographies(c.value))
 const relEntries = computed(() => (c.value ? work.loreLinksOf('character', c.value.id) : []))
 const avatarUrl = computed(() => {
   void work.urlTick
-  return c.value?.avatarAssetId ? work.assetUrl(c.value.avatarAssetId) : ''
+  return pendingAvatar.value?.url || (profile.value?.avatarAssetId ? work.assetUrl(profile.value.avatarAssetId) : '')
 })
-const faceStyle = computed(() => ({ '--char-tone': tagColor(c.value?.name || '人') }))
-const initial = computed(() => String(c.value?.name || '').trim().slice(0, 1) || '人')
+const faceStyle = computed(() => ({ '--char-tone': tagColor(profile.value?.name || '人') }))
+const initial = computed(() => String(profile.value?.name || '').trim().slice(0, 1) || '人')
 
 watch(() => c.value?.avatarAssetId, (id) => {
   if (id) void work.warmUrls([id])
 }, { immediate: true })
 /* 换人即退出编辑态，避免把上一份表单状态带到下一个人物 */
 watch(() => c.value?.id, () => {
-  editing.value = false
+  discardDraft()
   menuOpen.value = false
 })
 
@@ -60,7 +63,7 @@ const ROLE_PRESETS = ['主角', '配角', '反派', '导师', '红颜', '盟友'
 const hasRole = (r) => roles.value.includes(r)
 
 function patch(p) {
-  if (c.value) work.updateCharacter(c.value.id, p)
+  if (draft.value) Object.assign(draft.value, p)
 }
 function onText(e, key) {
   patch({ [key]: e.target.value })
@@ -69,21 +72,13 @@ function toggleRoleChip(r) {
   const list = hasRole(r) ? roles.value.filter((x) => x !== r) : [...roles.value, r]
   patch({ role: uniqTags(list).slice(0, 12).join('/') })
 }
-/* 标签输入保留用户输入的原文（局部草稿），落库的是归一化结果：
-   直接绑 store 会在「雾港 /」这种中途状态把输入框改回去，光标随之跳位 */
 const tagsDraft = ref('')
-watch(() => c.value?.id, () => {
-  tagsDraft.value = (c.value?.tags || []).join(' / ')
-}, { immediate: true })
 function onTags(e) {
   tagsDraft.value = e.target.value
   patch({ tags: uniqTags(splitTagString(e.target.value)) })
 }
-function onNote(e) {
-  patch({ fields: { ...(c.value?.fields || {}), [NOTE_KEY]: e.target.value } })
-}
 function addField() {
-  const f = { ...(c.value?.fields || {}) }
+  const f = { ...draft.value.fields }
   let i = 1
   while (f['字段' + i] !== undefined) i++
   f['字段' + i] = ''
@@ -91,8 +86,8 @@ function addField() {
 }
 function renameField(oldKey, e) {
   const next = String(e.target.value || '').trim()
-  const f = { ...(c.value?.fields || {}) }
-  if (!next || next === oldKey || f[next] !== undefined) {
+  const f = { ...draft.value.fields }
+  if (!next || next === oldKey || next === LEGACY_NOTE_KEY || f[next] !== undefined) {
     e.target.value = oldKey
     return
   }
@@ -101,46 +96,86 @@ function renameField(oldKey, e) {
   patch({ fields: f })
 }
 function setFieldValue(k, e) {
-  patch({ fields: { ...(c.value?.fields || {}), [k]: e.target.value } })
+  patch({ fields: { ...draft.value.fields, [k]: e.target.value } })
 }
 function removeField(k) {
-  const f = { ...(c.value?.fields || {}) }
+  const f = { ...draft.value.fields }
   delete f[k]
   patch({ fields: f })
 }
 
-/* 小传右键双链菜单：DLinkTextMenu 只挂在 textarea / contenteditable 上，编辑态的小传输入框是宿主 */
-function onBioContext(e) {
-  const row = c.value
-  if (!row) return
-  dlMenu.value?.open(e, { get: () => row.content || '', set: (v) => work.updateCharacter(row.id, { content: v }) })
+function addBiography() {
+  draft.value.biographies.push({ id: crypto.randomUUID(), title: '', content: '' })
+}
+function removeBiography(index) {
+  if (draft.value.biographies.length <= 1) return
+  dlMenu.value?.close()
+  draft.value.biographies.splice(index, 1)
+}
+function onBioContext(e, biography) {
+  dlMenu.value?.open(e, {
+    get: () => biography.content,
+    set: value => { if (draft.value?.biographies.includes(biography)) biography.content = value }
+  })
+}
+
+function clearAvatarPreview() {
+  if (pendingAvatar.value) URL.revokeObjectURL(pendingAvatar.value.url)
+  pendingAvatar.value = null
 }
 
 async function changeAvatar() {
-  const row = c.value
-  if (!row) return
+  const current = draft.value
+  if (!current) return
   const files = await pickFiles(IMAGE_EXTS)
-  if (!files.length) return
+  if (!files.length || draft.value !== current || saving.value) return
   const f = files[0]
-  const meta = await work.addAssetBlob(arrayBufferToBlob(f.data, imageMime(f.ext)), f.name)
-  work.updateCharacter(row.id, { avatarAssetId: meta.id })
-  await work.warmUrls([meta.id])
+  const blob = arrayBufferToBlob(f.data, imageMime(f.ext))
+  clearAvatarPreview()
+  pendingAvatar.value = { blob, name: f.name, url: URL.createObjectURL(blob) }
 }
 function removeAvatar() {
+  clearAvatarPreview()
   patch({ avatarAssetId: null })
 }
 
 function startEdit() {
-  editing.value = true
+  if (!c.value || editing.value || saving.value) return
+  originalDraft = createCharacterDraft(c.value)
+  draft.value = createCharacterDraft(c.value)
+  tagsDraft.value = draft.value.tags.join(' / ')
+  menuOpen.value = false
   nextTick(() => nameEl.value?.focus?.())
 }
-function finishEdit() {
-  editing.value = false
-  window.$msg?.success('档案已保存')
+function discardDraft() {
+  dlMenu.value?.close()
+  clearAvatarPreview()
+  draft.value = null
+  originalDraft = null
 }
-/* 取消只退出编辑态：插件是即时落库，没有草稿层可以回滚（设计稿的草稿表不引入） */
-function cancelEdit() {
-  editing.value = false
+async function finishEdit() {
+  if (!draft.value || !c.value || saving.value) return
+  const current = draft.value
+  const id = c.value.id
+  const workId = work.work?.id
+  const changes = characterDraftPatch(originalDraft, current)
+  const avatar = pendingAvatar.value
+  saving.value = true
+  try {
+    if (avatar) {
+      const meta = await work.addAssetBlob(avatar.blob, avatar.name)
+      changes.avatarAssetId = meta.id
+      if (work.work?.id === workId) void work.warmUrls([meta.id])
+    }
+    if (work.work?.id !== workId) return
+    if (Object.keys(changes).length) work.updateCharacter(id, changes)
+    if (draft.value === current) discardDraft()
+    window.$msg?.success('档案修改已确认')
+  } catch {
+    window.$msg?.error('无法确认档案修改，请重试')
+  } finally {
+    saving.value = false
+  }
 }
 
 function pickRel(e) {
@@ -208,7 +243,10 @@ function onDocClick(e) {
   if (!e.target?.closest?.('.char-foot-more')) menuOpen.value = false
 }
 onMounted(() => document.addEventListener('click', onDocClick))
-onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
+onBeforeUnmount(() => {
+  document.removeEventListener('click', onDocClick)
+  discardDraft()
+})
 </script>
 
 <template>
@@ -263,11 +301,10 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
       </div>
 
       <!-- 编辑态：app.mjs:33 editForm() -->
-      <form v-else-if="editing" class="char-edit" @submit.prevent="finishEdit">
+      <form v-else-if="editing" class="char-edit" :inert="saving" @submit.prevent="finishEdit">
         <div class="char-editing-label">
           <OIcon name="edit" :size="14" />
-          <span>正在编辑 · {{ c.name || '未命名' }}</span>
-          <button class="char-btn small soft" type="button" @click="cancelEdit">取消</button>
+          <span>正在编辑 · {{ draft.name || '未命名' }}</span>
         </div>
 
         <div class="char-avatar-edit">
@@ -290,7 +327,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
             ref="nameEl"
             class="char-name-input"
             type="text"
-            :value="c.name"
+            :value="draft.name"
             placeholder="为这个人物起名"
             autocomplete="off"
             @input="onText($event, 'name')"
@@ -300,7 +337,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
         <div class="char-form-pair">
           <div class="char-edit-field">
             <span>角色定位</span>
-            <input type="text" aria-label="角色定位" :value="c.role" placeholder="主角 / 守护者" @input="onText($event, 'role')" />
+            <input type="text" aria-label="角色定位" :value="draft.role" placeholder="主角 / 守护者" @input="onText($event, 'role')" />
             <small>多个角色用 / 分隔</small>
             <span class="char-role-chips">
               <button
@@ -315,7 +352,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           </div>
           <label class="char-edit-field">
             <span>别名</span>
-            <input type="text" :value="c.aliases" placeholder="别名 / 称呼" @input="onText($event, 'aliases')" />
+            <input type="text" :value="draft.aliases" placeholder="别名 / 称呼" @input="onText($event, 'aliases')" />
           </label>
         </div>
 
@@ -324,21 +361,27 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           <input type="text" :value="tagsDraft" placeholder="雾港 / 灯塔" @input="onTags" />
         </label>
 
-        <label class="char-edit-field">
-          <span>一句话</span>
-          <input type="text" :value="note" placeholder="一句话说清这个人在故事里的位置" @input="onNote" />
-        </label>
-
-        <label class="char-edit-field">
-          <span>人物小传</span>
-          <textarea
-            class="char-bio"
-            :value="c.content"
-            placeholder="写下这个人的经历、动机与秘密……"
-            @input="onText($event, 'content')"
-            @contextmenu="onBioContext"
-          ></textarea>
-        </label>
+        <section aria-label="人物小传">
+          <div class="char-field-editor-title">
+            <span>人物小传</span>
+            <button class="char-btn small soft" type="button" @click="addBiography">
+              <OIcon name="plus" :size="11" />
+              <span>添加小传</span>
+            </button>
+          </div>
+          <div v-for="(biography, index) in draft.biographies" :key="biography.id" class="char-edit-field char-biography-edit">
+            <div class="char-biography-title">
+              <input v-model="biography.title" type="text" :aria-label="'第 ' + (index + 1) + ' 篇小传标题'"
+                :placeholder="index ? '小传 ' + (index + 1) : '人物小传'">
+              <button v-if="draft.biographies.length > 1" class="char-icon-btn" type="button" title="移除这篇小传"
+                :aria-label="'移除第 ' + (index + 1) + ' 篇小传'" @click="removeBiography(index)">
+                <OIcon name="trash" :size="13" />
+              </button>
+            </div>
+            <textarea v-model="biography.content" class="char-bio" :aria-label="'第 ' + (index + 1) + ' 篇小传正文'"
+              placeholder="写下这个人的经历、动机与秘密……" @contextmenu="onBioContext($event, biography)"></textarea>
+          </div>
+        </section>
 
         <div class="char-field-editor-title">
           <span>自定义字段</span>
@@ -355,13 +398,6 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           </button>
         </div>
 
-        <div class="char-edit-buttons">
-          <button class="char-btn" type="button" @click="cancelEdit">取消</button>
-          <button class="char-btn primary" type="submit">
-            <OIcon name="check" :size="13" />
-            <span>完成</span>
-          </button>
-        </div>
       </form>
 
       <!-- 阅读态：app.mjs:32 profile() -->
@@ -393,8 +429,6 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           </div>
         </div>
 
-        <p v-if="note" class="char-identity-note">{{ note }}</p>
-
         <section class="char-section">
           <div class="char-section-head">
             <span class="char-section-index">01</span>
@@ -403,8 +437,13 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
               <OIcon name="edit" :size="13" />
             </button>
           </div>
-          <div v-if="bioParagraphs.length" class="char-prose">
-            <p v-for="(p, i) in bioParagraphs" :key="i">{{ p }}</p>
+          <div v-if="biographies.length" class="char-biography-list">
+            <div v-for="biography in biographies" :key="biography.id">
+              <h4 v-if="biographies.length > 1 || biography.title !== '人物小传'" class="char-biography-heading">{{ biography.title }}</h4>
+              <div v-if="biography.paragraphs.length" class="char-prose">
+                <p v-for="(p, i) in biography.paragraphs" :key="i">{{ p }}</p>
+              </div>
+            </div>
           </div>
           <template v-else>
             <p class="char-tiny-empty">还没有写下这个人的故事。</p>
@@ -449,7 +488,14 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
 
     <footer class="char-pane-foot">
       <span class="char-foot-path">{{ workTitle }} / {{ c?.name || '人物' }}</span>
-      <template v-if="c">
+      <div v-if="editing" class="char-edit-buttons">
+        <button class="char-btn" type="button" :disabled="saving" @click="discardDraft">取消</button>
+        <button class="char-btn primary" type="button" :disabled="saving" @click="finishEdit">
+          <OIcon name="check" :size="13" />
+          <span>{{ saving ? '保存中…' : '完成' }}</span>
+        </button>
+      </div>
+      <template v-else-if="c">
         <button class="char-icon-btn" type="button" title="删除人物" aria-label="删除人物" @click="removeCharacter">
           <OIcon name="trash" :size="13" />
         </button>
@@ -475,7 +521,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
             </button>
           </div>
         </div>
-        <button v-if="!editing" class="char-btn" type="button" @click="startEdit">
+        <button class="char-btn" type="button" @click="startEdit">
           <OIcon name="edit" :size="12" />
           <span>编辑档案</span>
         </button>

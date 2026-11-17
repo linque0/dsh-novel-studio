@@ -1,7 +1,6 @@
 <script setup>
 const nsPlugin = __NS_PLUGIN__
 const chapterControlSlot = nsPlugin ? 'more-end' : 'bar-end'
-import TaskLauncher from './ai/TaskLauncher.vue'
 import WritingPaperPicker from './WritingPaperPicker.vue'
 import ChapterTitleField from './ChapterTitleField.vue'
 import WritingLayoutHandle from './writing-layout/WritingLayoutHandle.vue'
@@ -391,7 +390,6 @@ async function clearGoal() {
 </script>
 
 <template>
-  <TaskLauncher v-if="!nsPlugin && !ui.readMode" module="chapters" />
   <div ref="editorWrap" class="editor-wrap" :data-paper-adjustable="paperEnabled || undefined" :style="paperWrapStyle" :data-writing-paper="ui.writingPaperStyle" :data-paper-skin="ui.skin" :data-paper-theme="ui.theme" :data-paper-quiet="ui.readMode || ui.focusMode" :class="{ 'read-mode': ui.readMode }">
     <div class="editor-head" v-if="work.activeChapter && !ui.readMode">
       <ChapterTitleField

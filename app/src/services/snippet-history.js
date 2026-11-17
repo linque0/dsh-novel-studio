@@ -3,6 +3,12 @@ export function fingerprint(row){
  function clean(x){if(Array.isArray(x))return x.map(clean);if(x&&typeof x==='object')return Object.fromEntries(Object.keys(x).sort().filter(k=>k!=='updatedAt').map(k=>[k,clean(x[k])]));return x}
  return JSON.stringify(clean(row??null))
 }
+export function snippetContentFingerprint(row){
+ return fingerprint(row ? { content: row.content ?? '', title: row.title ?? '', deletedAt: row.deletedAt ?? null } : null)
+}
+export function matchesSnippetContent(row,base){
+ try{return snippetContentFingerprint(row)===snippetContentFingerprint(JSON.parse(base))}catch{return false}
+}
 export function inverseChanges(changes){return changes.map(c=>({...c,before:clone(c.after),after:c.before==null?{...clone(c.after),deletedAt:Date.now()}:clone(c.before)}))}
 /** Command preparation happens once. A failed commit retries the same IDs and expected rows. */
 export function createSnippetHistory({apply,before=async()=>{},committed=()=>{},changed=()=>{}}){

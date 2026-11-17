@@ -1,29 +1,45 @@
-import { clamp } from './planet-scene.js'
-
-export const MIN_ENTRY_RADIUS = 6
-export const MAX_ENTRY_RADIUS = 180
-const DEFAULT_LINES = 3
-const DEFAULT_GLYPHS = 15
+export const MIN_ENTRY_RADIUS = 1
 
 export function entryCircleGlyphs(text) {
   return Array.from(text.trim().replace(/\s+/gu, ' '))
 }
 
-export function entryCircleRadius(base, count) {
-  if (!count) return base
-  const textRadius = 7 + 5.4 * Math.sqrt(Math.min(count, DEFAULT_GLYPHS))
-    + Math.min(10, 2.6 * Math.log2(1 + Math.max(0, count - DEFAULT_GLYPHS) / DEFAULT_GLYPHS))
-  return Math.max(base, textRadius)
+export function entryCircleScale(zoom) {
+  return zoom < 1 ? zoom ** 1.5 : 2 * zoom / (1 + zoom)
 }
 
-export function entryRadiusLimit(width, height) {
-  return clamp(Math.floor(Math.min(width, height) / 2) - 4, MIN_ENTRY_RADIUS, MAX_ENTRY_RADIUS)
+export function entryRadiusLimit(width, height, zoom = 1, overview = false, size = 1) {
+  const canvasLimit = Math.max(1, Math.floor(Math.min(width, height) / 2) - 4)
+  const viewLimit = (overview ? 9 : 17) * entryCircleScale(zoom) * size
+  return Math.min(canvasLimit, viewLimit)
+}
+
+export function entryDisplayRadius(base, scale) {
+  return Math.max(base, MIN_ENTRY_RADIUS) * scale
+}
+
+export function entryReferenceRadius(displayed, scale) {
+  return Math.max(displayed / scale, MIN_ENTRY_RADIUS)
+}
+
+function singleLineTitle(measure, glyphs, radius) {
+  const width = Math.max(0, radius * 1.76 - 2.5)
+  const prefix = []
+  for (const glyph of glyphs) {
+    if (measure(prefix.join('') + glyph) > width) break
+    prefix.push(glyph)
+  }
+  if (!prefix.length) return []
+  if (prefix.length === glyphs.length) return [prefix.join('')]
+  while (prefix.length > 1 && measure(prefix.join('') + '…') > width) prefix.pop()
+  const label = prefix.join('').trimEnd()
+  return [measure(label + '…') <= width ? label + '…' : label]
 }
 
 export function layoutEntryCircleText(measure, glyphs, radius, manual, lineHeight, fontSize = lineHeight / 1.2) {
-  const capacity = Math.max(1, Math.floor((1.65 * radius - 3) / lineHeight))
-  const maxLines = manual ? capacity : Math.min(capacity, DEFAULT_LINES)
-  const limit = manual ? glyphs.length : Math.min(glyphs.length, DEFAULT_GLYPHS)
+  if (!manual) return singleLineTitle(measure, glyphs, radius)
+  const maxLines = Math.max(1, Math.floor((1.65 * radius - 3) / lineHeight))
+  const limit = glyphs.length
   for (let rows = 1; rows <= maxLines; rows++) {
     const lines = []
     let index = 0
@@ -34,11 +50,10 @@ export function layoutEntryCircleText(measure, glyphs, radius, manual, lineHeigh
       let text = ''
       while (index < limit && measure(text + glyphs[index]) <= width) text += glyphs[index++]
       if (!text) break
-      if (index < glyphs.length && (index === limit || (rows === maxLines && row === rows - 1))) {
+      if (index < limit && rows === maxLines && row === rows - 1) {
         const chars = Array.from(text.trimEnd())
-        if (!manual && index === limit) chars.pop()
         while (chars.length && measure(chars.join('') + '…') > width) chars.pop()
-        text = measure('…') <= width ? chars.join('') + '…' : text
+        if (chars.length && measure(chars.join('') + '…') <= width) text = chars.join('') + '…'
       }
       lines.push(text.trimEnd())
     }

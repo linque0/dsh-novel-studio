@@ -29,21 +29,21 @@ html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] .panel-
 }
 
 /* ---- 2. 背景层：脱流钉满壳层，层级 = 背景 0 < 内容 1 < 顶栏 40（与 latent-studio.css §15 同一套几何）---- */
-html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] .st-backdrop-wrap {
+html body[data-skin='dsh'] :is(.workbench-shell, .panel-host, .writing-stats-full)[data-flow] .st-backdrop-wrap {
   position: absolute;
   inset: 0;
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
 }
-html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] .st-backdrop-wrap > canvas.st-backdrop {
+html body[data-skin='dsh'] :is(.workbench-shell, .panel-host, .writing-stats-full)[data-flow] .st-backdrop-wrap > canvas.st-backdrop {
   position: absolute;
   inset: 0;
   display: block;
   width: 100%;
   height: 100%;
 }
-html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] .st-layer {
+html body[data-skin='dsh'] :is(.workbench-shell, .panel-host, .writing-stats-full)[data-flow] .st-layer {
   position: absolute;
   inset: 0;
   pointer-events: none;

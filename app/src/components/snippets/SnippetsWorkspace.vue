@@ -9,7 +9,7 @@ import {useWorkStore} from '../../stores/work'
 import {useUiStore} from '../../stores/ui'
 import {autosave} from '../../services/autosave'
 import {snippetCommandsFor} from '../../services/snippet-commands.js'
-import {fingerprint} from '../../services/snippet-history.js'
+import {matchesSnippetContent,snippetContentFingerprint} from '../../services/snippet-history.js'
 import {previewFor,targetById} from '../../services/doublelinks.js'
 import OIcon from '../OIcon.vue'
 import SnipNav from './SnipNav.vue'
@@ -42,7 +42,7 @@ const visible=computed(()=>visibleNotes(notes.value,{filter:filter.value,tag:tag
 const groups=computed(()=>boardGroups(visible.value,ui.snipTagOrder,filter.value==='trash'))
 const currentGroup=computed(()=>groups.value.some(g=>g.id===ui.snipGroup)?ui.snipGroup:groups.value[0]?.id||'')
 const selectedId=computed(()=>work.selSnippetId||''),selected=computed(()=>notes.value.find(n=>n.id===selectedId.value)||null),draft=computed(()=>ui.snipDrafts.edit[selectedId.value]||null),quick=computed(()=>ui.snipDrafts.quick||'')
-const draftConflict=computed(()=>!!draft.value?.base&&draft.value.base!==fingerprint(work.snippets.find(n=>n.id===selectedId.value)))
+const draftConflict=computed(()=>!!draft.value?.base&&!matchesSnippetContent(work.snippets.find(n=>n.id===selectedId.value),draft.value.base))
 const showInspector=computed(()=>narrow.value?detailOpen.value:ui.snipInspector[view.value]),knownTags=computed(()=>counts.value.tags.map(t=>t.tag))
 function notify(text,undo){clearTimeout(toastTimer);toast.value={text,undo:!!undo};lastUndo=undo||null;toastTimer=setTimeout(()=>{toast.value=null;lastUndo=null},undo?6000:3200)}
 function setState(patch){ui.saveSnipState(patch)}
@@ -75,18 +75,24 @@ async function capture(text,explicitTag){
 async function onCompose(text){const result=await capture(text,dialog.value&&Object.hasOwn(dialog.value,'tag')?dialog.value.tag:tag.value);if(result)dialog.value=null}
 function startEdit(id){
  const row=work.snippets.find(n=>n.id===id&&!n.deletedAt);if(!row)return
- pick(id);if(!ui.snipDrafts.edit[id]?.editing)ui.setSnipDraft(id,{...splitNote(row),base:fingerprint(row),editing:true})
+ pick(id)
  if(narrow.value)detailOpen.value=true;else setState({inspector:{...ui.snipInspector,[view.value]:true}})
  nextTick(()=>document.querySelector('.snip-edit-form [name=title]')?.focus({preventScroll:true}))
 }
-function updateDraft(value){const id=selectedId.value;if(!id)return;const previous=ui.snipDrafts.edit[id];ui.setSnipDraft(id,{...value,base:previous?.base||fingerprint(work.snippets.find(n=>n.id===id)),editing:true})}
+function updateDraft(value){
+ const id=selectedId.value,row=work.snippets.find(n=>n.id===id&&!n.deletedAt)
+ if(!row)return
+ const previous=ui.snipDrafts.edit[id],saved=splitNote(row)
+ if(value.title===saved.title&&value.body===saved.body){if(previous)ui.setSnipDraft(id,null);return}
+ ui.setSnipDraft(id,{...value,base:previous?.base||snippetContentFingerprint(row),editing:true})
+}
 function cancelEdit(){const id=selectedId.value;if(id)ui.setSnipDraft(id,null)}
-function resolveConflict(){const id=selectedId.value,row=work.snippets.find(n=>n.id===id);if(draft.value&&row){ui.setSnipDraft(id,{...draft.value,base:fingerprint(row)});commands.history.get(work.work?.id||'').error=null;revision.value++}}
+function resolveConflict(){const id=selectedId.value,row=work.snippets.find(n=>n.id===id);if(draft.value&&row){ui.setSnipDraft(id,{...draft.value,base:snippetContentFingerprint(row)});commands.history.get(work.work?.id||'').error=null;revision.value++}}
 async function saveEdit({title,body}){
  if(!String(title).trim()){notify('请保留一个标题。');return}
- const id=selectedId.value,workId=work.work?.id,base=draft.value?.base||fingerprint(work.snippets.find(n=>n.id===selectedId.value))
+ const id=selectedId.value,workId=work.work?.id,base=draft.value?.base||snippetContentFingerprint(work.snippets.find(n=>n.id===selectedId.value))
  if(draft.value&&!draft.value.base)ui.setSnipDraft(id,{...draft.value,base},workId)
- const result=await action(()=>commands.patch(id,{content:joinContent(title,body)},{expected:base,clearDraft:true,submitted:{title,body}}),'已保存修改')
+ const result=await action(()=>commands.patch(id,{content:joinContent(title,body)},{expectedContent:base,clearDraft:true,submitted:{title,body}}),'已保存修改')
  if(result?.empty)ui.setSnipDraft(id,null,workId)
 }
 async function addTag(value){const t=String(value||'').trim().replace(/^#+/,'');if(!t||t.length>30){notify('标签需要 1–30 个字。');return}await action(()=>commands.patch(selectedId.value,row=>({tags:normalizeTags([...(row.tags||[]),t])})),'已添加标签')}
@@ -291,12 +297,9 @@ async function retrySave(){await ui.retrySnipPersistence();await autosave.flushA
             :busy="actionBusy"
             :save-error="!!autosaveError"
             @retry="retrySave"
-            wide
-            :board="view === 'board'"
             :work-title="work.work?.title || ''"
             :known-tags="knownTags"
             @close="closeDetail"
-            @edit="startEdit"
             @save="saveEdit"
             @update-draft="updateDraft"
             @add-tag="addTag"
@@ -342,11 +345,9 @@ async function retrySave(){await ui.retrySnipPersistence();await autosave.flushA
             :busy="actionBusy"
             :save-error="!!autosaveError"
             @retry="retrySave"
-          :board="view === 'board'"
           :work-title="work.work?.title || ''"
           :known-tags="knownTags"
           @close="closeDetail"
-          @edit="startEdit"
           @save="saveEdit"
             @update-draft="updateDraft"
           @add-tag="addTag"

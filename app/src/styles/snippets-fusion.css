@@ -7,7 +7,6 @@
  *
  * 地面：不铺实底。模块坐在 Workbench 的流动画布上（flow-shell.css 已把 .wb-body 擦透明），
  * 所以这里只给玻璃面，页面本身透明 —— verify:app 的「主区内容面不吃实底」按 .snippet-surface 量。
- * 底色用设计稿的暗紫纱（工作室既有其他模块是中性深灰，灵感页保留设计稿的紫调，见 DESIGN.md「视觉与空间」）。
  */
 
 .snip-shell {
@@ -35,11 +34,7 @@
   height: 100%;
   color: var(--snip-text);
   font: 14px/1.6 var(--snip-sans);
-  /* 设计稿 body::before 的那层紫纱：插件的地面是流动画布，只叠纱不铺图 */
-  background:
-    radial-gradient(ellipse at 74% -10%, #cb879733, transparent 53%),
-    radial-gradient(ellipse at 8% 55%, #4d436330, transparent 57%),
-    linear-gradient(180deg, #281c3822, #231b3199 88%);
+  background: transparent;
 }
 .snip-shell *,
 .snip-shell *::before,
@@ -73,7 +68,8 @@
 .snip-shell .snip-caption { color: var(--snip-quiet); font-size: 11px; }
 .snip-shell .snip-text-button { font-size: 11px; color: var(--snip-mint); white-space: nowrap; }
 .snip-shell .snip-danger { color: var(--snip-rose) !important; }
-.snip-shell .snip-glass { border: 1px solid var(--snip-border); background: var(--snip-surface-a); border-radius: 15px; backdrop-filter: blur(18px); box-shadow: 0 8px 24px #10091a14; }
+.snip-shell .snip-glass,
+.snip-shell .snip-body > .snip-nav { border: 1px solid var(--snip-border); background: var(--snip-surface-a); border-radius: 15px; backdrop-filter: blur(18px); box-shadow: 0 8px 24px #10091a14; }
 
 /* 模块根占满 Workbench 的 .wb-body / 拆窗 .panel-body（外置 .side-panel 已对本模块关闭） */
 .snippets-shell-host { flex: 1; min-width: 0; min-height: 0; }
@@ -98,9 +94,11 @@
 /* ---------- 工作区（174 | 1fr，gap 22，边距 30/20） ---------- */
 .snip-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 174px minmax(0, 1fr); gap: 22px; margin: 0 30px 20px; }
 .snip-nav { display: flex; flex-direction: column; min-height: 0; overflow: auto; padding: 14px 0; scrollbar-width: thin; overflow-x: hidden; }
+.snip-body > .snip-nav { --snip-quiet: var(--snip-muted); padding-inline: 8px; }
 .snip-nav .work-heading { font-size: 11px; color: var(--snip-quiet); margin: 4px 10px 8px; }
 .snip-nav h2 { font-size: 20px; margin: 0 10px 19px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .snip-nav-row { display: flex; align-items: center; gap: 10px; width: calc(100% - 10px); min-height: 37px; padding: 8px 10px; border-radius: 8px; font-size: 13px; color: var(--snip-muted); text-align: left; }
+.snip-body > .snip-nav .snip-nav-row { width: 100%; }
 .snip-nav-row:hover { background: #efdbff0c; }
 .snip-nav .snip-nav-row {
   /* Beat the module's generic button reset: the prototype uses 13px labels and 8/10px insets. */
@@ -207,10 +205,10 @@
 .snip-tag-form button { font-size: 17px; border: 1px solid var(--snip-border); border-radius: 6px; width: 32px; flex: none; }
 .snip-edit-form label { display: grid; gap: 6px; color: var(--snip-muted); font-size: 11px; margin-bottom: 13px; }
 .snip-edit-form input, .snip-edit-form textarea { border: 1px solid var(--snip-border); background: #f6e2ff05; border-radius: 7px; width: 100%; padding: 9px; font-size: 13px; }
-.snip-edit-form textarea { min-height: 220px; resize: vertical; line-height: 1.9; font-family: var(--snip-serif); }
-.snip-edit-controls { display: flex; align-items: center; gap: 9px; justify-content: space-between; }
+.snip-edit-form textarea { min-height: 150px; resize: vertical; line-height: 1.9; font-family: var(--snip-serif); }
+.snip-edit-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; justify-content: flex-end; }
 .snip-edit-controls .snip-primary { font-size: 12px; padding: 6px 9px; }
-.snip-edit-draft { font-size: 11px; color: var(--snip-quiet); }
+.snip-edit-draft { margin-right: auto; font-size: 11px; color: var(--snip-quiet); }
 .snip-edit-button { width: 100%; margin-bottom: 14px; min-height: 36px; }
 .snip-ref { display: flex; gap: 8px; align-items: center; border: 1px solid var(--snip-border); border-radius: 8px; padding: 10px; font-size: 12px; color: #e5d8eb; width: 100%; text-align: left; }
 .snip-ref svg { width: 15px; height: 15px; color: var(--snip-lav); }

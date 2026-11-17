@@ -4,6 +4,7 @@ import { db } from '../../../db/database'
 import { useWorkStore } from '../../../stores/work'
 import LorePlanetNetwork from './LorePlanetNetwork.vue'
 import { lorePlanetData } from './lore-planet-data.js'
+import { withOrbitSpacingReference } from './planet-scene.js'
 
 defineProps({ location: { type: Object, required: true } })
 const emit = defineEmits(['open-entry', 'open-target', 'edit-relations', 'navigate', 'heading'])
@@ -34,9 +35,22 @@ watch(workId, async (id, _previous, onCleanup) => {
     initialPositions, initialSpacing, initialOrbitSettings,
     initialCenterGlow: saved?.centerGlow || {},
     initialEntryRadii: saved?.entryRadii || {},
+    initialPlanetSizes: saved?.planetSizes || {},
     onLayoutChange: positions => save(previous => ({ ...previous, positions })),
-    onSpacingChange: spacing => save(previous => ({ ...previous, spacing })),
+    onSpacingChange: (spacing, systemId) => save(previous => {
+      const settings = previous.orbitSettings?.[systemId]
+      if (!settings) return { ...previous, spacing }
+      const anchored = withOrbitSpacingReference(settings, previous.spacing?.[systemId])
+      if (anchored === settings) return { ...previous, spacing }
+      return { ...previous, spacing, orbitSettings: { ...previous.orbitSettings, [systemId]: anchored } }
+    }),
     onOrbitSettingsChange: orbitSettings => save(previous => ({ ...previous, orbitSettings })),
+    onPlanetSizeChange: (planetId, size) => save(previous => {
+      const planetSizes = { ...previous.planetSizes }
+      if (size === null) delete planetSizes[planetId]
+      else planetSizes[planetId] = size
+      return { ...previous, planetSizes }
+    }),
     onEntryRadiusChange: (entryId, radius) => save(previous => {
       const entryRadii = { ...previous.entryRadii }
       if (radius === null) delete entryRadii[entryId]

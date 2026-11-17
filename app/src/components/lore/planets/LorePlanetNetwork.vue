@@ -1,10 +1,11 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { Vector3 } from 'three'
-import { clamp, ease, localPosition, networkModel, orbitPoint, rotation, spacePlanets, spacingValue, TUNING } from './planet-scene.js'
+import { clamp, ease, localPosition, networkModel, orbitPoint, planetSizeValue, rotation, scaleOrbitRadius, spacePlanets, spacingValue, TUNING, withOrbitSpacingReference } from './planet-scene.js'
 import { paintNetwork } from './draw-planets.js'
+import PlanetSizeControl from './PlanetSizeControl.vue'
 import { advanceCenterGlow, CENTER_GLOW_COLOR_MODES, CENTER_GLOW_EFFECTS, hasCenterColorModes, normalizeCenterGlow } from './center-glow.js'
-import { entryRadiusLimit, MIN_ENTRY_RADIUS } from './entry-circles.js'
+import { entryCircleScale, entryReferenceRadius, MIN_ENTRY_RADIUS } from './entry-circles.js'
 import './planet-network.css'
 
 const props = defineProps({
@@ -16,10 +17,12 @@ const props = defineProps({
   initialOrbitSettings: { type: Object, default: () => ({}) },
   initialCenterGlow: { type: Object, default: () => ({}) },
   initialEntryRadii: { type: Object, default: () => ({}) },
+  initialPlanetSizes: { type: Object, default: () => ({}) },
   embedded: Boolean,
   location: { type: Object, required: true },
   onLayoutChange: Function, onSpacingChange: Function, onOpenEntry: Function,
-  onOpenTarget: Function, onEditRelations: Function, onOrbitSettingsChange: Function, onCenterGlowChange: Function, onEntryRadiusChange: Function
+  onOpenTarget: Function, onEditRelations: Function, onOrbitSettingsChange: Function,
+  onCenterGlowChange: Function, onEntryRadiusChange: Function, onPlanetSizeChange: Function
 })
 const emit = defineEmits(['open-entry', 'open-target', 'edit-relations', 'navigate', 'heading'])
 const model = computed(() => networkModel(props.sets, props.nodes, props.links, props.satellites))
@@ -28,6 +31,7 @@ const satellite = computed(() => model.value.bySatellite.get(satelliteId.value))
 const positions = shallowRef(props.initialPositions)
 const framingPositions = shallowRef(props.initialPositions)
 const entryRadii = shallowRef(props.initialEntryRadii)
+const planetSizes = shallowRef(props.initialPlanetSizes)
 const entryResize = shallowRef(null)
 const spacingBySystem = shallowRef(props.initialSpacing)
 const orbitSettings = shallowRef(props.initialOrbitSettings)
@@ -48,14 +52,18 @@ let centerGlowTime = 0
 const reduced = ref(false), zoom = ref(1)
 const entryPreview = ref(false), status = ref(''), dragActive = ref(false)
 const spacing = computed(() => spacingValue(spacingBySystem.value[setId.value]))
-const currentOrbitSettings = computed(() => orbitSettings.value[setId.value] || {})
-const system = computed(() => {
+const currentOrbitSettings = computed(() =>
+  withOrbitSpacingReference(orbitSettings.value[setId.value] || {}, props.initialSpacing[setId.value]))
+const referenceSpacing = computed(() => currentOrbitSettings.value.spacingReference ?? 100)
+function layoutSystem(orbitSpacing) {
   const current = model.value.system(setId.value)
   return {
     ...current,
-    planets: spacePlanets(current.planets, framingPositions.value, spacing.value, currentOrbitSettings.value)
+    planets: spacePlanets(current.planets, framingPositions.value, orbitSpacing, currentOrbitSettings.value)
   }
-})
+}
+const referenceSystem = computed(() => layoutSystem(referenceSpacing.value))
+const system = computed(() => spacing.value === referenceSpacing.value ? referenceSystem.value : layoutSystem(spacing.value))
 const activeTrack = computed(() => system.value.planets.find(body => body.orbitId === activeOrbit.value))
 const activeSet = computed(() => system.value.center)
 const selected = computed(() => model.value.byBody.get(nodeId.value))
@@ -116,6 +124,7 @@ function draw() {
   const arrival = ease(clamp((progress - .46) / .54, 0, 1))
   const camera = flight ? {
     ...scene,
+    entryZoom: scene.zoom,
     zoom: scene.zoom * (.83 + .17 * arrival),
     pan: scene.pan.clone().multiplyScalar(arrival),
     offset: scene.offset.clone().multiplyScalar(arrival)
@@ -127,14 +136,16 @@ function draw() {
       ? { ...body, orbitRadius: preview.radius } : body)
   } : data
   painted = paintNetwork(ctx, size, display, camera, {
-    positions: positions.value, framingPositions: framingPositions.value, names, now,
+    positions: positions.value, framingPositions: framingPositions.value, names,
     entryRadii: entryRadii.value, entryResize: entryResize.value,
+    planetSizes: planetSizes.value, planetSettingsId: speedMenu.value?.body.id,
     nodeId: nodeId.value, bridgeId: bridgeId.value, hoverId,
     workTitle: props.workTitle, reduced: reduced.value, satelliteId: satelliteId.value,
     centerGlow: centerGlow.value, centerGlowTime,
     motionPhases, orbitEditing: orbitEditing.value, activeOrbit: orbitEditing.value ? activeOrbit.value : '',
     hoverOrbit: orbitEditing.value ? hoverOrbit.value : '',
-    mergeOrbit: preview?.target, framingData: orbitFraming
+    mergeOrbit: preview?.target, framingData: orbitFraming,
+    spacingFramingData: spacing.value === referenceSpacing.value ? null : referenceSystem.value
   })
   if (previousFrame && flight) {
     const { x, y, scale } = flight
@@ -209,7 +220,7 @@ function animate(now) {
     scene.time += step
     centerGlowTime = advanceCenterGlow(centerGlowTime, step, centerGlow.value.speed)
     draw()
-  } else if (painted?.labelsPending && !document.hidden) draw()
+  }
   frame = requestAnimationFrame(animate)
 }
 
@@ -393,7 +404,7 @@ function adjustSpacing(value, save = false) {
   if (value == null) delete next[setId.value]
   else next[setId.value] = spacingValue(value)
   spacingBySystem.value = next
-  if (save) reportSave(props.onSpacingChange?.(next), '', '当前无法保存星系间距')
+  if (save) reportSave(props.onSpacingChange?.(next, setId.value), '', '当前无法保存轨道间距')
   draw()
 }
 
@@ -417,10 +428,11 @@ function commitOrbits(track) {
   const before = system.value.planets
   const radii = { ...current.radii }
   const joins = { ...current.joins }
+  const reference = current.spacingReference ?? spacing.value
   if (!current.independent) {
     for (const body of before) {
       if (body.orbitRadius !== body.defaultOrbitRadius || Object.hasOwn(radii, body.orbitId)) {
-        radii[body.orbitId] = body.orbitRadius
+        radii[body.orbitId] = scaleOrbitRadius(body.orbitRadius, spacing.value, reference)
       }
     }
   }
@@ -431,10 +443,12 @@ function commitOrbits(track) {
     joins[track.id] = target
     delete radii[track.id]
     activeOrbit.value = target
-  } else radii[track.id] = radius
+  } else radii[track.id] = scaleOrbitRadius(radius, spacing.value, reference)
   orbitPreview.value = null
+  const next = { speeds: current.speeds, radii, joins, independent: true }
+  if (Number.isFinite(current.spacingReference) || !target) next.spacingReference = reference
   orbitSettings.value = {
-    ...orbitSettings.value, [setId.value]: { speeds: current.speeds, radii, joins, independent: true }
+    ...orbitSettings.value, [setId.value]: next
   }
   if (target) {
     spreadJoinedBodies(before, track.id, target)
@@ -476,6 +490,20 @@ function changeSpeed(kind, event) {
   event.target.value = speed
   if (speed === speedOf(body, kind)) return
   updateOrbitSetting('speeds', body.id, { ...currentOrbitSettings.value.speeds?.[body.id], [kind]: speed })
+}
+
+function planetSizeOf(id) {
+  return planetSizeValue(planetSizes.value[id])
+}
+
+function setPlanetSize(id, value, save = false) {
+  const size = planetSizeValue(value)
+  const next = { ...planetSizes.value }
+  if (size === 100) delete next[id]
+  else next[id] = size
+  planetSizes.value = next
+  if (save) reportSave(props.onPlanetSizeChange?.(id, next[id] ?? null), '星体大小已保存', '当前无法保存星体大小')
+  draw()
 }
 
 function updateCenterGlow(field, value) {
@@ -542,7 +570,7 @@ function closeCenterMenu(restoreFocus = false) {
   draw()
 }
 
-async function openSpeedMenu(body, event) {
+async function openSpeedMenu(body, event, entryId = '') {
   if (!body) return
   event.preventDefault()
   closeCenterMenu()
@@ -551,7 +579,7 @@ async function openSpeedMenu(body, event) {
   const rect = canvas.value.getBoundingClientRect()
   const anchorX = event.clientX - rect.left
   const anchorY = event.clientY - rect.top
-  speedMenu.value = { body, anchorX, anchorY, x: anchorX, y: anchorY }
+  speedMenu.value = { body, entryId, anchorX, anchorY, x: anchorX, y: anchorY }
   activeOrbit.value = body.orbitId || ''
   draw()
   await nextTick()
@@ -655,7 +683,7 @@ function changeZoom(factor) {
   scaleTo(scene.zoom * factor)
 }
 function resetView() {
-  if (gesture?.kind === 'orbit') cancelGesture()
+  if (gesture?.kind === 'orbit' || gesture?.kind === 'resize') cancelGesture()
   orbitFraming = null
   interact()
   scene.offset.set(0, 0, 0)
@@ -717,15 +745,17 @@ function startOrbitDrag(hit, point) {
 function hitAt(point) {
   const hits = painted?.hits || []
   const distance = hit => Math.hypot(point.x - hit.x, point.y - hit.y)
-  const satelliteHit = hits.filter(hit => hit.kind === 'satellite' && distance(hit) <= hit.radius).at(-1)
-  if (satelliteHit) return satelliteHit
+  const marker = hits.findLast(hit => {
+    if (hit.kind === 'node') return distance(hit) <= hit.radius
+    if (hit.kind !== 'satellite') return false
+    return Math.abs(point.x - hit.x) + Math.abs(point.y - hit.y) <= hit.radius
+  })
+  if (marker) return marker
   const count = hits.find(hit => hit.kind === 'bridge' && distance(hit) <= hit.radius)
   if (count) return count
   const covers = hit => hit.halfWidth
     ? Math.abs(point.x - hit.x) <= hit.halfWidth && Math.abs(point.y - hit.y) <= hit.halfHeight
     : distance(hit) <= hit.radius
-  const nodes = hits.filter(hit => hit.kind === 'node' && covers(hit))
-  if (nodes.length) return nodes.at(-1)
   const work = painted?.work
   const path = (!work || distance(work) > work.radius + 7) && hits.find(hit => hit.paths?.some(points => points.some((end, index) => {
     if (!index) return false
@@ -764,7 +794,7 @@ function onMenu(event) {
   const planetId = hit?.kind === 'planet' ? hit.id
     : hit?.kind === 'node' ? painted.projected.get(hit.id)?.planetId || hit.planetId || '' : ''
   const body = system.value.planets.find(item => item.id === planetId)
-  if (body) openSpeedMenu(body, event)
+  if (body) openSpeedMenu(body, event, hit?.resizable ? hit.id : '')
   else if (speedMenu.value) closeSpeedMenu()
 }
 
@@ -802,8 +832,10 @@ function onDown(event) {
   const hit = hitAt(point)
   const rim = resizeAt(point, hit)
   if (rim) {
+    const planetScale = rim.planetId === rim.id ? planetSizeOf(rim.id) / 100 : 1
     gesture = { kind: 'resize', hit: rim, node: model.value.byNode.get(rim.id),
-      startDistance: Math.hypot(point.x - rim.x, point.y - rim.y) }
+      startDistance: Math.hypot(point.x - rim.x, point.y - rim.y),
+      scale: entryCircleScale(scene.zoom) * planetScale }
     return
   }
   if (orbitEditing.value && !hit) {
@@ -823,7 +855,8 @@ function onDown(event) {
     gesture.center = projected.center
     gesture.inverse = projected.orientation.clone().invert()
     gesture.localScale = TUNING.detailRadius / projected.sphereRadius
-    gesture.offset = { x: hit.x - point.x, y: hit.y - point.y }
+    const origin = painted.camera.project(projected.world)
+    gesture.offset = { x: origin.x - point.x, y: origin.y - point.y }
   }
 }
 
@@ -858,10 +891,9 @@ function onMove(event) {
   if (gesture?.kind === 'resize') {
     const { id, x, y, radius } = gesture.hit
     const delta = Math.hypot(point.x - x, point.y - y) - gesture.startDistance
-    if (!entryResize.value && Math.abs(delta) < TUNING.dragThreshold) return
+    if (!entryResize.value && Math.abs(delta) < Math.min(TUNING.dragThreshold, radius / 3)) return
     dragActive.value = true
-    entryResize.value = { id, x, y,
-      radius: clamp(Math.round(radius + delta), MIN_ENTRY_RADIUS, entryRadiusLimit(size.width, size.height)) }
+    entryResize.value = { id, x, y, radius: Math.max(radius + delta, MIN_ENTRY_RADIUS * gesture.scale) }
     draw()
     return
   }
@@ -952,7 +984,8 @@ function onUp(event) {
   idleSince = performance.now()
   if (resized) {
     lastClick = null
-    saveEntryRadius(resized.id, resized.radius)
+    if (Math.abs(resized.radius - current.hit.radius) > .01) saveEntryRadius(resized.id, entryReferenceRadius(resized.radius, current.scale))
+    else draw()
     return
   }
   if (current.kind === 'orbit') {
@@ -1080,6 +1113,8 @@ onBeforeUnmount(() => {
               <div><p class="lpn-speed-menu-head">中心发光</p><small>{{ activeSet?.title || workTitle }}</small></div>
               <button type="button" class="lpn-speed-close" aria-label="关闭中心发光" @click="closeCenterMenu(true)">×</button>
             </header>
+            <PlanetSizeControl :value="planetSizeOf(setId)"
+              @preview="setPlanetSize(setId, $event)" @commit="setPlanetSize(setId, $event, true)" />
             <label class="lpn-center-setting">
               <span>发光颜色</span>
               <input type="color" :value="centerGlow.color"
@@ -1111,19 +1146,25 @@ onBeforeUnmount(() => {
               <button type="button" class="lpn-pill" @click="restoreCenterGlow">恢复默认</button>
             </div>
           </div>
-          <div v-if="speedMenu" ref="speedPanel" class="lpn-speed-menu" role="dialog" tabindex="-1" :aria-label="speedMenu.body.title + ' 运动设置'"
+          <div v-if="speedMenu" ref="speedPanel" class="lpn-speed-menu" role="dialog" tabindex="-1" :aria-label="speedMenu.body.title + ' 星体设置'"
             :style="{ left: speedMenu.x + 'px', top: speedMenu.y + 'px' }" @contextmenu.prevent>
             <header class="lpn-speed-menu-header">
               <p class="lpn-speed-menu-head" :title="speedMenu.body.title">{{ speedMenu.body.title }}</p>
-              <button type="button" class="lpn-speed-close" aria-label="关闭运动设置" @click="closeSpeedMenu(true)">×</button>
+              <button type="button" class="lpn-speed-close" aria-label="关闭星体设置" @click="closeSpeedMenu(true)">×</button>
             </header>
+            <div v-if="speedMenu.entryId" class="lpn-speed-menu-actions">
+              <button type="button" class="lpn-pill" :disabled="!Number.isFinite(entryRadii[speedMenu.entryId])"
+                @click="saveEntryRadius(speedMenu.entryId, null); closeSpeedMenu(true)">恢复条目圆默认大小</button>
+            </div>
+            <PlanetSizeControl :value="planetSizeOf(speedMenu.body.id)"
+              @preview="setPlanetSize(speedMenu.body.id, $event)" @commit="setPlanetSize(speedMenu.body.id, $event, true)" />
             <label v-for="(label, kind) in { orbit: '公转速度', spin: '自转速度' }" :key="kind" class="lpn-speed-setting">
               <span>{{ label }}</span>
               <span class="lpn-speed-value"><input type="number" min="0" max="1000" step="any" :aria-label="label"
                 :value="speedOf(speedMenu.body, kind)" @change="changeSpeed(kind, $event)" @keydown.enter.prevent="changeSpeed(kind, $event)"><span aria-hidden="true">%</span></span>
             </label>
             <div class="lpn-speed-menu-actions">
-              <button type="button" class="lpn-pill" @click="updateOrbitSetting('speeds', speedMenu.body.id, null)">恢复默认</button>
+              <button type="button" class="lpn-pill" @click="updateOrbitSetting('speeds', speedMenu.body.id, null)">恢复默认速度</button>
             </div>
           </div>
           <div v-if="activeSet && !activeSet.entries.length" class="lpn-empty">还没有下级条目</div>
@@ -1197,13 +1238,13 @@ onBeforeUnmount(() => {
             <button ref="layoutButton" type="button" class="lpn-pill" :aria-expanded="layoutOpen" @click="closeCenterMenu(); layoutOpen = !layoutOpen">布局</button>
             <div v-if="layoutOpen" class="lpn-layout-panel" aria-label="当前星系布局">
               <label class="lpn-depth">
-                <span>星体间距</span>
-                <span class="lpn-setting-value"><input type="number" min="0" step="any" aria-label="星体间距百分比" :value="spacing" @change="changeSpacingInput">%</span>
-                <input type="range" min="0" max="500" step="1" :value="Math.min(spacing, 500)" aria-label="星体间距"
+                <span>轨道间距</span>
+                <span class="lpn-setting-value"><input type="number" min="0" step="any" aria-label="轨道间距百分比" :value="spacing" @change="changeSpacingInput">%</span>
+                <input type="range" min="0" max="500" step="1" :value="Math.min(spacing, 500)" aria-label="轨道间距"
                   @input="adjustSpacing($event.target.valueAsNumber)" @change="adjustSpacing($event.target.valueAsNumber, true)">
               </label>
               <div class="lpn-layout-scale"><span>紧凑</span><span>宽松</span></div>
-              <button type="button" class="lpn-pill" @click="adjustSpacing(null, true)">恢复自动</button>
+              <button type="button" class="lpn-pill" @click="adjustSpacing(null, true)">恢复默认间距</button>
               <div class="lpn-orbit-controls">
                 <button type="button" class="lpn-pill" :aria-pressed="orbitEditing" @click="toggleOrbitEditing">
                   {{ orbitEditing ? '退出轨道编辑' : '拖拽轨道半径' }}

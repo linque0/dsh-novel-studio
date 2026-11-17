@@ -86,7 +86,7 @@
 .lpn-legend, .lpn-stage-hint, .lpn-empty { position: absolute; pointer-events: none; color: var(--canvas-muted); font-size: 11px; }
 .lpn-legend { display: flex; gap: 13px; left: 17px; top: 17px; flex-wrap: wrap; }
 .lpn-legend span { display: flex; gap: 5px; align-items: center; }
-.lpn-legend i { width: 15px; border-top: 1px solid; }
+.lpn-legend i { width: 15px; border-top: 2px solid; }
 .lpn-legend .lpn-key-mesh { color: #b8a6c6; border-top-style: dashed; }
 .lpn-key-line { color: #b7d7c9; }
 .lpn-key-cross { color: #d2aa8c; }
@@ -181,7 +181,7 @@
 .lpn-center-setting select { padding: 5px 8px; }
 .lpn-center-setting input[type='color'] { width: 46px; height: 27px; padding: 2px; cursor: pointer; }
 .lpn-center-slider output { color: var(--lpn-muted); font-variant-numeric: tabular-nums; }
-.lpn-center-slider input { grid-column: 1 / -1; width: 100%; margin: 0; accent-color: var(--lpn-mint); }
+.lpn-center-slider input[type='range'] { grid-column: 1 / -1; width: 100%; margin: 0; accent-color: var(--lpn-mint); }
 .lpn-center-save-error { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0; color: var(--panel-danger); font-size: 12px; }
 .lpn-empty { inset: auto 12px 42px; text-align: center; }
 .lpn-inspector {

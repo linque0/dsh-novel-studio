@@ -10,6 +10,7 @@ import { useWorkStore } from '../stores/work'
 import { useUiStore } from '../stores/ui'
 import { stripTags } from './wordcount'
 import { primaryRole } from './character-tags'
+import { characterBiographies, characterBiographyText } from './character-biographies.js'
 import { doublelinkTitle } from './doublelink-titles.js'
 
 export const KIND_LABEL = { chapter: '正文', mubu: '设定', character: '人物', outline: '大纲', olnode: '大纲节点', snippet: '灵感' }
@@ -83,7 +84,7 @@ export function searchTargets(query, limit = 40) {
     push('mubu', n.id, doublelinkTitle('mubu',n,work), lorePath(loreNodes, n.id).slice(0, -1).map(n => n.text).join(' › ') || '设定', n.text)
   }
   for (const c of work.liveCharacters) {
-    push('character', c.id, c.name || '未命名', `人物${primaryRole(c) ? ' · ' + primaryRole(c) : ''}`, (c.content || '') + ' ' + (c.aliases || ''))
+    push('character', c.id, c.name || '未命名', `人物${primaryRole(c) ? ' · ' + primaryRole(c) : ''}`, characterBiographyText(c) + ' ' + (c.aliases || ''))
   }
   if (work.work) push('outline', work.work.id, '总纲', '大纲', outlineBody(work.work.id))
   for (const v of work.liveVolumes) {
@@ -215,7 +216,7 @@ export function previewFor(target) {
       kindLabel: '人物',
       title: c.name || '未命名',
       meta: [primaryRole(c), c.aliases ? '别名 ' + c.aliases : ''].filter(Boolean).join(' · '),
-      body: cut(c.content) || '（暂无小传）'
+      body: cut(characterBiographyText(c)) || '（暂无小传）'
     }
   }
   if (target.kind === 'outline') {
@@ -293,7 +294,7 @@ export function findBacklinks(title) {
     if (has(n.html) || has(n.text)) out.push({ kind: 'mubu', id: n.id, title: (n.text || '').slice(0, 24) || '（空）' })
   }
   for (const c of work.liveCharacters) {
-    if (has(c.content)) out.push({ kind: 'character', id: c.id, title: c.name || '未命名' })
+    if (characterBiographies(c).some(section => has(section.content))) out.push({ kind: 'character', id: c.id, title: c.name || '未命名' })
   }
   for (const o of work.outlines) {
     if (o.deletedAt) continue
@@ -391,7 +392,7 @@ export function referenceSources() {
   const loreNodes = new Map(w.mubu.map(n => [n.id, n]))
   for (const n of w.liveMubu()) add('mubu', n.id, n.text || '空节点', n.text, n.html, lorePath(loreNodes, n.id).slice(0, -1).map(n => n.text).join(' › '))
   for (const n of w.liveChapters) add('chapter', n.id, n.title || '未命名章节', n.fmt === 'text' ? n.content : stripTags(n.content), n.fmt === 'text' ? '' : n.content, '正文')
-  for (const n of w.liveCharacters) add('character', n.id, n.name || '未命名人物', n.content, /<[^>]+>/.test(n.content || '') ? n.content : '', '人物')
+  for (const n of w.liveCharacters) add('character', n.id, n.name || '未命名人物', characterBiographyText(n), /<[^>]+>/.test(n.content || '') ? n.content : '', '人物')
   for (const n of w.outlines.filter(n => !n.deletedAt)) add('outline', n.refId, outlineLabel(n.refId), n.content, /<[^>]+>/.test(n.content || '') ? n.content : '', '大纲')
   for (const n of w.olnodes.filter(n => !n.deletedAt)) {
     const explicit = n.kind === 'cite' && parseTarget(n.refId)

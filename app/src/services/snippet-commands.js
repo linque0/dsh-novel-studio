@@ -3,7 +3,7 @@ import {putRow} from '../db/repo'
 import {SOURCE_TABLES} from './project/normalize.js'
 import {autosave} from './autosave'
 import {countWords} from './wordcount.js'
-import {createSnippetHistory,fingerprint} from './snippet-history.js'
+import {createSnippetHistory,fingerprint,matchesSnippetContent,snippetContentFingerprint} from './snippet-history.js'
 import {joinContent,splitNote,normalizeTags,normalizeLinks} from '../components/snippets/snippet-model.js'
 
 const clone=value=>JSON.parse(JSON.stringify(value)),kindTable={chapter:'chapters',mubu:'mubu',character:'characters',snippet:'snippets'}
@@ -76,7 +76,7 @@ export function snippetCommandsFor(work,ui){
     if(ctx.clearDraftId){
      const current=session.drafts.edit[ctx.clearDraftId],source=pending.changes.find(c=>c.table==='snippets'&&c.id===ctx.clearDraftId)?.after
      if(!current||current.title===ctx.submitted?.title&&current.body===ctx.submitted?.body)ui.setSnipDraft(ctx.clearDraftId,null,workId)
-     else if(source)ui.setSnipDraft(ctx.clearDraftId,{...current,base:fingerprint(source)},workId)
+     else if(source)ui.setSnipDraft(ctx.clearDraftId,{...current,base:snippetContentFingerprint(source)},workId)
     }
     if(ctx.clearQuick&&session.drafts.quick===ctx.quickContent)ui.saveSnipDrafts({quick:''},workId)
    }
@@ -97,9 +97,9 @@ export function snippetCommandsFor(work,ui){
    const t=now(),row={id:uid(),workId,content,tags:normalizeTags(tags),links:[],createdAt:t,updatedAt:t,deletedAt:null}
    return {changes:[change('snippets',null,row)],createdIds:[row.id],result:{id:row.id},context:{clearQuick:true,quickContent}}
   })},
-  patch(id,patch,{expected,clearDraft=false,submitted}={}){return run(async workId=>{
+  patch(id,patch,{expected,expectedContent,clearDraft=false,submitted}={}){return run(async workId=>{
    const before=await readNote(id,workId)
-   if(expected&&fingerprint(before)!==expected)throw conflict('原片段已变化，草稿已保留，请核对后重新保存。')
+   if((expected&&fingerprint(before)!==expected)||(expectedContent&&!matchesSnippetContent(before,expectedContent)))throw conflict('原片段已变化，草稿已保留，请核对后重新保存。')
    const after={...clone(before),...(typeof patch==='function'?patch(clone(before)):patch)}
    return {changes:fingerprint(before)===fingerprint(after)?[]:[change('snippets',before,after)],result:{id},context:clearDraft?{clearDraftId:id,submitted}:{}}
   })},

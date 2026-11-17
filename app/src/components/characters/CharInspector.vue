@@ -6,6 +6,7 @@ import { computed, inject, watch, watchEffect } from 'vue'
 import OIcon from '../OIcon.vue'
 import { useWorkStore } from '../../stores/work'
 import { aliasesOf, primaryRole, rolesOf, uniqTags } from '../../services/character-tags'
+import { readCharacterBiographies } from '../../services/character-biographies.js'
 
 const shell = inject('charShell', null)
 const work = useWorkStore()
@@ -21,12 +22,7 @@ const aliasText = computed(() => aliasesOf(current.value).join(' / ') || '尚未
 const tags = computed(() => uniqTags(current.value?.tags || []))
 const note = computed(() => String((current.value?.fields || {})['身份'] || '').trim())
 const sideFields = computed(() => Object.entries(current.value?.fields || {}).filter(([k]) => k !== '身份'))
-const paras = computed(() =>
-  String(current.value?.content || '')
-    .split(/\n{2,}/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-)
+const biographies = computed(() => readCharacterBiographies(current.value))
 const initial = computed(() => (current.value?.name || '人').slice(0, 1))
 
 function toDossier() {
@@ -96,9 +92,14 @@ watchEffect(() => {
             <span class="section-index">01</span>
             <h3>人物小传</h3>
           </div>
-          <div class="prose">
-            <p v-for="(p, i) in paras" :key="i">{{ p }}</p>
-            <template v-if="!paras.length">
+          <div class="char-biography-list">
+            <div v-for="biography in biographies" :key="biography.id">
+              <h4 v-if="biographies.length > 1 || biography.title !== '人物小传'" class="char-biography-heading">{{ biography.title }}</h4>
+              <div v-if="biography.paragraphs.length" class="prose">
+                <p v-for="(p, i) in biography.paragraphs" :key="i">{{ p }}</p>
+              </div>
+            </div>
+            <template v-if="!biographies.length">
               <p class="context-note">还没有写下这个人的故事。</p>
               <button type="button" class="btn tiny" @click="toDossier">开始写小传</button>
             </template>
