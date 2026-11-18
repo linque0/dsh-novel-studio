@@ -12,6 +12,7 @@ import { useWorkStore } from './work'
 import { resolveLoreFocus, resolveLoreGalaxy } from '../services/lore-core.js'
 import { normalizeCharPrefs, normalizeCharState } from '../components/characters/char-layout.js'
 import { createSnippetPersistence } from '../services/snippet-persistence.js'
+import { SNIP_CARD_SIZE } from '../components/snippets/snippet-model.js'
 import { registerFlushHook } from '../services/autosave'
 import { normalizeDrafts, normalizeSnipState } from '../components/snippets/snippet-model.js'
 import { CJK_FONTS, LATIN_FONTS, FONT_MAP, LATIN_MAP, SETTINGS_SAVE_ERROR } from '../components/settings/settings-prefs.js'
@@ -27,8 +28,9 @@ let charStatePending = null
 /* 灵感状态 / 草稿的写入防抖：草稿按键频繁（250ms），状态改动稀少（立即落）。 */
 /* 设计稿状态名 → store 字段名（saveSnipState 的唯一映射点） */
 const SNIP_FIELD = {
-  view: 'snipView', filter: 'snipFilter', tag: 'snipTag', sort: 'snipSort', group: 'snipGroup',
-  query: 'snipQuery', selected: 'snipSelectedId', moreTags: 'snipMoreTags', tagOrder: 'snipTagOrder', order: 'snipOrder', inspector: 'snipInspector', scroll: 'snipScroll'
+  filter: 'snipFilter', tag: 'snipTag', sort: 'snipSort', group: 'snipGroup',
+  query: 'snipQuery', selected: 'snipSelectedId', tagOrder: 'snipTagOrder', order: 'snipOrder', inspector: 'snipInspector', scroll: 'snipScroll',
+  cardSize: 'snipCardSize', sidebarWidth: 'snipSidebarWidth', expandedGroups: 'snipExpandedGroups'
 }
 
 /* 引擎按 store.$id 缓存：dev/devtools 下 Pinia 每次 action 调用都传一个新的 store proxy，
@@ -143,18 +145,20 @@ export const useUiStore = defineStore('ui', {
        与草稿（随手记 + 逐条未提交修改）分开存——草稿每次按键都变，状态很少变。
        落 appconfig['snipstate:<workId>'] 与 ['snipdraft:<workId>']。 */
     snipStateWorkId: null,
-    snipView: 'journal',
     snipFilter: 'all',
     snipTag: '',
     snipSort: 'new',
     snipGroup: '',
     snipQuery: '',
     snipSelectedId: '',
-    snipMoreTags: false,
+    snipCardSize: SNIP_CARD_SIZE.initial,
+    snipSidebarWidth: 220,
+    snipExpandedGroups: [],
     snipOrder: [],
     snipTagOrder: [],
     snipPersistence: {reading:false,pending:false,readError:false,writeError:false},
     snipInspector: { journal: true, board: false },
+    snipSidebarOpen: true,
     snipScroll: { journal: {top:0,left:0}, board: {top:0,left:0} },
     snipDrafts: { quick: '', edit: {} },
     autosave: { pending: 0, saving: false, lastSavedAt: 0, error: false },
@@ -223,6 +227,7 @@ export const useUiStore = defineStore('ui', {
         this.outlineRightWidth = normalizeOutlineWidth('right', map.outlineRightWidth)
         if (map.outlineDetailOpen !== undefined) this.outlineDetailOpen = !!map.outlineDetailOpen
         if (map.outlineSideOpen !== undefined) this.outlineSideOpen = !!map.outlineSideOpen
+        this.snipSidebarOpen = map.snipSidebarOpen !== false
         if (map.aiDrawerWidth) this.aiDrawerWidth = Math.min(640, Math.max(300, Number(map.aiDrawerWidth) || 400))
         if (map.rightPanelOpen !== undefined) this.rightPanelOpen = !!map.rightPanelOpen
         if (map.sidePanelOpen !== undefined) this.sidePanelOpen = !!map.sidePanelOpen

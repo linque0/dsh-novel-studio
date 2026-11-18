@@ -1,61 +1,117 @@
-<!-- 灵感左栏（设计稿 render.js:7 .sidebar）：当前作品 / 全部 / 未标记 / 有关联 / 标签（可展开）/ 回收站。
-     默认 7 条，展开后全部可访问；仅标签列表独立滚动。 -->
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, useId } from 'vue'
 import OIcon from '../OIcon.vue'
+import { SNIP_CARD_SIZE } from './snippet-model.js'
 
 const props = defineProps({
   workTitle: { type: String, default: '' },
-  counts: { type: Object, required: true },
+  groups: { type: Array, required: true },
+  expanded: { type: Array, required: true },
+  selectedId: { type: String, default: '' },
   filter: { type: String, default: 'all' },
   tag: { type: String, default: '' },
-  moreTags: Boolean
+  trashCount: { type: Number, default: 0 },
+  cardSize: { type: Number, required: true },
+  sort: { type: String, required: true }
 })
-const emit = defineEmits(['filter', 'tag', 'toggle-more'])
+const emit = defineEmits(['filter', 'tag', 'toggle-group', 'select-note', 'card-size', 'sort'])
+const sizing = ref(false)
+const sizePanelId = useId()
+const sliderId = sizePanelId + '-slider'
+const sizeFill = computed(() => `${(props.cardSize - SNIP_CARD_SIZE.min) / (SNIP_CARD_SIZE.max - SNIP_CARD_SIZE.min) * 100}%`)
+const openGroups = computed(() => new Set(props.expanded))
+const sorts = { new: '最新', old: '最早', manual: '手动' }
 
-const shown = computed(() => (props.moreTags ? props.counts.tags : props.counts.tags.slice(0, 7)))
+function isActive(group) {
+  return group.tag ? props.tag === group.tag : !props.tag && props.filter === group.filter
+}
+function showGroup(group) {
+  if (group.tag) emit('tag', group.tag)
+  else emit('filter', group.filter)
+}
 </script>
 
 <template>
   <nav class="snip-nav" aria-label="灵感导航">
-    <div class="snip-nav-work"><div class="work-heading">当前作品</div>
-    <h2 :title="workTitle">{{ workTitle }}</h2></div>
+    <div class="snip-nav-content">
+      <div class="snip-nav-work">
+        <div class="work-heading">当前作品</div>
+        <h2 :title="workTitle">{{ workTitle }}</h2>
+      </div>
 
-    <div class="snip-nav-primary"><button type="button" class="snip-nav-row" :class="{ selected: filter === 'all' && !tag }" data-value="all" :aria-pressed="filter === 'all' && !tag" @click="emit('filter', 'all')">
-      <OIcon name="tray" :size="16" /><span>全部灵感</span><b>{{ counts.all }}</b>
-    </button>
-    <button type="button" class="snip-nav-row" :class="{ selected: filter === 'untagged' && !tag }" data-value="untagged" :aria-pressed="filter === 'untagged' && !tag" @click="emit('filter', 'untagged')">
-      <OIcon name="tag" :size="16" /><span>未标记</span><b>{{ counts.untagged }}</b>
-    </button>
-    <button type="button" class="snip-nav-row" :class="{ selected: filter === 'linked' && !tag }" data-value="linked" :aria-pressed="filter === 'linked' && !tag" @click="emit('filter', 'linked')">
-      <OIcon name="link" :size="16" /><span>有关联</span><b>{{ counts.linked }}</b>
-    </button>
+      <template v-for="(group, index) in groups" :key="group.id">
+        <h3 v-if="index === 3" class="snip-nav-heading">标签</h3>
+        <div class="snip-nav-group">
+          <div class="snip-nav-group-head" :class="{ selected: isActive(group) }">
+            <button
+              class="snip-nav-disclosure"
+              type="button"
+              :disabled="!group.notes.length"
+              :aria-label="(openGroups.has(group.id) ? '折叠' : '展开') + group.label"
+              :aria-expanded="openGroups.has(group.id)"
+              @click="emit('toggle-group', group.id)"
+            ><OIcon :name="openGroups.has(group.id) ? 'caret-down' : 'caret-right'" :size="12" /></button>
+            <button
+              class="snip-nav-row"
+              type="button"
+              :data-value="group.filter"
+              :data-tag="group.tag"
+              :title="group.label"
+              :aria-pressed="isActive(group)"
+              @click="showGroup(group)"
+            >
+              <OIcon v-if="group.icon" :name="group.icon" :size="15" />
+              <span v-else class="hash">#</span>
+              <span>{{ group.label }}</span><b>{{ group.notes.length }}</b>
+            </button>
+          </div>
 
-    </div><div class="snip-nav-tags"><div class="snip-nav-title-line">
-      <span>标签</span>
-      <button v-if="counts.tags.length > 7" type="button" @click="emit('toggle-more')">{{ moreTags ? '收起' : '全部' }}</button>
+          <ul v-if="openGroups.has(group.id) && group.notes.length" class="snip-nav-notes">
+            <li v-for="note in group.notes" :key="note.id">
+              <button
+                class="snip-nav-note"
+                type="button"
+                :aria-current="selectedId === note.id || undefined"
+                :data-card-color="note.cardColor"
+                :title="note.title || '未命名'"
+                @click="emit('select-note', { group, note })"
+              >{{ note.title || '未命名' }}</button>
+            </li>
+          </ul>
+        </div>
+      </template>
     </div>
-    <div class="snip-tag-list"><button
-      v-for="row in shown"
-      :key="row.tag"
-      type="button"
-      class="snip-nav-row"
-      :class="{ selected: tag === row.tag }"
-      :data-tag="row.tag"
-      :title="row.tag"
-      :aria-pressed="tag === row.tag"
-      @click="emit('tag', tag === row.tag ? '' : row.tag)"
-    >
-      <span class="hash">#</span><span>{{ row.tag }}</span><b>{{ row.count }}</b>
-    </button>
-    <p v-if="!counts.tags.length" class="snip-caption" style="padding: 0 10px">还没有标签。在片段详情里给灵感加标签。</p>
 
-    </div></div><div class="snip-nav-footer"><div class="snip-nav-end">{{ counts.all }} 条灵感 · {{ counts.tags.length }} 个标签</div>
-    <div class="snip-trash-nav">
-      <button type="button" class="snip-nav-row" :class="{ selected: filter === 'trash' }" data-value="trash" :aria-pressed="filter === 'trash'" @click="emit('filter', 'trash')">
-        <OIcon name="trash" :size="16" /><span>回收站</span><b>{{ counts.trash }}</b>
-      </button>
-    </div>
-    </div>
+    <footer class="snip-nav-footer">
+      <div class="snip-nav-control">
+        <span>排序</span>
+        <div class="snip-nav-options" role="group" aria-label="卡片排序">
+          <button v-for="(label, key) in sorts" :key="key" type="button" :aria-pressed="sort === key" @click="emit('sort', key)">{{ label }}</button>
+        </div>
+      </div>
+      <div v-if="sizing" :id="sizePanelId" class="snip-size-control">
+        <label class="snip-size-caption" :for="sliderId">缩放比例<span class="num" aria-hidden="true">{{ cardSize }}%</span></label>
+        <div class="snip-size-slider" :style="{ '--snip-size-fill': sizeFill }">
+          <span class="snip-size-track" aria-hidden="true"><span class="snip-size-fluid"></span></span>
+          <input
+            :id="sliderId"
+            type="range"
+            :min="SNIP_CARD_SIZE.min"
+            :max="SNIP_CARD_SIZE.max"
+            :value="cardSize"
+            :aria-valuetext="cardSize + '%'"
+            @input="emit('card-size', $event.currentTarget.valueAsNumber)"
+          >
+        </div>
+      </div>
+      <div class="snip-nav-bottom">
+        <button type="button" class="snip-nav-bottom-button" :aria-expanded="sizing" :aria-controls="sizePanelId" @click="sizing = !sizing">
+          <OIcon name="rows" :size="15" /><span>卡片大小</span>
+        </button>
+        <button type="button" class="snip-nav-bottom-button" data-value="trash" :aria-pressed="filter === 'trash'" @click="emit('filter', 'trash')">
+          <OIcon name="trash" :size="15" /><span>回收站</span><b v-if="trashCount">{{ trashCount }}</b>
+        </button>
+      </div>
+    </footer>
   </nav>
 </template>

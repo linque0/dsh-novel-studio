@@ -85,14 +85,14 @@
 .char-search .char-icon-btn { width: 20px; height: 20px; }
 
 /* 两个筛选（studio.css .select-filter） */
-.char-filters { display: flex; gap: 8px; flex: none; padding: 0 16px 12px; }
-.char-filters select {
-  width: 100%; min-width: 0; padding: 6px 7px;
-  border: 1px solid var(--char-pane-line); border-radius: 7px;
-  background: var(--char-pane-bg); color: var(--char-ink); font-family: inherit; font-size: 12px;
-  cursor: pointer;
+.char-filters {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;
+  flex: none; padding: 0 16px 12px;
 }
-.char-filters select:focus-visible { outline: 2px solid var(--char-accent); outline-offset: 1px; }
+/* 下拉控件已有圆角焦点描边，标签和搜索输入框无需叠加全局描边。 */
+body[data-skin='dsh'] .char-filters .n-base-selection :is(.n-base-selection-label, .n-base-selection-input):focus-visible {
+  outline: none;
+}
 
 /* 计数行（studio.css .list-label） */
 .char-roster-label { display: flex; justify-content: space-between; gap: 10px; flex: none; padding: 1px 21px 11px; font-size: 12px; color: var(--char-dim); }

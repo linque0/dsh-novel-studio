@@ -4,7 +4,7 @@ import {SOURCE_TABLES} from './project/normalize.js'
 import {autosave} from './autosave'
 import {countWords} from './wordcount.js'
 import {createSnippetHistory,fingerprint,matchesSnippetContent,snippetContentFingerprint} from './snippet-history.js'
-import {joinContent,splitNote,normalizeTags,normalizeLinks} from '../components/snippets/snippet-model.js'
+import {joinContent,splitNote,normalizeTags,normalizeLinks,pickSnipCardColor,tagsAfterGroupMove} from '../components/snippets/snippet-model.js'
 
 const clone=value=>JSON.parse(JSON.stringify(value)),kindTable={chapter:'chapters',mubu:'mubu',character:'characters',snippet:'snippets'}
 const conflict=message=>Object.assign(new Error(message||'内容已在其他位置修改，未覆盖新数据。'),{code:'CONFLICT'})
@@ -94,7 +94,7 @@ export function snippetCommandsFor(work,ui){
    if(work.work?.id===workId)['snippets','chapters','outlines','mubu'].forEach((t,i)=>work[t]=bundle[i])
   },
   capture(content,tags=[],quickContent=content){return run(async workId=>{
-   const t=now(),row={id:uid(),workId,content,tags:normalizeTags(tags),links:[],createdAt:t,updatedAt:t,deletedAt:null}
+   const t=now(),row={id:uid(),workId,content,tags:normalizeTags(tags),links:[],cardColor:pickSnipCardColor(),createdAt:t,updatedAt:t,deletedAt:null}
    return {changes:[change('snippets',null,row)],createdIds:[row.id],result:{id:row.id},context:{clearQuick:true,quickContent}}
   })},
   patch(id,patch,{expected,expectedContent,clearDraft=false,submitted}={}){return run(async workId=>{
@@ -107,8 +107,11 @@ export function snippetCommandsFor(work,ui){
    const row=await db.appconfig.get('snipstate:'+workId),before={order:row?.value?.order||[]}
    return {changes:[{table:'appconfig',id:'snipstate:'+workId,scope:'order',before,after:{order}}],context:{beforeSort:ui.snipSort,afterSort:'manual'}}
   })},
-  tagAndOrder(id,tag,order){return run(async workId=>{
-   const before=await readNote(id,workId),after={...clone(before),tags:normalizeTags([...(before.tags||[]),tag])},row=await db.appconfig.get('snipstate:'+workId)
+  moveToGroup(id,from,to,order){return run(async workId=>{
+   const before=await readNote(id,workId)
+   const tags=tagsAfterGroupMove(before.tags,from,to)
+   if(before.deletedAt||!tags)throw conflict('片段已离开原分组，请重新拖动。')
+   const after={...clone(before),tags},row=await db.appconfig.get('snipstate:'+workId)
    return {changes:[change('snippets',before,after),{table:'appconfig',id:'snipstate:'+workId,scope:'order',before:{order:row?.value?.order||[]},after:{order}}],context:{beforeSort:ui.snipSort,afterSort:'manual'}}
   })},
   convert(id,kind,dest){return run(async workId=>{

@@ -74,6 +74,11 @@ function openRoster() {
   if (narrow.value) return openDrawer()
   if (prefs.value.leftClosed) setClosed('leftClosed', false)
 }
+async function openRosterFromRail() {
+  openRoster()
+  await nextTick()
+  shellEl.value?.querySelector('.char-roster-head button')?.focus({ preventScroll: true })
+}
 function openContext() {
   if (narrow.value) return showContext()
   if (prefs.value.rightClosed) setClosed('rightClosed', false)
@@ -82,7 +87,9 @@ function openContext() {
    宽档 = 列收成 40px 细轨；窄档 = 名录走抽屉、侧栏走两屏互切（窄档没有可收起的列）。 */
 function toggleRoster() {
   if (narrow.value) return drawer.value ? closeDrawer() : openDrawer()
+  const returnToRail = !prefs.value.leftClosed && shellEl.value?.querySelector('.char-roster')?.contains(document.activeElement)
   setClosed('leftClosed', !prefs.value.leftClosed)
+  if (returnToRail) nextTick(() => shellEl.value?.querySelector('[data-rail="roster"]')?.focus({ preventScroll: true }))
 }
 function toggleContext() {
   if (narrow.value) return screen.value === 'context' ? backToMain() : showContext()
@@ -152,7 +159,7 @@ function onResize() {
   if (!narrow.value) { drawer.value = false }
 }
 function onKeydown(e) {
-  if (e.isComposing) return
+  if (e.isComposing || e.defaultPrevented) return
   if (e.key === 'Escape' && drawer.value) { e.preventDefault(); drawer.value = false }
 }
 onMounted(async () => {
@@ -190,9 +197,10 @@ onBeforeUnmount(() => {
 
     <section class="char-pane" data-pane="roster" :data-closed="prefs.leftClosed ? 'true' : null">
       <CharRoster />
-      <button class="char-rail" data-rail="roster" type="button" title="展开人物名录" aria-label="展开人物名录" @click="openRoster">
+      <button class="char-rail" data-rail="roster" type="button" title="展开人物名录" aria-label="展开人物名录" aria-expanded="false" @click="openRosterFromRail">
         <OIcon name="user" :size="16" />
         <span>人物名录</span>
+        <OIcon name="caret-right" :size="12" />
       </button>
     </section>
     <CharDivider size="left" />

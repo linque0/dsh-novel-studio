@@ -11,8 +11,30 @@
 export const LINK_KINDS = ['chapter', 'mubu', 'character']
 export const FILTERS = ['all', 'untagged', 'linked', 'trash']
 export const SORTS = ['new', 'old', 'manual']
-export const VIEWS = ['journal', 'board']
 export const MAX_TAG = 30
+export const SNIP_CARD_SIZE = Object.freeze({ min: 80, initial: 100, max: 125 })
+const LEGACY_CARD_SIZES = { small: SNIP_CARD_SIZE.min, medium: SNIP_CARD_SIZE.initial, large: SNIP_CARD_SIZE.max }
+export const SNIP_CARD_COLORS = Object.freeze({
+  default: '默认', rose: '玫瑰', amber: '琥珀', moss: '苔绿', blue: '雾蓝', lilac: '藤紫'
+})
+const RANDOM_CARD_COLORS = Object.keys(SNIP_CARD_COLORS).filter(color => color !== 'default')
+export const SNIP_SIDEBAR = Object.freeze({ min: 184, max: 420, initial: 220 })
+
+export function pickSnipCardColor(sample = Math.random()) {
+  return RANDOM_CARD_COLORS[Math.floor(sample * RANDOM_CARD_COLORS.length)]
+}
+
+function normalizeCardSize(value) {
+  const size = typeof value === 'string' ? LEGACY_CARD_SIZES[value] : value
+  if (!Number.isFinite(size)) return SNIP_CARD_SIZE.initial
+  return Math.max(SNIP_CARD_SIZE.min, Math.min(SNIP_CARD_SIZE.max, Math.round(size)))
+}
+
+export function clampSnipSidebarWidth(value) {
+  const width = Number(value)
+  if (!(width > 0) || !Number.isFinite(width)) return SNIP_SIDEBAR.initial
+  return Math.max(SNIP_SIDEBAR.min, Math.min(SNIP_SIDEBAR.max, Math.round(width)))
+}
 
 /** content → {title, body}：首个非空行作标题，其后去掉开头空行作正文。 */
 export function splitNote(row) {
@@ -34,7 +56,7 @@ export function joinContent(title, body) {
 
 const pad = (n) => String(n).padStart(2, '0')
 
-/** 时间戳 → 手札分组用的 {date:'YYYY-MM-DD', time:'HH:mm'}（本地时区，与设计稿 stamp() 同口径）。 */
+/** 卡片时间使用本地时区。 */
 export function stamp(createdAt) {
   const d = new Date(Number(createdAt) || Date.now())
   if (Number.isNaN(d.getTime())) return { date: '', time: '' }
@@ -42,14 +64,6 @@ export function stamp(createdAt) {
     date: [d.getFullYear(), pad(d.getMonth() + 1), pad(d.getDate())].join('-'),
     time: pad(d.getHours()) + ':' + pad(d.getMinutes())
   }
-}
-
-/** 日期标题：今天 / 11 月 07 日（设计稿 render.js:22 的口径）。 */
-export function dateLabel(date, today = stamp(Date.now()).date) {
-  if (!date) return ''
-  if (date === today) return '今天'
-  const [, m, d] = date.split('-')
-  return Number(m) + ' 月 ' + d + ' 日'
 }
 
 /** 标签归一：去首尾空白与前导 #、折叠内部空白、上限 30 字；空串返回 ''。 */
@@ -92,7 +106,7 @@ export function normalizeLinks(list) {
 
 export const linkKey = (l) => String(l?.kind || '') + ':' + String(l?.id || '')
 
-/** 一条灵感在手札/拼板里显示用的视图对象；names 由调用方注入（实时解析目标标题）。 */
+/** 拼板和目录的卡片数据；names 由调用方注入（实时解析目标标题）。 */
 export function noteView(row, names = {}) {
   const { title, body } = splitNote(row)
   const at = stamp(row.createdAt)
@@ -101,6 +115,7 @@ export function noteView(row, names = {}) {
     title,
     body,
     tags: normalizeTags(row.tags),
+    cardColor: Object.hasOwn(SNIP_CARD_COLORS, row.cardColor) ? row.cardColor : 'default',
     links: normalizeLinks(row.links).map((l) => ({ ...l, name: names[l.kind + ':' + l.id] || '', missing: !names[l.kind + ':' + l.id] })),
     date: at.date,
     time: at.time,
@@ -164,6 +179,18 @@ export function stableTagOrder(notes, previous = []) {
 }
 export const UNTAGGED_GROUP = "untagged:"
 export const tagGroupId = tag => "tag:" + tag
+
+/** 从分组移走当前标签，保留卡片在其他组的归属。null 分组代表未标记。 */
+export function tagsAfterGroupMove(rawTags, from, to) {
+  const tags = normalizeTags(rawTags)
+  if (from === null ? tags.length > 0 : !tags.includes(from)) return null
+  if (from === to) return tags
+  if (to === null) return []
+  if (from === null) return [to]
+  if (tags.includes(to)) return tags.filter(tag => tag !== from)
+  return tags.map(tag => tag === from ? to : tag)
+}
+
 export function noteCounts(notes, tagOrder = []) {
   const live = notes.filter((n) => !n.deletedAt)
   const tags = new Map()
@@ -189,12 +216,39 @@ export function boardGroups(notes, tagOrder = [], trash = false) {
   return groups
 }
 
+export function snippetNavGroups(notes, tagOrder, sort, order) {
+  const live = sortNotes(notes.filter(note => !note.deletedAt), sort, order)
+  return [
+    { id: 'all', filter: 'all', icon: 'tray', label: '全部灵感', notes: live },
+    { id: 'untagged', filter: 'untagged', icon: 'tag', label: '未标记', notes: live.filter(note => !note.tags.length) },
+    { id: 'linked', filter: 'linked', icon: 'link', label: '有关联', notes: live.filter(note => note.links.length) },
+    ...boardGroups(live, tagOrder).filter(group => group.tag !== null)
+  ]
+}
+
 /** 上移/下移：在给定同组顺序里换位；没有相邻项时返回 null（调用方给提示，不改数据）。 */
 export function neighbourId(list, id, direction) {
   const i = list.findIndex((n) => n.id === id)
   if (i < 0) return null
   const other = list[i + (direction < 0 ? -1 : 1)]
   return other ? other.id : null
+}
+
+/** 插入提示和提交使用同一个落点。空栏和分组胶囊都视为追加。 */
+export function snippetDropPlacement(notes, draggedId, targetId, after, sameGroup) {
+  if (targetId === draggedId) {
+    return sameGroup ? null : { beforeId: '', markerId: targetId, edge: 'existing' }
+  }
+  const rest = notes.filter(note => note.id !== draggedId)
+  const index = rest.findIndex(note => note.id === targetId)
+  const insertion = index < 0 ? rest.length : index + (after ? 1 : 0)
+  if (sameGroup && notes[insertion]?.id === draggedId) return null
+  if (index < 0) return { beforeId: '', markerId: rest.at(-1)?.id || '', edge: 'after' }
+  return {
+    beforeId: rest[insertion]?.id || '',
+    markerId: targetId,
+    edge: after ? 'after' : 'before'
+  }
 }
 
 /** 把 id 挪到 beforeId 之前（beforeId 为空则追加到末尾），返回新的 order 数组。 */
@@ -224,7 +278,6 @@ export function normalizeSnipState(raw) {
   const scroll = v.scroll && typeof v.scroll === 'object' ? v.scroll : {}
   const num = (x) => (Number.isFinite(Number(x)) && Number(x) > 0 ? Number(x) : 0)
   return {
-    view: VIEWS.includes(v.view) ? v.view : 'journal',
     filter: FILTERS.includes(v.filter) ? v.filter : 'all',
     tag: normalizeTag(v.tag),
     sort: SORTS.includes(v.sort) ? v.sort : 'new',
@@ -232,7 +285,9 @@ export function normalizeSnipState(raw) {
     group: !v.group ? '' : String(v.group).startsWith('tag:') || v.group === UNTAGGED_GROUP ? String(v.group) : v.group === '未标记' ? UNTAGGED_GROUP : tagGroupId(String(v.group)),
     tagOrder: Array.isArray(v.tagOrder)?[...new Set(v.tagOrder.map(String))]:[],
     query: str(v.query),
-    moreTags: v.moreTags === true,
+    cardSize: normalizeCardSize(v.cardSize),
+    sidebarWidth: clampSnipSidebarWidth(v.sidebarWidth),
+    expandedGroups: Array.isArray(v.expandedGroups) ? [...new Set(v.expandedGroups.filter(key => typeof key === 'string' && key))] : [],
     inspector: { journal: inspector.journal !== false, board: inspector.board === true },
     order: Array.isArray(v.order) ? v.order.map(String) : [],
     scroll: Object.fromEntries(['journal','board'].map(k=>[k,typeof scroll[k]==='object'&&scroll[k] ? {top:num(scroll[k].top),left:num(scroll[k].left)} : {top:num(scroll[k]),left:0}]))

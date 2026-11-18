@@ -260,7 +260,7 @@ onBeforeUnmount(() => {
         <!-- 与主窗口同构的背景层：.st-backdrop-wrap 必须是 .latent-studio 的直接子项（§15 的脱流规则按这个层级写） -->
         <div class="st-backdrop-wrap"><canvas ref="flowCanvas" class="st-backdrop"></canvas><div class="st-layer vignette"></div></div>
         <OutlineTopbar v-if="nsPlugin && spec.type==='outline'" detached @navigate="outlineNavigate" @close="flushAndClose"/>
-        <div v-else class="panel-topbar">
+        <div v-else-if="spec.type === 'ai'" class="panel-topbar">
           <span class="serif" style="font-weight: 700">{{ work.work?.title }} · {{ panelTitle }}</span>
           <span class="save-badge">
             <span class="save-dot" :class="badgeClass"></span>

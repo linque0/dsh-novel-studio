@@ -1,5 +1,5 @@
 <!-- 灵感弹窗（设计稿 render.js:35 一套 #action-dialog 按类型换内容）：
-     记一条 / 片段操作 / 关联 / 转换 / 目标预览 / 跨组添加标签 / 键盘快捷键。 -->
+     记一条 / 关联 / 转换 / 目标预览 / 键盘快捷键。 -->
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import OIcon from '../OIcon.vue'
@@ -19,7 +19,7 @@ const props = defineProps({
   busy: Boolean,
   saveError: Boolean
 })
-const emit = defineEmits(['close', 'compose', 'action', 'link', 'convert', 'confirm-drop', 'update:quick', 'retry'])
+const emit = defineEmits(['close', 'compose', 'link', 'convert', 'update:quick', 'retry'])
 
 const panel = ref(null)
 const composing=ref(false)
@@ -36,11 +36,9 @@ watch(()=>props.convertOptions,options=>{if(!options.some(o=>o.value===dest.valu
 
 const heading = computed(() => ({
   compose: '记下一点灵感',
-  menu: '片段操作',
   link: '关联已有内容',
   convert: props.payload?.kind === 'mubu' ? '转为设定' : '转为章节',
   preview: props.preview?.title || props.preview?.fallback || '关联目标',
-  drop: '添加到 #' + (props.payload?.group || ''),
   shortcuts: '键盘快捷键'
 }[props.type] || ''))
 
@@ -48,9 +46,7 @@ const shortcuts = [
   ['搜索灵感', 'Ctrl / Cmd + K'],
   ['记录灵感', 'Ctrl / Cmd + Enter'],
   ['保存修改', 'Ctrl / Cmd + S'],
-  ['手札 / 拼板', 'Alt + 1 / 2'],
-  ['关闭当前面板', 'Esc'],
-  ['切换视图标签', '← / →']
+  ['关闭当前面板', 'Esc']
 ]
 
 function onCompose(form) {
@@ -93,16 +89,6 @@ onMounted(async () => {
           <button type="submit" class="snip-primary" :disabled="busy">记录灵感 <OIcon name="arrow-right" :size="15" /></button>
         </div>
       </form>
-
-      <div v-else-if="type === 'menu'" class="snip-dialog-body snip-menu-list">
-        <button v-if="!note?.deletedAt" type="button" @click="emit('action', 'edit')"><OIcon name="edit" :size="15" />编辑片段</button>
-        <template v-if="payload.group && !note?.deletedAt">
-          <button type="button" @click="emit('action', 'move-prev')">上移一位</button>
-          <button type="button" @click="emit('action', 'move-next')">下移一位</button>
-        </template>
-        <button v-if="note?.deletedAt" type="button" @click="emit('action', 'restore')"><OIcon name="refresh" :size="15" />恢复灵感</button>
-        <button v-else type="button" class="snip-danger" @click="emit('action', 'delete')"><OIcon name="trash" :size="15" />移入回收站</button>
-      </div>
 
       <form v-else-if="type === 'link'" @submit.prevent="submitLink">
         <div class="snip-dialog-body">
@@ -149,16 +135,6 @@ onMounted(async () => {
         <div class="snip-dialog-foot">
           <small>关联内容</small>
           <button type="button" class="snip-soft" @click="emit('close')">返回灵感</button>
-        </div>
-      </template>
-
-      <template v-else-if="type === 'drop'">
-        <div class="snip-dialog-body">
-          <p>为「{{ note?.title }}」添加「{{ payload.group }}」标签。原有标签保留，这条灵感也会继续出现在原组。</p>
-        </div>
-        <div class="snip-dialog-foot">
-          <button type="button" class="snip-soft" @click="emit('close')">取消</button>
-          <button type="button" class="snip-primary" @click="emit('confirm-drop')">添加标签</button>
         </div>
       </template>
 

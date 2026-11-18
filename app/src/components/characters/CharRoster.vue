@@ -3,6 +3,7 @@
      list-label / person-row / pane-foot），滚动位置的存取由外壳按 data-char-scroll="roster" 负责。 -->
 <script setup>
 import { computed, inject, nextTick, ref, watch } from 'vue'
+import { NSelect } from 'naive-ui'
 import OIcon from '../OIcon.vue'
 import { useWorkStore } from '../../stores/work'
 import { useUiStore } from '../../stores/ui'
@@ -18,8 +19,17 @@ const narrow = computed(() => !!shell?.narrow?.value)
 const view = computed(() => shell?.view?.value || (work.charView === 'graph' ? 'graph' : 'profile'))
 
 /* 筛选候选取全部未删人物：不被当前筛选结果裁剪（原型 sidebar() 的 new Set(all.flatMap(...))） */
-const roleOptions = computed(() => [...new Set(work.liveCharacters.flatMap((c) => rolesOf(c)))].sort((a, b) => a.localeCompare(b)))
-const tagOptions = computed(() => [...new Set(work.liveCharacters.flatMap((c) => characterTagList(c)))].sort((a, b) => a.localeCompare(b)))
+function filterOptions(allLabel, valuesOf) {
+  const values = [...new Set(work.liveCharacters.flatMap(valuesOf))].sort((a, b) => a.localeCompare(b))
+  return [{ label: allLabel, value: '' }, ...values.map(value => ({ label: value, value }))]
+}
+const roleOptions = computed(() => filterOptions('全部角色', rolesOf))
+const tagOptions = computed(() => filterOptions('全部标签', characterTagList))
+const menuOpen = { role: false, tag: false }
+
+function handleFilterEscape(event) {
+  if (menuOpen.role || menuOpen.tag) event.preventDefault()
+}
 
 const filtering = computed(() => !!(ui.charQuery || ui.charRole || ui.charTag))
 /* 检索语义照原型 model.mjs:17：姓名/别名/角色/标签拼串包含；角色按多值之一；标签按标签集之一 */
@@ -60,12 +70,12 @@ function onQuery(e) {
   ui.charQuery = e.target.value
   persist({ query: ui.charQuery })
 }
-function onRole(e) {
-  ui.charRole = e.target.value
+function onRole(value) {
+  ui.charRole = value
   persist({ role: ui.charRole })
 }
-function onTag(e) {
-  ui.charTag = e.target.value
+function onTag(value) {
+  ui.charTag = value
   persist({ tag: ui.charTag })
 }
 function clearQuery() {
@@ -94,6 +104,7 @@ function collapse() {
     shell?.closeDrawer?.()
     return
   }
+  if (shell) return shell.toggleRoster()
   const one = ui.charPrefs[view.value] || ui.charPrefs.profile
   void ui.setPref('charPrefs', { ...ui.charPrefs, [view.value]: { ...one, leftClosed: true } })
 }
@@ -104,8 +115,8 @@ function collapse() {
     <header class="char-roster-head">
       <OIcon name="user" :size="17" />
       <h2>人物名录</h2>
-      <button class="char-icon-btn" type="button" title="收起人物名录" aria-label="收起人物名录" @click="collapse">
-        <OIcon name="arrow-left" :size="14" />
+      <button class="char-icon-btn" type="button" title="收起人物名录" aria-label="收起人物名录" aria-expanded="true" @click="collapse">
+        <OIcon name="back" :size="14" />
       </button>
     </header>
 
@@ -125,15 +136,27 @@ function collapse() {
       </button>
     </label>
 
-    <div class="char-filters">
-      <select :value="ui.charRole" aria-label="按角色筛选" @change="onRole">
-        <option value="">全部角色</option>
-        <option v-for="r in roleOptions" :key="r" :value="r">{{ r }}</option>
-      </select>
-      <select :value="ui.charTag" aria-label="按标签筛选" @change="onTag">
-        <option value="">全部标签</option>
-        <option v-for="t in tagOptions" :key="t" :value="t">{{ t }}</option>
-      </select>
+    <div class="char-filters" @keydown.esc.capture="handleFilterEscape">
+      <NSelect
+        size="small"
+        filterable
+        placeholder="全部角色"
+        :input-props="{ 'aria-label': '按角色筛选' }"
+        :value="ui.charRole"
+        :options="roleOptions"
+        @update:value="onRole"
+        @update:show="menuOpen.role = $event"
+      />
+      <NSelect
+        size="small"
+        filterable
+        placeholder="全部标签"
+        :input-props="{ 'aria-label': '按标签筛选' }"
+        :value="ui.charTag"
+        :options="tagOptions"
+        @update:value="onTag"
+        @update:show="menuOpen.tag = $event"
+      />
     </div>
 
     <div class="char-roster-label">

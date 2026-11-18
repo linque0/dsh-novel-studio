@@ -19,7 +19,7 @@ onBeforeUnmount(()=>{
   const visible=e=>e?.getClientRects().length&&!e.closest('[inert]')
   const cards=[...document.querySelectorAll('.snip-note')],card=cards.find(e=>e.dataset.id===originId&&visible(e))
   const same=card&&[...card.querySelectorAll('[aria-label]')].find(e=>e.getAttribute('aria-label')===originLabel)
-  const target=visible(origin)?origin:same||card||document.querySelector('.snip-mobile-menu')||document.querySelector('.snip-view-switch [aria-selected=true]')
+  const target=visible(origin)?origin:same||card||document.querySelector('.snip-mobile-menu, .snip-sidebar-toggle')
   if(visible(target))target.focus({preventScroll:true})
  })
 })

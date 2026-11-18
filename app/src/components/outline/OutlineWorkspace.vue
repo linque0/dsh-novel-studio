@@ -17,7 +17,20 @@ const selected=computed(()=>work.liveOlnodes().some(n=>n.id===work.selOlnodeId))
 const panelWidth=side=>narrow.value?Math.min(Math.max(side==='left'?260:320,ui[side==='left'?'outlineLeftWidth':'outlineRightWidth']),Math.max(0,width.value-32)):layout.value[side]
 let returnFocus=null
 function open(side){if(narrow.value){if(!activeDrawer.value)returnFocus=document.activeElement;activeDrawer.value=side}else ui.setPref(side==='left'?'outlineSideOpen':'outlineDetailOpen',true)}
-function close(side){if(narrow.value)activeDrawer.value=null;else ui.setPref(side==='left'?'outlineSideOpen':'outlineDetailOpen',false)}
+function close(side) {
+  if (narrow.value) {
+    activeDrawer.value = null
+    return
+  }
+  const returnToRail = side === 'left' && root.value?.querySelector('.ow-left')?.contains(document.activeElement)
+  void ui.setPref(side === 'left' ? 'outlineSideOpen' : 'outlineDetailOpen', false)
+  if (returnToRail) nextTick(() => root.value?.querySelector('.ow-left-rail')?.focus({ preventScroll: true }))
+}
+async function openLeftFromRail() {
+  open('left')
+  await nextTick()
+  root.value?.querySelector('.ow-left .ol-side-toggle')?.focus({ preventScroll: true })
+}
 provide(OUTLINE_LAYOUT_KEY,{detailTarget,narrow,open,close,actions,toggle:side=>(side==='left'?leftVisible.value:rightVisible.value)?close(side):open(side)})
 function reset(side){ui.setPref(side==='left'?'outlineLeftWidth':'outlineRightWidth',side==='left'?220:318)}
 function keyboard(side,e){
@@ -88,7 +101,7 @@ onBeforeUnmount(() => {
     <button v-if="narrow&&activeDrawer" class="ow-scrim" type="button" aria-label="关闭侧栏" @click="activeDrawer=null"></button>
     <aside v-show="leftVisible" class="ow-left" :style="{width:panelWidth('left')+'px'}" :role="narrow?'dialog':undefined" :aria-modal="narrow?'true':undefined" aria-label="故事结构"><OutlineSidebar/></aside>
     <div v-if="!narrow&&leftVisible" class="ow-resizer ow-left-resizer" role="separator" tabindex="0" aria-label="调整故事结构宽度" aria-orientation="vertical" :aria-valuenow="layout.left" aria-valuemin="180" aria-valuemax="420" title="拖动调宽，双击复位" @pointerdown="startResize('left',$event)" @dblclick.prevent="reset('left')" @keydown="keyboard('left',$event)"></div>
-    <button v-if="!narrow&&!leftVisible" class="ow-rail ow-left-rail" type="button" aria-label="展开故事结构" @click="open('left')"><OIcon name="rows" :size="17"/><span>故事结构</span><small>{{work.liveOlnodes().length}}</small><OIcon name="caret-right" :size="12"/></button>
+    <button v-if="!narrow&&!leftVisible" class="ow-rail ow-left-rail" type="button" aria-label="展开故事结构" title="展开故事结构" aria-expanded="false" @click="openLeftFromRail"><OIcon name="rows" :size="17"/><span>故事结构</span><small>{{work.liveOlnodes().length}}</small><OIcon name="caret-right" :size="12"/></button>
     <section class="ow-main"><slot/></section>
     <div v-if="!narrow&&rightVisible" class="ow-resizer ow-right-resizer" role="separator" tabindex="0" aria-label="调整详情宽度" aria-orientation="vertical" :aria-valuenow="layout.right" aria-valuemin="260" aria-valuemax="480" title="拖动调宽，双击复位" @pointerdown="startResize('right',$event)" @dblclick.prevent="reset('right')" @keydown="keyboard('right',$event)"></div>
     <aside v-show="rightVisible" class="ow-right" :style="{width:panelWidth('right')+'px'}" :role="narrow?'dialog':undefined" :aria-modal="narrow?'true':undefined" aria-label="节点详情">

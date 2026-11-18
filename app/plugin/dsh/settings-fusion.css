@@ -12,7 +12,7 @@ body[data-skin=dsh] .settings-shell{--set-serif:'Noto Serif SC','Songti SC',seri
 
 /* ---------- 设置工作区 · 外壳（总稿 html,body 重置 + .workspace） ---------- */
 body[data-skin=dsh] .settings-workspace{display:flex;flex:1;flex-direction:column;min-height:0;min-width:0}
-body[data-skin=dsh] .settings-shell{position:relative;z-index:20;flex:1;min-height:0;min-width:0;margin:16px 28px 24px;display:grid;grid-template-columns:236px minmax(0,1fr);grid-template-rows:minmax(0,1fr);gap:16px;color-scheme:var(--panel-scheme);font:14px/1.65 'Microsoft YaHei','PingFang SC',sans-serif;color:var(--set-ink);-webkit-font-smoothing:antialiased}
+body[data-skin=dsh] .settings-shell{--set-top-inset:16px;position:relative;z-index:20;flex:1;min-height:0;min-width:0;margin:var(--set-top-inset) 28px 24px;display:grid;grid-template-columns:236px minmax(0,1fr);grid-template-rows:minmax(0,1fr);gap:16px;color-scheme:var(--panel-scheme);font:14px/1.65 'Microsoft YaHei','PingFang SC',sans-serif;color:var(--set-ink);-webkit-font-smoothing:antialiased}
 body[data-skin=dsh] .settings-shell,body[data-skin=dsh] .settings-shell *{box-sizing:border-box}
 body[data-skin=dsh] .settings-shell :is(button,input,select,textarea){font:inherit;color:inherit}
 body[data-skin=dsh] .settings-shell button{cursor:pointer;background:none;border:0;transition:background .16s,border-color .16s,color .16s}
@@ -272,7 +272,7 @@ body[data-skin=dsh] .settings-shell .action-row .btn{min-width:67px;padding:5px 
 /* ---------- 设置工作区 · 断点 ≤1099（总稿 @media(max-width:1099px)：外壳转 flex，分类栏成抽屉） ---------- */
 @media(max-width:1099px){
 body[data-skin=dsh] .settings-shell .page-head .breadcrumbs{display:none}
-body[data-skin=dsh] .settings-shell{margin:12px 20px 20px;display:flex;gap:0}
+body[data-skin=dsh] .settings-shell{--set-top-inset:12px;margin:var(--set-top-inset) 20px 20px;display:flex;gap:0}
 body[data-skin=dsh] .settings-shell .main-pane{flex:1}
 body[data-skin=dsh] .settings-shell .side-pane{display:none;position:absolute;inset:0 auto 0 0;width:min(300px,100%);z-index:40;background:var(--panel-base)}
 body[data-skin=dsh] .settings-shell .nav-head .icon-btn{display:inline-flex}
@@ -311,7 +311,7 @@ body[data-skin=dsh] .settings-shell .data-layout .action-row{min-height:85px}
 
 /* ---------- 设置工作区 · 断点 ≤559（总稿 @media(max-width:559px)） ---------- */
 @media(max-width:559px){
-body[data-skin=dsh] .settings-shell{margin:8px 12px 12px}
+body[data-skin=dsh] .settings-shell{--set-top-inset:8px;margin:var(--set-top-inset) 12px 12px}
 body[data-skin=dsh] .settings-shell .pane{border-radius:16px}
 body[data-skin=dsh] .settings-shell .page-head{padding:18px 21px 17px;gap:13px;align-items:flex-start;flex-wrap:wrap;min-height:0}
 body[data-skin=dsh] .settings-shell .breadcrumbs{margin-bottom:6px}

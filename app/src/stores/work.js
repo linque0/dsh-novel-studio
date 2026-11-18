@@ -21,7 +21,7 @@ import { characterBiographyText } from '../services/character-biographies.js'
 import { readWritingPosition } from '../services/writing-position.js'
 import { resolveWritingChapter } from '../services/writing-position-core.js'
 import { DEFAULT_MUBU_SETS, kindOf } from '../components/lore/lore-kinds.js'
-import { joinContent, normalizeLinks, normalizeTags, normalizeTag, splitNote } from '../components/snippets/snippet-model.js'
+import { joinContent, normalizeLinks, normalizeTags, normalizeTag, pickSnipCardColor, splitNote } from '../components/snippets/snippet-model.js'
 
 const urlCache = new Map()
 
@@ -503,6 +503,7 @@ export const useWorkStore = defineStore('work', {
         content,
         tags: normalizeTags(opts.tags),
         links: normalizeLinks(opts.links),
+        cardColor: pickSnipCardColor(),
         createdAt: now(),
         updatedAt: now(),
         deletedAt: null

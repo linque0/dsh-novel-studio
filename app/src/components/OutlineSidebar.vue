@@ -207,7 +207,12 @@ onMounted(() => {
 <template>
 
   <div v-if="outlineWorkspace" class="draft-tree b-tree">
-   <div class="tree-heading"><button type="button" class="ol-side-toggle" aria-label="收起故事结构" title="收起故事结构" @click="outlineWorkspace.close('left')"><Glyph name="tree" :size="16"/> 故事结构</button><NDropdown trigger="click" :options="draftAddOptions" @select="draftAction"><button type="button" aria-label="添加模块"><Glyph name="plus" :size="16"/></button></NDropdown></div>
+   <div class="tree-heading">
+     <button type="button" class="ol-side-toggle" aria-label="收起故事结构" title="收起故事结构" aria-expanded="true" @click="outlineWorkspace.close('left')">
+       <Glyph name="tree" :size="16"/> 故事结构 <OIcon name="back" :size="14"/>
+     </button>
+     <NDropdown trigger="click" :options="draftAddOptions" @select="draftAction"><button type="button" aria-label="添加模块"><Glyph name="plus" :size="16"/></button></NDropdown>
+   </div>
    <label class="tree-search"><Glyph name="search" :size="14"/><input v-model="q" placeholder="搜索事件、章节…" aria-label="侧栏搜索模块"/></label>
    <div v-if="advancedOpen" class="draft-tree-filters"><button v-for="t in TYPES" :key="t" type="button" :aria-pressed="typeFilter===t" @click="typeFilter=t">{{t}}</button><input v-model="newTypeName" placeholder="新类型名称" @keydown.enter="addType"/><button type="button" @click="addType">添加类型</button><button v-for="t in customTypes" :key="t.name" type="button" @click="work.olTypeRemove(t.name)">移除 {{t.name}}</button></div>
    <button type="button" class="tree-topline" @click="home">全书情节 <span class="count">{{work.liveOlnodes().length}}</span></button>

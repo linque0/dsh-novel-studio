@@ -59,7 +59,7 @@ watch(() => c.value?.id, () => {
   menuOpen.value = false
 })
 
-const ROLE_PRESETS = ['主角', '配角', '反派', '导师', '红颜', '盟友', '旁观者', '龙套']
+const ROLE_PRESETS = ['主角', '配角', '反派', '导师', '盟友', '旁观者', '龙套']
 const hasRole = (r) => roles.value.includes(r)
 
 function patch(p) {
@@ -267,10 +267,10 @@ onBeforeUnmount(() => {
           type="button"
           :title="closedLeft ? '展开人物名录' : '收起人物名录'"
           :aria-label="closedLeft ? '展开人物名录' : '收起人物名录'"
-          :aria-pressed="closedLeft"
+          :aria-expanded="!closedLeft"
           @click="toggleLeft"
         >
-          <OIcon name="arrow-left" :size="14" />
+          <OIcon :name="closedLeft ? 'arrow-right' : 'back'" :size="14" />
         </button>
         <span class="char-segmented" role="group" aria-label="人物视图">
           <button type="button" :class="{ on: view === 'profile' }" :aria-pressed="view === 'profile'" @click="switchView('profile')">人物卷宗</button>

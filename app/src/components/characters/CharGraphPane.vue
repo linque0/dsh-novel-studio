@@ -704,9 +704,10 @@ onBeforeUnmount(() => {
           data-act="toggle-left"
           :aria-label="shell?.closed?.value?.left ? '展开人物名录' : '收起人物名录'"
           :title="shell?.closed?.value?.left ? '展开人物名录' : '收起人物名录'"
+          :aria-expanded="!shell?.closed?.value?.left"
           @click="shell?.toggleRoster?.()"
         >
-          <OIcon name="user" :size="15" />
+          <OIcon :name="shell?.closed?.value?.left ? 'arrow-right' : 'back'" :size="15" />
         </button>
         <button
           class="icon-btn char-head-toggle"
