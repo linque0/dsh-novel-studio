@@ -5,9 +5,10 @@
      这里不再内联分栏、也不再内联图谱：它是 LoreWorkspace 主 pane 里的一段内容。
      当前条目来自 ui.loreActiveId（唯一真源），本组件只渲染与触发切换。 -->
 <script setup>
-import { cleanLoreHtml } from '../services/lore-editor-dom.js'
+import { loreContentHtml, loreImageHtml } from '../services/lore-editor-dom.js'
 import { computed, ref } from 'vue'
 import OIcon from './OIcon.vue'
+import LoreImageHiddenNotice from './LoreImageHiddenNotice.vue'
 import LoreRelRows from './LoreRelRows.vue'
 import { kindOf } from './lore/lore-kinds.js'
 import { useWorkStore } from '../stores/work'
@@ -26,12 +27,14 @@ const ui = useUiStore()
 const hoverLink = ref(null)
 
 const node = computed(() => (ui.loreActiveId ? work.mubu.find((n) => n.id === ui.loreActiveId && !n.deletedAt) || null : null))
+const nodeImages = computed(() => loreImageHtml(node.value?.html))
+const nodeTitle = computed(() => (node.value?.text || '').trim() || (nodeImages.value ? '（图片）' : '（空节点）'))
 const entries = computed(() => (node.value ? work.loreLinksOf('mubu', node.value.id) : []))
 const parentName = computed(() => {
   const n = node.value
-  if (!n || !n.parentId) return '设定集'
+  if (!n || !n.parentId) return '顶层条目'
   const p = work.mubu.find((x) => x.id === n.parentId && !x.deletedAt)
-  return (p && p.text) || '设定集'
+  return (p && p.text) || '父条目'
 })
 /** 面包屑：根 → … → 当前（祖先可点，就地切换详情） */
 const crumbs = computed(() => {
@@ -52,7 +55,7 @@ const proseList = computed(() => {
   return work.mubuChildren(node.value.id)
     .filter((c) => !work.mubuChildren(c.id).length)
     .filter(c => (c.text || '').trim() || c.html)
-    .map(c => ({ id: c.id, html: cleanLoreHtml(c.html || String(c.text || '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('\n', '<br>')) }))
+    .map(c => ({ id: c.id, html: loreContentHtml(c) }))
 })
 /** 子条目：直属子节点（设计稿 01/02 编号行 + 一行摘要） */
 const kids = computed(() => {
@@ -130,12 +133,15 @@ function addChild() {
               <button class="lore-icon" type="button" title="添加关联关系" @click="openRelPanel"><OIcon name="link" :size="13" /></button>
             </div>
           </div>
-          <h2 class="lore-detail-title">{{ (node.text || '').trim() || '（空节点）' }}</h2>
+          <h2 class="lore-detail-title">{{ nodeTitle }}</h2>
           <div v-if="(node.tags || []).length" class="lore-detail-tags">
             <button v-for="t in node.tags" :key="t" class="lore-detail-tag" type="button" :style="tagStyle(t)" :title="`筛选标签「${t}」`" @click="filterTag(t)">{{ t }}</button>
           </div>
-          <div v-for="(p, i) in proseList" :key="'p' + i" class="lore-detail-childprose">
+          <div v-if="nodeImages" class="lore-detail-body lore-embedded-images" v-html="nodeImages" />
+          <LoreImageHiddenNotice :node-id="node.id" :html="node.html" />
+          <div v-for="p in proseList" :key="p.id" class="lore-detail-childprose">
             <div class="lore-detail-body" v-html="p.html" />
+            <LoreImageHiddenNotice :node-id="p.id" :html="p.html" />
           </div>
 
           <section class="lore-detail-section">
@@ -174,7 +180,7 @@ function addChild() {
       </div>
 
       <footer class="lore-detail-footer">
-        <span class="lore-detail-context">{{ parentPath }} / {{ (node.text || '').trim() || '（空节点）' }}</span>
+        <span class="lore-detail-context">{{ parentPath }} / {{ nodeTitle }}</span>
         <button class="lore-btn" type="button" title="回到条目编写继续编辑" @click="emit('locate', node.id)"><OIcon name="edit" :size="12" /> 编辑条目</button>
       </footer>
     </div>

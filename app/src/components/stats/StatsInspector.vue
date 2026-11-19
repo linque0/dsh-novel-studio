@@ -8,7 +8,7 @@ const props=defineProps({detail:Object,data:Object,model:Object,state:Object,wor
 const emit=defineEmits(['close','chapter','detail','chapterDay'])
 const root=ref(null),page=ref(0)
 useStatsMotion(root,()=>props.detail?.kind||'empty')
-watch(()=>[props.detail,props.state.period,props.state.range],()=>page.value=0)
+watch([()=>props.detail,()=>props.state.period,()=>props.state.range],()=>page.value=0)
 const fmt=n=>(n||0).toLocaleString('zh-CN'),sign=n=>(n>0?'+':n<0?'−':'')+fmt(Math.abs(n))
 const labels={done:'已完成',revise:'待修改',draft:'草稿',planned:'待写',writing:'进行中'}
 const chapter=computed(()=>props.detail?.kind==='chapter'?props.data.chapters.find(c=>c.id===props.detail.id):null)

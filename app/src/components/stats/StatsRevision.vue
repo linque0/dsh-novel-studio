@@ -5,7 +5,7 @@ import { snapshotPreview } from '../../services/writing-analysis-data.js'
 const props=defineProps({revision:Object,chapter:Object})
 const opened=ref(false),busy=ref(false),error=ref(false),value=ref(null)
 let request=0
-watch(()=>[props.revision.id,props.chapter?.id],()=>{request++;value.value=null;error.value=false;busy.value=false;opened.value=false})
+watch([()=>props.revision.id,()=>props.chapter?.id],()=>{request++;value.value=null;error.value=false;busy.value=false;opened.value=false})
 async function load(){
  const n=++request
  busy.value=true;error.value=false

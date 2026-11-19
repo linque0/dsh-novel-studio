@@ -1,11 +1,13 @@
 <script setup>
 import { useLoreSort } from '../composables/useLoreSort.js'
+import { useLoreImages } from '../composables/useLoreImages.js'
 import { cleanLoreHtml, loreText, loreCaret, setLoreCaret, splitLoreSelection } from '../services/lore-editor-dom.js'
 import LoreLinkComposer from './lore/LoreLinkComposer.vue'
 import TaskLauncher from './ai/TaskLauncher.vue'
 import { ref, reactive, computed, watch, nextTick, onMounted, onUpdated, onBeforeUnmount } from 'vue'
 import { NPopover } from 'naive-ui'
 import OIcon from './OIcon.vue'
+import LoreImageHiddenNotice from './LoreImageHiddenNotice.vue'
 import { useWorkStore } from '../stores/work'
 import { useUiStore } from '../stores/ui'
 import { useAiStore } from '../stores/ai'
@@ -17,7 +19,6 @@ import { jumpTo } from '../services/doublelinks'
 import DLinkPicker from './DLinkPicker.vue'
 import LoreRelRows from './LoreRelRows.vue'
 import { popOut } from '../services/panelwindows'
-import { setKindOf } from './lore/lore-kinds.js'
 
 const work = useWorkStore()
 const ui = useUiStore()
@@ -31,18 +32,9 @@ const loreEditor = ref(null)
 const mobileToolsOpen = ref(false)
 const ver = ref(0)
 const rows = ref([])
-const sections = ref([])
-const renaming = ref(null)
-/* 内容根：详情页 = 当前节点；列表页 = 当前设定集。标题单独显示，不再作为树行 */
-const focusedRootId = computed(() => props.focusNodeId || (ui.loreScope !== 'all' ? ui.loreRootId : null))
-const focusNode = computed(() => work.mubu.find(n => n.id === focusedRootId.value && !n.deletedAt) || null)
-const contentRoot = computed(() => focusNode.value || work.currentMubuRoot())
-const contentRootId = computed(() => contentRoot.value?.id || null)
-const titleText = computed(() => contentRoot.value?.text || '未命名设定集')
-/* 赤月戏：模块条上的「独立窗口」与「更多 → 拆窗」同一动作 */
-function popLore() {
-  popOut(work, 'lore', '', `${work.work?.title || ''} · 设定`)
-}
+const focusedRootId = computed(() => props.focusNodeId || (ui.loreScope === 'all' ? null : ui.loreRootId))
+const focusNode = computed(() => work.mubu.find(node => node.id === focusedRootId.value && !node.deletedAt) || null)
+const contentRootId = computed(() => focusNode.value?.id || null)
 const pending = reactive({ key: null, offset: 'end' })
 const focusedId = ref(null)
 const ctx = reactive({ open: false, x: 0, y: 0, rowId: null, folded: false, hasChildren: false, linkSearch: false, linkSpan: null })
@@ -50,7 +42,6 @@ const clip = ref(null)
 const cutId = ref(null)
 const undoStack = computed(() => work.mubuHistory().past)
 const redoStack = computed(() => work.mubuHistory().future)
-let lastSnap = 0
 
 const COLORS = ['#3c3427', '#8c6f4e', '#c0392b', '#d35400', '#27ae60', '#2980b9', '#8e44ad', '#7f8c8d']
 const HIGHLIGHTS = ['#fff3a3', '#ffd6a5', '#ffa8a8', '#b8f2c9', '#a8d8ff', '#e0c3fc']
@@ -96,33 +87,8 @@ function build() {
     parentId: n.parentId || null,
     children: (byParent.get(n.id) || []).filter(ok).map(make)
   })
-  const countIn = (id) => {
-    let total = 0
-    const walk = (pid) => {
-      for (const c of byParent.get(pid) || []) {
-        total++
-        walk(c.id)
-      }
-    }
-    walk(id)
-    return total
-  }
-  /* 主区呈现整棵森林：每个顶层节点即一个设定集；详情复用分支只渲染该节点的子条目 */
-  sections.value = focusNode.value
-    ? []
-    : work.mubuRoots().filter(ok).map((r) => ({
-        id: r.id,
-        kind: r.kind,
-        text: r.text || '未命名设定集',
-        fold: !!r.fold,
-        count: countIn(r.id),
-        rows: (byParent.get(r.id) || []).filter(ok).map(make)
-      }))
-  /* 行与集头取自同一份 renderGroups（折叠的集在其中 rows 为空）：必须在 sections 赋值之后读，
-     否则拿到的是上一轮分组。 */
-  rows.value = focusNode.value
-    ? (byParent.get(focusNode.value.id) || []).filter(ok).map(make)
-    : renderGroups.value.flatMap((g) => g.rows)
+  const roots = focusNode.value ? [focusNode.value] : byParent.get(null) || []
+  rows.value = roots.filter(ok).map(make)
   nextTick(() => {
     syncAll()
     checkFocusFlash()
@@ -189,28 +155,7 @@ function flattenRows(list, depth = 0) {
   return out
 }
 const visible = computed(() => flattenRows(rows.value))
-const setId = computed(() => work.mubuSetId || sections.value[0]?.id || work.mubuRoots()[0]?.id || null)
-/* 范围（ui.loreScope，由 store 持久化，默认 'set'）：all = 全部集；set = 只有当前集。
-   字段缺失（旧快照）时按 'set' 处理。 */
-const scopeAll = computed(() => ui.loreScope === 'all')
-/** 参与渲染的设定集：all = 全部；set = 当前设定集（缺省退回第一集） */
-const scopeSections = computed(() => {
-  if (scopeAll.value) return sections.value
-  const cur = sections.value.find((s) => s.id === setId.value) || sections.value[0] || null
-  return cur ? [cur] : []
-})
-/* 渲染分组：all = 每集一块，被折叠的集只留组头、条目行一条不渲染；set = 只有当前集且始终展开
-   （没有集头可点）。blocks 与 build() 的 rows 都从这一份结果派生，键盘上下与目录不会跳到看不见的行。 */
-const renderGroups = computed(() =>
-  scopeSections.value.map((s) => ({ ...s, head: scopeAll.value, rows: scopeAll.value && s.fold ? [] : s.rows }))
-)
-/* 主区按设定集分块；详情复用分支退化为单块无集头 */
-const blocks = computed(() => {
-  if (focusNode.value) return [{ id: null, text: '', count: 0, fold: false, head: false, rows: visible.value }]
-  return renderGroups.value.map((g) => ({ ...g, rows: flattenRows(g.rows) }))
-})
-/* 计数口径与分组一致：all = 全库；set = 当前集 */
-const entryTotal = computed(() => focusNode.value ? work.mubuDescendants(focusNode.value.id).length : scopeSections.value.reduce((n, s) => n + s.count, 0))
+const entryTotal = computed(() => focusNode.value ? work.mubuDescendants(focusNode.value.id).length + 1 : work.liveMubu().length)
 const filterText = computed(() => String(ui.mubuQuery || '').trim())
 function clearFilter() {
   ui.mubuQuery = ''
@@ -252,80 +197,17 @@ const tocItems = computed(() => {
   walk(rows.value, 0)
   return out
 })
-/* 纸面标题：设定集名 / 详情页当前节点名（可直接改名） */
-function renameTitle(e) {
-  const id = contentRootId.value
-  if (!id) return
-  const v = String(e.target.value || '').trim() || '未命名设定集'
-  work.mubuSetText(id, v)
-  e.target.value = v
-}
-function pickToc(id) {
-  if (id) ui.loreFocusId = id
-}
-function createSet() {
-  pushUndo()
-  const r = work.createMubuSet()
-  ver.value++
-  nextTick(() => flashNode(r.id))
-}
-/* ---------- 设定集头（集根不再是行，操作挂到集头上） ---------- */
-function setRow(blk) {
-  return {
-    node: {
-      key: 'm:' + blk.id,
-      id: blk.id,
-      text: blk.text,
-      parentId: null,
-      hasChildren: blk.count > 0,
-      fold: !!blk.fold,
-      children: []
-    },
-    depth: -1
-  }
-}
-function toggleSetFold(blk) {
-  work.mubuToggleFold(blk.id)
-  ver.value++
-}
 function headAdd() {
   pushUndo()
-  const parent = focusNode.value?.id || (ui.loreScope === 'all' ? null : work.currentMubuRoot()?.id || null)
-  const n = work.mubuAdd(parent, null, parent ? '' : '新节点')
-  if (!parent) { enterNode(n.id); return }
-  commit(() => {}, 'm:' + n.id, 'start')
+  const parent = contentRootId.value
+  if (focusNode.value?.fold) work.mubuToggleFold(parent)
+  const node = work.mubuAdd(parent, null, '')
+  commit(() => {}, 'm:' + node.id, 'start')
 }
 
-/** 全部折叠 / 全部展开（按钮在外壳头部，外壳通过 defineExpose 调到） */
-function foldAll(v) {
-  work.mubuFoldAll(v)
+function foldAll(value) {
+  work.mubuFoldAll(value)
   ver.value++
-}
-/** 单击集名即进入改名编辑：先保持"选中该集"的语义，再进入编辑并全选文本 */
-function beginRename(blk) {
-  selectSet(blk)
-  renameSet(blk)
-}
-function renameSet(blk) {
-  renaming.value = { id: blk.id, value: blk.text }
-  nextTick(() => {
-    const el = rootEl.value?.querySelector('.ls-input')
-    el?.focus()
-    el?.select()
-  })
-}
-function commitRename() {
-  const r = renaming.value
-  if (!r) return
-  const s = String(r.value || '').trim()
-  renaming.value = null
-  /* 空值 / 纯空白：不写库，保留原名 */
-  if (!s) return
-  work.mubuSetText(r.id, s)
-  ver.value++
-}
-function selectSet(blk) {
-  ui.mubuSelectedId = blk.id
 }
 
 /* ---------- 撤销 / 重做（快照 + 差异落库） ---------- */
@@ -400,7 +282,7 @@ function applyFocus() {
     return
   }
   el.focus()
-  setLoreCaret(el, pending.offset === 'start' ? 0 : pending.offset === 'end' ? (el.textContent || '').length : pending.offset)
+  setLoreCaret(el, pending.offset === 'start' ? 0 : pending.offset === 'end' ? Infinity : pending.offset)
   pending.key = null
 }
 function syncAll() {
@@ -436,11 +318,14 @@ function onInput(row, e) {
   rememberPosition()
 }
 
-function onPaste(e) {
-  e.preventDefault()
-  const t = e.clipboardData?.getData('text/plain') || ''
-  if (t) document.execCommand('insertText', false, t)
-}
+const { imageInput, imageAccept, chooseImages, onImageFiles, onLorePaste, onLoreDragOver, onLoreDrop } = useLoreImages(loreEditor, {
+  work,
+  selectedId: () => ui.mubuSelectedId,
+  parentId: () => contentRootId.value,
+  allowRoot: true,
+  checkpoint: pushUndo,
+  focusNew: id => nextTick(() => focusKeyFn('m:' + id))
+})
 function syncFocusedRow() {
   const el = document.activeElement
   if (!el || !el.classList?.contains('ob-text')) return
@@ -457,7 +342,7 @@ function addSibling(row) {
   pushUndo()
   const r = row
     ? work.mubuAdd(row.node.parentId, row.node.id, '')
-    : (setId.value ? work.mubuAdd(setId.value, null, '') : work.createMubuSet())
+    : work.mubuAdd(contentRootId.value)
   commit(() => {}, 'm:' + r.id, 'start')
 }
 function createFirst() { headAdd() }
@@ -492,22 +377,18 @@ function indent(row) {
   const sib = siblingsOf(row)
   const i = sib.findIndex((r) => r.node.key === row.node.key)
   if (i <= 0) return
-  pushUndo()
-  work.mubuMove(row.node.id, sib[i - 1].node.id, 'inside')
+  if (!work.mubuPlace(row.node.id, sib[i - 1].node.id, 'inside')) return
   commit(() => {}, row.node.key, 'end')
 }
 function outdent(row) {
   const n = row.node
-  const rootId = work.mubuRootOf(n.id)?.id || null
-  if (!n.parentId) return
-  pushUndo()
-  work.mubuMove(n.id, n.parentId, 'after')
+  if (!n.parentId || !work.mubuPlace(n.id, n.parentId, 'outdent')) return
   if (focusNode.value && !work.mubuPath(n.id).some(x => x.id === focusNode.value.id)) ui.focusLoreNode(n.id, work.mubuPath(n.id))
   commit(() => {}, row.node.key, 'end')
 }
 function moveRow(row, dir) {
-  pushUndo()
-  work.mubuMoveOrder(row.node.id, dir)
+  const adjacent = siblingsOf(row)[siblingsOf(row).findIndex(item => item.node.id === row.node.id) + dir]
+  if (!adjacent || !work.mubuPlace(row.node.id, adjacent.node.id, dir < 0 ? 'before' : 'after')) return
   commit(() => {}, row.node.key, 'end')
 }
 function siblingsOf(row) {
@@ -540,7 +421,8 @@ function pasteClip(asChild) {
   if (cutId.value) {
     const id = cutId.value
     if (id === anchor.node.id || work.mubuDescendants(id).some(n => n.id === anchor.node.id)) return
-    pushUndo(); work.mubuMove(id, anchor.node.id, asChild ? 'inside' : 'after'); cutId.value = null
+    if (!work.mubuPlace(id, anchor.node.id, asChild ? 'inside' : 'after')) return
+    cutId.value = null
     commit(() => {}, 'm:' + id, 'start'); return
   }
   pushUndo()
@@ -593,7 +475,7 @@ function onKey(row, e) {
     e.shiftKey ? outdent(row) : indent(row)
     return
   }
-  if (e.key === 'Backspace' && caretOffsetFromStart(el) === 0) {
+  if (e.key === 'Backspace' && getSelection()?.isCollapsed && caretOffsetFromStart(el) === 0 && loreCaret(el) === 0) {
     e.preventDefault()
     onBackspace(row)
     return
@@ -637,12 +519,12 @@ function onBackspace(row) {
     }
     if (row.node.children.length) {
       // 子节点上提到本层
-      for (const c of [...row.node.children].reverse()) work.mubuMove(c.id, row.node.id, 'after')
+      for (const c of [...row.node.children].reverse()) work.mubuPlace(c.id, row.node.id, 'after', undefined, () => {})
     }
     work.mubuRemove(row.node.id)
     commit(() => {}, prev.node.key, 'end')
   } else if (row.node.parentId) {
-    work.mubuMove(row.node.id, row.node.parentId, 'after')
+    work.mubuPlace(row.node.id, row.node.parentId, 'outdent', undefined, () => {})
     commit(() => {}, row.node.key, 'start')
   }
 }
@@ -650,7 +532,7 @@ function onBackspace(row) {
 /* ---------- 拖拽（三区指示 + 悬停自动展开 + FLIP） ---------- */
 const loreSort = useLoreSort(loreEditor, work, () => [
   contentRootId.value, ui.mubuQuery, ui.loreScope, ui.loreRootId, ui.mubuSelectedId
-], () => ver.value++)
+], () => ver.value++, undefined, { freeEntries: true })
 
 /* ---------- 导入 MD / TXT ---------- */
 async function importMd() {
@@ -659,9 +541,7 @@ async function importMd() {
   pushUndo()
   let nodesAdded = 0
   const anchorId = focusedId.value?.startsWith('m:') ? focusedId.value.slice(2) : null
-  /* 导入落在当前内容根：有焦点则挂在焦点节点下，否则作为一级条目 */
-  const anchorInRoot = anchorId && (anchorId === contentRootId.value || work.mubuRootOf(anchorId)?.id === work.mubuSetId) ? anchorId : null
-  const parentId = anchorInRoot || setId.value || work.createMubuSet().id
+  const parentId = anchorId && visible.value.some(row => row.node.id === anchorId) ? anchorId : contentRootId.value
   for (const f of files) {
     const { text } = decodeText(f.data)
     const tree = parseMubuMd(text)
@@ -1044,6 +924,7 @@ defineExpose({
       </NPopover>
       <button class="tb" title="清除格式" @mousedown.prevent @click="fmt('removeFormat')">清除</button>
       <button class="tb" title="导入 MD / TXT（标题层级自动转为节点层级）" @click="importMd"><OIcon name="upload" :size="12" /> 导入</button>
+      <button class="tb" type="button" title="插入图片" @mousedown.prevent @click="chooseImages"><OIcon name="image" :size="12" /> 图片</button>
       <i class="tb-sep" />
       <button class="tb" title="新建同级节点" :disabled="!focusedRow" @click="addSibling(focusedRow)"><OIcon name="plus" :size="11" /> 同级</button>
       <button class="tb" title="新建子节点（先点击选中一个节点）" :disabled="!focusedRow" @click="addChild(focusedRow)"><OIcon name="plus" :size="11" /> 子级</button>
@@ -1057,36 +938,11 @@ defineExpose({
       <small class="ob-count">{{ nodeCount }} / {{ entryTotal }} 条目</small>
     </div>
 
-    <div ref="loreEditor" class="ob-editor" @scroll="rememberPosition" @pointerdown="loreSort.pointerDown" @dragstart.capture="loreSort.nativeDrag" @click.capture="loreSort.click">
+    <input ref="imageInput" type="file" :accept="imageAccept" multiple hidden @change="onImageFiles" />
+    <div ref="loreEditor" class="ob-editor" @scroll="rememberPosition" @pointerdown="loreSort.pointerDown" @dragstart.capture="loreSort.nativeDrag" @click.capture="loreSort.click" @dragover="onLoreDragOver" @drop="onLoreDrop">
       <section class="write-surface">
-      <template v-for="blk in blocks" :key="blk.id || 'flat'">
-        <!-- 集头（设计稿 .mubu-set-head：图标 + 集名 + 条目数 + 悬停「＋」；整条吸顶由样式单负责）。
-             右键 = 该集合的节点菜单（设标签 / 关系 / 复制…）；单击集名 = 选中该集并进入改名。set 范围不渲染本头。 -->
-        <header
-          v-if="blk.head"
-          class="lore-set-head mubu-set-head"
-          :data-set="blk.id"
-          :data-node="'m:' + blk.id"
-          @contextmenu.prevent="onRowCtx(setRow(blk), $event)"
-        >
-          <OIcon class="ls-icon" :name="setKindOf(blk).icon" :size="15" />
-          <button class="ls-fold" :class="{ folded: blk.fold }" :title="blk.fold ? '展开该设定集' : '折叠该设定集'" @click.stop="toggleSetFold(blk)"><span /></button>
-          <input
-            v-if="renaming && renaming.id === blk.id"
-            v-model="renaming.value"
-            class="ls-input"
-            @keydown.enter.prevent="commitRename"
-            @keydown.esc.prevent="renaming = null"
-            @blur="commitRename"
-          />
-          <h2 v-else class="ls-name" @click="enterNode(blk.id)">{{ blk.text }}</h2>
-          <small class="ls-count">{{ blk.count }} 条目</small>
-          <span class="ls-ops">
-            <button class="icon-button" title="在此设定集新建条目" @click.stop="addChild({ node: { id: blk.id } })"><OIcon name="plus" :size="11" /></button>
-          </span>
-        </header>
-        <div
-        v-for="row in blk.rows"
+      <div
+        v-for="row in visible"
         :key="row.node.key"
         class="ob-row"
         :data-depth="row.depth"
@@ -1118,12 +974,13 @@ defineExpose({
           :data-ph="row.node.text ? '' : '输入内容，回车新建节点…'"
           @input="onInput(row, $event)"
           @keydown="onKey(row, $event)"
-          @paste="onPaste"
+          @paste="onLorePaste"
           @focus="onTextFocus"
           @keyup="rememberPosition"
           @mouseup="rememberPosition"
           @blur="rememberPosition"
         />
+        <LoreImageHiddenNotice :node-id="row.node.id" :html="row.node.html" />
         <span v-if="row.node.tags.length" class="ob-tags">
           <button
             v-for="t in row.node.tags"
@@ -1154,17 +1011,11 @@ defineExpose({
           <button class="ob-op" title="删除节点" @click.stop="deleteRow(row)"><OIcon name="close" :size="11" /></button>
         </span>
         </div>
-      </template>
-      <!-- 全部集都折叠时画面只有组头，不再叠加「空设定集」提示 -->
-      <div v-if="!nodeCount && !(scopeAll && blocks.length && blocks.every((b) => b.fold))" class="empty-shelf" style="padding-top: 50px">
+      <div v-if="!nodeCount" class="empty-shelf" style="padding-top: 50px">
         <template v-if="filterText">
           <div class="big">没有匹配条目</div>
           <p>当前筛选「{{ filterText }}」在整库中没有命中。</p>
           <button class="btn-primary" @click="clearFilter">清除筛选</button>
-        </template>
-        <template v-else-if="!scopeAll && contentRoot">
-          <div class="big">暂无子节点</div>
-          <button class="btn-primary" @click="createFirst">添加子节点</button>
         </template>
         <template v-else>
           <div class="big">暂无设定节点</div>

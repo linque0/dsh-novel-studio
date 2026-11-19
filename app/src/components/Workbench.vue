@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, provide, onMounted, onBeforeUnmount, watch } from 'vue'
+import { computed, nextTick, ref, provide, onMounted, onBeforeUnmount, watch } from 'vue'
 import { NButton, useMessage } from 'naive-ui'
 import { useWorkStore } from '../stores/work'
 import { useUiStore } from '../stores/ui'
@@ -29,6 +29,7 @@ import DLinkPopover from './DLinkPopover.vue'
 import { popOut, isPopped, focusPopped } from '../services/panelwindows'
 import { mountFlowBackdrop } from '../services/latent/flow.js'
 import { hashString, paletteOf } from '../services/latent/palette.js'
+import { runFlowTransition } from '../services/latent/flow-transition.js'
 
 const work = useWorkStore()
 const ui = useUiStore()
@@ -52,7 +53,11 @@ function openDirectoryDrawer() {
 const ai = useAiStore()
 function returnToShelf(){
   if(new URLSearchParams(location.search).get('panel')?.startsWith('agent:'))return window.native?.panelCloseSelf()
-  return work.closeWork()
+  return runFlowTransition(() => work.closeWork(), {
+    skin: ui.skin,
+    work: work.work,
+    afterCommit: () => nextTick()
+  })
 }
 const inspirationPrompt = ref('把这条灵感扩展成一个场景，保留悬念。')
 provide('inspirationPrompt', inspirationPrompt)
@@ -69,7 +74,14 @@ async function enterAiMode(mode){
 
 const tabs = WORK_NAVIGATION
 function selectTab(key) {
-  work.tab = key
+  if (work.tab === key) return
+  void runFlowTransition(() => {
+    work.tab = key
+  }, {
+    skin: ui.skin,
+    work: work.work,
+    afterCommit: () => nextTick()
+  })
 }
 
 let narrowMq1180 = null

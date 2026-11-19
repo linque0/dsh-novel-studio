@@ -10,7 +10,7 @@ import { useUiStore } from '../../stores/ui'
 import { jumpTo } from '../../services/doublelinks'
 import { tagColor } from '../../services/tagcolors'
 
-const emit = defineEmits(['open', 'locate', 'back'])
+const emit = defineEmits(['open', 'locate', 'back', 'select'])
 const work = useWorkStore()
 const ui = useUiStore()
 
@@ -47,18 +47,13 @@ function tagStyle(t) {
   }
 }
 function selectNode(id) {
-  if (!id) return
-  ui.loreActiveId = id
-  const root = work.mubuRootOf(id)
-  if (root) work.setMubuSet(root.id)
+  if (id) emit('select', id)
 }
 /** 关系行点击：目标为设定 → 切目标条目；人物 → 跳人物模块 */
 function pickRel(e) {
   if (!e) return
   if (e.otherKind === 'mubu') {
-    const root = work.mubuRootOf(e.otherId)
-    if (root) work.setMubuSet(root.id)
-    ui.loreActiveId = e.otherId
+    emit('select', e.otherId)
     return
   }
   jumpTo({ kind: 'character', id: e.otherId })

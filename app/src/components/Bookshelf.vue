@@ -1,9 +1,10 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { liveQuery } from 'dexie'
 import { NButton, NModal, NInput, NSelect, NCheckbox, useMessage } from 'naive-ui'
 import DreamLaunchDialog from './agent/DreamLaunchDialog.vue'
 import { WORK_NAVIGATION } from './app-navigation'
+import { runFlowTransition } from '../services/latent/flow-transition.js'
 import LatentShelf from './LatentShelf.vue'
 import { useShelfStore } from '../stores/shelf'
 import { useWorkStore } from '../stores/work'
@@ -91,9 +92,15 @@ async function openWorkAt(w, tab = 'chapters') {
   if (opening.value) return
   opening.value = true
   try {
-    await work.open(w.id)
-    ui.workbenchMode=tab==='agent'?'agent':'writing'
-    if (WORK_NAVIGATION.some(item => item.key === tab)) work.tab = tab
+    await runFlowTransition(async () => {
+      await work.open(w.id)
+      ui.workbenchMode = tab === 'agent' ? 'agent' : 'writing'
+      if (WORK_NAVIGATION.some(item => item.key === tab)) work.tab = tab
+    }, {
+      skin: ui.skin,
+      work: w,
+      afterCommit: () => nextTick()
+    })
   } catch {
     msg.error('作品未能打开，请重试')
   } finally { opening.value = false }

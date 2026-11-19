@@ -40,6 +40,15 @@ export function shouldSkipEcho(op, revisions) {
   return revisions.get(revKey(op.table, op.id)) === op.revision
 }
 
+export function remoteLibraryOps(ops, revisions) {
+  const latest = new Map()
+  for (const op of ops || []) {
+    if (op?.table && op.id) latest.set(revKey(op.table, op.id), op)
+  }
+  // 日志按写入顺序返回。先取最新版，再识别回声，避免把旧版应用到本地。
+  return Array.from(latest.values()).filter(op => !shouldSkipEcho(op, revisions))
+}
+
 export function applyRevisions(revisions, written) {
   for (const item of written || []) {
     if (!item?.table || !item?.id) continue

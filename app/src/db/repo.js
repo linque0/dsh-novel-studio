@@ -3,7 +3,7 @@ import { memoryJob, recoverMemoryJob } from '../services/ai/memory-queue-core.js
 import { db, uid, now, todayStr } from './database'
 import { htmlToMd, htmlToPlain } from '../services/importers'
 import { suspendProjection, resumeProjection } from './project-repo.js'
-import { DEFAULT_MUBU_SETS } from '../components/lore/lore-kinds.js'
+import { starterLoreEntries } from '../services/lore-entries.js'
 import { readWritingPosition } from '../services/writing-position.js'
 import { resolveWritingChapter } from '../services/writing-position-core.js'
 import { STATS_TABLES, buildWritingStats, chapterWordChange, statsDates } from '../services/writing-stats-core.js'
@@ -109,14 +109,7 @@ export async function seedWorkDefaults(workId, { withVolume = true } = {}) {
     const volId = uid()
     await db.volumes.add({ id: volId, workId, title: '第一卷', sortOrder: 0, createdAt: t, updatedAt: t, deletedAt: null })
   }
-  // 新作品直接落六个默认设定集（与 ensureDefaultMubuSets 同一真源），不再写旧 lorecats
-  for (const [i, set] of DEFAULT_MUBU_SETS.entries()) {
-    await db.mubu.add({
-      id: uid(), workId, parentId: null, sortOrder: i * 1000,
-      text: set.text, html: null, fold: false, deletedAt: null,
-      createdAt: t, updatedAt: t, kind: set.kind
-    })
-  }
+  await db.mubu.bulkAdd(starterLoreEntries(workId, uid, t))
 }
 
 export async function putRow(table, row, opts = {}) {

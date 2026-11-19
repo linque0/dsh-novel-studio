@@ -169,7 +169,7 @@ function lowerTarget(drag, bounds, row, pointer, inSource) {
   return level ? levelTarget(drag, level, pointer, { mode: 'sink' }) : null
 }
 
-function getTarget(drag, bounds, work) {
+function getTarget(drag, bounds, work, freeEntries) {
   const { x, y, list, rows, from } = drag
   if (x < bounds.left || x >= bounds.right || y < bounds.top || y >= bounds.bottom) return null
   const pointer = y - bounds.top + list.scrollTop
@@ -183,6 +183,7 @@ function getTarget(drag, bounds, work) {
   if (level || pointer >= rows.at(-1).bottom) {
     showLevelGuides(drag, bounds, EMPTY_GUIDES, 'lowerGuides')
     if (level) return levelTarget(drag, level, pointer)
+    if (freeEntries) return { mode: 'root', id: null, slot: rows.length }
     if (drag.levels.length) return levelTarget(drag, drag.levels.at(-1), pointer, { append: true })
   }
   const lower = lowerTarget(drag, bounds, row, pointer, index >= from && index < source.end)
@@ -200,7 +201,7 @@ function getTarget(drag, bounds, work) {
     mode = previous.mode === 'swap' ? 'inside' : previous.mode
   }
   if (index > from && index < source.end) {
-    return mode === 'inside' ? { mode: 'swap', id: row.id, slot: from } : null
+    return !freeEntries && mode === 'inside' ? { mode: 'swap', id: row.id, slot: from } : null
   }
   const target = { mode, id: row.id, slot: mode === 'before' ? index : row.end }
   const node = work.mubu.find(node => node.id === row.id)
@@ -267,7 +268,7 @@ function preview(drag, target) {
   drag.headerMode = target?.mode
 }
 
-export function useLoreSort(editor, work, context, refresh, checkpoint) {
+export function useLoreSort(editor, work, context, refresh, checkpoint, { freeEntries = false } = {}) {
   return usePointerRowSort(editor, {
     structure: () => JSON.stringify([
       context(), work.work?.id, work.mubuSetId,
@@ -295,7 +296,7 @@ export function useLoreSort(editor, work, context, refresh, checkpoint) {
         drag.previousSibling = drag.rows.slice(0, drag.from).findLast(row => drag.parents.get(row.id) === drag.parents.get(source.id))
         showLevelGuides(drag, bounds, drag.levels, 'upperGuides')
       }
-      return getTarget(drag, bounds, work)
+      return getTarget(drag, bounds, work, freeEntries)
     },
     ghostX: (drag, target) => target?.snap
       ? (target.snap.bulletX ?? target.snap.x) - drag.ghostBulletOffset
@@ -312,7 +313,9 @@ export function useLoreSort(editor, work, context, refresh, checkpoint) {
       return target.slot > from ? boundary - extent : boundary
     },
     commit(id, target) {
-      const changed = work.mubuDrop(id, target.id, target.mode, checkpoint, target.placement)
+      const changed = freeEntries
+        ? work.mubuPlace(id, target.id, target.mode, target.placement, checkpoint)
+        : work.mubuDrop(id, target.id, target.mode, checkpoint, target.placement)
       if (changed) refresh()
       return changed
     }

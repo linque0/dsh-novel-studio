@@ -3,11 +3,13 @@ export function planLoreMove(nodes, sourceId, targetId, mode, placement) {
   const byId = new Map(nodes.map(node => [node.id, node]))
   const source = byId.get(sourceId)
   const target = byId.get(targetId)
-  if (!source?.parentId || sourceId === targetId) return []
+  const allowRoot = placement?.allowRoot === true
+  const toRoot = allowRoot && mode === 'root'
+  if (!source || (!allowRoot && !source.parentId) || sourceId === targetId || (!target && !toRoot)) return []
   const parentOf = node => node?.parentId || null
   const siblings = parentId => nodes.filter(node => parentOf(node) === parentId).map(node => node.id)
   const oldParent = parentOf(source)
-  if (!byId.has(oldParent)) return []
+  if (oldParent && !byId.has(oldParent)) return []
   const lists = new Map()
   const list = parentId => {
     if (!lists.has(parentId)) lists.set(parentId, siblings(parentId))
@@ -28,7 +30,7 @@ export function planLoreMove(nodes, sourceId, targetId, mode, placement) {
   const descendant = path.has(sourceId)
 
   if (mode === 'swap') {
-    if (!descendant) return []
+    if (!descendant || !oldParent) return []
     const targetParent = parentOf(target)
     replace(list(oldParent), sourceId, targetId)
     if (targetParent === sourceId) {
@@ -44,12 +46,12 @@ export function planLoreMove(nodes, sourceId, targetId, mode, placement) {
     }
     newParents.set(targetId, oldParent)
   } else {
-    if (descendant || !['before', 'after', 'inside', 'outdent', 'lift', 'sink'].includes(mode)) return []
+    if (descendant || (!toRoot && !['before', 'after', 'inside', 'outdent', 'lift', 'sink'].includes(mode))) return []
     const reference = mode === 'outdent' ? byId.get(oldParent) : target
-    if (!reference) return []
+    if (!reference && !toRoot) return []
     const byLevel = mode === 'lift' || mode === 'sink'
     const parent = mode === 'inside' || byLevel ? reference.id : parentOf(reference)
-    if (!parent) return []
+    if (!parent && !allowRoot) return []
     if (mode === 'lift') {
       const ancestors = new Set()
       for (let cursor = parentOf(byId.get(oldParent)); cursor; cursor = parentOf(byId.get(cursor))) {
@@ -78,7 +80,7 @@ export function planLoreMove(nodes, sourceId, targetId, mode, placement) {
       ? placement?.referenceId
         ? destination.indexOf(placement.referenceId) + Number(placement.side === 'after')
         : destination.length
-      : mode === 'inside' ? destination.length
+      : mode === 'inside' || toRoot ? destination.length
         : destination.indexOf(reference.id) + Number(mode !== 'before')
     destination.splice(index, 0, sourceId)
     if (parent === oldParent && before.every((id, i) => id === origin[i])) return []
@@ -87,7 +89,7 @@ export function planLoreMove(nodes, sourceId, targetId, mode, placement) {
 
   for (const id of newParents.keys()) {
     const seen = new Set()
-    for (let cursor = id; cursor; cursor = newParents.get(cursor) ?? parentOf(byId.get(cursor))) {
+    for (let cursor = id; cursor; cursor = newParents.has(cursor) ? newParents.get(cursor) : parentOf(byId.get(cursor))) {
       if (seen.has(cursor) || !byId.has(cursor)) return []
       seen.add(cursor)
     }

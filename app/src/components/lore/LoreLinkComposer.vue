@@ -10,7 +10,10 @@ let source = null, range = null, lastField = null, lastRange = null
 const results = computed(() => searchTargets(query.value, 8).filter(t => !(t.kind === 'mubu' && t.id === sourceId())))
 const sourceId = () => source?.dataset.loreId || source?.closest('[data-node]')?.dataset.node.slice(2)
 function close() { shown.value = false; range = null }
-function fieldFor(el) { const field = el?.closest?.('.ob-text,.lore-h1[contenteditable="true"]'); return field && (props.editorRoot?.closest('.lore-shell-wrap') || props.editorRoot)?.contains(field) ? field : null }
+function fieldFor(el) {
+  const field = el?.closest?.(':is(.ob-text,[data-lore-entry-editor])[contenteditable="true"]')
+  return field && props.editorRoot?.contains(field) ? field : null
+}
 function position() { nextTick(() => { if (!box.value || !source) return; const r = range?.getBoundingClientRect(), b = r?.height ? r : source.getBoundingClientRect(); point.value = { x: Math.max(12, Math.min(innerWidth - box.value.offsetWidth - 12, b.left)), y: Math.max(80, Math.min(innerHeight - box.value.offsetHeight - 12, b.bottom + 8)) } }) }
 function detect(field) {
   const selection = getSelection(); if (!selection?.isCollapsed || !field.contains(selection.anchorNode)) return
@@ -26,7 +29,7 @@ function insert(target, create = false) {
   if (!source?.isConnected || !range || !sourceId()) return close()
   const id = sourceId(); work.mubuCheckpoint()
   if (create) {
-    const parent = props.scopeRoot || work.mubuRootOf(id)?.id || null
+    const parent = props.scopeRoot || null
     const n = work.mubuAdd(parent, null, query.value.trim()); if (!n) return
     target = { kind: 'mubu', id: n.id, title: n.text }
   }
@@ -51,7 +54,7 @@ function key(e) {
 function selection() { const s = getSelection(), field = fieldFor(s?.anchorNode?.parentElement); if (field && s.rangeCount && !shown.value) { lastField = field; lastRange = s.getRangeAt(0).cloneRange() } }
 function request(e) {
   if (!props.editorRoot?.contains(e.target)) return
-  source = fieldFor(lastField) || props.editorRoot.querySelector('.ob-text') || props.editorRoot.closest('.lore-shell-wrap')?.querySelector('.lore-h1[contenteditable="true"]')
+  source = fieldFor(lastField) || props.editorRoot.querySelector('.ob-text, [data-lore-entry-editor]')
   if (!source) return
   if (lastRange && source.contains(lastRange.startContainer)) range = lastRange.cloneRange()
   else { setLoreCaret(source, source.textContent.length); range = getSelection().getRangeAt(0).cloneRange() }

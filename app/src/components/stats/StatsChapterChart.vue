@@ -3,6 +3,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import StatsSectionHead from './StatsSectionHead.vue'
 import StatsMetrics from './StatsMetrics.vue'
 import StatsPagination from './StatsPagination.vue'
+import WritingStatsSelect from './WritingStatsSelect.vue'
 import { useStatsMotion } from './use-stats-motion.js'
 const props=defineProps({model:Object,data:Object,state:Object,workName:Function})
 const emit=defineEmits(['patch','chapter','day'])
@@ -15,6 +16,7 @@ const rows=computed(()=>score.value.groups.flatMap(g=>g.rows))
 const pageRows=computed(()=>rows.value.slice(page.value*40,(page.value+1)*40))
 const groups=computed(()=>score.value.groups.map(g=>({...g,rows:g.rows.filter(c=>pageRows.value.includes(c))})).filter(g=>g.rows.length))
 const vs=computed(()=>props.model.volumes(props.state.work))
+const volumeOptions=computed(()=>[{value:'all',label:'全部分卷'},...vs.value.map(v=>({value:v.id,label:v.title}))])
 const counts=computed(()=>Object.fromEntries(Object.keys(labels).map(k=>[k,score.value.base.filter(c=>c.status===k).length])))
 const volumeName=computed(()=>vs.value.find(v=>v.id===props.state.volume)?.title||'全部章节')
 const matrix=computed(()=>{
@@ -36,8 +38,8 @@ async function restore(){
  pane.value.scrollLeft=saved?.[0]??pane.value.scrollWidth
  pane.value.scrollTop=saved?.[1]??0
 }
-watch(()=>[props.state.work,props.state.volume,props.state.status],()=>{page.value=0})
-watch(()=>[props.state.chart,matrixKey.value,page.value],restore,{flush:'post',immediate:true})
+watch([()=>props.state.work,()=>props.state.volume,()=>props.state.status],()=>{page.value=0})
+watch([()=>props.state.chart,matrixKey,page],restore,{flush:'post',immediate:true})
 function visibleCell(cell){
  const box=cell.getBoundingClientRect(),r=pane.value.getBoundingClientRect(),stub=pane.value.querySelector('th').offsetWidth
  if(box.left<r.left+stub+3)pane.value.scrollLeft+=box.left-r.left-stub-3
@@ -62,7 +64,7 @@ const tabCell=(c,d)=>c.id===(pageRows.value.find(c=>c.id===props.state.chapterPi
    <div class="chapter-head-tools"><div class="chapter-switch period" role="group" aria-label="章节分析图表"><button v-for="(label,k) in {structure:'章节结构',revision:'改稿轨迹'}" :key="k" :data-chart="k" :aria-pressed="state.chart===k" @click="remember();patch('chart',k)">{{label}}</button></div><span class="badge">{{state.status==='all'?'共':'筛出'}} {{rows.length}} 章</span></div>
   </StatsSectionHead>
   <StatsMetrics :items="metrics"/>
-  <label class="mobile-volume"><span>分卷</span><select :value="state.volume" aria-label="分卷" @change="patch('volume',$event.target.value)"><option value="all">全部分卷</option><option v-for="v in vs" :key="v.id" :value="v.id">{{v.title}}</option></select></label>
+  <div class="mobile-volume"><span>分卷</span><WritingStatsSelect label="分卷" :value="state.volume" :options="volumeOptions" @change="patch('volume',$event)"/></div>
   <div class="status-band" aria-hidden="true"><i v-for="(n,k) in counts" :key="k" :class="k" :style="{flex:n}"/></div>
   <div class="status-filter" role="group" aria-label="章节状态"><button :aria-pressed="state.status==='all'" data-status="all" @click="patch('status','all')">全部 {{score.base.length}}</button><button v-for="(n,k) in counts" :key="k" :data-status="k" :aria-pressed="state.status===k" @click="patch('status',k)"><i :class="k"/>{{labels[k]}} <span>{{n}}</span></button></div>
   <div v-if="!rows.length" class="empty"><b>没有符合条件的章节</b><p>可切换分卷、状态或作品范围。</p></div>

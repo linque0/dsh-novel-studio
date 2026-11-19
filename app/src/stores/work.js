@@ -846,6 +846,7 @@ export const useWorkStore = defineStore('work', {
 
     /** 在当前设定集内新建一条设定（无设定集时自动先建一个） */
     mubuAddInCurrentSet(text = '', html = null) {
+      if (useUiStore().skin === 'dsh') return this.mubuAdd(null, null, text, html)
       const root = this.currentMubuRoot() || this.createMubuSet()
       return this.mubuAdd(root.id, null, text, html)
     },
@@ -972,6 +973,24 @@ export const useWorkStore = defineStore('work', {
         autosave.mark('mubu', node)
       }
       this.mubuRevision++
+      return true
+    },
+
+    mubuPlace(id, targetId, mode, placement, checkpoint) {
+      if (!this.mubuDrop(id, targetId, mode, checkpoint, { ...placement, allowRoot: true })) return false
+      const path = this.mubuPath(id)
+      for (const ancestor of path.slice(0, -1)) {
+        if (ancestor.fold) this.mubuToggleFold(ancestor.id)
+      }
+      const ui = useUiStore()
+      ui.loreNavFold = ui.loreNavFold.filter(key => !path.some(node => node.id === key))
+      if (ui.loreScope !== 'all' && ui.loreRootId && !path.some(node => node.id === ui.loreRootId) &&
+          !(ui.loreView === 'map' && ui.loreMapMode === 'relations')) {
+        ui.navigateLore({ rootId: null, rootPath: [], scope: 'all', activeId: id, selectedId: id })
+      }
+      ui.loreActiveId = id
+      ui.mubuSelectedId = id
+      this.setMubuSet(path[0]?.id)
       return true
     },
 

@@ -227,7 +227,12 @@ function trackSource(transaction,table,row,kind='put') {
 }
 for (const table of SOURCE_TABLES) {
   db.table(table).hook('creating', function (_key, row, transaction) { this.onsuccess = () => trackSource(transaction,table,row) })
-  db.table(table).hook('updating', function (changes, _key, row, transaction) { this.onsuccess = () => {trackSource(transaction,table,row);if(changes.workId&&changes.workId!==row.workId)trackSource(transaction,table,{...row,workId:changes.workId})} })
+  db.table(table).hook('updating', function (_changes, _key, previous, transaction) {
+    this.onsuccess = saved => {
+      if (saved.workId && saved.workId !== previous.workId) trackSource(transaction, table, previous)
+      trackSource(transaction, table, saved)
+    }
+  })
   db.table(table).hook('deleting', function (_key, row, transaction) { this.onsuccess = () => trackSource(transaction,table,row,'delete') })
 }
 

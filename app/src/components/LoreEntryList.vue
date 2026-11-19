@@ -28,9 +28,9 @@ const tagsOfSet = computed(() => {
 const siblings = computed(() => (tagFilter.value ? allSiblings.value.filter((s) => (s.tags || []).includes(tagFilter.value)) : allSiblings.value))
 const parentName = computed(() => {
   const n = node.value
-  if (!n || !n.parentId) return '设定集'
+  if (!n || !n.parentId) return '顶层条目'
   const p = work.mubu.find((x) => x.id === n.parentId && !x.deletedAt)
-  return (p && p.text) || '设定集'
+  return (p && p.text) || '父条目'
 })
 function relCountOf(id) {
   return work.loreLinksOf('mubu', id).length
@@ -52,7 +52,7 @@ function descOf(n) {
     }
   }
   collect(n.id, 0)
-  return (leaves.join(' ') || titles.join(' ')).slice(0, 90) || (n.parentId ? parentName.value : '设定集')
+  return (leaves.join(' ') || titles.join(' ')).slice(0, 90) || (n.parentId ? parentName.value : '顶层条目')
 }
 function tagStyle(t) {
   const c = tagColor(t)

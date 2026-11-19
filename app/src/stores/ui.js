@@ -121,6 +121,8 @@ export const useUiStore = defineStore('ui', {
     loreView: 'write',
     loreActiveId: null,
     loreMapMode: 'hierarchy', // map 视图的两种模式：hierarchy 层级导图 / relations 关系网络
+    loreTreeDirection: 'single',
+    loreTreeEdgeStyle: 'elbow', // 层级导图连线形式：elbow 折线 / curve 曲线
     loreReturn: [],
     /* 设定面板矩阵（设计稿 prefs 的对应物）：三列宽度 / 三列收起 / A 视图范围 writeScope。
        宽度按列分别记（nav 220 / list 300 / detail 348），收起态写 40px 细轨，
@@ -131,7 +133,7 @@ export const useUiStore = defineStore('ui', {
     loreNavClosed: false,
     loreListClosed: false,
     loreDetailClosed: false,
-    loreScope: 'set',
+    loreScope: 'all',
     /* 人物面板矩阵（原型 app.mjs:17 的 defaults / fusion.css:2-3）：两种视图各记左右栏宽与收起态，
        落 appconfig['charPrefs']（读回时用 char-layout.js 的 clampWidth 夹紧）。
        筛选词 / 关系范围 / 三处滚动位置按作品落 appconfig['charstate:<workId>']。 */
@@ -164,6 +166,7 @@ export const useUiStore = defineStore('ui', {
     autosave: { pending: 0, saving: false, lastSavedAt: 0, error: false },
     searchOpen: false,
     statsOpen: false,
+    statsAnalysisOpen: false,
     statsWorkId: null,
     trashOpen: false,
     importOpen: false,
@@ -317,21 +320,25 @@ export const useUiStore = defineStore('ui', {
     },
     async persistLoreState(workId) {
       if (!workId || workId !== this.loreWorkId) return
-      const value = { ...this.captureLoreLocation(), navFold: this.loreNavFold, linksOpen: this.loreLinksOpen, referenceTab: this.loreReferenceTab, positions: this.lorePositions }
+      const value = { ...this.captureLoreLocation(), treeDirection: this.loreTreeDirection, treeEdgeStyle: this.loreTreeEdgeStyle, navFold: this.loreNavFold, linksOpen: this.loreLinksOpen, referenceTab: this.loreReferenceTab, positions: this.lorePositions }
       try { await db.appconfig.put({ key: 'lorestate:' + workId, value: JSON.parse(JSON.stringify(value)) }) } catch { /* keep the current position in memory */ }
     },
     async restoreLoreState(workId) {
       if (this.loreWorkId === workId) return
       this.loreWorkId = workId; this.loreReturn = []; this.loreForward = []
       this.lorePositions = {}; this.loreNavFold = []; this.loreNavSeeded = false; this.loreLinksOpen = false; this.loreReferenceTab = 'backlinks'
-      this.applyLoreLocation({ view: 'write', scope: 'set' })
+      this.loreTreeDirection = 'single'
+      this.loreTreeEdgeStyle = 'elbow'
+      this.applyLoreLocation({ view: 'write', scope: 'all' })
       try {
         const row = await db.appconfig.get('lorestate:' + workId)
         if (this.loreWorkId !== workId || !row?.value) return
         const v = row.value; this.lorePositions = v.positions || {}
+        this.loreTreeDirection = v.treeDirection === 'double' ? 'double' : 'single'
+        this.loreTreeEdgeStyle = v.treeEdgeStyle === 'curve' ? 'curve' : 'elbow'
         this.loreNavFold = v.navFold || []; this.loreNavSeeded = Array.isArray(v.navFold); this.loreLinksOpen = !!v.linksOpen
         this.loreReferenceTab = ['backlinks', 'outline', 'relations'].includes(v.referenceTab) ? v.referenceTab : 'backlinks'
-        this.applyLoreLocation({ ...v, scope: v.scope || this.loreScope })
+        this.applyLoreLocation({ ...v, scope: v.rootId ? v.scope || this.loreScope : 'all' })
       } catch { /* an unreadable preference does not affect source content */ }
     },
 

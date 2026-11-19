@@ -21,6 +21,7 @@ import LoreHead from './LoreHead.vue'
 import LoreEntryList from '../LoreEntryList.vue'
 import LoreGalaxy from './planets/LoreGalaxy.vue'
 import LoreTreeMap from './LoreTreeMap.vue'
+import LoreImageControls from '../LoreImageControls.vue'
 import LoreInspector from './LoreInspector.vue'
 import LoreDivider from './LoreDivider.vue'
 import { loreWidths } from './lore-layout.js'
@@ -36,6 +37,7 @@ const treeMap = ref(null) // C 层级导图实例：缩放 / 适应 / 聚焦
 const drawer = ref(false) // ≤1099：nav 变抽屉（原型 drawer）
 const screen = ref('main') // ≤1099 两屏流程：main | list | insp（宽档不生效）
 const mainPane = ref(null)
+const imageSurface = ref(null)
 const innerWidth = ref(typeof window === 'undefined' ? 1440 : window.innerWidth)
 
 /* ---------- 面板矩阵的列宽（纯函数算，结果写成 CSS 变量） ---------- */
@@ -89,8 +91,14 @@ function pickEntry(id) {
 
 /* ---------- 头部：页头已抽成 LoreHead.vue（只发事件），范围切换仍由外壳落库 ---------- */
 const node = computed(() => (ui.loreActiveId ? work.mubu.find((n) => n.id === ui.loreActiveId && !n.deletedAt) || null : null))
-function toggleScope() {
-  ui.navigateLore({ rootId: null, rootPath: [], scope: ui.loreScope === 'all' ? 'set' : 'all' })
+function showAllEntries() {
+  ui.navigateLore({ rootId: null, rootPath: [], scope: 'all', query: '' })
+}
+function focusBranch(id = ui.loreActiveId) {
+  if (!id || !work.mubu.some(node => node.id === id && !node.deletedAt)) return
+  const path = work.mubuPath(id).map(node => node.id)
+  ui.navigateLore({ rootId: id, rootPath: path, scope: 'set', activeId: id, selectedId: id, query: '' })
+  ui.loreNavFold = ui.loreNavFold.filter(key => !path.includes(key))
 }
 /** 进详情时同步当前设定集：否则导航高亮的是 A 集、同级条目列列的是 B 集 */
 function syncSet(id) {
@@ -100,14 +108,14 @@ function syncSet(id) {
 
 /* ---------- 视图切换（保留当前条目；返回恢复视图与滚动位置） ---------- */
 function fallbackId() {
-  return ui.loreActiveId || ui.mubuSelectedId || work.mubuChildren(work.currentMubuRoot()?.id || null)[0]?.id || null
+  return ui.loreActiveId || ui.mubuSelectedId || work.mubuRoots()[0]?.id || null
 }
 function captureScroll() {
   return ui.loreView === 'write' ? mubu.value?.getScroll() ?? 0 : 0
 }
 function switchView(next) {
   if (next === ui.loreView) return
-  const id = next === 'detail' ? (isGalaxy.value ? fallbackId() : ui.loreRootId || fallbackId()) : undefined
+  const id = next === 'detail' ? fallbackId() : undefined
   if (next === 'detail' && !id) return
   const scroll = captureScroll()
   ui.setLoreView(next, { id, scroll })
@@ -146,8 +154,23 @@ function clearFilter() {
 function selectNode(id) {
   if (!id) return
   ui.loreActiveId = id
+  ui.mubuSelectedId = id
+  const path = new Set(work.mubuPath(id).map(node => node.id))
+  ui.loreNavFold = ui.loreNavFold.filter(key => !path.has(key))
   const root = work.mubuRootOf(id)
   if (root) work.setMubuSet(root.id)
+}
+async function navigateFromTree(id, created = false) {
+  if (!id) return
+  if (ui.loreScope !== 'all' && ui.loreRootId && !work.mubuPath(id).some(node => node.id === ui.loreRootId)) showAllEntries()
+  if (ui.loreView === 'detail') ui.navigateLore({ activeId: id, selectedId: id })
+  selectNode(id)
+  await nextTick()
+  if (ui.loreView === 'map') treeMap.value?.focusActive()
+  else if (ui.loreView === 'write') {
+    if (created) ui.loreFocusId = id
+    else mubu.value?.focusNode(id)
+  }
 }
 
 /* ---------- C 视觉导图 ---------- */
@@ -177,14 +200,19 @@ async function pickGalaxyNode(id) {
     mainPane.value?.querySelector('.lpn-stage canvas')?.focus({ preventScroll: true })
   }
 }
-const mapSetId = computed(() => ui.loreRootId || work.currentMubuRoot()?.id || null)
-/* 层级导图的范围：'all' 画全部设定集（多根），否则只画当前集 */
-const mapSetIds = computed(() => (ui.loreScope === 'all' ? work.mubuRoots().map((r) => r.id) : [work.currentMubuRoot()?.id].filter(Boolean)))
-const mapContext = computed(() => ui.loreScope === 'all' ? '全部设定 · 层级' : '条目层级')
+const mapFocus = computed(() => ui.loreScope === 'all' ? null : ui.loreRootId)
+const mapContext = computed(() => mapFocus.value ? '聚焦分支' : '全部条目')
+function afterMapMove(id) {
+  const path = work.mubuPath(id).map(node => node.id)
+  if (mapFocus.value && !path.includes(mapFocus.value)) showAllEntries()
+  selectNode(id)
+}
 const zoomPercent = computed(() => Math.round((Number(treeMap.value?.zoom) || 1) * 100))
 function setMapMode(mode) {
   resetScreen()
-  ui.setLoreMapMode(mode)
+  if (mode === 'hierarchy' && mapMode.value !== 'hierarchy') {
+    ui.navigateLore({ mapMode: 'hierarchy', rootId: null, rootPath: [], scope: 'all' })
+  } else ui.setLoreMapMode(mode)
 }
 function openRelPanel(id) {
   if (!id) return
@@ -203,7 +231,7 @@ function schedulePersist() {
   clearTimeout(saveTimer)
   saveTimer = setTimeout(() => ui.persistLoreState(ownerWorkId), 300)
 }
-watch(() => [ui.loreView, ui.loreRootId, ui.loreActiveId, ui.mubuSelectedId, ui.loreScope, ui.mubuQuery, ui.loreMapMode, ui.loreNavFold, ui.loreLinksOpen, ui.loreReferenceTab, ui.lorePositions], schedulePersist, { deep: true })
+watch(() => [ui.loreView, ui.loreRootId, ui.loreActiveId, ui.mubuSelectedId, ui.loreScope, ui.mubuQuery, ui.loreMapMode, ui.loreTreeDirection, ui.loreTreeEdgeStyle, ui.loreNavFold, ui.loreLinksOpen, ui.loreReferenceTab, ui.lorePositions], schedulePersist, { deep: true })
 watch(() => [ui.loreRootId, ui.loreRestoreTick], () => { drawer.value = false; screen.value = 'main'; const id = ui.loreRootId || ui.loreActiveId; if (id) syncSet(id) })
 watch([isGalaxy, () => ui.loreActiveId, () => ui.loreRootId, () => ui.loreRestoreTick], async ([enabled, activeId, rootId]) => {
   if (!enabled) {
@@ -308,10 +336,12 @@ watch(() => ui.loreRestoreTick, () => nextTick(() => {
 </script>
 
 <template>
-  <div class="lore-shell-wrap" @click.capture="onLinkClick" @scroll.capture="rememberReading">
+  <div ref="imageSurface" class="lore-shell-wrap" @click.capture="onLinkClick" @scroll.capture="rememberReading">
+    <LoreImageControls :surface="imageSurface" :enabled="ui.loreView === 'write'" />
     <div class="lore-shell" :data-view="ui.loreView" :data-map-mode="ui.loreMapMode" :data-screen="screen" :data-drawer="drawer ? 'nav' : null" :data-narrow="narrow ? 'true' : null" :style="shellStyle">
       <aside class="lore-pane" data-pane="nav" :data-closed="ui.loreNavClosed ? 'true' : null" @click="onNavClick">
-        <MubuTree @galaxy-pick="pickGalaxyNode" />
+        <MubuTree @galaxy-pick="pickGalaxyNode" @scope-all="showAllEntries" @focus-branch="focusBranch"
+          @select="navigateFromTree" @created="id => navigateFromTree(id, true)" @moved="navigateFromTree" />
       </aside>
       <LoreDivider size="nav" />
 
@@ -324,7 +354,7 @@ watch(() => ui.loreRestoreTick, () => nextTick(() => {
             :narrow="narrow"
             :nav-open="drawer"
             @view="switchView"
-            @scope="toggleScope"
+            @focus-branch="focusBranch"
             @new="newEntry"
             @clear-filter="clearFilter"
             @nav="openNav"
@@ -344,12 +374,11 @@ watch(() => ui.loreRestoreTick, () => nextTick(() => {
           :narrow="narrow"
           :nav-open="drawer"
           @view="switchView"
-          @scope="toggleScope"
           @new="newEntry"
           @clear-filter="clearFilter"
           @nav="openNav"
-          @position="mubu?.rememberPosition()"
-          :galaxy="isGalaxy ? galaxyHeading || { path: [], title: '设定集总览', stats: '' } : null"
+          @focus-branch="focusBranch"
+          :galaxy="isGalaxy ? galaxyHeading || { path: [], title: '条目总览', stats: '' } : null"
           @galaxy-center="enterGalaxyCenter"
         >
           <template v-if="ui.loreView === 'map'" #map-tools>
@@ -359,6 +388,16 @@ watch(() => ui.loreRestoreTick, () => nextTick(() => {
               <button type="button" role="tab" :class="{ on: mapMode === 'relations' }" :aria-selected="mapMode === 'relations'" @click="setMapMode('relations')">关系星系</button>
             </div>
             <span v-if="mapMode === 'hierarchy'" class="lore-map-context">{{ mapContext }}</span>
+            <div v-if="mapMode === 'hierarchy'" class="lore-map-modes lore-tree-direction" role="group" aria-label="层级导图排布">
+              <button type="button" :class="{ on: ui.loreTreeDirection === 'single' }" :aria-pressed="ui.loreTreeDirection === 'single'" @click="ui.loreTreeDirection = 'single'">单侧</button>
+              <button type="button" :class="{ on: ui.loreTreeDirection === 'double' }" :aria-pressed="ui.loreTreeDirection === 'double'" @click="ui.loreTreeDirection = 'double'">双侧</button>
+            </div>
+            <div v-if="mapMode === 'hierarchy'" class="lore-map-modes lore-tree-edge-style" role="group" aria-label="层级导图连线形式">
+              <button type="button" :class="{ on: ui.loreTreeEdgeStyle === 'elbow' }" :aria-pressed="ui.loreTreeEdgeStyle === 'elbow'" @click="ui.loreTreeEdgeStyle = 'elbow'">折线</button>
+              <button type="button" :class="{ on: ui.loreTreeEdgeStyle === 'curve' }" :aria-pressed="ui.loreTreeEdgeStyle === 'curve'" @click="ui.loreTreeEdgeStyle = 'curve'">曲线</button>
+            </div>
+            <button v-if="mapMode === 'hierarchy'" type="button" class="lore-btn quiet" :disabled="!mapFocus && !ui.loreActiveId"
+              @click="mapFocus ? showAllEntries() : focusBranch()">{{ mapFocus ? '全部条目' : '聚焦分支' }}</button>
             <button v-if="mapMode === 'hierarchy'" class="lore-mobile-back" type="button" @click="toScreen('insp')">摘要</button>
           </div>
           </template>
@@ -381,20 +420,23 @@ watch(() => ui.loreRestoreTick, () => nextTick(() => {
             <LoreTreeMap
               v-if="mapMode === 'hierarchy'"
               ref="treeMap"
-              :set-id="mapSetId"
-              :set-ids="mapSetIds"
+              :focus-id="mapFocus || ''"
+              :direction="ui.loreTreeDirection"
+              :edge-style="ui.loreTreeEdgeStyle"
               :active-id="ui.loreActiveId"
               @select="selectNode"
-              @open="openDetail"
+              @move="afterMapMove"
             />
             <LoreGalaxy v-else :location="galaxyLocation" @navigate="navigateGalaxy" @heading="galaxyHeading = $event" @open-entry="openDetail"
               @open-target="openGalaxyTarget" @edit-relations="openRelPanel" />
           </div>
           <div v-if="mapMode === 'hierarchy'" class="lore-map-foot">
             <span class="lore-map-legend">
-              <i />
+              <svg class="lore-map-legend-icon" width="18" height="10" viewBox="0 0 18 10" aria-hidden="true">
+                <path v-if="ui.loreTreeEdgeStyle === 'curve'" d="M1 8 C7 8, 11 2, 17 2" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" />
+                <path v-else d="M1 8 H7 Q9 8 9 6 V4 Q9 2 11 2 H17" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
               父子层级
-              <span>点击圆点展开</span>
             </span>
             <div class="lore-zoom">
               <button type="button" title="缩小" @click="treeMap?.zoomOut()">−</button>
@@ -413,7 +455,7 @@ watch(() => ui.loreRestoreTick, () => nextTick(() => {
       <template v-if="ui.loreView === 'map' && mapMode === 'hierarchy'">
         <LoreDivider size="detail" />
         <aside class="lore-pane" data-pane="detail" :data-closed="ui.loreDetailClosed ? 'true' : null">
-          <LoreInspector @open="openDetail" @locate="locate" @back="toScreen('main')" />
+          <LoreInspector @open="openDetail" @locate="locate" @back="toScreen('main')" @select="navigateFromTree" />
           <button class="lore-rail" data-rail="detail" type="button" title="展开条目摘要" aria-label="展开条目摘要" @click="openInspector">
             <OIcon name="note" :size="16" />
             <span>条目摘要</span>

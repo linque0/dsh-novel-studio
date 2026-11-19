@@ -1,228 +1,375 @@
-<!-- 设定层级导图（C 视图 · hierarchy 模式）——布局与画法对照设计稿 c-hierarchy-1440 与原型 map.mjs/treeLayout：
-     横向树（x = 90 + 层级 × 232，叶子行距 80），纸片节点卡（设定集 160×68 / 条目 176×68），
-     连线是两端水平切线的三次贝塞尔，折叠按钮是节点右缘的绿色圆点（展开显示 −，折叠显示子项数）。
-     交互：拖动空白平移、Ctrl+滚轮缩放、点击选中（联动右摘要）、双击进 B、圆点折叠。
-     数据仍取 work.mubu*，不套大纲画布（OutlineCanvas）的节点/连线模型。 -->
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { useWorkStore } from '../../stores/work'
+import { useUiStore } from '../../stores/ui'
 import { usePanZoom } from '../../services/graphview'
-import OIcon from '../OIcon.vue'
-import { kindOf } from './lore-kinds.js'
+import { loreMapContent } from '../../services/lore-editor-dom'
+import { layoutLoreTree } from '../../services/lore-tree-layout'
+import { planLoreMove } from '../../services/lore-move'
+import LoreImageHiddenNotice from '../LoreImageHiddenNotice.vue'
+import LoreMapEditor from './LoreMapEditor.vue'
 
 const props = defineProps({
-  setId: { type: String, default: '' },
-  /* 「全部设定」总览：非空时每个 id 各画一棵树（集与集之间纵向留白），空时退回单集 setId */
-  setIds: { type: Array, default: () => [] },
+  focusId: { type: String, default: '' },
+  direction: { type: String, default: 'single' },
+  edgeStyle: { type: String, default: 'elbow' },
   activeId: { type: String, default: '' }
 })
-const emit = defineEmits(['select', 'open'])
-
+const emit = defineEmits(['select', 'move'])
 const work = useWorkStore()
+const ui = useUiStore()
 const canvasEl = ref(null)
-const { zoom, innerStyle, onWheel, onPanStart, fit, centerOn } = usePanZoom(canvasEl)
-
-const NODE_W = 176
-const SET_W = 160
-const NODE_H = 68
-const EDGE_PAD = 100 // svg 相对画布外扩的留白；<g> 用同一常量反向补偿，路径坐标与节点坐标同源
-const STEP_X = 232
-const STEP_Y = 80
-const folded = ref(new Set())
-
-function widthOf(n) {
-  return n.set ? SET_W : NODE_W
-}
-/* 卡片 kind 行：设定集仍写「设定集」；条目按 kindOf 取名，读原始节点才有 tags/kind（只读，不动布局） */
-function cardKind(n) {
-  if (n.set) return { icon: 'folder', label: '设定集' }
-  const raw = work.mubu.find((x) => x.id === n.id && !x.deletedAt)
-  return kindOf(raw || n)
-}
-
-/* 布局根：setIds 非空即多根总览，否则单集（setId 兼容旧接线） */
-const roots = computed(() => (props.setIds.length ? props.setIds : [props.setId || work.currentMubuRoot()?.id].filter(Boolean)))
-const ROOT_GAP = 60 // 集与集之间的纵向留白（上一集末叶与下一集首叶的 y 差）
-
-const layout = computed(() => {
-  if (!roots.value.length) return { nodes: [], edges: [], bounds: { x: 0, y: 0, w: 760, h: 580 } }
-  const nodes = []
-  const edges = []
-  const seen = new Set()
-  let cursor = 0
-  let maxDepth = 0
-  const visit = (id, depth, isSet) => {
-    if (seen.has(id)) return 0
-    seen.add(id)
-    const raw = work.mubu.find((n) => n.id === id && !n.deletedAt)
-    if (!raw) return 0
-    const kids = folded.value.has(id) ? [] : work.mubuChildren(id)
-    const ys = kids.map((k) => visit(k.id, depth + 1, false))
-    const y = ys.length ? (ys[0] + ys[ys.length - 1]) / 2 : (cursor += STEP_Y)
-    nodes.push({
-      id,
-      set: isSet,
-      text: String(raw.text || '').trim() || '（空节点）',
-      depth,
-      x: 90 + depth * STEP_X,
-      y,
-      childCount: work.mubuChildren(id).length,
-      collapsed: folded.value.has(id)
-    })
-    for (const k of kids) edges.push({ from: id, to: k.id })
-    maxDepth = Math.max(maxDepth, depth)
-    return y
+const toolbar = ref(null)
+const editing = shallowRef(null)
+const gesture = shallowRef(null)
+const dropTarget = shallowRef(null)
+const hoveredId = ref('')
+const CENTER = Symbol('work-center')
+const minZoom = 0.08
+const { zoom, tx, ty, onWheel, onPanStart, fit, centerOn } = usePanZoom(canvasEl, { minZoom })
+const innerStyle = computed(() => {
+  const z = Math.round((zoom.value || 1) * 1000) / 1000
+  const edgeW = Math.min(3.6, Math.max(0.8, 1.35 / z)).toFixed(2)
+  const edgeActiveW = Math.min(4.2, Math.max(1.0, 1.75 / z)).toFixed(2)
+  return {
+    transform: `translate(${Math.round(tx.value)}px, ${Math.round(ty.value)}px) scale(${z})`,
+    transformOrigin: '0 0',
+    '--tm-zoom': String(z),
+    '--tm-edge-w': `${edgeW}px`,
+    '--tm-edge-active-w': `${edgeActiveW}px`
   }
-  /* 多根依次布局：cursor / maxDepth 跨根累计，每集之间留 ROOT_GAP；上一根没画出节点（已删除的 id）不留白 */
-  roots.value.forEach((rid, i) => {
-    if (i && nodes.length) cursor += ROOT_GAP
-    visit(rid, 0, true)
-  })
-  const byId = new Map(nodes.map((n) => [n.id, n]))
-  const paths = edges
-    .map((e) => {
-      const a = byId.get(e.from)
-      const b = byId.get(e.to)
-      if (!a || !b) return null
-      const x1 = a.x + widthOf(a) / 2 + 3
-      const y1 = a.y
-      const x2 = b.x - widthOf(b) / 2 - 3
-      const y2 = b.y
-      const mx = (x1 + x2) / 2
-      return { id: e.from + '>' + e.to, d: `M${x1} ${y1}C${mx} ${y1},${mx} ${y2},${x2} ${y2}` }
-    })
-    .filter(Boolean)
-  const w = Math.max(760, 180 + maxDepth * STEP_X)
-  const h = Math.max(580, cursor + 70)
-  return { nodes, edges: paths, bounds: { x: 0, y: 0, w, h } }
 })
+const folded = ref(new Set())
+const sizes = shallowRef(new Map())
+const nodes = new Map()
+const cache = new Map()
+let observer
+let initialFrame = true
 
-const nodeCount = computed(() => layout.value.nodes.length)
+const roots = computed(() => props.focusId ? [props.focusId] : work.mubuRoots().map(node => node.id))
+const entries = computed(() => {
+  const byId = new Map(work.liveMubu().map(node => [node.id, {
+    node, children: [],
+    get imageWidth() {
+      const width = contentOf(node).imageWidth
+      return width && !node.parentId ? width + 28 : width
+    }
+  }]))
+  for (const { node } of byId.values()) byId.get(node.parentId)?.children.push(node.id)
+  return byId
+})
+watch(entries, current => {
+  for (const id of cache.keys()) if (!current.has(id)) cache.delete(id)
+})
+const layout = computed(() => layoutLoreTree(roots.value, entries.value, folded.value, sizes.value, {
+  mode: props.direction,
+  edgeStyle: props.edgeStyle,
+  centerWidth: sizes.value.get(CENTER)?.width || 132,
+  centerHeight: sizes.value.get(CENTER)?.height || 42
+}))
+const topLevel = id => !entries.value.get(id)?.node.parentId
+const isEmpty = id => {
+  const entry = entries.value.get(id)
+  return !entry?.node.text?.trim() && !contentOf(entry.node).imageWidth
+}
+
+function measureAll() {
+  const next = new Map(sizes.value)
+  let changed = false
+  for (const [id, target] of nodes.entries()) {
+    const width = target.offsetWidth, height = target.offsetHeight
+    const previous = next.get(id)
+    if (!width || !height || (previous?.width === width && previous?.height === height)) continue
+    next.set(id, { width, height })
+    changed = true
+  }
+  if (changed) sizes.value = next
+}
+
+function contentOf(node) {
+  const previous = cache.get(node.id)
+  if (previous && previous.sourceHtml === node.html && previous.sourceText === node.text) return previous
+  const content = { ...loreMapContent(node), sourceHtml: node.html, sourceText: node.text }
+  cache.set(node.id, content)
+  return content
+}
+
+function markup(id) {
+  return contentOf(entries.value.get(id).node).html || '（空节点）'
+}
+
+function trackNode(id, el) {
+  const previous = nodes.get(id)
+  if (el === previous || (!el && !previous)) return
+  if (previous) observer?.unobserve(previous)
+  if (el) {
+    nodes.set(id, el)
+    observer?.observe(el)
+  } else {
+    nodes.delete(id)
+  }
+}
+
 function fitAll() {
-  fit(layout.value.bounds, { minZoom: 0.12 })
+  fit(layout.value.bounds, { minZoom: 0 })
 }
+
+function centerNode(node) {
+  centerOn(node.x + node.width / 2, node.y + node.height / 2)
+}
+
 function frameTree() {
-  const n = layout.value.nodes.find(x => x.id === props.activeId) || layout.value.nodes[0]
-  if (window.innerWidth <= 559 && n) { zoom.value = 0.8; centerOn(n.x, n.y) }
-  else fitAll()
+  const node = layout.value.nodes.find(item => item.id === props.activeId) || layout.value.nodes[0]
+  if (window.innerWidth <= 559 && node) {
+    zoom.value = 0.8
+    centerNode(node)
+  } else fitAll()
 }
-function toggleFold(id, e) {
-  if (e) e.stopPropagation()
+
+function focusActive() {
+  const node = layout.value.nodes.find(item => item.id === props.activeId)
+  if (!node) return fitAll()
+  if (window.innerWidth <= 559) zoom.value = Math.max(0.8, zoom.value)
+  centerNode(node)
+}
+
+function toggleFold(id) {
   const next = new Set(folded.value)
   if (next.has(id)) next.delete(id)
   else next.add(id)
   folded.value = next
-  nextTick(fitAll)
 }
-function nodeStyle(n) {
-  return {
-    left: n.x + 'px',
-    top: n.y + 'px',
-    width: widthOf(n) + 'px',
-    minHeight: NODE_H + 'px',
-    transform: 'translate(-50%, -50%)'
+
+function startEdit(node, event) {
+  if (event.target.closest('button, a, [data-dl-target]')) return
+  emit('select', node.id)
+  editing.value = { id: node.id, point: event.detail ? { x: event.clientX, y: event.clientY } : null }
+}
+
+function closeEditing(event) {
+  if (!editing.value) return
+  if (event.target.closest('.lore-tm-editor, .lore-tm-editor-tools, .lore-tm-editor-dock, .lore-image-chrome, .lore-link-picker')) return
+  editing.value = null
+}
+
+function openPath(id) {
+  const path = new Set(work.mubuPath(id).slice(0, -1).map(node => node.id))
+  if ([...folded.value].some(item => path.has(item))) folded.value = new Set([...folded.value].filter(item => !path.has(item)))
+}
+
+function targetAt(event) {
+  const { clientX: x, clientY: y } = event
+  const hit = document.elementFromPoint(x, y)
+  if (!canvasEl.value?.contains(hit)) return null
+  if (hit.closest('[data-lore-work-center]')) return { key: CENTER, id: null, mode: 'root' }
+  const exact = hit.closest('[data-lore-tree-id]')
+  const node = exact || [...nodes.values()].find(el => {
+    if (el.hasAttribute('data-lore-work-center')) return false
+    const rect = el.getBoundingClientRect()
+    return x >= rect.left && x <= rect.right && y >= rect.top - 7 && y <= rect.bottom + 7
+  })
+  if (!node) return null
+  const rect = node.getBoundingClientRect()
+  const edge = Math.min(16, rect.height * 0.25)
+  const mode = y < rect.top + edge ? 'before' : y > rect.bottom - edge ? 'after' : 'inside'
+  return { key: node.dataset.loreTreeId, id: node.dataset.loreTreeId, mode }
+}
+
+function startMove(node, event) {
+  if (event.button !== 0 || gesture.value) return
+  editing.value = null
+  emit('select', node.id)
+  const handle = event.currentTarget
+  handle.setPointerCapture(event.pointerId)
+  gesture.value = {
+    id: node.id, pointer: event.pointerId, handle,
+    startX: event.clientX, startY: event.clientY, x: event.clientX, y: event.clientY,
+    label: entries.value.get(node.id).node.text?.trim().slice(0, 50) || '条目', moved: false
   }
 }
-function onNodeClick(n) {
-  emit('select', n.id)
+
+function move(event) {
+  const current = gesture.value
+  if (!current || event.pointerId !== current.pointer) return
+  const x = event.clientX, y = event.clientY
+  if (!current.moved && Math.hypot(x - current.startX, y - current.startY) < 5) return
+  gesture.value = { ...current, x, y, moved: true }
+  const next = targetAt(event)
+  const previous = dropTarget.value
+  if (previous?.key === next?.key && previous?.mode === next?.mode) return
+  dropTarget.value = next && planLoreMove(work.liveMubu(), current.id, next.id, next.mode, { allowRoot: true }).length ? next : null
 }
-function onNodeDblClick(n) {
-  if (n.set) return
-  emit('open', n.id)
+
+function endMove(event, apply) {
+  const current = gesture.value
+  if (!current || event && event.pointerId !== current.pointer) return
+  const target = apply && current.moved && targetAt(event)
+  gesture.value = null
+  dropTarget.value = null
+  if (current.handle.hasPointerCapture(current.pointer)) current.handle.releasePointerCapture(current.pointer)
+  if (target && work.mubuPlace(current.id, target.id, target.mode)) {
+    openPath(current.id)
+    emit('move', current.id)
+    nextTick(() => nodes.get(current.id)?.focus({ preventScroll: true }))
+  }
 }
+
+function shortcuts(event) {
+  if (event.key === 'Escape' && gesture.value) {
+    event.preventDefault()
+    endMove(null, false)
+  }
+}
+
+async function onCanvasKey(event) {
+  if (event.isComposing || event.defaultPrevented || !(event.ctrlKey || event.metaKey)) return
+  const key = event.key.toLowerCase()
+  if (!['z', 'y'].includes(key)) return
+  event.preventDefault()
+  await work.mubuUndo(key === 'y' || event.shiftKey ? 'redo' : 'undo')
+  openPath(props.activeId)
+}
+
 function zoomIn() {
-  zoom.value = Math.min(2, Math.round((zoom.value + 0.1) * 100) / 100)
+  zoom.value = Math.min(2, zoom.value * 1.2)
 }
 function zoomOut() {
-  zoom.value = Math.max(0.35, Math.round((zoom.value - 0.1) * 100) / 100)
+  zoom.value = Math.max(Math.min(minZoom, zoom.value), zoom.value / 1.2)
 }
 function zoomReset() {
   zoom.value = 1
 }
-function focusActive() {
-  const n = layout.value.nodes.find((x) => x.id === props.activeId)
-  if (n) { if (window.innerWidth <= 559) zoom.value = Math.max(0.8, zoom.value); centerOn(n.x, n.y) }
-  else fitAll()
-}
 
-watch(roots, () => {
-  folded.value = new Set()
+watch(() => [props.focusId, props.direction, work.work?.id], () => {
+  editing.value = null
+  endMove(null, false)
+  initialFrame = !sizes.value.size
   nextTick(frameTree)
 })
-/* 尺寸自适应：细轨收起 / 摘要列收起 / 窗口缩放都会改 stage 宽度，画布自身尺寸一变就重新 fitAll */
-let ro = null
-let resizeTimer = 0
+watch(() => props.activeId, id => {
+  openPath(id)
+  if (editing.value && editing.value.id !== id) editing.value = null
+})
+watch(() => [ui.editorFont, ui.editorLatin], async () => {
+  await nextTick()
+  measureAll()
+  await document.fonts?.ready
+  measureAll()
+})
+
 onMounted(() => {
-  nextTick(frameTree)
-  const el = canvasEl.value
-  if (!el || typeof ResizeObserver === 'undefined') return
-  let lastW = el.clientWidth
-  let lastH = el.clientHeight
-  ro = new ResizeObserver((entries) => {
-    const box = entries[entries.length - 1].contentRect
-    const w = Math.round(box.width)
-    const h = Math.round(box.height)
-    if (w === lastW && h === lastH) return // 首帧与平移缩放不动画布尺寸，不触发重排
-    lastW = w
-    lastH = h
-    if (resizeTimer) clearTimeout(resizeTimer)
-    resizeTimer = setTimeout(() => {
-      resizeTimer = 0
+  document.addEventListener('pointerdown', closeEditing, true)
+  document.addEventListener('keydown', shortcuts, true)
+  observer = new ResizeObserver(changes => {
+    const next = new Map(sizes.value)
+    let changed = false
+    for (const { target } of changes) {
+      const id = target.hasAttribute('data-lore-work-center') ? CENTER : target.dataset.loreTreeId
+      if (nodes.get(id) !== target) continue
+      const width = target.offsetWidth, height = target.offsetHeight
+      const previous = next.get(id)
+      if (!width || !height || (previous?.width === width && previous?.height === height)) continue
+      next.set(id, { width, height })
+      changed = true
+    }
+    if (changed) sizes.value = next
+    if (initialFrame && next.size) {
+      initialFrame = false
       nextTick(frameTree)
-    }, 60)
+    }
   })
-  ro.observe(el)
+  for (const node of nodes.values()) observer.observe(node)
+  if (!nodes.size) frameTree()
 })
 onBeforeUnmount(() => {
-  ro?.disconnect()
-  ro = null
-  if (resizeTimer) clearTimeout(resizeTimer)
-  resizeTimer = 0
+  document.removeEventListener('pointerdown', closeEditing, true)
+  document.removeEventListener('keydown', shortcuts, true)
+  endMove(null, false)
+  observer?.disconnect()
 })
 
 defineExpose({ zoomIn, zoomOut, zoomReset, fitAll, focusActive, zoom })
 </script>
 
 <template>
-  <div ref="canvasEl" class="lore-tm-wrap" @mousedown="onPanStart" @wheel.prevent="onWheel">
+  <div ref="canvasEl" class="lore-tm-wrap" tabindex="-1" @mousedown="onPanStart" @wheel.prevent="onWheel" @keydown="onCanvasKey">
+    <div ref="toolbar" class="lore-tm-editor-dock" @mousedown.stop />
     <div class="lore-tm-inner" :style="innerStyle">
-      <svg
-        class="lore-tm-edges"
-        :width="layout.bounds.w + EDGE_PAD * 2"
-        :height="layout.bounds.h + EDGE_PAD * 2"
-        :style="{ left: -EDGE_PAD + 'px', top: -EDGE_PAD + 'px' }"
-      >
-        <g :transform="`translate(${EDGE_PAD},${EDGE_PAD})`">
-          <path v-for="p in layout.edges" :key="p.id" class="lore-tm-edge" :d="p.d" />
-        </g>
+      <svg class="lore-tm-edges" :width="layout.bounds.w" :height="layout.bounds.h"
+        :style="{ left: layout.bounds.x + 'px', top: layout.bounds.y + 'px' }"
+        :viewBox="`${layout.bounds.x} ${layout.bounds.y} ${layout.bounds.w} ${layout.bounds.h}`" aria-hidden="true">
+        <path
+          v-for="edge in layout.edges"
+          :key="edge.id"
+          class="lore-tm-edge"
+          :class="{
+            'is-root-edge': edge.depth === 0,
+            'is-active': edge.id === props.activeId || edge.parentId === props.activeId,
+            'is-hovered': hoveredId && (edge.id === hoveredId || edge.parentId === hoveredId)
+          }"
+          :d="edge.d"
+        />
       </svg>
       <div
-        v-for="n in layout.nodes"
-        :key="n.id"
-        class="lore-tm-node"
-        :class="{ set: n.set, on: n.id === props.activeId }"
-        :style="nodeStyle(n)"
-        :title="n.text"
-        role="button"
+        :ref="el => trackNode(CENTER, el)" class="lore-tm-work-center"
+        data-lore-work-center
+        :data-drop="dropTarget?.key === CENTER ? 'inside' : undefined"
+        :style="{ left: layout.center.x + 'px', top: layout.center.y + 'px' }"
+        @mousedown.stop
+      >{{ work.work?.title || '作品' }}</div>
+      <div
+        v-for="node in layout.nodes"
+        :key="node.id"
+        :ref="el => trackNode(node.id, el)"
+        class="lore-tm-content-node"
+        :class="{
+          'is-root': topLevel(node.id),
+          'is-empty': isEmpty(node.id),
+          'is-selected': node.id === props.activeId,
+          'is-editing': editing?.id === node.id,
+          'is-hovered': hoveredId === node.id
+        }"
+        :data-lore-tree-id="node.id"
+        :data-side="node.side"
+        :aria-current="node.id === props.activeId ? 'true' : undefined"
+        :data-drop="dropTarget?.key === node.id ? dropTarget.mode : undefined"
+        :style="{ left: node.x + 'px', top: node.y + 'px', maxWidth: (editing?.id === node.id ? Math.max(node.columnWidth, 720) : node.columnWidth) + 'px' }"
         tabindex="0"
         @mousedown.stop
-        @click="onNodeClick(n)"
-        @dblclick.stop="onNodeDblClick(n)"
-        @keydown.enter="onNodeClick(n)"
+        @mouseenter="hoveredId = node.id"
+        @mouseleave="hoveredId === node.id && (hoveredId = '')"
+        @click="emit('select', node.id)"
+        @dblclick.stop="startEdit(node, $event)"
+        @keydown.enter.self.prevent="startEdit(node, $event)"
+        @keydown.f2.self.prevent="startEdit(node, $event)"
+        @keydown.space.self.prevent="emit('select', node.id)"
       >
-        <small class="lore-tm-kind"><OIcon :name="cardKind(n).icon" :size="10" />{{ cardKind(n).label }}</small>
-        <h3 class="lore-tm-title">{{ n.text }}</h3>
+        <LoreMapEditor v-if="editing?.id === node.id" :node="entries.get(node.id).node" :point="editing.point"
+          :toolbar="toolbar" :scope-root="focusId" :zoom="zoom" :viewport="innerStyle.transform"
+          :width="Math.max(node.columnWidth, 720)" @finish="editing = null" />
+        <div v-else class="lore-tm-content" v-html="markup(node.id)" />
+        <LoreImageHiddenNotice :node-id="node.id" :html="entries.get(node.id).node.html" />
+        <button v-if="editing?.id !== node.id" class="lore-tm-position" type="button" aria-label="拖动条目" title="拖动条目"
+          @pointerdown.stop.prevent="startMove(node, $event)" @pointermove="move"
+          @pointerup="endMove($event, true)" @pointercancel="endMove($event, false)"
+          @lostpointercapture="endMove($event, false)" @click.stop @dblclick.stop />
         <button
-          v-if="n.childCount"
+          v-if="node.childCount"
           class="lore-tm-fold"
-          :class="{ collapsed: n.collapsed }"
+          :class="{ collapsed: node.collapsed }"
           type="button"
-          :title="n.collapsed ? `展开 ${n.childCount} 项` : `收起 ${n.childCount} 项`"
-          @mousedown.stop
-          @click="toggleFold(n.id, $event)"
-        >{{ n.collapsed ? n.childCount : '−' }}</button>
+          :aria-expanded="!node.collapsed"
+          :title="node.collapsed ? `展开 ${node.childCount} 项` : `收起 ${node.childCount} 项`"
+          @click.stop="toggleFold(node.id)"
+          @dblclick.stop
+        >{{ node.collapsed ? node.childCount : '−' }}</button>
       </div>
     </div>
-    <p v-if="!nodeCount" class="lore-tm-empty">当前设定集还没有条目</p>
+    <p v-if="!layout.nodes.length" class="lore-tm-empty lore-tm-empty-entries">暂无设定条目</p>
+    <Teleport to="body">
+      <div v-if="gesture?.moved" class="lore-tm-drag-label" :style="{ left: gesture.x + 12 + 'px', top: gesture.y + 12 + 'px' }">
+        {{ gesture.label }}
+      </div>
+    </Teleport>
   </div>
 </template>

@@ -241,7 +241,7 @@ function trapTab(event) {
   }
 }
 function onKeydown(event) {
-  if (event.isComposing || ui.statsOpen) return
+  if (event.isComposing || ui.statsAnalysisOpen || event.target?.closest?.('.writing-stats-fusion')) return
   const modal = dialogOpen()
   if (event.key === 'Escape' && !modal) {
     if (drawer.value) {

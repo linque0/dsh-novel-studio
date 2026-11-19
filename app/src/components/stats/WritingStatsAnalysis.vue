@@ -7,6 +7,7 @@ import StatsChapterChart from './StatsChapterChart.vue'
 import StatsModules from './StatsModules.vue'
 import StatsBreakdown from './StatsBreakdown.vue'
 import StatsPagination from './StatsPagination.vue'
+import WritingStatsSelect from './WritingStatsSelect.vue'
 import { useStatsMotion } from './use-stats-motion.js'
 const props=defineProps({stats:Object,data:Object,model:Object,state:Object,choices:Array})
 const emit=defineEmits(['patch','detail','chapter','day','drill'])
@@ -14,6 +15,7 @@ const root=ref(null),recordPage=ref(0),bookPage=ref(0),from=ref(''),to=ref(''),r
 useStatsMotion(root,()=>props.state.tab==='overview'?props.state.mode:props.state.tab)
 const fmt=n=>(n||0).toLocaleString('zh-CN'),sign=n=>(n>0?'+':n<0?'−':'')+fmt(Math.abs(n))
 const workName=id=>props.choices.find(w=>w.id===id)?.label||'全部作品'
+const compareOptions=computed(()=>props.data.works.map(w=>({value:w.id,label:workName(w.id)})))
 const days=computed(()=>props.model.timeline(props.state.work,props.data.end,props.state.period,props.state.range))
 const whole=computed(()=>props.model.timeline(props.state.work,props.data.end,props.state.period))
 const notable=computed(()=>props.model.records(props.state.work,days.value[0].date,days.value.at(-1).date).filter(r=>r.kind!=='保存'))
@@ -24,7 +26,7 @@ const weekGroups=computed(()=>{
  return Array.from({length:Math.ceil(cells.length/7)},(_,i)=>cells.slice(i*7,i*7+7))
 })
 const metrics=computed(()=>[{label:'区间累计净增',value:days.value.some(d=>d.logs.length)?sign(days.value.at(-1).cumulative):'—',unit:'字',accent:true,negative:days.value.at(-1).cumulative<0},{label:'活跃日期',value:days.value.filter(d=>d.active).length,unit:'天'},{label:'当前正文存量',value:fmt(props.model.inventory(props.state.work).words),unit:'字',key:'words'}])
-watch(()=>[props.state.period,props.state.range,props.data.end],()=>{from.value=days.value[0].date;to.value=days.value.at(-1).date;rangeError.value='';recordPage.value=0},{immediate:true})
+watch([()=>props.state.period,()=>props.state.range,()=>props.data.end],()=>{from.value=days.value[0].date;to.value=days.value.at(-1).date;rangeError.value='';recordPage.value=0},{immediate:true})
 const pickDate=(date,e,work=props.state.work)=>emit('detail',{kind:'date',date,work,trigger:e?.currentTarget})
 const dateText=d=>!d.logs.length?'无保存记录':sign(d.net)+' 字'+(!d.net&&d.active?' · 有写入':'')
 function submit(){if(from.value>to.value){rangeError.value='起始日期不能晚于结束日期。';return}emit('patch',{range:[from.value,to.value]});rangeError.value=''}
@@ -54,7 +56,7 @@ function choosePair(i,value){const p=props.state.pair.slice();if(p[1-i]===value)
  <section class="panel compare-panel">
   <StatsSectionHead kicker="01 / SIDE BY SIDE" title="两部作品的写作走势" note="每日正文净增 · 两图共用日期与刻度"><div class="comparison-range"><span class="badge">{{days[0].date}} — {{days.at(-1).date}}</span><button v-if="state.range" class="soft" @click="emit('patch',{range:null})">清除区间</button></div></StatsSectionHead>
   <div class="compare-plots">
-   <article v-for="(item,i) in port.rows" :key="item.work"><div class="compare-plot-head"><label><span>对照 {{i+1}}</span><select :aria-label="'对照作品 '+(i+1)" :value="item.work" @change="choosePair(i,$event.target.value)"><option v-for="w in data.works" :key="w.id" :value="w.id">{{workName(w.id)}}</option></select></label><button class="soft" :data-drill-work="item.work" @click="emit('drill',{work:item.work,trigger:$event.currentTarget})">深入 →</button></div>
+   <article v-for="(item,i) in port.rows" :key="item.work"><div class="compare-plot-head"><div class="compare-work"><span>对照 {{i+1}}</span><WritingStatsSelect :label="'对照作品 '+(i+1)" :value="item.work" :options="compareOptions" searchable @change="choosePair(i,$event)"/></div><button class="soft" :data-drill-work="item.work" @click="emit('drill',{work:item.work,trigger:$event.currentTarget})">深入 →</button></div>
    <div class="compare-net"><b :class="item.days.at(-1).cumulative<0?'loss':'accent'">{{item.days.some(d=>d.logs.length)?sign(item.days.at(-1).cumulative):'—'}}</b><small>字 · 区间净增 · {{item.days.filter(d=>d.active).length}} 活跃日</small></div>
    <StatsTrend :days="item.days" :scale="port" :work="item.work" :model-value="state.detail?.work===item.work?state.detail.date:null" @select="pickDate($event,null,item.work)"/>
    <details class="exact"><summary>查看逐日数值</summary><div class="table-scroll"><table><thead><tr><th>日期</th><th>净增</th><th>保存</th></tr></thead><tbody><tr v-for="d in item.days.slice().reverse()" :key="d.date"><td>{{d.date}}</td><td>{{d.logs.length?sign(d.net):'—'}}</td><td>{{d.logs.length}}</td></tr></tbody></table></div></details>

@@ -7,7 +7,7 @@ import { db, setWriteTap, pauseWriteTap, resumeWriteTap } from '../db/database'
 import { libraryAvailable, librarySnapshot, libraryPull, librarySubmit } from './library'
 import {
   MAX_PENDING, applyRevisions, boundQueue, buildOps, groupByTable,
-  revKey, revisionsFromJSON, revisionsToJSON, shouldSkipEcho,
+  remoteLibraryOps, revKey, revisionsFromJSON, revisionsToJSON,
 } from './library-ops'
 
 const REV_KEY = 'ns.library.revisions.v1'
@@ -149,7 +149,7 @@ async function pullOnce() {
   try {
     const result = await libraryPull(lastSeq)
     lastSeq = Number(result?.seq) || lastSeq
-    const fresh = (result?.ops || []).filter((op) => !shouldSkipEcho(op, revisions))
+    const fresh = remoteLibraryOps(result?.ops, revisions)
     for (const op of result?.ops || []) applyRevisions(revisions, [{ table: op.table, id: op.id, revision: op.revision }])
     saveRevisions()
     if (fresh.length) await applyRemote(fresh)

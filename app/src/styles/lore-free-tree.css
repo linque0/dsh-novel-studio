@@ -134,7 +134,7 @@ body:has(.lore-peek-panel) .lore-head-actions{visibility:hidden}
   .lore-shell[data-view] .lore-main .ob-toolbar{height:auto;min-height:37px;gap:3px;padding-inline:9px}
   .lore-shell[data-view] .lore-main .ob-toolbar.mobile-tools-open{flex-wrap:wrap;padding-block:5px;overflow:visible}
   .lore-shell[data-view] .lore-main .ob-toolbar .lore-toolbar-overflow{display:inline-flex;margin-left:auto}
-  .lore-shell[data-view] .lore-main .ob-toolbar:not(.mobile-tools-open) > :not([title^='撤销']):not([title='节点标题级别']):not([title='插入双链']):not([title^='新建子节点']):not(.lore-toolbar-overflow){display:none}
+  .lore-shell[data-view] .lore-main .ob-toolbar:not(.mobile-tools-open) > :not([title^='撤销']):not([title='节点标题级别']):not([title='插入双链']):not([title='插入图片']):not([title^='新建子节点']):not(.lore-toolbar-overflow){display:none}
   .lore-shell[data-view] .lore-main .ob-row .ob-ops .ob-op:not([title^='节点操作']){display:none}
   .lore-shell[data-view] .lore-main .ob-row .ob-ops{opacity:.7}
   .lore-shell[data-view] .lore-main .lore-map-foot{height:auto;min-height:70px;flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;padding:8px 10px}

@@ -45,7 +45,12 @@ export async function librarySnapshot(options = {}) {
 }
 
 export async function librarySubmit(payload) {
-  return unwrap(await bridge().librarySubmit(payload))
+  const response = await bridge().librarySubmit(payload)
+  const result = response?.conflict || Array.isArray(response?.revisions) ? response : unwrap(response)
+  if (!result?.conflict) return result
+  const error = new Error('作品库版本冲突')
+  error.code = 'CONFLICT'
+  throw error
 }
 
 /**

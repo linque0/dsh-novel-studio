@@ -3,6 +3,7 @@
 import { ref, computed } from 'vue'
 
 export function usePanZoom(canvasEl, initial = {}) {
+  const minZoom = initial.minZoom ?? 0.3
   const zoom = ref(initial.zoom ?? 1)
   const tx = ref(initial.tx ?? 60)
   const ty = ref(initial.ty ?? 40)
@@ -16,7 +17,7 @@ export function usePanZoom(canvasEl, initial = {}) {
       // 以鼠标为锚点缩放
       const rect = canvasEl.value?.getBoundingClientRect()
       const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12
-      const nz = Math.min(2.2, Math.max(0.3, zoom.value * factor))
+      const nz = Math.min(2.2, Math.max(Math.min(minZoom, zoom.value), zoom.value * factor))
       if (rect) {
         const mx = e.clientX - rect.left
         const my = e.clientY - rect.top
@@ -49,12 +50,13 @@ export function usePanZoom(canvasEl, initial = {}) {
   }
 
   /** 适应内容包围盒 {x,y,w,h} 到画布（x/y 缺省按 0 处理）；opts.minZoom/maxZoom 可放宽缩放钳制，缺省 0.3/1.2 */
-  function fit(bounds, { minZoom = 0.3, maxZoom = 1.2 } = {}) {
+  function fit(bounds, { minZoom: floor = minZoom, maxZoom = 1.2 } = {}) {
     const el = canvasEl.value
     if (!el || !bounds.w || !bounds.h) return
     const vw = el.clientWidth
     const vh = el.clientHeight
-    const z = Math.min(maxZoom, Math.max(minZoom, Math.min(vw / (bounds.w + 80), vh / (bounds.h + 80))))
+    if (!vw || !vh) return
+    const z = Math.min(maxZoom, Math.max(floor, Math.min(vw / (bounds.w + 80), vh / (bounds.h + 80))))
     zoom.value = z
     const bx = bounds.x || 0
     const by = bounds.y || 0

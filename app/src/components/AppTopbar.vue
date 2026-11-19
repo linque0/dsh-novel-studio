@@ -11,6 +11,7 @@ import WritingStatsEntry from './stats/WritingStatsEntry.vue'
 
 const props = defineProps({
   active: { type: String, default: 'shelf' },
+  navigationLabel: { type: String, default: '' },
   busy: Boolean,
   hasWork: Boolean,
   targetTitle: { type: String, default: '' },
@@ -179,23 +180,25 @@ watch(() => [props.active, ui.skin], async () => {
 </script>
 
 <template>
-  <AutoHideTopbar class="app-topbar-shell" :auto-hide="ui.topbarAutoHide" @update:auto-hide="value => ui.setPref('topbarAutoHide', value)">
+  <AutoHideTopbar class="app-topbar-shell" :class="{ 'is-auxiliary': navigationLabel }" :auto-hide="!navigationLabel && ui.topbarAutoHide" @update:auto-hide="value => ui.setPref('topbarAutoHide', value)">
     <header class="app-topbar" :data-topbar-page="active">
-      <button type="button" class="app-topbar-brand" title="返回书架" aria-label="小说工坊，返回书架" :disabled="busy" @click="navigate('shelf')">
+      <button type="button" class="app-topbar-brand" :title="navigationLabel ? '关闭写作分析' : '返回书架'" :aria-label="navigationLabel ? '小说工坊，关闭写作分析' : '小说工坊，返回书架'" :disabled="busy" @click="navigate('shelf')">
         <span class="app-topbar-brand-text">小说工坊<small>幻流</small></span>
         <span class="app-topbar-narrow-title" :title="narrowTitle">{{ narrowTitle }}</span>
       </button>
-      <nav ref="nav" class="app-topnav" aria-label="功能模块" :data-ovf="navOvf || null" :style="navBudget ? {maxWidth:navBudget+'px'} : undefined" @wheel="onNavWheel" @scroll="measureNav">
+      <nav ref="nav" class="app-topnav" :role="navigationLabel ? 'tablist' : undefined" :aria-label="navigationLabel || '功能模块'" :data-ovf="navOvf || null" :style="navBudget ? {maxWidth:navBudget+'px'} : undefined" @wheel="onNavWheel" @scroll="measureNav">
+        <slot name="navigation">
         <button v-for="item in navItems" :key="item.key" type="button" class="app-topnav-item" :data-nav="item.key" :class="{ active: active === item.key }" :aria-current="active === item.key ? 'page' : undefined" :aria-haspopup="canSplit(item.key) ? 'menu' : undefined" :disabled="disabled(item.key)" :title="title(item) + (canSplit(item.key) ? '（右键拆窗）' : '')" @click="navigate(item.key)" @contextmenu="showSplitMenu($event, item)" @keydown.shift.f10="showSplitMenu($event, item)">{{ item.label }}</button>
+        </slot>
       </nav>
-      <NDropdown v-if="mainWindow" trigger="manual" placement="bottom-start"
+      <NDropdown v-if="!navigationLabel && mainWindow" trigger="manual" placement="bottom-start"
         :show="!!splitMenu" :x="splitMenu?.x ?? 0" :y="splitMenu?.y ?? 0"
         :options="splitMenu ? [{ key: 'split', label: '在独立窗口打开' + splitMenu.item.label }] : []"
         @select="confirmSplit" @clickoutside="splitMenu = null" @update:show="value => { if (!value) splitMenu = null }" />
       <span class="app-topbar-current" aria-hidden="true">{{ currentLabel }}</span>
       <button v-if="nsPlugin && active === 'shelf'" type="button" class="app-topbar-create" aria-label="新书上架" @click="emit('create')">＋新书上架</button>
       <div class="app-topbar-controls">
-      <div class="app-topbar-cluster">
+      <div v-if="!navigationLabel" class="app-topbar-cluster">
         <span class="app-topbar-save" :data-save-state="saveState" role="img" :aria-label="saveLabel" :title="saveLabel">
           <svg class="app-topbar-save-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
           <span class="app-topbar-save-text">{{ saveLabel }}</span>
@@ -220,6 +223,9 @@ watch(() => [props.active, ui.skin], async () => {
       <span v-if="nsPlugin" class="writing-stats-mobile-wrap"><WritingStatsEntry :library="active==='shelf'" :disabled="busy" /></span>
       <span v-if="active === 'settings'" class="app-topbar-more-wrap"><NDropdown trigger="click" placement="bottom-end" scrollable style="max-height:calc(100dvh - 90px)" :options="moreOptions" @select="onSelect"><button type="button" class="app-topbar-more" aria-label="更多" :title="'更多（当前：' + currentLabel + '）'">⋯</button></NDropdown></span>
       <div class="app-topbar-actions"><DreamModeEntries v-if="!nsPlugin && active==='shelf'" shelf :disabled="busy" @dream="ui.dreamLauncherOpen=true" /><slot name="actions" /></div>
+      <div v-if="$slots['window-controls']" class="app-topbar-window-controls">
+        <slot name="window-controls" />
+      </div>
       </div>
       <div v-if="$slots.search" ref="searchPanel" class="app-topbar-search app-topbar-search-panel" :class="{ 'is-open': searchOpen }" data-topbar-search @keydown.esc.stop="closeSearch"><slot name="search" /></div>
     </header>
@@ -228,6 +234,8 @@ watch(() => [props.active, ui.skin], async () => {
 
 <style>
 .app-topbar-controls { display: contents; }
+.app-topbar-window-controls { display: flex; align-items: center; gap: 6px; flex: none; }
+.app-topbar-shell.is-auxiliary .wb-topbar-pin { display:none; }
 .app-topbar-shell {
   --topbar-bg: var(--bg-panel);
   --topbar-text: var(--text);

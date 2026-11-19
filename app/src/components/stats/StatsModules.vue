@@ -9,8 +9,8 @@ const props=defineProps({data:Object,stats:Object,state:Object,workName:Function
 const emit=defineEmits(['select'])
 const root=ref(null),page=ref(0),tag=ref(null),networkPage=ref(0)
 useStatsMotion(root,()=>props.state.tab)
-watch(()=>[props.state.work,props.state.tab],()=>{page.value=0;tag.value=null;networkPage.value=0})
-watch(()=>[props.state.period,props.state.range],()=>page.value=0)
+watch([()=>props.state.work,()=>props.state.tab],()=>{page.value=0;tag.value=null;networkPage.value=0})
+watch([()=>props.state.period,()=>props.state.range],()=>page.value=0)
 const labels={planned:'待写',writing:'进行中',done:'已完成',revise:'待修改'}
 const names={outline:['STORY STRUCTURE','大纲事件','按故事容器查看各状态的事件数'],lore:['WORLD INDEX','设定分支','点击根分支，查看其节点目录'],characters:['CAST & CONNECTIONS','人物与关系','仅列出已建立的关系'],snippets:['IDEA ARCHIVE','灵感档案','标签分布为当前存量，最近新增随所选日期变化']}
 const info=computed(()=>names[props.state.tab]||names.snippets)

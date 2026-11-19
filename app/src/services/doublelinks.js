@@ -251,6 +251,13 @@ export function jumpTo(target) {
     if (c) work.selVolumeId = c.volumeId
   } else if (target.kind === 'mubu') {
     work.tab = 'lore'
+    if (ui.skin === 'dsh') {
+      const inScope = ui.loreRootId && work.mubuPath(target.id).some(node => node.id === ui.loreRootId)
+      ui.navigateLore({
+        view: 'write', activeId: target.id, selectedId: target.id, query: '',
+        ...(!inScope ? { rootId: null, rootPath: [], scope: 'all' } : {})
+      })
+    }
     // 目标可能位于另一个设定集：先切换当前集，再由 MubuView 展开定位
     const root = work.mubuRootOf(target.id)
     if (root) work.setMubuSet(root.id)

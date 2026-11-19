@@ -199,7 +199,7 @@ function previewLink(link){
  }
  dialog.value={type:'preview',preview:pv?{title:pv.title,path:[pv.kindLabel,work.work?.title,pv.meta].filter(Boolean).join(' / '),body:pv.body}:{fallback:'关联目标不可用',path:'目标可能已被移除',body:'暂时没有正文。'}}
 }
-const convertOptions=computed(()=>dialog.value?.payload?.kind==='chapter'?[{value:'',label:'未分卷'},...work.liveVolumes.map(v=>({value:v.id,label:'卷 · '+(v.title||'未命名')}))]:[{value:'',label:'全部设定 / 新根节点'},...work.liveMubu().map(n=>({value:n.id,label:work.mubuPath(n.id).map(x=>x.text||'未命名').join(' / ')}))])
+const convertOptions=computed(()=>dialog.value?.payload?.kind==='chapter'?[{value:'',label:'未分卷'},...work.liveVolumes.map(v=>({value:v.id,label:'卷 · '+(v.title||'未命名')}))]:[{value:'',label:'新建顶层条目'},...work.liveMubu().map(n=>({value:n.id,label:work.mubuPath(n.id).map(x=>x.text||'未命名').join(' / ')}))])
 async function doConvert(dest){const kind=dialog.value?.payload?.kind,result=await action(()=>commands.convert(selectedId.value,kind,dest||null),kind==='chapter'?'已创建章节':'已创建设定节点');if(result)previewLink(result.result)}
 async function remove(id){const result=await action(()=>commands.patch(id,{deletedAt:Date.now()}),'已移入回收站');if(result){dialog.value=null;if(narrow.value)detailOpen.value=false}}
 async function restore(id){const result=await action(()=>commands.patch(id,{deletedAt:null}),'已恢复灵感');if(result){dialog.value=null;if(narrow.value)detailOpen.value=false}}
