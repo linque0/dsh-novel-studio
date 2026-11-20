@@ -6,7 +6,7 @@ import OutlinePlacementGhost from './outline/OutlinePlacementGhost.vue'
 import { useOutlinePlacement } from './outline/useOutlinePlacement.js'
 import OutlineCardText from './outline/OutlineCardText.vue'
 import { normalizeCanvasOpacity } from '../services/canvas-appearance.js'
-import { computed, ref, reactive, watch, nextTick, onMounted, onBeforeUnmount, inject } from 'vue'
+import { computed, ref, reactive, watch, nextTick, onActivated, onBeforeUnmount, onDeactivated, onMounted, inject } from 'vue'
 import { useWorkStore } from '../stores/work'
 import { usePanZoom, arrowHeadDir } from '../services/graphview'
 import { parseTokens, findByTitle, targetById, parseTarget, jumpTo, KIND_LABEL } from '../services/doublelinks'
@@ -139,6 +139,7 @@ const AI_UNSET_HINT = '恍然梦未配置：请先在设置中完成恍然梦配
 
 /* ---------- 基础几何 / 分层 ---------- */
 const live = computed(() => work.liveOlnodes())
+const bookEmpty = computed(() => !live.value.length)
 const nodeIndex = computed(() => new Map(live.value.map(n=>[n.id,n])))
 const nodeById = (id) => nodeIndex.value.get(id)
 const posOf = (n) => dragPos.get(n.id) || (n.canvasX != null ? { x: n.canvasX, y: n.canvasY } : null)
@@ -157,6 +158,7 @@ const layerLayout = computed(() => buildLayerLayout(live.value, scopeId.value, e
 }))
 const visNodes = computed(() => layerLayout.value.layer)
 const miniItems = computed(() => layerLayout.value.mini.items)
+const scopeEmpty = computed(() => !visNodes.value.length && !miniItems.value.length)
 const miniById = computed(() => layerLayout.value.mini.byId)
 const visibleIdSet = computed(() => layerLayout.value.visibleIds)
 const containerSizes = computed(() => layerLayout.value.sizes)
@@ -2037,9 +2039,30 @@ watch(scopeId, (id) => {
 })
 
 /* ---------- 键盘 / 生命周期 ---------- */
+let canvasActiveBound = false
+function bindCanvasActive() {
+  if (canvasActiveBound) return
+  canvasActiveBound = true
+  if (outlineWorkspace) outlineWorkspace.actions.value = { add: startPlacement, settings: () => updateSettings(true) }
+  window.addEventListener('outline-command', outlineCommand)
+  window.addEventListener('keydown', onKey)
+  window.addEventListener('mousedown', onWinDown, true)
+  window.addEventListener('resize', positionSettings)
+  if (!juncFlashTimer) juncFlashTimer = setInterval(() => juncFlashTick.value++, 400)
+}
+function unbindCanvasActive() {
+  if (!canvasActiveBound) return
+  canvasActiveBound = false
+  window.removeEventListener('outline-command', outlineCommand)
+  if (outlineWorkspace) outlineWorkspace.actions.value = null
+  window.removeEventListener('keydown', onKey)
+  window.removeEventListener('mousedown', onWinDown, true)
+  window.removeEventListener('resize', positionSettings)
+  clearInterval(juncFlashTimer)
+  juncFlashTimer = 0
+}
 onMounted(() => {
-  if(outlineWorkspace)outlineWorkspace.actions.value={add:startPlacement,settings:()=>updateSettings(true)}
-  window.addEventListener('outline-command',outlineCommand)
+  bindCanvasActive()
   if (!ai.loaded) ai.loadSettings() // 保障入口置灰判定基于已装载的配置（幂等）
   migrateSides()
   ensurePlaced()
@@ -2064,11 +2087,15 @@ onMounted(() => {
       work.olnodeTextboxesSet(c.id, [])
     }
   }
-  window.addEventListener('keydown', onKey)
-  window.addEventListener('mousedown', onWinDown, true)
-  window.addEventListener('resize', positionSettings)
-  juncFlashTimer = setInterval(() => juncFlashTick.value++, 400)
   if (live.value.length) nextTick(() => { if (!restoreCamera(scopeId.value)) fitLayer(true) })
+})
+onActivated(() => {
+  bindCanvasActive()
+})
+onDeactivated(() => {
+  saveCamera()
+  cancelGesture?.()
+  unbindCanvasActive()
 })
 watch(() => work.work?.id, () => {
   settingsOpen.value = false
@@ -2083,30 +2110,25 @@ watch(() => work.work?.id, () => {
   nextTick(() => { if (!restoreCamera(scopeId.value)) fitLayer(true) })
 })
 onBeforeUnmount(() => {
-  window.removeEventListener('outline-command',outlineCommand)
-  if(outlineWorkspace)outlineWorkspace.actions.value=null
+  unbindCanvasActive()
   saveCamera()
   cancelGesture?.()
   routeCache.clear()
-  window.removeEventListener('keydown', onKey)
-  window.removeEventListener('mousedown', onWinDown, true)
-  window.removeEventListener('resize', positionSettings)
-  clearInterval(juncFlashTimer)
 })
 </script>
 
 <template>
-  <div class="om-wrap" :class="{ 'oc-compact': work.canvasPrefs.density === 'compact', 'oc-root-scope': !scopeId, 'oc-background-visible': canvasOpacity < 100 }">
+  <div class="om-wrap" :class="{ 'oc-compact': work.canvasPrefs.density === 'compact', 'oc-root-scope': !scopeId, 'oc-empty-scope': scopeEmpty, 'oc-background-visible': canvasOpacity < 100 }">
 
     <div v-if="outlineWorkspace" class="draft-canvas-head">
      <div class="draft-head-copy">
      <div class="bookline"><span>{{work.work?.title}}</span><Glyph name="chevron" :size="11"/><button type="button" @click="overview">全书情节</button><template v-for="c in scopeCrumbsList.filter(x=>x.id)" :key="c.id"><Glyph name="chevron" :size="11"/><button type="button" @click="focusScope(c.id)">{{c.title}}</button></template></div>
-     <h1>故事大纲</h1><p class="subtitle">{{draftTotals.total}} 个事件 · {{draftTotals.blocks}} 个容器 · {{draftTotals.done}} 个事件已完成</p>
+     <h1>故事大纲</h1><p v-if="!bookEmpty" class="subtitle">{{draftTotals.total}} 个事件 · {{draftTotals.blocks}} 个容器 · {{draftTotals.done}} 个事件已完成</p>
      </div>
      <div class="draft-head-tools">
-       <button type="button" class="btn light" @click="startPlacement('event')"><Glyph name="plus" :size="13"/>新建事件</button>
-       <button type="button" class="btn" @click="tidyAll"><Glyph name="tidy" :size="13"/>整理</button>
-       <button type="button" class="btn" @click="overview"><Glyph name="expand" :size="13"/>总览</button>
+       <button v-if="!scopeEmpty" type="button" class="btn light" @click="startPlacement('event')"><Glyph name="plus" :size="13"/>新建事件</button>
+       <button v-if="!scopeEmpty" type="button" class="btn" @click="tidyAll"><Glyph name="tidy" :size="13"/>整理</button>
+       <button v-if="!bookEmpty" type="button" class="btn" @click="overview"><Glyph name="expand" :size="13"/>总览</button>
        <button ref="settingsTrigger" type="button" class="btn draft-settings-toggle" aria-haspopup="dialog" :aria-expanded="settingsOpen" @click="updateSettings(!settingsOpen)"><Glyph name="gear" :size="13"/>画布设置</button>
        <Teleport to="body">
          <section v-if="settingsOpen" ref="settingsPanel" class="latent-canvas-settings" :style="settingsPosition" role="dialog" aria-label="画布设置" tabindex="-1">
@@ -2138,7 +2160,7 @@ onBeforeUnmount(() => {
     <template v-if="outlineWorkspace">
      <div class="draft-create creation glass oc-module-tools"><button type="button" class="tool" :class="{chosen:!viewMulti&&!placementDraft}" aria-label="选择" title="退出放置或多选" @click="placement.cancel(); viewMulti&&toggleMulti()"><Glyph name="pointer"/><span>选择</span></button><i></i><template v-for="tool in ADD_TOOLS" :key="tool.kind"><NDropdown v-if="tool.kind==='anchor'||tool.kind==='volume'" trigger="click" :options="tool.kind==='anchor'?anchorMenuOptions:volumeMenuOptions" @select="onModuleSelect(tool.kind,$event)"><button type="button" class="tool" :title="'添加'+(tool.kind==='anchor'?'章节':tool.label)" :class="{ chosen: placementDraft?.kind === tool.kind, 'oc-placement-active': placementDraft?.kind === tool.kind }"><Glyph :name="tool.kind==='anchor'?'anchor':'volume'"/><span>{{tool.kind==='anchor'?'章节':tool.label}}</span></button></NDropdown><button v-else type="button" class="tool" :title="'添加'+tool.label" :aria-pressed="placementDraft?.kind === tool.kind" :class="{ chosen: placementDraft?.kind === tool.kind, 'oc-placement-active': placementDraft?.kind === tool.kind }" @click="startPlacement(tool.kind)"><Glyph :name="tool.kind==='cite'?'link':tool.kind==='textbox'?'text':tool.kind"/><span>{{tool.label}}</span></button></template></div>
      <div class="draft-zoom zoom glass"><button type="button" class="btn" aria-label="缩小" @click="zoom=Math.max(.3,zoom-.15)">−</button><button type="button" class="draft-percent" title="恢复 100%" @click="zoom=1">{{Math.round(zoom*100)}}%</button><button type="button" class="btn" aria-label="放大" @click="zoom=Math.min(2.2,zoom+.15)">+</button><i></i><button type="button" class="btn" @click="fitView"><Glyph name="expand" :size="13"/>总览</button></div>
-     <div class="draft-legend legend"><span><i></i>情节推进</span><span><i class="dashed"></i>关联与伏笔</span></div>
+     <div v-if="!scopeEmpty" class="draft-legend legend"><span><i></i>情节推进</span><span><i class="dashed"></i>关联与伏笔</span></div>
     </template>
 
     <div v-if="!outlineWorkspace" class="oc-workspace-head"><div><div class="oc-eyebrow">OUTLINE · 故事大纲</div><h1>{{ scopeTitle }}<small v-if="scopeId">容器内部</small></h1><p>{{ scopeMetaText }}</p></div><div class="oc-head-actions"><button type="button" @click="overview">总览</button><button type="button" @click="expandAllDeep">展开全部</button><button type="button" @click="collapseAllDeep">收起全部</button><button type="button" @click="tidyAll">整理布局</button><button type="button" @click="work.outlineView='text'">文本视图</button><TaskLauncher module="outline" /></div></div>
@@ -2680,11 +2702,21 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <!-- 当前层空态 -->
-      <div v-if="!placementDraft && !visNodes.length && !miniItems.length" class="oc-scope-empty">
-        <p>当前层还没有模块。</p>
-        <button class="oc-quiet primary" type="button" @click="startPlacement('event')">＋ 新建事件</button>
-        <span v-if="scopeId">也可以从上方面包屑返回上一层。</span>
+      <div v-if="scopeEmpty && !placementDraft" class="oc-empty-state">
+        <div class="oc-empty-content" @mousedown.stop>
+          <h2>{{ bookEmpty ? '从第一个事件开始' : '当前层还没有模块' }}</h2>
+          <p>新建事件后，在画布上点击放置。</p>
+          <div class="oc-empty-actions">
+            <button class="oc-empty-primary" type="button" @click="startPlacement('event')">
+              <Glyph name="plus" :size="15" aria-hidden="true" />
+              新建事件
+            </button>
+            <div v-if="bookEmpty" class="oc-empty-templates" role="group" aria-label="大纲模板">
+              <button type="button" @click="applyTemplate(tplThreeAct(cardDensity))">三幕式模板</button>
+              <button type="button" @click="applyTemplate(tplChapterList(work.liveChapters, cardDensity))">章级清单模板</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 右侧设置抽屉 -->
@@ -2773,18 +2805,114 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </div>
-
-
-    <!-- 空画布快速开始 -->
-    <div v-if="!placementDraft && !live.length" class="oc-quick">
-      <div class="big">谋篇布局 · 自由画布</div>
-      <p>事件、便签、引用卡、容器是积木，连线是脉络——结构由你自由生长，没有固定框架。</p>
-      <div class="oc-quick-btns">
-        <button @click="applyTemplate(tplThreeAct(cardDensity))">三幕式模板</button>
-        <button @click="applyTemplate(tplChapterList(work.liveChapters, cardDensity))">章级清单模板</button>
-        <button class="ghost" @click="startPlacement('event')">空白开始</button>
-      </div>
-      <p class="oc-quick-tip">拖节点四向锚点拉出连线 · 拖入容器即归组 · 双击模块行内编辑内容 · 拖边缘调整大小 · 空白处双击新建事件</p>
-    </div>
   </div>
 </template>
+
+<style scoped>
+.oc-empty-state {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  display: grid;
+  place-items: safe center;
+  overflow: auto;
+  padding: 12px;
+  pointer-events: none;
+}
+
+.oc-empty-content {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--text);
+  text-align: center;
+}
+
+.oc-empty-content h2 {
+  margin: 0;
+  font: 500 clamp(18px, 3vw, 23px) / 1.4 var(--oc-serif, serif);
+  text-wrap: balance;
+}
+
+.oc-empty-content p {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.6;
+  text-wrap: balance;
+}
+
+.oc-empty-content button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 5px 13px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--bg-panel) 65%, transparent);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.oc-empty-content button:hover {
+  background: var(--bg-panel);
+  border-color: var(--text-dim);
+}
+
+.oc-empty-content button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.oc-empty-content .oc-empty-primary {
+  min-height: 38px;
+  padding-inline: 16px;
+  border-color: transparent;
+  color: var(--bg-panel);
+  background: var(--text);
+  font-weight: 600;
+}
+
+.oc-empty-content .oc-empty-primary:hover {
+  background: color-mix(in srgb, var(--text) 82%, var(--accent));
+}
+
+.oc-empty-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 7px;
+}
+
+.oc-empty-templates {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-height: 560px) {
+  .oc-empty-scope > :is(.draft-create, .draft-zoom) { visibility: hidden; }
+  .oc-empty-state { padding: 6px; }
+  .oc-empty-content p { display: none; }
+  .oc-empty-actions {
+    flex-flow: row wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 0;
+  }
+  .oc-empty-content button,
+  .oc-empty-content .oc-empty-primary {
+    min-height: 32px;
+    padding-inline: 8px;
+  }
+}
+</style>

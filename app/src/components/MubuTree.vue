@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref, onActivated, onBeforeUnmount, onDeactivated, onMounted } from 'vue'
 import { useWorkStore } from '../stores/work'
 import { useUiStore } from '../stores/ui'
 import OIcon from './OIcon.vue'
@@ -35,8 +35,21 @@ function showMenu({ node, event }) { const b = event.target.getBoundingClientRec
 function remove() { work.mubuCheckpoint(); work.mubuRemove(menu.value.node.id); menu.value = null }
 function close(e) { if (!e.target.closest('.lore-nav-context,.lore-nav-more')) menu.value = null }
 function key(e) { if (e.key === 'Escape') menu.value = null }
-onMounted(() => { document.addEventListener('pointerdown', close); document.addEventListener('keydown', key) })
-onBeforeUnmount(() => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', key) })
+let treeListenersBound = false
+function bindTreeListeners() {
+  if (treeListenersBound) return
+  treeListenersBound = true
+  document.addEventListener('pointerdown', close); document.addEventListener('keydown', key)
+}
+function unbindTreeListeners() {
+  if (!treeListenersBound) return
+  treeListenersBound = false
+  document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', key)
+}
+onMounted(bindTreeListeners)
+onActivated(bindTreeListeners)
+onDeactivated(() => { menu.value = null; unbindTreeListeners() })
+onBeforeUnmount(unbindTreeListeners)
 </script>
 <template>
   <div class="nav-pane" role="navigation" aria-label="设定目录">

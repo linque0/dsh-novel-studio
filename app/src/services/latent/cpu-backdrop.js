@@ -24,6 +24,7 @@ export function createCpuBackdrop(canvas, options = {}) {
   let lastFrame = performance.now()
   let reducedMotion = Boolean(options.reducedMotion)
   let running = false
+  let transitionHolds = 0
   let disposed = false
   let raf = 0
   let frameData = ctx.createImageData(simWidth, simHeight)
@@ -55,7 +56,7 @@ export function createCpuBackdrop(canvas, options = {}) {
     if (resizeCanvas() && !running && !document.hidden) draw(performance.now())
   }
 
-  function draw(now) {
+  function draw(now, schedule = true) {
     if (disposed) return
     if (running) simTime = advanceFlowTime(simTime, now - lastFrame, speed)
     lastFrame = now
@@ -103,11 +104,11 @@ export function createCpuBackdrop(canvas, options = {}) {
     }
     ctx.putImageData(frameData, 0, 0)
     lastDrawnStops = colors
-    if (running) raf = requestAnimationFrame(draw)
+    if (running && schedule) raf = requestAnimationFrame(draw)
   }
 
   function start() {
-    if (running || disposed || reducedMotion || speed === 0 || document.hidden) return
+    if (running || disposed || transitionHolds || reducedMotion || speed === 0 || document.hidden) return
     running = true
     lastFrame = performance.now()
     raf = requestAnimationFrame(draw)
@@ -168,6 +169,20 @@ export function createCpuBackdrop(canvas, options = {}) {
       } else start()
     },
     resize,
+    transitionFrame() { return { time: simTime, stops: lastDrawnStops } },
+    holdTransition() {
+      transitionHolds += 1
+      stop()
+      return () => {
+        transitionHolds -= 1
+        start()
+      }
+    },
+    syncTransitionTime(next) {
+      simTime = next
+      lastFrame = performance.now()
+      if (!document.hidden) draw(lastFrame, false)
+    },
     stats() {
       return {
         backend: 'cpu',

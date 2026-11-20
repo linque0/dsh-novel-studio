@@ -10,6 +10,10 @@
 html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] {
   position: relative;
 }
+html body[data-skin='dsh'] .workbench-shell.latent-studio[data-flow]::before,
+html body[data-skin='dsh'] .workbench-shell.latent-studio[data-flow]::after {
+  display: none;
+}
 
 /* ---- 1. 内容地面让位：.wb-body 原本铺 --ns-bg 实底（dsh.css:305），会把画布整块盖住 ---- */
 html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow] :is(.wb-body, .panel-body) {
@@ -123,6 +127,15 @@ html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow][data-mo
  * 内容面自己不再铺底，地面交给 .center-pane 的 52% 玻璃，与人物/灵感同档；文字色沿用宿主令牌。 */
 html body[data-skin='dsh'] :is(.workbench-shell, .panel-host)[data-flow][data-module='outline'] .outline-text-body {
   background: transparent;
+}
+
+/* 转场快照采集前立即结算顶栏、视图壳与抽屉面板的 CSS 过渡与进场动画，避免旧状态或半透明残影被定格进 u_newInk；
+ * 仅命中壳层与交互控件而非全局 `*`，防止大纲画布成百上千个节点在转场结束时全树样式重算掉帧。 */
+[data-flow-transitioning] :is(.app-topbar *, .wb-header *, .wb-body > *, .wb-body > * > *, .snip-inspector, .snip-main, .snip-nav, .char-pane, .right-panel) {
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+  animation-duration: 0.001ms !important;
+  animation-delay: 0s !important;
 }
 
 /* 浮起的章节沿用宿主底色，让浅色宿主的深色文字也清晰。 */

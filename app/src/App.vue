@@ -28,6 +28,7 @@ import { useAiStore } from './stores/ai'
 import { resolveSkin } from './skins/registry'
 
 const ui = useUiStore()
+const flowScene = ref(null)
 const shelf = useShelfStore()
 
 /* 跨窗口事件（偏好同步 / 书架刷新 / 恢复备份协议）：主窗口与面板窗口都在根组件装一次 */
@@ -130,7 +131,7 @@ async function seedDevVerifyBooks() {
       <NDialogProvider>
         <PrefBridge />
         <PanelHost v-if="panelMode && !analysisPanel && prefsReady" />
-        <div v-else-if="!panelMode || ui.dbError" class="app-root" :class="'theme-' + effectiveTheme" :data-skin="activeSkin.id" :style="ui.rootStyle" :inert="ui.statsAnalysisOpen">
+        <div v-else-if="!panelMode || ui.dbError" ref="flowScene" class="app-root" :class="'theme-' + effectiveTheme" :data-skin="activeSkin.id" :style="ui.rootStyle" :inert="ui.statsAnalysisOpen">
           <div v-if="ui.dbError" class="empty-shelf" style="padding-top: 16vh">
             <div class="big">数据的另一扇门被占用了</div>
             <p>
@@ -157,7 +158,7 @@ async function seedDevVerifyBooks() {
           v-if="analysisPanel ? prefsReady : !panelMode"
           :panel-entry="analysisPanel ? panelSpec[2] || '' : null"
         />
-        <FlowTransitionOverlay v-if="!panelMode" />
+        <FlowTransitionOverlay v-if="!panelMode" :scene="flowScene" />
       </NDialogProvider>
     </NMessageProvider>
   </NConfigProvider>

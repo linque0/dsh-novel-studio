@@ -4,7 +4,7 @@ import { useLoreImages } from '../composables/useLoreImages.js'
 import { cleanLoreHtml, loreText, loreCaret, setLoreCaret, splitLoreSelection } from '../services/lore-editor-dom.js'
 import LoreLinkComposer from './lore/LoreLinkComposer.vue'
 import TaskLauncher from './ai/TaskLauncher.vue'
-import { ref, reactive, computed, watch, nextTick, onMounted, onUpdated, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, watch, nextTick, onMounted, onUpdated, onActivated, onDeactivated, onBeforeUnmount } from 'vue'
 import { NPopover } from 'naive-ui'
 import OIcon from './OIcon.vue'
 import LoreImageHiddenNotice from './LoreImageHiddenNotice.vue'
@@ -845,18 +845,36 @@ watch(
   () => ver.value++
 )
 
-onMounted(() => {
-  if (!ai.loaded) ai.loadSettings() // 保障入口置灰判定基于已装载的配置（幂等）
+let mubuListenersBound = false
+function bindMubuListeners() {
+  if (mubuListenersBound) return
+  mubuListenersBound = true
   window.addEventListener('mousedown', onWinMouseDown, true)
   window.addEventListener('keydown', onWinKeyDown)
   window.addEventListener('wheel', onWinWheel, { passive: true })
   window.addEventListener('resize', closeCtx)
-})
-onBeforeUnmount(() => {
+}
+function unbindMubuListeners() {
+  if (!mubuListenersBound) return
+  mubuListenersBound = false
   window.removeEventListener('mousedown', onWinMouseDown, true)
   window.removeEventListener('keydown', onWinKeyDown)
   window.removeEventListener('wheel', onWinWheel)
   window.removeEventListener('resize', closeCtx)
+}
+onMounted(() => {
+  if (!ai.loaded) ai.loadSettings() // 保障入口置灰判定基于已装载的配置（幂等）
+  bindMubuListeners()
+})
+onActivated(() => {
+  bindMubuListeners()
+})
+onDeactivated(() => {
+  unbindMubuListeners()
+  clearTimeout(relPopTimer)
+})
+onBeforeUnmount(() => {
+  unbindMubuListeners()
   clearTimeout(relPopTimer)
 })
 

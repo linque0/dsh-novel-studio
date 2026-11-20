@@ -8,7 +8,7 @@
 <script setup>
 import '../../styles/lore-free-tree.css'
 import { autosave } from '../../services/autosave'
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onActivated, onBeforeUnmount, onDeactivated, onMounted, ref, watch } from 'vue'
 import OIcon from '../OIcon.vue'
 import MubuView from '../MubuView.vue'
 import MubuTree from '../MubuTree.vue'
@@ -286,9 +286,21 @@ function onKeydown(e) {
     e.preventDefault()
   }
 }
-onMounted(async () => {
+let loreListenersBound = false
+function bindLoreListeners() {
+  if (loreListenersBound) return
+  loreListenersBound = true
   window.addEventListener('resize', onResize)
   window.addEventListener('keydown', onKeydown)
+}
+function unbindLoreListeners() {
+  if (!loreListenersBound) return
+  loreListenersBound = false
+  window.removeEventListener('resize', onResize)
+  window.removeEventListener('keydown', onKeydown)
+}
+onMounted(async () => {
+  bindLoreListeners()
   const requested = ui.loreWorkId !== work.work?.id && ui.loreRootId && work.liveMubu().some(n => n.id === ui.loreRootId) ? ui.loreRootId : null
   await ui.restoreLoreState(work.work?.id)
   if (requested) ui.focusLoreNode(requested, work.mubuPath(requested))
@@ -309,11 +321,19 @@ onMounted(async () => {
   resetScreen()
   // Default categories are seeded only for a new work, never restored on entry.
 })
+onActivated(() => {
+  bindLoreListeners()
+  onResize()
+})
+onDeactivated(() => {
+  mubu.value?.rememberPosition(); void ui.persistLoreState(ownerWorkId)
+  clearTimeout(saveTimer)
+  unbindLoreListeners()
+})
 onBeforeUnmount(() => {
   mubu.value?.rememberPosition(); void ui.persistLoreState(ownerWorkId)
   clearTimeout(saveTimer)
-  window.removeEventListener('resize', onResize)
-  window.removeEventListener('keydown', onKeydown)
+  unbindLoreListeners()
 })
 function onLinkClick(e) {
   const link = e.target.closest?.('[data-dl-target]')

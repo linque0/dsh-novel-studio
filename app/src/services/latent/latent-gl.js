@@ -161,6 +161,23 @@ function paletteColors(palette) {
   return { data, count: 5 }
 }
 
+function releaseContextLater(gl) {
+  const release = () => {
+    try { gl.getExtension('WEBGL_lose_context')?.loseContext() } catch { /* 老浏览器没有该扩展 */ }
+  }
+  if (typeof setTimeout === 'function') {
+    setTimeout(() => {
+      if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(release, { timeout: 1000 })
+      } else {
+        release()
+      }
+    }, 1300)
+  } else {
+    release()
+  }
+}
+
 /* 验收要数全站 WebGL 上下文：浏览器同时只允许十来个，书架漏一个就等于别的画布少一块预算。 */
 let liveContexts = 0
 
@@ -234,7 +251,7 @@ export function createCoverPainter() {
     disposed = true
     gl.deleteBuffer(state.buffer)
     gl.deleteProgram(state.mesh)
-    gl.getExtension('WEBGL_lose_context')?.loseContext()
+    releaseContextLater(gl)
     if (liveContexts > 0) liveContexts -= 1
   }
 
@@ -270,12 +287,15 @@ export function createLatentBackdrop(canvas, options = {}) {
   let time = options.time ?? 0
   let lastFrame = performance.now()
   let running = false
+  let transitionHolds = 0
   let scaleIndex = 0
   let frameTimes = []
   let avgFrameMs = 0
   let raf = 0
   let disposed = false
   let contextLost = false
+  let parked = false
+  let fallbackHandler = options.onFallback
   const maxEdge = Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE), gl.getParameter(gl.MAX_VIEWPORT_DIMS)[0], gl.getParameter(gl.MAX_VIEWPORT_DIMS)[1])
   let renderRatio = 1
   let targetReady = false
@@ -305,7 +325,7 @@ export function createLatentBackdrop(canvas, options = {}) {
     return false
   }
 
-  function draw(now) {
+  function draw(now, schedule = true) {
     if (disposed || contextLost) return
     const dt = Math.min(64, now - lastFrame)
     lastFrame = now
@@ -360,11 +380,11 @@ export function createLatentBackdrop(canvas, options = {}) {
     gl.drawArrays(gl.TRIANGLES, 0, 3)
     lastDrawnStops = colors
 
-    if (running) raf = requestAnimationFrame(draw)
+    if (running && schedule) raf = requestAnimationFrame(draw)
   }
 
   function start() {
-    if (running || disposed || contextLost || reducedMotion || speed === 0 || document.hidden) return
+    if (running || disposed || contextLost || parked || transitionHolds || reducedMotion || speed === 0 || document.hidden) return
     running = true
     frameTimes = []
     lastFrame = performance.now()
@@ -380,7 +400,7 @@ export function createLatentBackdrop(canvas, options = {}) {
     if (contextLost || disposed) return
     contextLost = true
     stop()
-    options.onFallback?.(reason, { time, stops: lastDrawnStops })
+    fallbackHandler?.(reason, { time, stops: lastDrawnStops })
   }
 
   function resizeOrFallback() {
@@ -394,9 +414,9 @@ export function createLatentBackdrop(canvas, options = {}) {
     return { supported: false, reason: 'framebuffer-error', shaderLog: error.message }
   }
 
-  const onResize = () => { if (resizeOrFallback() && !running && !document.hidden) draw(performance.now()) }
+  const onResize = () => { if (resizeOrFallback() && !running && !parked && !transitionHolds && !document.hidden) draw(performance.now()) }
   const parent = canvas.parentElement
-  const observer = typeof ResizeObserver === 'function' && parent ? new ResizeObserver(onResize) : null
+  let observer = typeof ResizeObserver === 'function' && parent ? new ResizeObserver(onResize) : null
   if (observer) observer.observe(parent)
   const onVisibility = () => {
     if (document.hidden) stop()
@@ -426,7 +446,7 @@ export function createLatentBackdrop(canvas, options = {}) {
       to = flowColorStops(palette)
       blendDuration = running ? Math.max(0, opts.duration ?? 750) : 0
       blendStart = now
-      if (!running && !document.hidden) draw(blendStart)
+      if (!running && !parked && !transitionHolds && !document.hidden) draw(blendStart)
     },
     setSpeed(value) {
       speed = normalizeFlowSpeed(value)
@@ -447,6 +467,38 @@ export function createLatentBackdrop(canvas, options = {}) {
       } else start()
     },
     resize: onResize,
+    reattach(onFallbackNext) {
+      if (disposed || contextLost) return
+      fallbackHandler = onFallbackNext
+      parked = false
+      if (observer) observer.disconnect()
+      const nextParent = canvas.parentElement
+      observer = typeof ResizeObserver === 'function' && nextParent ? new ResizeObserver(onResize) : null
+      if (observer) observer.observe(nextParent)
+      if (resizeOrFallback()) {
+        if (!running && !transitionHolds && !document.hidden) draw(performance.now())
+        start()
+      }
+    },
+    setParked(next) {
+      parked = Boolean(next)
+      if (parked) stop()
+      else start()
+    },
+    transitionFrame() { return { time, stops: lastDrawnStops } },
+    holdTransition() {
+      transitionHolds += 1
+      stop()
+      return () => {
+        transitionHolds -= 1
+        start()
+      }
+    },
+    syncTransitionTime(next) {
+      time = next
+      lastFrame = performance.now()
+      if (!document.hidden) draw(lastFrame, false)
+    },
     stats() {
       return {
         backend: 'gpu',
@@ -473,8 +525,8 @@ export function createLatentBackdrop(canvas, options = {}) {
       gl.deleteProgram(state.mesh)
       gl.deleteProgram(state.dither)
       /* 反复进出书架会不断建上下文，浏览器有上限（约 16 个）：不主动放弃的话，
-         第 N 次切回时新背板会拿不到上下文而落到 CPU 底（画面直接变样）。 */
-      try { gl.getExtension('WEBGL_lose_context')?.loseContext() } catch { /* 老浏览器没有该扩展 */ }
+         第 N 次切回时新背板会拿不到上下文而落到 CPU 底，故延后到转场结束再释放。 */
+      releaseContextLater(gl)
       if (liveContexts > 0) liveContexts -= 1
     }
   }

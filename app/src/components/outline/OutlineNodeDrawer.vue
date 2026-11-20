@@ -1,6 +1,6 @@
 <!-- 分层大纲画布右侧设置抽屉：节点内容 / 事件状态与形状 / 容器颜色与层级动作。 -->
 <script setup>
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onDeactivated, ref, watch } from 'vue'
 import OIcon from '../OIcon.vue'
 import { CONTAINER_COLORS, EVENT_SHAPES, STATUS } from './outline-paper'
 
@@ -23,6 +23,7 @@ watch(() => props.node?.id, () => {
   armed.value = false
   clearTimeout(timer)
 })
+onDeactivated(() => clearTimeout(timer))
 onBeforeUnmount(() => clearTimeout(timer))
 
 const isContainer = computed(() => props.node?.kind === 'container')

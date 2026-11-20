@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, onBeforeUnmount, ref, nextTick } from 'vue'
+import { computed, onActivated, onBeforeUnmount, onDeactivated, onMounted, ref, nextTick } from 'vue'
 import { useWorkStore } from '../../stores/work'
 import { searchTargets, KIND_LABEL } from '../../services/doublelinks'
 import { cleanLoreHtml, loreText, loreCaret, setLoreCaret } from '../../services/lore-editor-dom.js'
@@ -62,8 +62,21 @@ function request(e) {
 }
 function outside(e) { if (shown.value && !e.target.closest('.lore-link-picker') && !fieldFor(e.target)) close() }
 function scroll() { if (shown.value) close() }
-onMounted(() => { document.addEventListener('input', input); document.addEventListener('compositionend', composition); document.addEventListener('keydown', key, true); document.addEventListener('selectionchange', selection); document.addEventListener('lore-insert-link', request); document.addEventListener('pointerdown', outside); window.addEventListener('scroll', scroll, true) })
-onBeforeUnmount(() => { document.removeEventListener('input', input); document.removeEventListener('compositionend', composition); document.removeEventListener('keydown', key, true); document.removeEventListener('selectionchange', selection); document.removeEventListener('lore-insert-link', request); document.removeEventListener('pointerdown', outside); window.removeEventListener('scroll', scroll, true) })
+let composerBound = false
+function bindComposerListeners() {
+  if (composerBound) return
+  composerBound = true
+  document.addEventListener('input', input); document.addEventListener('compositionend', composition); document.addEventListener('keydown', key, true); document.addEventListener('selectionchange', selection); document.addEventListener('lore-insert-link', request); document.addEventListener('pointerdown', outside); window.addEventListener('scroll', scroll, true)
+}
+function unbindComposerListeners() {
+  if (!composerBound) return
+  composerBound = false
+  document.removeEventListener('input', input); document.removeEventListener('compositionend', composition); document.removeEventListener('keydown', key, true); document.removeEventListener('selectionchange', selection); document.removeEventListener('lore-insert-link', request); document.removeEventListener('pointerdown', outside); window.removeEventListener('scroll', scroll, true)
+}
+onMounted(bindComposerListeners)
+onActivated(bindComposerListeners)
+onDeactivated(() => { close(); unbindComposerListeners() })
+onBeforeUnmount(unbindComposerListeners)
 </script>
 <template>
   <Teleport to="body"><div v-if="shown" ref="box" class="lore-link-picker" role="dialog" aria-label="选择链接节点" :style="{ left: point.x + 'px', top: point.y + 'px' }" @mousedown.prevent>

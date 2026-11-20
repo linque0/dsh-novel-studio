@@ -1,169 +1,107 @@
-import { DEFAULT_FLOW_PALETTE, paletteOf } from './palette.js'
-import { flowColorStops } from './flow-color-stops.js'
-
-const DEFAULT_COVER_MS = 230
-const DEFAULT_REVEAL_MS = 310
-
 function defaultReducedMotion() {
-  return typeof window !== 'undefined' &&
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
-}
-
-export function rgbCss(rgb, alpha = 1) {
-  const channels = (rgb || [0.2, 0.24, 0.36]).map(value => Math.round(Math.max(0, Math.min(1, value)) * 255))
-  return alpha >= 1
-    ? `rgb(${channels[0]} ${channels[1]} ${channels[2]})`
-    : `rgb(${channels[0]} ${channels[1]} ${channels[2]} / ${alpha})`
-}
-
-function buildColors(stops) {
-  const [main, accent, deep, highlight, shadow, mist] = stops
-  return {
-    main: rgbCss(main),
-    accent: rgbCss(accent),
-    accentGlow: rgbCss(accent, 0.56),
-    accentSoft: rgbCss(accent, 0.24),
-    deep: rgbCss(deep),
-    highlight: rgbCss(highlight),
-    highlightSoft: rgbCss(highlight, 0.34),
-    shadow: rgbCss(shadow),
-    mist: rgbCss(mist),
-    mistSoft: rgbCss(mist, 0.42)
-  }
+  return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 }
 
 export function createFlowTransitionController({
-  setTimeoutFn = (...args) => setTimeout(...args),
-  clearTimeoutFn = id => clearTimeout(id),
   isReducedMotion = defaultReducedMotion,
   hasDocument = () => typeof document !== 'undefined'
 } = {}) {
-  let state = {
-    active: false,
-    runId: 0,
-    phase: 'idle',
-    palette: null,
-    stops: null,
-    colors: null,
-    coverMs: DEFAULT_COVER_MS,
-    revealMs: DEFAULT_REVEAL_MS
-  }
-  let activeToken = 0
-  let timer = null
-  let settleWait = null
-  const listeners = new Set()
-
-  function emit(next) {
-    state = { ...state, ...next }
-    for (const listener of listeners) listener(state)
-  }
-
-  function clearTimer() {
-    if (timer != null) {
-      clearTimeoutFn(timer)
-      timer = null
-    }
-    if (settleWait) {
-      const done = settleWait
-      settleWait = null
-      done(false)
-    }
-  }
-
-  function wait(ms, token) {
-    clearTimer()
-    return new Promise(resolve => {
-      settleWait = resolve
-      timer = setTimeoutFn(() => {
-        timer = null
-        settleWait = null
-        resolve(token === activeToken)
-      }, Math.max(0, ms))
-    })
-  }
+  let prepare
+  let active
+  let pendingCommit
 
   function reset() {
-    activeToken += 1
-    clearTimer()
-    emit({
-      active: false,
-      phase: 'idle',
-      palette: null,
-      stops: null,
-      colors: null
-    })
+    active?.request.abort()
+    active = null
   }
 
   async function run(commit, options = {}) {
-    const reduced = typeof options.reducedMotion === 'boolean' ? options.reducedMotion : isReducedMotion()
-    const isDsh = !options.skin || options.skin === 'dsh'
-    if (!isDsh || reduced || !hasDocument()) {
-      return await commit?.()
+    const intent = { commit, options }
+    const reduced = options.reducedMotion ?? isReducedMotion()
+    const animate = prepare && (!options.skin || options.skin === 'dsh') && !reduced && hasDocument() ? prepare : null
+    let navigation = active
+    if (animate && navigation?.animate === animate && !navigation.committed) {
+      navigation.intent = intent
+    } else {
+      if (!navigation?.committing) reset()
+      navigation = { request: new AbortController(), animate, intent, committing: false, committed: false }
+      active = navigation
+      navigation.finished = execute(navigation)
     }
-
-    const token = ++activeToken
-    const coverMs = Math.max(40, Number(options.coverMs) || DEFAULT_COVER_MS)
-    const revealMs = Math.max(40, Number(options.revealMs) || DEFAULT_REVEAL_MS)
-    const palette = options.work ? paletteOf(options.work) : DEFAULT_FLOW_PALETTE
-    const stops = flowColorStops(palette)
-    const colors = buildColors(stops)
-
-    emit({
-      active: true,
-      runId: token,
-      phase: 'covering',
-      palette,
-      stops,
-      colors,
-      coverMs,
-      revealMs
-    })
-
-    if (!(await wait(coverMs, token))) return undefined
-
-    emit({ phase: 'switching' })
-    let result
     try {
-      result = await commit?.()
+      const result = await navigation.finished
+      if (navigation.intent === intent) return result
     } catch (error) {
-      if (token === activeToken) reset()
-      throw error
+      if (navigation.intent === intent) throw error
     }
-    if (token !== activeToken) return result
+  }
 
-    if (typeof options.afterCommit === 'function') {
-      await options.afterCommit()
-      if (token !== activeToken) return result
+  async function execute(navigation) {
+    const { request, animate } = navigation
+    const { signal } = request
+    let surface
+
+    try {
+      // A book can still be loading or flushing under the preceding cover.
+      if (pendingCommit) await pendingCommit.catch(() => {})
+      if (signal.aborted) return
+      if (animate) {
+        try {
+          surface = await animate({ signal })
+          if (!signal.aborted) await surface?.play()
+        } catch {
+          surface?.dispose()
+          surface = null
+        }
+      }
+      if (signal.aborted) return
+
+      const applying = Promise.resolve().then(async () => {
+        if (signal.aborted) return
+        navigation.committed = true
+        navigation.committing = true
+        const { commit, options } = navigation.intent
+        const result = await commit?.()
+        await options.afterCommit?.()
+        return result
+      })
+      pendingCommit = applying
+      let result
+      try {
+        result = await applying
+      } finally {
+        if (pendingCommit === applying) pendingCommit = null
+        navigation.committing = false
+      }
+      if (!signal.aborted) {
+        try { await surface?.reveal?.() } catch { /* The live page is already ready. */ }
+      }
+      return result
+    } finally {
+      surface?.dispose()
+      if (active === navigation) active = null
     }
-
-    emit({ phase: 'revealing' })
-    if (!(await wait(revealMs, token))) return result
-
-    emit({
-      active: false,
-      phase: 'idle',
-      palette: null,
-      stops: null,
-      colors: null
-    })
-    return result
   }
 
   return {
-    get state() { return state },
-    subscribe(listener) {
-      listeners.add(listener)
-      listener(state)
-      return () => listeners.delete(listener)
+    attach(fn) {
+      prepare = fn
+      return () => {
+        if (prepare !== fn) return
+        prepare = null
+        reset()
+      }
     },
     run,
+    cancelPending() {
+      if (active && !active.committed) reset()
+    },
     reset
   }
 }
 
 export const flowTransition = createFlowTransitionController()
 
-export function runFlowTransition(commit, options = {}) {
+export function runFlowTransition(commit, options) {
   return flowTransition.run(commit, options)
 }

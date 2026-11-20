@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
+import { computed, nextTick, onActivated, onBeforeUnmount, onDeactivated, onMounted, ref, shallowRef, watch } from 'vue'
 import { useWorkStore } from '../../stores/work'
 import { useUiStore } from '../../stores/ui'
 import { usePanZoom } from '../../services/graphview'
@@ -257,9 +257,21 @@ watch(() => [ui.editorFont, ui.editorLatin], async () => {
   measureAll()
 })
 
-onMounted(() => {
+let treeMapBound = false
+function bindTreeMapListeners() {
+  if (treeMapBound) return
+  treeMapBound = true
   document.addEventListener('pointerdown', closeEditing, true)
   document.addEventListener('keydown', shortcuts, true)
+}
+function unbindTreeMapListeners() {
+  if (!treeMapBound) return
+  treeMapBound = false
+  document.removeEventListener('pointerdown', closeEditing, true)
+  document.removeEventListener('keydown', shortcuts, true)
+}
+onMounted(() => {
+  bindTreeMapListeners()
   observer = new ResizeObserver(changes => {
     const next = new Map(sizes.value)
     let changed = false
@@ -281,9 +293,15 @@ onMounted(() => {
   for (const node of nodes.values()) observer.observe(node)
   if (!nodes.size) frameTree()
 })
+onActivated(() => {
+  bindTreeMapListeners()
+})
+onDeactivated(() => {
+  unbindTreeMapListeners()
+  endMove(null, false)
+})
 onBeforeUnmount(() => {
-  document.removeEventListener('pointerdown', closeEditing, true)
-  document.removeEventListener('keydown', shortcuts, true)
+  unbindTreeMapListeners()
   endMove(null, false)
   observer?.disconnect()
 })

@@ -27,6 +27,7 @@ html body[data-skin='dsh'] .app-topbar-shell .app-topbar[data-topbar-page]:not([
     grid-area: 1 / 2;
     justify-self: center;
     position: static;
+    inset: auto;
     transform: none;
     width: max-content;
     max-width: 100%;

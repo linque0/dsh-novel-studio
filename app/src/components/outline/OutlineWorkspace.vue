@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, provide, ref, shallowRef, watch } from 'vue'
+import { computed, nextTick, onActivated, onBeforeUnmount, onDeactivated, onMounted, provide, ref, shallowRef, watch } from 'vue'
 import { useUiStore } from '../../stores/ui'
 import { useWorkStore } from '../../stores/work'
 import OIcon from '../OIcon.vue'
@@ -8,15 +8,22 @@ import { OUTLINE_LAYOUT_KEY, normalizeOutlineWidth, outlineLayout } from './outl
 
 const ui=useUiStore(),work=useWorkStore()
 const root=ref(null),detailTarget=ref(null),width=ref(0),activeDrawer=ref(null),actions=shallowRef(null)
-const hasDetails=computed(()=>work.outlineView==='canvas')
+const liveNodes=computed(()=>work.liveOlnodes())
+const hasDetails=computed(()=>work.outlineView==='canvas'&&liveNodes.value.length>0)
 const layout=computed(()=>outlineLayout({width:width.value,leftWidth:ui.outlineLeftWidth,rightWidth:ui.outlineRightWidth,leftOpen:ui.outlineSideOpen,rightOpen:hasDetails.value&&ui.outlineDetailOpen}))
 const narrow=computed(()=>layout.value.narrow)
 const leftVisible=computed(()=>narrow.value?activeDrawer.value==='left':ui.outlineSideOpen)
 const rightVisible=computed(()=>hasDetails.value&&(narrow.value?activeDrawer.value==='right':ui.outlineDetailOpen))
-const selected=computed(()=>work.liveOlnodes().some(n=>n.id===work.selOlnodeId))
+const selected=computed(()=>liveNodes.value.some(n=>n.id===work.selOlnodeId))
 const panelWidth=side=>narrow.value?Math.min(Math.max(side==='left'?260:320,ui[side==='left'?'outlineLeftWidth':'outlineRightWidth']),Math.max(0,width.value-32)):layout.value[side]
 let returnFocus=null
-function open(side){if(narrow.value){if(!activeDrawer.value)returnFocus=document.activeElement;activeDrawer.value=side}else ui.setPref(side==='left'?'outlineSideOpen':'outlineDetailOpen',true)}
+function open(side) {
+  if (side === 'right' && !hasDetails.value) return
+  if (narrow.value) {
+    if (!activeDrawer.value) returnFocus = document.activeElement
+    activeDrawer.value = side
+  } else ui.setPref(side === 'left' ? 'outlineSideOpen' : 'outlineDetailOpen', true)
+}
 function close(side) {
   if (narrow.value) {
     activeDrawer.value = null
@@ -78,20 +85,42 @@ function escape(e){
 }
 watch(activeDrawer,async(side,previous)=>{await nextTick();if(side)drawerControls()[0]?.focus();else if(previous&&returnFocus?.isConnected&&returnFocus.getClientRects().length)returnFocus.focus()})
 watch(narrow,()=>{cleanupDrag?.(true);activeDrawer.value=null})
-watch(hasDetails,()=>{activeDrawer.value=null})
+watch(() => work.outlineView, () => { activeDrawer.value = null })
+watch(hasDetails, (available) => {
+  if (!available && activeDrawer.value === 'right') activeDrawer.value = null
+})
 function measureWorkspace() { if (root.value) width.value = root.value.clientWidth }
+let workspaceListenersBound = false
+function bindWorkspaceListeners() {
+  if (workspaceListenersBound) return
+  workspaceListenersBound = true
+  window.addEventListener('resize', measureWorkspace)
+  window.addEventListener('keydown', escape, true)
+}
+function unbindWorkspaceListeners() {
+  if (!workspaceListenersBound) return
+  workspaceListenersBound = false
+  window.removeEventListener('resize', measureWorkspace)
+  window.removeEventListener('keydown', escape, true)
+}
 onMounted(() => {
   measureWorkspace()
   observer = new ResizeObserver(measureWorkspace)
   observer.observe(root.value)
-  window.addEventListener('resize', measureWorkspace)
-  window.addEventListener('keydown', escape, true)
+  bindWorkspaceListeners()
+})
+onActivated(() => {
+  measureWorkspace()
+  bindWorkspaceListeners()
+})
+onDeactivated(() => {
+  cleanupDrag?.(true)
+  unbindWorkspaceListeners()
 })
 onBeforeUnmount(() => {
   cleanupDrag?.(true)
   observer?.disconnect()
-  window.removeEventListener('resize', measureWorkspace)
-  window.removeEventListener('keydown', escape, true)
+  unbindWorkspaceListeners()
 })
 </script>
 
@@ -101,7 +130,7 @@ onBeforeUnmount(() => {
     <button v-if="narrow&&activeDrawer" class="ow-scrim" type="button" aria-label="关闭侧栏" @click="activeDrawer=null"></button>
     <aside v-show="leftVisible" class="ow-left" :style="{width:panelWidth('left')+'px'}" :role="narrow?'dialog':undefined" :aria-modal="narrow?'true':undefined" aria-label="故事结构"><OutlineSidebar/></aside>
     <div v-if="!narrow&&leftVisible" class="ow-resizer ow-left-resizer" role="separator" tabindex="0" aria-label="调整故事结构宽度" aria-orientation="vertical" :aria-valuenow="layout.left" aria-valuemin="180" aria-valuemax="420" title="拖动调宽，双击复位" @pointerdown="startResize('left',$event)" @dblclick.prevent="reset('left')" @keydown="keyboard('left',$event)"></div>
-    <button v-if="!narrow&&!leftVisible" class="ow-rail ow-left-rail" type="button" aria-label="展开故事结构" title="展开故事结构" aria-expanded="false" @click="openLeftFromRail"><OIcon name="rows" :size="17"/><span>故事结构</span><small>{{work.liveOlnodes().length}}</small><OIcon name="caret-right" :size="12"/></button>
+    <button v-if="!narrow&&!leftVisible" class="ow-rail ow-left-rail" type="button" aria-label="展开故事结构" title="展开故事结构" aria-expanded="false" @click="openLeftFromRail"><OIcon name="rows" :size="17"/><span>故事结构</span><small>{{liveNodes.length}}</small><OIcon name="caret-right" :size="12"/></button>
     <section class="ow-main"><slot/></section>
     <div v-if="!narrow&&rightVisible" class="ow-resizer ow-right-resizer" role="separator" tabindex="0" aria-label="调整详情宽度" aria-orientation="vertical" :aria-valuenow="layout.right" aria-valuemin="260" aria-valuemax="480" title="拖动调宽，双击复位" @pointerdown="startResize('right',$event)" @dblclick.prevent="reset('right')" @keydown="keyboard('right',$event)"></div>
     <aside v-show="rightVisible" class="ow-right" :style="{width:panelWidth('right')+'px'}" :role="narrow?'dialog':undefined" :aria-modal="narrow?'true':undefined" aria-label="节点详情">

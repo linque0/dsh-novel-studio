@@ -1,6 +1,6 @@
 <!-- Approved B detail surface: reading first, edit in place; advanced actions live in More. -->
 <script setup>
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onDeactivated, ref, watch } from 'vue'
 import { NPopover } from 'naive-ui'
 import { useWorkStore } from '../../stores/work'
 import Glyph from './OutlineGlyph.vue'
@@ -27,6 +27,7 @@ const people=computed(()=>{
 function chapterTitle(chapter){const m=/^(第\s*.+?章)[\s·：:—-]*(.*)$/.exec(chapter.title||'');return m?{heading:m[1],sub:m[2]||`${chapter.wordCount||0} 字`}:{heading:chapter.title,sub:`${chapter.wordCount||0} 字`}}
 let timer
 watch(()=>props.node?.id,()=>{commit();showMore.value=false;showStatus.value=false;armed.value=false;clearTimeout(timer)})
+onDeactivated(()=>{commit();clearTimeout(timer)})
 onBeforeUnmount(()=>{commit();clearTimeout(timer)})
 async function edit(field){editingNodeId.value=props.node.id;draft.value=field==='title'?props.node.title||'':props.node.text||'';editing.value=field;await nextTick();input.value?.focus()}
 function commit(){if(!editing.value)return;const change={id:editingNodeId.value,field:editing.value,value:draft.value};editing.value='';editingNodeId.value=null;emit('edit-node',change)}

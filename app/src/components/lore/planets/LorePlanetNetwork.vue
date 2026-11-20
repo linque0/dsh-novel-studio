@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
+import { computed, nextTick, onActivated, onBeforeUnmount, onDeactivated, onMounted, ref, shallowRef, watch } from 'vue'
 import { Vector3 } from 'three'
 import { clamp, ease, localPosition, networkModel, orbitPoint, planetSizeValue, rotation, scaleOrbitRadius, spacePlanets, spacingValue, TUNING, withOrbitSpacingReference } from './planet-scene.js'
 import { paintNetwork } from './draw-planets.js'
@@ -1069,26 +1069,46 @@ watch(() => props.location, applyLocation, { flush: 'post' })
 watch([centerSaveErrors, () => centerGlow.value.effect], positionCenterMenu, { flush: 'post' })
 watch(heading, value => emit('heading', value), { immediate: true })
 
-onMounted(async () => {
-  ctx = canvas.value.getContext('2d')
-  motion = matchMedia('(prefers-reduced-motion: reduce)')
-  changeMotion()
-  motion.addEventListener('change', changeMotion)
-  observer = new ResizeObserver(measure)
-  observer.observe(stage.value)
+let galaxyActive = false
+function activateGalaxy() {
+  if (galaxyActive) return
+  galaxyActive = true
+  motion?.addEventListener('change', changeMotion)
   window.addEventListener('resize', measure)
   window.addEventListener('blur', cancelGesture)
-  await nextTick()
-  measure()
-  applyLocation()
-  frame = requestAnimationFrame(animate)
-})
-onBeforeUnmount(() => {
-  observer?.disconnect()
+  if (!frame) frame = requestAnimationFrame(animate)
+}
+function deactivateGalaxy() {
+  if (!galaxyActive) return
+  galaxyActive = false
   motion?.removeEventListener('change', changeMotion)
   window.removeEventListener('resize', measure)
   window.removeEventListener('blur', cancelGesture)
   cancelAnimationFrame(frame)
+  frame = 0
+}
+onMounted(async () => {
+  ctx = canvas.value.getContext('2d')
+  motion = matchMedia('(prefers-reduced-motion: reduce)')
+  changeMotion()
+  observer = new ResizeObserver(measure)
+  observer.observe(stage.value)
+  activateGalaxy()
+  await nextTick()
+  measure()
+  applyLocation()
+})
+onActivated(() => {
+  activateGalaxy()
+  measure()
+})
+onDeactivated(() => {
+  cancelGesture()
+  deactivateGalaxy()
+})
+onBeforeUnmount(() => {
+  observer?.disconnect()
+  deactivateGalaxy()
 })
 </script>
 

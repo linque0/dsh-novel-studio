@@ -165,6 +165,7 @@ watch(() => ui.effectiveFlowSpeed, speed => backdrop?.setSpeed(speed))
 function buildBackdrop() {
   backdrop?.dispose?.()
   backdrop = mountFlowBackdrop(canvasEl.value, {
+    transitionSurface: true,
     palette: focused.value ? paletteOf(focused.value) : null,
     speed: ui.effectiveFlowSpeed,
     reducedMotion: Boolean(flowMotion?.matches),
@@ -172,9 +173,15 @@ function buildBackdrop() {
   })
 }
 
-/* ---------- 封面：单例 painter，只画可见的 5 张，结果按 work.id 缓存 ---------- */
+/* ---------- 封面：单例 painter，只画可见的 5 张，结果按 work.id 跨挂载复用 ---------- */
+const sharedCoverCache = new Map()
+let sharedPainter = null
+function ensureCoverPainter() {
+  if (!sharedPainter) sharedPainter = createCoverPainter()
+  return sharedPainter
+}
 const coverEls = new Map()
-const coverCache = new Map()
+const coverCache = sharedCoverCache
 function bindCover(id, el) {
   if (!el) { coverEls.delete(id); return }
   coverEls.set(id, el)
@@ -183,27 +190,33 @@ function bindCover(id, el) {
   paintCover(id, el)
 }
 function paintCover(id, canvas) {
-  if (!painter?.supported || !canvas) return
+  if (!canvas) return
   const work = list.value.find((w) => w.id === id)
   if (!work) return
   let image = coverCache.get(id)
   if (!image) {
-    image = painter.paint(paletteOf(work), (hashString(work.id) % 997) / 997, 256, 384)
+    painter ||= ensureCoverPainter()
+    flatCovers.value = !painter?.supported
+    if (!painter?.supported) return
+    image = painter.paint(paletteOf(work), (hashString(work.id) % 997) / 997, 112, 168)
     if (!image) return
+    if (coverCache.size >= 32) coverCache.delete(coverCache.keys().next().value)
     coverCache.set(id, image)
   }
   const ctx = canvas.getContext('2d')
   if (ctx) ctx.putImageData(image, 0, 0)
 }
-async function paintCovers() {
-  if (!painter?.supported) return
-  await nextTick()
+function paintVisibleCovers() {
   const total = list.value.length
   const focus = focusIndex.value
   for (const [index, work] of list.value.entries()) {
     if (Math.abs(wrapDistance(index, focus, total)) > 2) continue
     paintCover(work.id, coverEls.get(work.id))
   }
+}
+async function paintCovers() {
+  await nextTick()
+  paintVisibleCovers()
 }
 
 /* ---------- 交互 ---------- */
@@ -287,12 +300,12 @@ onMounted(() => {
   window.addEventListener('keydown', onKeydown)
   window.addEventListener('resize', onResize)
   buildBackdrop()
-  painter = createCoverPainter()
+  painter = ensureCoverPainter()
   flatCovers.value = !painter?.supported
   paintPalette()
-  paintCovers()
+  paintVisibleCovers()
   /* 首帧里玻璃牌/卡片可能还没量到最终宽度，下一帧再补一遍（命中缓存，几乎无成本）。 */
-  requestAnimationFrame(() => paintCovers())
+  requestAnimationFrame(() => paintVisibleCovers())
   window.__nsFlowBackdrop = latentStats
   window.__nsLatentStats = latentStats
 })
@@ -306,11 +319,9 @@ onBeforeUnmount(() => {
   if (window.__nsLatentStats === latentStats) delete window.__nsLatentStats
   stopChapters()
   try { backdrop?.dispose?.() } catch { /* 已销毁 */ }
-  try { painter?.dispose?.() } catch { /* 已销毁 */ }
   backdrop = null
   painter = null
   coverEls.clear()
-  coverCache.clear()
 })
 </script>
 
@@ -353,7 +364,7 @@ onBeforeUnmount(() => {
         >
           <span class="ls-plate">
             <span class="ls-glass">
-              <canvas :ref="(el) => bindCover(work.id, el)" class="ls-cover-art" width="256" height="384"></canvas>
+              <canvas :ref="(el) => bindCover(work.id, el)" class="ls-cover-art" width="112" height="168"></canvas>
               <span class="ls-glyph-top"><span>{{ work.genre || '其他' }}</span><span>{{ work.status || '构思' }}</span></span>
               <span class="ls-glyph-rule"></span>
               <span class="ls-glyph-latin">{{ latinOf(work) }}</span>

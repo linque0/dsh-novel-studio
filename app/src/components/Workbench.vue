@@ -29,7 +29,7 @@ import DLinkPopover from './DLinkPopover.vue'
 import { popOut, isPopped, focusPopped } from '../services/panelwindows'
 import { mountFlowBackdrop } from '../services/latent/flow.js'
 import { hashString, paletteOf } from '../services/latent/palette.js'
-import { runFlowTransition } from '../services/latent/flow-transition.js'
+import { flowTransition, runFlowTransition } from '../services/latent/flow-transition.js'
 
 const work = useWorkStore()
 const ui = useUiStore()
@@ -55,8 +55,7 @@ function returnToShelf(){
   if(new URLSearchParams(location.search).get('panel')?.startsWith('agent:'))return window.native?.panelCloseSelf()
   return runFlowTransition(() => work.closeWork(), {
     skin: ui.skin,
-    work: work.work,
-    afterCommit: () => nextTick()
+    afterCommit: async () => { await nextTick(); await nextTick() }
   })
 }
 const inspirationPrompt = ref('把这条灵感扩展成一个场景，保留悬念。')
@@ -72,15 +71,30 @@ async function enterAiMode(mode){
   }catch(e){msg.error(e.message)}finally{entryBusy.value=false}
 }
 
+const latentFlowPalette = computed(() =>
+  work.work ? `${work.work.id || ''}|${work.work.title || ''}|${work.work.coverColor || ''}` : ''
+)
+const latentFlowRev = computed(() => {
+  const common = `${work.work?.id || ''}|${work.tab}|${saveState.value}|${ui.aiDrawerOpen ? 1 : 0}|${ui.focusMode ? 1 : 0}|${modulePopped.value ? 1 : 0}`
+  if (work.tab === 'outline') {
+    const oSum = work.olnodes.reduce((s, n) => s + (n.updatedAt || 0), 0)
+    const cSum = work.chapters.reduce((s, c) => s + (c.updatedAt || 0), 0)
+    return `${common}|${work.outlineView}|${work.olnodes.length}|${work.selOlnodeId || ''}|${ui.outlineSideOpen ? 1 : 0}|${ui.outlineDetailOpen ? 1 : 0}|${ui.outlineLeftWidth}|${ui.outlineRightWidth}|${work.canvasPrefs?.showDots !== false ? 1 : 0}|${work.canvasPrefs?.density || ''}|${oSum}|${cSum}`
+  }
+  if (work.tab === 'lore') {
+    const mSum = work.mubu.reduce((s, n) => s + (n.updatedAt || 0), 0)
+    return `${common}|${ui.loreView}|${ui.loreMapMode}|${ui.loreNavClosed ? 1 : 0}|${ui.loreInspectClosed ? 1 : 0}|${ui.loreScope}|${ui.loreRootId || ''}|${ui.loreActiveId || ''}|${work.mubuRevision}|${work.mubu.length}|${mSum}`
+  }
+  return ''
+})
 const tabs = WORK_NAVIGATION
 function selectTab(key) {
-  if (work.tab === key) return
+  if (work.tab === key) return flowTransition.cancelPending()
   void runFlowTransition(() => {
     work.tab = key
   }, {
     skin: ui.skin,
-    work: work.work,
-    afterCommit: () => nextTick()
+    afterCommit: async () => { await nextTick(); await nextTick() }
   })
 }
 
@@ -250,6 +264,7 @@ function mountFlow() {
   if (!canvas) return
   const width = window.innerWidth
   flowApi = mountFlowBackdrop(canvas, {
+    transitionSurface: true,
     speed: ui.effectiveFlowSpeed,
     palette: work.work ? paletteOf(work.work) : null,
     reducedMotion: Boolean(reduceMotionQuery?.matches),
@@ -274,8 +289,7 @@ function unmountStudioBackdrop() {
   if (window.__nsStudioBackdrop === flowStats) delete window.__nsStudioBackdrop
 }
 
-/* 切页即销毁重建：上下文必须跟着放掉，重挂时引擎换一张干净画布（碰过 WebGL 的画布取不回上下文） */
-watch(() => work.tab, () => { mountFlow() }, { flush: 'post' })
+/* 模块切换共用背板。只有工作模式让这个背板离场时才重挂。 */
 watch(() => ui.workbenchMode, () => { mountFlow() }, { flush: 'post' })
 watch(() => work.work?.id, () => { applyFlowPalette() })
 
@@ -315,7 +329,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="shell" class="workbench-shell" :class="{ 'is-focus': ui.focusMode, 'is-reading': ui.readMode, 'latent-studio': work.tab === 'chapters', 'outline-strict': nsPlugin && work.tab==='outline' }" :data-module="work.tab" :data-flow="'on'" style="display: flex; flex-direction: column; height: 100%">
+  <div ref="shell" class="workbench-shell" :class="{ 'is-focus': ui.focusMode, 'is-reading': ui.readMode, 'latent-studio': work.tab === 'chapters', 'outline-strict': nsPlugin && work.tab==='outline' }" :data-module="work.tab" :data-flow="'on'" :data-flow-palette="latentFlowPalette || undefined" :data-flow-rev="latentFlowRev || undefined" style="display: flex; flex-direction: column; height: 100%">
     <div class="st-backdrop-wrap"><canvas class="st-backdrop" ref="flowCanvas"></canvas><div class="st-layer vignette"></div></div>
 
     <AppTopbar :active="work.tab" :has-work="!!work.work" :target-title="work.work?.title" :save-state="saveState" @navigate="key => key === 'shelf' ? returnToShelf() : key === 'settings' ? openSettings() : selectTab(key)">
@@ -365,7 +379,7 @@ onBeforeUnmount(() => {
         <span v-if="work.tab === 'chapters'" class="rail-count">{{ work.liveChapters.length }}</span>
       </button>
       <button
-        v-if="!nsPlugin && work.tab === 'outline' && !ui.outlineSideOpen && !ui.focusMode && !ui.readMode && !modulePopped"
+        v-if="showDirectory && work.tab === 'outline' && !dirVisible"
         class="ol-side-rail"
         type="button"
         title="展开故事结构"
@@ -384,16 +398,20 @@ onBeforeUnmount(() => {
         </div>
       </div>
       <!-- 设定页：委派给 LoreWorkspace 自带的面板矩阵外壳（nav | 16 | list | 16 | main | 16 | detail） -->
-      <LoreWorkspace v-if="work.tab === 'lore'" v-show="!modulePopped" class="lore-shell-host" />
+      <KeepAlive :max="1" :key="work.work?.id || 'none'">
+        <LoreWorkspace v-if="work.tab === 'lore' && !modulePopped" class="lore-shell-host" />
+      </KeepAlive>
       <!-- 人物页：委派给 CharactersWorkspace 自带的面板矩阵外壳（roster | 16 | main | 16 | context） -->
-      <CharactersWorkspace v-else-if="work.tab === 'characters'" v-show="!modulePopped" class="char-shell-host" />
+      <CharactersWorkspace v-if="work.tab === 'characters'" v-show="!modulePopped" class="char-shell-host" />
       <SnippetsWorkspace v-else-if="work.tab === 'snippets'" v-show="!modulePopped" class="snippets-shell-host" />
-      <div v-else v-show="!modulePopped" class="center-pane paper-texture">
+      <div v-else-if="work.tab !== 'lore'" v-show="!modulePopped" class="center-pane paper-texture">
         <div v-if="work.tab==='chapters'&&story.active&&!ui.agentCandidateId&&!nsPlugin" class="story-workshop-bar"><span>{{story.formalView?'正式正文':'与恍然梦共用的工作稿'}} · {{story.active.status==='confirmed'?'本章已确认':'尚未确认入正文'}}</span><button @click="story.formalView=!story.formalView">{{story.formalView?'回到共同工作稿':'对照正式正文'}}</button><button @click="ui.workbenchMode='agent'">回到故事现场</button></div>
         <div id="writing-story-editor-host" v-show="work.tab==='chapters'&&!ui.agentCandidateId&&story.active&&!story.formalView" class="shared-editor-host story-workshop-editor"></div>
         <div id="writing-editor-host" v-show="work.tab==='chapters'&&!ui.agentCandidateId&&(!story.active||story.formalView)" class="shared-editor-host"></div>
         <CandidateEditor v-if="work.tab==='chapters'&&ui.agentCandidateId" :candidate-id="ui.agentCandidateId" handoff @close="ui.agentCandidateId=null" />
-        <OutlineCenter v-if="work.tab === 'outline'" />
+        <KeepAlive :max="1" :key="work.work?.id || 'none'">
+          <OutlineCenter v-if="work.tab === 'outline'" />
+        </KeepAlive>
       </div>
 
       <!-- 批注栏收起后的右缘细轨：点击重新展开（仅正文页显示，与批注栏同条件） -->

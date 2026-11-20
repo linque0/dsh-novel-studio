@@ -25,6 +25,7 @@ const newTypeName = ref('')
 const advancedOpen = ref(false)
 const treeState = ref(new Map())
 const bookStats = computed(() => scopeStats(work.liveOlnodes(), null))
+const nodeCount = computed(() => work.liveOlnodes().length)
 const bookMark = computed(() => Array.from(work.work?.title || '故事').filter(c => /[\p{L}\p{N}]/u.test(c)).slice(0,2))
 const bookSubtitle = computed(() => work.liveVolumes.find(v => v.id === work.selVolumeId)?.title || work.liveVolumes[0]?.title || '故事大纲')
 const treeIsOpen = n => treeState.value.has(n.id) ? treeState.value.get(n.id) : !n.fold
@@ -213,19 +214,21 @@ onMounted(() => {
      </button>
      <NDropdown trigger="click" :options="draftAddOptions" @select="draftAction"><button type="button" aria-label="添加模块"><Glyph name="plus" :size="16"/></button></NDropdown>
    </div>
-   <label class="tree-search"><Glyph name="search" :size="14"/><input v-model="q" placeholder="搜索事件、章节…" aria-label="侧栏搜索模块"/></label>
+   <label v-if="nodeCount" class="tree-search"><Glyph name="search" :size="14"/><input v-model="q" placeholder="搜索事件、章节…" aria-label="侧栏搜索模块"/></label>
    <div v-if="advancedOpen" class="draft-tree-filters"><button v-for="t in TYPES" :key="t" type="button" :aria-pressed="typeFilter===t" @click="typeFilter=t">{{t}}</button><input v-model="newTypeName" placeholder="新类型名称" @keydown.enter="addType"/><button type="button" @click="addType">添加类型</button><button v-for="t in customTypes" :key="t.name" type="button" @click="work.olTypeRemove(t.name)">移除 {{t.name}}</button></div>
-   <button type="button" class="tree-topline" @click="home">全书情节 <span class="count">{{work.liveOlnodes().length}}</span></button>
+   <button v-if="nodeCount" type="button" class="tree-topline" @click="home">全书情节 <span class="count">{{nodeCount}}</span></button>
    <div class="draft-tree-scroll" aria-label="故事结构树">
     <div v-for="m in structuralModules" :key="m.n.id" class="tree-item" :class="{selected:work.selOlnodeId===m.n.id,'tree-container':m.n.kind==='container'}" :data-story-id="m.n.id" :style="{'--depth':m.depth}">
      <button v-if="m.n.kind==='container'" type="button" class="tree-fold" :aria-label="(treeIsOpen(m.n)?'收起':'展开')+m.label+'结构'" :aria-expanded="treeIsOpen(m.n)" @click="toggleTree(m.n)"><Glyph name="chevron" :size="11"/></button><Glyph v-else :name="m.n.kind==='event'?'event':m.n.kind==='textbox'?'text':m.n.kind" :size="12"/>
      <button type="button" class="tree-name" :title="'定位：'+m.label" @click="pick(m)">{{m.label}}</button>
      <NDropdown trigger="click" :options="[{key:'rename',label:'重命名'},{key:'remove',label:'删除'}]" @select="key=>key==='rename'?rename(m):remove(m)"><button class="tree-row-more" type="button" :aria-label="m.label+'的操作'">⋯</button></NDropdown>
     </div>
-    <p v-if="!structuralModules.length" class="draft-tree-empty">{{q?'没有匹配的事件。':'添加事件或容器，搭建故事的脉络。'}}</p>
-    <div class="divider"></div><div class="tree-bottom"><Glyph name="note" :size="14"/><span>便签与引用</span><span>{{auxiliaryModules.length}}</span></div><div class="tree-tags"><button v-for="m in auxiliaryModules" :key="m.n.id" type="button" @click="pick(m)">{{m.label}}</button></div>
+    <p v-if="!structuralModules.length && !auxiliaryModules.length" class="draft-tree-empty">{{ nodeCount ? '没有匹配的模块' : '暂无故事模块' }}</p>
+    <template v-if="auxiliaryModules.length">
+     <div class="divider"></div><div class="tree-bottom"><Glyph name="note" :size="14"/><span>便签与引用</span><span>{{auxiliaryModules.length}}</span></div><div class="tree-tags"><button v-for="m in auxiliaryModules" :key="m.n.id" type="button" @click="pick(m)">{{m.label}}</button></div>
+    </template>
    </div>
-   <div class="tree-foot"><Glyph name="container" :size="14"/>容器可自由嵌套</div>
+   <div v-if="nodeCount" class="tree-foot"><Glyph name="container" :size="14"/>容器可自由嵌套</div>
   </div>
   <div v-else class="ol-side-root ol-paper-sidebar">
     <div class="ol-side-scroll">
