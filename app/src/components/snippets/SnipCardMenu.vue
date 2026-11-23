@@ -1,3 +1,6 @@
+<!--
+  SnipCardMenu.vue — 灵感卡片上下文操作浮层（卡片配色切换、编辑/置顶/删除与保存失败重试）。
+-->
 <script setup>
 import { nextTick, onMounted, ref } from 'vue'
 import { NPopover } from 'naive-ui'

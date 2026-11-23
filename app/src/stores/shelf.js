@@ -1,3 +1,7 @@
+/**
+ * 书架（Bookshelf）Pinia 状态管理：维护作品列表、最近打开统计与新建/改名/软删操作。
+ * updateWork 采用先 flushAll 再 refresh，避免防抖定时器未落盘时被旧库数据回盖。
+ */
 import { defineStore } from 'pinia'
 import { listWorks, createWorkRow, seedWorkDefaults, softDeleteRow } from '../db/repo'
 import { db } from '../db/database'

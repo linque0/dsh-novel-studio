@@ -1,7 +1,11 @@
+﻿<!-- 关系星系容器组件（LoreGalaxy）：
+     负责从 work store 收集幕布、关联关系、人物、大纲与章节等全库数据组装星系模型，
+     并把各作品隔离的星系布局、轨道、辉光及尺寸偏好安全合并写回 appconfig['loreGalaxy:<workId>']。 -->
 <script setup>
 import { computed, shallowRef, watch } from 'vue'
 import { db } from '../../../db/database'
 import { useWorkStore } from '../../../stores/work'
+import { DEFAULT_FLOW_PALETTE, paletteOf } from '../../../services/latent/palette.js'
 import LorePlanetNetwork from './LorePlanetNetwork.vue'
 import { lorePlanetData } from './lore-planet-data.js'
 import { withOrbitSpacingReference } from './planet-scene.js'
@@ -9,7 +13,20 @@ import { withOrbitSpacingReference } from './planet-scene.js'
 defineProps({ location: { type: Object, required: true } })
 const emit = defineEmits(['open-entry', 'open-target', 'edit-relations', 'navigate', 'heading'])
 const work = useWorkStore()
-const data = computed(() => lorePlanetData(work.liveMubu(), work.liveLoreLinks, work.liveCharacters))
+const backdropPalette = computed(() => (work.work ? paletteOf(work.work) : DEFAULT_FLOW_PALETTE))
+const data = computed(() => lorePlanetData(
+  work.liveMubu(),
+  work.liveLoreLinks,
+  work.liveCharacters,
+  {
+    work: work.work,
+    outlines: work.outlines,
+    olnodes: work.olnodes,
+    chapters: work.liveChapters,
+    volumes: work.liveVolumes,
+    snippets: work.liveSnippets
+  }
+))
 const workId = computed(() => work.work?.id)
 const preferences = shallowRef(null)
 
@@ -69,7 +86,7 @@ watch(workId, async (id, _previous, onCleanup) => {
 
 <template>
   <LorePlanetNetwork v-if="preferences" :key="workId" embedded v-bind="{ ...data, ...preferences }"
-    :work-title="work.work?.title" :location="location"
+    :work-title="work.work?.title" :backdrop-palette="backdropPalette" :location="location"
     @open-entry="emit('open-entry', $event)" @open-target="emit('open-target', $event)"
     @edit-relations="emit('edit-relations', $event)" @navigate="emit('navigate', $event)" @heading="emit('heading', $event)" />
 </template>

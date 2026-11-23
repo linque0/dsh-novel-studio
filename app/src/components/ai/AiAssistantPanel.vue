@@ -1,3 +1,7 @@
+<!--
+  AiAssistantPanel.vue — 「浅眠模式」写作侧栏与独立 AI 助手面板。
+  集成作品讨论、续写/改写方向探索与单章专用创作任务，支持候选对比、应用与多轮工具交互。
+-->
 <script setup>
 import {computed,nextTick,onBeforeUnmount,onMounted,ref,watch} from 'vue'
 import {NButton,NConfigProvider,NDropdown,NInput,NModal,NPopover,NSelect} from 'naive-ui'

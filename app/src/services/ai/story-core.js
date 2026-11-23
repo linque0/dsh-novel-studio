@@ -1,3 +1,6 @@
+/**
+ * story-core.js — 入梦自由故事工作稿（Story Document）状态机、轮次追加与分支版本切换。
+ */
 import {protocolHash,assertReviewCurrent} from './review-cycle.js'
 
 export const storyHash=protocolHash

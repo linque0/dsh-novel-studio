@@ -1,3 +1,7 @@
+/**
+ * 写作统计与分析面板的 WAAPI 轻量动效编排器（FLIP 行位移、柱状/折线生长、Tab 滑块）：
+ * 自动尊重系统 prefers-reduced-motion 与测试态 data-static 标记。
+ */
 export function createStatsMotion({controlsOnly=false}={}) {
   const reduced=matchMedia('(prefers-reduced-motion: reduce)'), surfaces=new WeakMap()
   const easing='cubic-bezier(.21,.72,.21,1)'

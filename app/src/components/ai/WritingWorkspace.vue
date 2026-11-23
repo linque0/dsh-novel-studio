@@ -1,3 +1,6 @@
+<!--
+  WritingWorkspace.vue — 浅眠写作流中的可编辑剧情方向卡列表与草稿候选承接容器。
+-->
 <script setup>
 import {NButton,NDropdown,NInput} from 'naive-ui'
 import {useWritingStore} from '../../stores/writing.js'

@@ -1,3 +1,6 @@
+<!--
+  FlowTransitionOverlay.vue — 挂载于 body 的全屏流体转场画布覆盖层，驱动页面切换液态过渡动效。
+-->
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { flowTransition } from '../services/latent/flow-transition.js'

@@ -1,3 +1,6 @@
+/**
+ * text.js — 作品实体无依赖基础文本工具（哈希指纹、稳定序列化、Token 估算与 HTML/正文纯文本归一化）。
+ */
 // Shared, dependency-free text coordinates. Do not evaluate project material.
 export function hashContent(str = '') {
   let h1 = 0xdeadbeef, h2 = 0x41c6ce57

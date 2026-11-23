@@ -1,3 +1,6 @@
+/**
+ * state.js — 按指定章节/写作边界回放人物阶段状态卡，输出严格区分于作者静态设定的正文证据状态。
+ */
 import { knowledgeSnapshot } from './knowledge.js'
 import { withoutQuotes } from './contracts.js'
 

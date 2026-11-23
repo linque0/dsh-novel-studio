@@ -1,3 +1,7 @@
+/**
+ * novel-context.js — 对话/任务上下文冻结（freezeContext）与分级槽位装配（assembleSlots）。
+ * 在异步请求前锁定章节边界、版本指纹及材料预算，防止跨作品污染或剧透越界。
+ */
 import { ordered } from './knowledge'
 import { kbQuery } from './retrieval'
 import { getChapterSummary } from './summarize'

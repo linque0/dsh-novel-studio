@@ -1,3 +1,6 @@
+<!--
+  OutlineWorkspace.vue — 隐现皮肤大纲工作区三栏布局容器（大纲目录 + 画布/文档视图 + 节点详情抽屉），自适应窄屏折叠。
+-->
 <script setup>
 import { computed, nextTick, onActivated, onBeforeUnmount, onDeactivated, onMounted, provide, ref, shallowRef, watch } from 'vue'
 import { useUiStore } from '../../stores/ui'

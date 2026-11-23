@@ -1,3 +1,6 @@
+/**
+ * review-cycle.js — 审稿—修稿—定向复核闭环不可变协议校验器（哈希冻结、引文定位与证据核验）。
+ */
 // Same JSON/FNV fingerprint as presets, kept dependency-free for protocol consumers.
 export function protocolHash(value) {
   let h=2166136261

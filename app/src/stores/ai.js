@@ -1,3 +1,8 @@
+/**
+ * 恍然梦 AI 核心 Pinia Store（useAiStore）：
+ * 管理多供应商预设与 DPAPI 加密密钥、模型专属参数、自由对话与结构化任务管线（send）、
+ * 候选切换/续写、预设双臂评测（evaluatePresets），以及知识库构建与向量索引调度。
+ */
 import { defineStore } from "pinia";
 import { db } from "../db/database";
 import {

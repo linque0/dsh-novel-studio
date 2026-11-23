@@ -1,3 +1,6 @@
+/**
+ * regex-core.js — 正则脚本匹配与宏展开核心逻辑（供 Web Worker 沙箱及预览测试调用）。
+ */
 import { expandMacros, copy } from "./presets.js";
 
 export function escapeRegexMacro(value) {

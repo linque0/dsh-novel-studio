@@ -1,3 +1,6 @@
+/**
+ * prepare-dialogue.js — 将冻结的作品上下文、历史消息与正则处理后的世界书槽位编译为最终模型请求。
+ */
 import { assembleSlots, scopedHistory } from "./novel-context";
 import { compilePreset, copy, estimate } from "./presets";
 import { textViews } from "./regex";

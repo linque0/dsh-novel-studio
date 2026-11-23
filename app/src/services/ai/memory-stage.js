@@ -1,3 +1,6 @@
+/**
+ * memory-stage.js — 记忆抽取阶段消息装配器（结合阶段预设与文本 Skill，但固定记忆 JSON 证据契约优先）。
+ */
 import { compilePreset } from './presets.js'
 // Compile the normal preset with isolated macro state, then treat its output as
 // lower-priority writing guidance. Memory's evidence/JSON contract stays fixed.

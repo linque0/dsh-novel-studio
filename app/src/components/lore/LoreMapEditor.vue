@@ -1,3 +1,6 @@
+<!--
+  LoreMapEditor.vue — 设定思维导图画布中的浮动富文本节点编辑器与图片粘贴/拖拽控制器。
+-->
 <script setup>
 import { nextTick, onMounted, ref, watch } from 'vue'
 import { useWorkStore } from '../../stores/work'

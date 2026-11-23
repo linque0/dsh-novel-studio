@@ -1,3 +1,7 @@
+/**
+ * 右侧 AI 助手任务启动器（TaskLauncher）共享表单状态：
+ * 根据当前工作区模块与选中对象组装 taskRequest，分发到正文任务或通用 AI 对话管线。
+ */
 import {defineStore} from 'pinia'
 import {useWorkStore} from './work.js'
 import {useAiStore} from './ai.js'

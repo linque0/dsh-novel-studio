@@ -1,3 +1,6 @@
+/**
+ * memory-queue-core.js — 后台记忆队列任务对象构造、时效校验与崩溃恢复纯逻辑。
+ */
 import { interruptWorkflow } from './workflow-core.js'
 import { chapterHash } from '../project/text.js'
 export const mergeMemoryIntent = (prior={},next={}) => ({...prior,...next,memoryIntent:next.memoryIntent===null?null:next.memoryIntent||prior.memoryIntent})

@@ -1,3 +1,7 @@
+/**
+ * booksource.js — 受控作品书源访问层（createBookAccess / bookSession / readBook）。
+ * 统一裁剪截至章节、写作边界、隐私模式摘要替代与只读文档游标分页。
+ */
 import { projectBook, sourceManifest, orderedChapters, PROJECTION_VERSION } from '../project/normalize.js'
 import { projectGraph } from '../project/graph.js'
 import { tokens, checkAbort, sourceChanged, chapterHash, plainChapter } from '../project/text.js'

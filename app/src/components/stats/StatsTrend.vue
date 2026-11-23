@@ -1,3 +1,6 @@
+<!--
+  StatsTrend.vue — 写作统计净增柱状与累计字数折线 SVG 图表，支持键盘导航与拖拽框选时间区间。
+-->
 <script setup>
 import { computed, ref } from 'vue'
 import { fmtNum } from '../../services/wordcount.js'

@@ -1,3 +1,7 @@
+<!--
+  LegacyAgentWorkbench.vue — 多章高级创作工作台（包含故事规划、章节批量生产、审稿对照、资料核查与运行历史）。
+  作为「故事现场」的进阶工作流视图保留，可通过左下角「高级创作工具」进入。
+-->
 <script setup>
 import {computed,ref,watch,onMounted,onBeforeUnmount,nextTick} from 'vue'
 import {NConfigProvider,NModal} from 'naive-ui'

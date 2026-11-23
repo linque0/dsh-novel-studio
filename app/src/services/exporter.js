@@ -1,3 +1,8 @@
+/**
+ * 作品备份与正文导出服务：
+ * - 全库 JSON 备份/恢复（自动排除密钥密文，恢复前先冲刷并丢弃待写防抖队列）；
+ * - 章节正文导出为 TXT / Markdown / 手写 OOXML .docx（零外部 Word 依赖），支持单章、逐章分批与 ZIP 打包。
+ */
 import { exportBackupJson, importBackupJson, buildBookText, collectExportChapters } from '../db/repo'
 import { saveTextFile } from './fileio'
 import { decodeText, htmlToMd, htmlToPlain } from './importers'

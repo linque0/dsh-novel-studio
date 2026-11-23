@@ -11,21 +11,33 @@
 
 export const KINDS = {
   place: { label: '地点', icon: 'map-pin' },
-  faction: { label: '组织', icon: 'landmark' },
-  rule: { label: '规则', icon: 'shield' },
-  history: { label: '历史', icon: 'clock' },
-  object: { label: '物件', icon: 'box' },
+  faction: { label: '势力', icon: 'landmark' },
+  rule: { label: '规则', icon: 'anchor' },
+  history: { label: '历史', icon: 'history' },
+  object: { label: '物件', icon: 'tag' },
   belief: { label: '民俗', icon: 'moon' },
+  tech: { label: '科技', icon: 'gear' },
+  creature: { label: '生灵', icon: 'user' },
+  power: { label: '能力', icon: 'sparkle' },
+  record: { label: '典籍', icon: 'books' },
+  resource: { label: '资源', icon: 'diamond' },
+  event: { label: '事件', icon: 'flag' },
   entry: { label: '条目', icon: 'tag' }
 }
 
 export const DEFAULT_MUBU_SETS = [
   { kind: 'place', text: '地理与场所' },
-  { kind: 'faction', text: '组织与势力' },
+  { kind: 'faction', text: '社会与势力' },
   { kind: 'rule', text: '规则与禁忌' },
   { kind: 'history', text: '历史与纪年' },
   { kind: 'object', text: '物件与线索' },
-  { kind: 'belief', text: '民俗与信仰' }
+  { kind: 'belief', text: '民俗与信仰' },
+  { kind: 'tech', text: '科技与造物' },
+  { kind: 'creature', text: '生灵与异类' },
+  { kind: 'power', text: '能力与体系' },
+  { kind: 'record', text: '典籍与传闻' },
+  { kind: 'resource', text: '货币与资源' },
+  { kind: 'event', text: '事件与伏笔' }
 ]
 
 /* 兜底（④）：条目 / 设定集。container 只出现在这里，不进 KINDS */
@@ -35,11 +47,17 @@ const SET_FALLBACK = { kind: 'container', label: '设定集', icon: 'container' 
 /* ③ 名称启发式表（顺序即优先级，取第一个命中的关键词组） */
 const NAME_HINTS = [
   [['地理', '场所', '地点'], 'place'],
-  [['组织', '势力'], 'faction'],
-  [['规则', '禁忌', '体系'], 'rule'],
+  [['社会', '组织', '势力'], 'faction'],
+  [['规则', '禁忌'], 'rule'],
   [['历史', '纪年', '大事记'], 'history'],
   [['物件', '线索', '物品'], 'object'],
-  [['民俗', '信仰', '习俗'], 'belief']
+  [['民俗', '信仰', '习俗'], 'belief'],
+  [['科技', '造物', '器物'], 'tech'],
+  [['生灵', '异类', '物种'], 'creature'],
+  [['能力', '体系', '超凡'], 'power'],
+  [['典籍', '传闻', '文献'], 'record'],
+  [['货币', '资源', '经济'], 'resource'],
+  [['事件', '伏笔', '秘辛'], 'event']
 ]
 
 const metaOf = (kind) => ({ kind, label: KINDS[kind].label, icon: KINDS[kind].icon })

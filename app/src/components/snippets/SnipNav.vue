@@ -1,3 +1,6 @@
+<!--
+  SnipNav.vue — 灵感工作台左侧分组/标签过滤、排序及卡片尺寸滑块导航栏。
+-->
 <script setup>
 import { computed, ref, useId } from 'vue'
 import OIcon from '../OIcon.vue'

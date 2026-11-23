@@ -1,3 +1,6 @@
+<!--
+  RuleScopeSettings.vue — 设定规则候选（全局 / 局部作用域及作者确认状态）批量分类设置页。
+-->
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import { NButton, NCheckbox, NInput, NSelect } from 'naive-ui'

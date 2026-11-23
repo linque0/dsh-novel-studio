@@ -1,3 +1,6 @@
+/**
+ * retrieval-policy.js — 检索任务分类、检索查询构造、向量开关策略与局部规则作用域判定。
+ */
 import { plainChapter } from '../project/text.js'
 
 export function retrievalTask(type='chat') {

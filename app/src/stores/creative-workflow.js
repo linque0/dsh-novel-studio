@@ -1,3 +1,8 @@
+/**
+ * 分阶段创作工作流（plan → draft → review → revise → recheck）Pinia 状态管理：
+ * 协调多章批处理执行、主窗唯一执行租约（creative-lock）、场景检查点冻结、
+ * 审稿/修稿循环与采纳后源码重基线（sourceRebaseAllowed）。
+ */
 import { defineStore } from 'pinia'
 import { useAiStore } from './ai'
 import { useWorkStore } from './work'

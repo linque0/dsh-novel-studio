@@ -1,3 +1,7 @@
+/**
+ * 渲染进程启动入口：挂载 Vue + Pinia + Naive UI，加载全部主题/皮肤样式，
+ * 插件构建下注入 DSH 宿主适配层，并暴露 window.__ns 供自动化验证与调试使用。
+ */
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import naive from 'naive-ui'

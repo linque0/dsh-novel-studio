@@ -1,3 +1,6 @@
+<!--
+  AgentWorkbench.vue — 「入梦模式」总容器，默认呈现沉浸式故事现场，支持切换至高级多章工作流视图。
+-->
 <script setup>
 import {ref,watch} from 'vue'
 import {useUiStore} from '../../stores/ui.js'

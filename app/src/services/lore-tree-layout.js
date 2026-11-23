@@ -1,3 +1,7 @@
+/**
+ * 设定层级视觉导图（LoreTreeMap）纯函数布局与折叠计算模块：
+ * 支持单侧（single）与左右双侧（double）分支排布、多级折叠深度探测与肘形/贝塞尔连线生成。
+ */
 const MIN_COLUMN_WIDTH = 320
 const COLUMN_GAP = 76
 const BRANCH_GAP = 24
@@ -28,6 +32,64 @@ function edgePath(start, y1, end, y2, trunk, direction, edgeStyle) {
   return `M${x1} ${sy1}H${tx - sx * r}Q${tx} ${sy1} ${tx} ${sy1 + sy * r}V${sy2 - sy * r}Q${tx} ${sy2} ${tx + ex * r} ${sy2}H${x2}`
 }
 
+/** 计算根节点集合下的最大树深度，用于导图工具栏折叠层级选择器。 */
+export function loreTreeMaxDepth(rootIds, childrenOf) {
+  const visited = new Set()
+  let max = 0
+  const walk = (id, depth) => {
+    if (visited.has(id)) return
+    visited.add(id)
+    if (depth > max) max = depth
+    for (const childId of childrenOf(id) || []) walk(childId, depth + 1)
+  }
+  for (const id of rootIds || []) walk(id, 1)
+  return max
+}
+
+/** 生成展开至第 level 级时需要折叠的父节点 ID 集合（Infinity 表示全展开）。 */
+export function loreFoldedIdsForLevel(rootIds, childrenOf, level) {
+  const next = new Set()
+  if (level === Infinity) return next
+  const visited = new Set()
+  const cutoff = Math.max(0, Number(level) || 0) - 1
+  const walk = (id, depth) => {
+    if (visited.has(id)) return
+    visited.add(id)
+    const kids = childrenOf(id) || []
+    if (!kids.length) return
+    if (depth >= cutoff) next.add(id)
+    for (const childId of kids) walk(childId, depth + 1)
+  }
+  for (const id of rootIds || []) walk(id, 0)
+  return next
+}
+
+/** 反推当前折叠状态对应的统一展开层级；若各分支展开深度不一致则返回 null。 */
+export function loreActiveFoldLevel(rootIds, childrenOf, folded) {
+  const visited = new Set()
+  let hasFoldable = false
+  let minCollapsedDepth = Infinity
+  let maxExpandedDepth = -1
+  const walk = (id, depth) => {
+    if (visited.has(id)) return
+    visited.add(id)
+    const kids = childrenOf(id) || []
+    if (!kids.length) return
+    hasFoldable = true
+    if (folded?.has(id)) {
+      if (depth < minCollapsedDepth) minCollapsedDepth = depth
+      return
+    }
+    if (depth > maxExpandedDepth) maxExpandedDepth = depth
+    for (const childId of kids) walk(childId, depth + 1)
+  }
+  for (const id of rootIds || []) walk(id, 0)
+  if (!hasFoldable || minCollapsedDepth === Infinity) return Infinity
+  if (maxExpandedDepth >= minCollapsedDepth) return null
+  return minCollapsedDepth + 1
+}
+
+/** 执行两遍树布局（先自底向上度量子树纵向跨度与列宽，再自顶向下落定节点坐标与连线路径）。 */
 export function layoutLoreTree(rootIds, entries, folded, sizes, { mode = 'single', edgeStyle = 'elbow', centerWidth = 132, centerHeight = 42 } = {}) {
   const seen = new Set()
   const sides = { left: { columns: [], trees: [] }, right: { columns: [], trees: [] } }

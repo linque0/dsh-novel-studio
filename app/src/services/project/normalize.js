@@ -1,3 +1,8 @@
+/**
+ * 作品源表到 AI 只读文档模型（aidoc / aichunk）的纯函数投影器：
+ * 计算全书来源快照清单（sourceManifest）用于脏检与一致性守卫，
+ * 并将正文/卷/人物/关系/关联/设定/大纲节点/连线/灵感/批注/附件统一切片投影。
+ */
 import {snippetReferences} from '../snippet-links.js'
 import { normalizeText, hashContent, rowHash, chapterHash, stableStringify, tokens } from './text.js'
 import { chunkText, paragraphRanges } from './chunker.js'

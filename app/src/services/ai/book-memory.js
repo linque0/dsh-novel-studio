@@ -1,3 +1,6 @@
+/**
+ * book-memory.js — 作品静态作者资料索引（buildBookMemory）与规则候选抽取（ruleCandidates）。
+ */
 import { db } from '../../db/database.js'
 import { ensureProjection, readSourceSnapshot } from '../../db/project-repo.js'
 import { sourceManifest } from '../project/normalize.js'

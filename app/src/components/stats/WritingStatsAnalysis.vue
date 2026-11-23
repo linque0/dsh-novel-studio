@@ -1,3 +1,6 @@
+<!--
+  WritingStatsAnalysis.vue — 写作统计分析主工作区，协调总览趋势、作品对照、章节矩阵与跨模块视图。
+-->
 <script setup>
 import { computed,ref,watch } from 'vue'
 import StatsTrend from './StatsTrend.vue'

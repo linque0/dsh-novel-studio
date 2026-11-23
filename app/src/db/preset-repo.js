@@ -1,3 +1,7 @@
+/**
+ * AI 提示词预设（aipresets）与作品/全局宏状态（aipresetstate）持久化仓。
+ * 通过乐观锁 revision 字段拦截跨窗口并发覆盖写。
+ */
 import { db } from "./database";
 import {
   copy,
@@ -6,6 +10,7 @@ import {
   normalizePreset,
 } from "../services/ai/presets";
 
+/** 列出全部预设并归一化格式，若库中尚未持久化默认预设则补充兜底项。 */
 export async function listPresets() {
   const rows = await db.aipresets.toArray();
   return (
@@ -14,6 +19,7 @@ export async function listPresets() {
       : [defaultPreset(), ...rows]
   ).map(normalizePreset);
 }
+/** 校验并保存预设（revision 乐观锁），可选同步激活到指定作品。 */
 export async function savePreset(row, activateWorkId = null) {
   validatePreset(row);
   return db.transaction("rw", db.aipresets, db.aipresetstate, async () => {
@@ -63,6 +69,7 @@ export async function globalState() {
     }
   );
 }
+/** 原子提交单轮对话产出的作品级/全局级宏变量状态，以 revision 校验并发一致。 */
 export async function commitState(local, global) {
   return db.transaction("rw", db.aipresetstate, async () => {
     for (const row of [local, global].filter(Boolean)) {

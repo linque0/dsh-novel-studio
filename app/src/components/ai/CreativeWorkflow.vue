@@ -1,3 +1,6 @@
+<!--
+  CreativeWorkflow.vue — 多章批处理创作工作流面板（规划→写稿→独立审稿→修稿→复核与采纳，含记忆队列监控）。
+-->
 <script setup>
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { NButton, NInput, NInputNumber, NSelect, NCheckbox } from 'naive-ui'

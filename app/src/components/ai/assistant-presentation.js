@@ -1,3 +1,6 @@
+/**
+ * assistant-presentation.js — 浅眠聊天消息与持久化写作会话（writing store）卡片视图映射辅助。
+ */
 // View-only associations. Keep original messages and canonical writing state intact.
 export function directionMessageId(messages,session){
   if(!session)return null

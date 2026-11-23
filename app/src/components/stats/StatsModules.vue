@@ -1,3 +1,6 @@
+<!--
+  StatsModules.vue — 写作统计跨模块概览视图（大纲事件 / 设定分支 / 人物关系 / 灵感档案统计）。
+-->
 <script setup>
 import { computed,ref,watch } from 'vue'
 import StatsSectionHead from './StatsSectionHead.vue'

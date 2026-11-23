@@ -59,7 +59,7 @@ html body[data-skin='dsh'][data-ns-panel-theme='dark'] {
   --panel-shadow: 0 16px 44px rgb(0 0 0 / .40);
 }
 
-/* Visual maps use the outline's continuous surface and the theme's utility panels. */
+/* Visual maps use the outline's continuous surface on the center stage; sidebars match the outline/detail views. */
 html body[data-skin='dsh'] .lore-shell[data-view='map'] > .lore-main {
   background: var(--canvas-glass);
   border: var(--canvas-glass-border);
@@ -68,49 +68,12 @@ html body[data-skin='dsh'] .lore-shell[data-view='map'] > .lore-main {
   backdrop-filter: var(--canvas-glass-filter);
 }
 
-html body[data-skin='dsh'] .lore-shell[data-view='map'] > .lore-pane:not(.lore-main),
-html body[data-skin='dsh'] .lore-shell[data-view='map'] .lore-reference-pane {
-  --ink: var(--panel-ink);
-  --ink-dim: var(--panel-muted);
-  --ink-faint: var(--panel-quiet);
-  --lore-ink: var(--panel-ink);
-  --lore-ink-strong: var(--panel-ink);
-  --lore-dim: var(--panel-muted);
-  --lore-dim-2: var(--panel-quiet);
-  --lore-line: var(--panel-line);
-  --lore-line-2: var(--panel-line);
-  --lore-tag-on: var(--panel-accent);
-  --lore-btn-bg: var(--panel-hover);
-  --lore-btn-line: var(--panel-line);
-  --lore-hover: var(--panel-hover);
-  color: var(--panel-ink);
-  background: var(--panel-glass);
-  border-color: var(--panel-line);
-  -webkit-backdrop-filter: blur(20px) saturate(1.5);
-  backdrop-filter: blur(20px) saturate(1.5);
-}
-
 html body[data-skin='dsh'] .lore-shell[data-view='map'] .lore-map-stage {
   --lore-grid-dot: rgb(255 255 255 / .085);
 }
 
 html body[data-skin='dsh'] .lore-shell[data-view='map'][data-map-mode='relations'] .lore-map-stage {
   background-image: none;
-}
-
-html body[data-skin='dsh'] .lore-shell[data-view='map'] .nav-pane
-  :is(.nav-head, .nav-foot, .nav-section-label, .nav-search, .nav-search input, .nav-entry, .category) {
-  color: var(--panel-muted);
-}
-
-html body[data-skin='dsh'] .lore-shell[data-view='map'] .nav-pane
-  :is(.lore-nav-row.current, .category.current) {
-  color: var(--panel-ink);
-  background: var(--panel-active);
-}
-
-html body[data-skin='dsh'] .lore-shell[data-view='map'] .nav-pane .lore-nav-row.current .lore-nav-node {
-  color: inherit;
 }
 
 /* Local appearance uses app-owned aliases. Follow mode inherits the host's original aliases. */

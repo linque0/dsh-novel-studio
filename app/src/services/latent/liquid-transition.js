@@ -1,6 +1,12 @@
+/**
+ * 幻流工作台页面切换 WebGL 液态转场调度器：
+ * 结合 SnapDOM 预采集与 MutationObserver 脏检测，在点击顶部导航时立即以水波纹遮罩
+ * 隐藏路由切换闪烁，待目标页首帧采集上传后平滑融合退场；不支持 WebGL2 时静默降级直切。
+ */
 import { getTransitionBackdrop } from './flow.js'
 import { blendFlowStops } from './flow-color-stops.js'
 import { createFlowCaptureQueue } from './flow-capture-queue.js'
+import { liveCapturePlugin, renderLiveCapture } from './flow-live-capture.js'
 import { createLiquidRenderer, LIQUID_DURATION, liquidPhase } from './liquid-transition-gl.js'
 
 const CAPTURE_BUDGET_MS = 650
@@ -11,6 +17,15 @@ const GLIDE_RATE = .20
 const PRECAPTURE_IDLE_MS = 350
 const samePixel = (a, b) => Math.abs(a - b) < 1
 const transitioningTokens = new WeakMap()
+const navButtonSelector = '.app-topnav-item[data-nav]:enabled'
+const sceneActivityEvents = ['scroll', 'wheel', 'input', 'keydown', 'pointerdown', 'pointerover', 'pointerout', 'focusin', 'focusout', 'load']
+
+/** 根据点击/键盘事件判断是否属于会触发液态转场的顶栏模块切换意图。 */
+export function isFlowNavigationIntent(event) {
+  if (!event.target?.closest?.(navButtonSelector)) return false
+  return (event.type === 'pointerdown' && event.isPrimary && event.button === 0) ||
+    (event.type === 'keydown' && (event.key === 'Enter' || event.key === ' '))
+}
 
 function beginTransitioning(el) {
   if (!el) return 0
@@ -36,19 +51,55 @@ export function liquidFrame(now, start, speed, hold = 0) {
 
 function captureKey(root, rect) {
   const view = root.querySelector('.workbench-shell[data-module], .latent-shelf') || root
+  const focus = root.ownerDocument.activeElement
+  const nav = view.querySelector('.app-topnav')
   return {
     root,
     view,
     module: view.dataset.module,
     rev: view.dataset.flowRev || '',
     palette: view.dataset.flowPalette || '',
-    rect
+    rect,
+    dpr: window.devicePixelRatio || 1,
+    scrollX: window.scrollX,
+    scrollY: window.scrollY,
+    focus: root.contains(focus) && focus?.matches(':focus-visible') ? focus : null,
+    navPaint: nav ? Array.from(nav.querySelectorAll(navButtonSelector), button => {
+      const style = getComputedStyle(button)
+      return [style.color, style.backgroundColor, style.borderColor, style.boxShadow,
+        style.outline, style.outlineOffset, style.transform].join('|')
+    }).join(';') : ''
   }
 }
 
-function sameCapture(a, b) {
+function sameScene(a, b) {
   return a.root === b.root && a.view === b.view && a.module === b.module &&
-    a.rev === b.rev && a.palette === b.palette && sameSceneRect(a.rect, b.rect)
+    a.rev === b.rev && a.palette === b.palette && a.dpr === b.dpr &&
+    a.scrollX === b.scrollX && a.scrollY === b.scrollY && sameSceneRect(a.rect, b.rect)
+}
+
+function sameCapture(a, b) {
+  return sameScene(a, b) && a.focus === b.focus && a.navPaint === b.navPaint
+}
+
+/** 判断 DOM 变动记录是否真实影响了可见画面（忽略过渡自身产生的属性和背景层变动）。 */
+export function changedScene(records) {
+  if (!records?.length) return false
+  const seen = new Map()
+  for (const r of records) {
+    const el = r.target.nodeType === 1 ? r.target : r.target.parentElement
+    if (el?.closest('.flow-liquid-overlay, .st-backdrop-wrap, .ls-backdrop-wrap')) continue
+    if (r.type === 'childList') return true
+    const name = r.attributeName
+    if (name === 'data-flow-transitioning' || name === 'data-flow-rev' || name === 'data-flow-palette') continue
+    let fields = seen.get(r.target)
+    if (!fields) seen.set(r.target, fields = new Set())
+    if (fields.has(name)) continue
+    fields.add(name)
+    const current = r.type === 'characterData' ? r.target.data : r.target.getAttribute(name)
+    if (r.oldValue !== current) return true
+  }
+  return false
 }
 
 export function sameSceneRect(a, b) {
@@ -60,6 +111,7 @@ export function matchesSceneAspect(image, rect) {
     Math.abs(image.height - image.width * rect.height / rect.width) <= 2
 }
 
+/** 构造 SnapDOM 截图选项：隐藏实景流动背景与悬停控件，并禁用隔离树内高开销的 backdrop-filter。 */
 export function sceneCaptureOptions(rect, density, scrollX, scrollY, fast = true) {
   return {
     dpr: density,
@@ -96,11 +148,19 @@ export function sceneCaptureOptions(rect, density, scrollX, scrollY, fast = true
   }
 }
 
+/**
+ * 创建绑定到覆盖层画布的液态转场实例，对外提供 prepare(signal) 与 dispose()。
+ * 内部维护启动预热、空闲预采缓存与按模块 rev 复用的高清保活帧缓存。
+ */
 export function createLiquidTransition(canvas, getScene) {
   let renderer
   let disposed = false
   let disposeSurface
-  const queueCapture = createFlowCaptureQueue(sameCapture)
+  let sceneRevision = 0
+  let captureMutations
+  const queueCapture = createFlowCaptureQueue((running, requested) => !requested.fresh &&
+    running.revision === requested.revision && running.live === requested.live && running.density >= requested.density &&
+    sameCapture(running.scene, requested.scene) && !changedScene(captureMutations))
   let snapdomModule
   const loadSnapdom = () => {
     snapdomModule ||= import('@zumer/snapdom').catch(error => {
@@ -171,30 +231,36 @@ export function createLiquidTransition(canvas, getScene) {
     precaptureAbort = null
   }
 
-  function storeCachedScene(root, rect, image, hd = false) {
-    if (!root || !image) return
-    const key = captureKey(root, rect)
-    cachedScene = { key, image, hd }
-    if (key.rev && key.module && hd) {
+  function storeCachedScene(snapshot) {
+    const { key } = snapshot
+    const live = liveGalaxyCanvas(key.root)
+    if (!snapshotIsCurrent(snapshot)) return
+    if (live) {
+      if (snapshot.live?.canvas === live) cachedScene = { ...snapshot, image: null }
+      return
+    }
+    cachedScene = snapshot
+    if (key.rev && key.module) {
       if (moduleCache.size >= 4 && !moduleCache.has(key.module)) {
         moduleCache.delete(moduleCache.keys().next().value)
       }
-      moduleCache.set(key.module, { key, image })
+      moduleCache.set(key.module, snapshot)
     }
   }
 
   function matchCachedScene(root, rect) {
-    if (!cachedScene || !root || disposed) return null
+    if (!cachedScene || disposed || changedScene(captureMutations)) return null
+    if (liveGalaxyCanvas(root) !== (cachedScene.live?.canvas || null)) return null
     const nowKey = captureKey(root, rect)
-    return sameCapture(cachedScene.key, nowKey) ? cachedScene.image : null
+    return sameCapture(cachedScene.key, nowKey) ? cachedScene : null
   }
 
   function matchModuleCache(root, rect) {
-    if (!root || disposed) return null
+    if (!root || disposed || liveGalaxyCanvas(root)) return null
     const nowKey = captureKey(root, rect)
     if (!nowKey.rev || !nowKey.module) return null
     const hit = moduleCache.get(nowKey.module)
-    return hit && sameCapture(hit.key, nowKey) ? hit.image : null
+    return hit && sameCapture(hit.key, nowKey) ? hit : null
   }
 
   function invalidateActiveCache(root) {
@@ -204,6 +270,11 @@ export function createLiquidTransition(canvas, getScene) {
     if (mod) moduleCache.delete(mod)
   }
 
+  function liveGalaxyCanvas(root) {
+    const canvas = root.querySelector('.lpn-stage > canvas')
+    return canvas?.offsetWidth > 0 && canvas.offsetHeight > 0 ? canvas : null
+  }
+
   function scheduleIdlePrecapture(root) {
     cancelPrecapture()
     if (disposed || !root || document.hidden || disposeSurface) return
@@ -211,6 +282,9 @@ export function createLiquidTransition(canvas, getScene) {
     const run = () => {
       precaptureIdle = undefined
       if (disposed || document.hidden || disposeSurface || !root.isConnected) return
+      const live = liveGalaxyCanvas(root)
+      // Only prepare the galaxy shell when the pointer or keyboard focus reaches module navigation.
+      if (live && !root.querySelector(navButtonSelector + ':is(:hover,:focus-visible)')) return
       const rect = root.getBoundingClientRect()
       if (rect.width < 1 || rect.height < 1) return
       if (matchCachedScene(root, rect)) return
@@ -222,13 +296,10 @@ export function createLiquidTransition(canvas, getScene) {
         } catch { return }
       }
       renderer.resize(rect.width, rect.height)
-      // 空闲预采直接按最高 1.5x（与画布 DPR 对齐），令重访保活页也可无损复用为 incoming。
-      capture(root, rect, ac.signal, false, 1.5).then(img => {
+      // 保活页预采可供目标页复用，星系模板沿用离场截图的采样倍率。
+      capture(root, rect, ac.signal, live ? .85 : 1.5, true, live).then(snapshot => {
         if (precaptureAbort === ac) precaptureAbort = null
-        if (img && !ac.signal.aborted && !disposeSurface && root.isConnected &&
-          sameSceneRect(rect, root.getBoundingClientRect())) {
-          storeCachedScene(root, rect, img, true)
-        }
+        if (snapshot && !ac.signal.aborted && !disposeSurface) storeCachedScene(snapshot)
       }).catch(() => {
         if (precaptureAbort === ac) precaptureAbort = null
       })
@@ -244,12 +315,35 @@ export function createLiquidTransition(canvas, getScene) {
   }
 
   function onSceneActivity(event) {
-    if (disposeSurface) return
-    if (event?.type === 'scroll' || event?.type === 'wheel' || event?.type === 'input' ||
-      event?.type === 'keydown' || event?.type === 'pointerdown') {
-      invalidateActiveCache(observedRoot)
-      if (observedRoot) scheduleIdlePrecapture(observedRoot)
+    if (isFlowNavigationIntent(event)) return
+    const nav = event.target?.closest?.(navButtonSelector)
+    if (event.type === 'pointerover' || event.type === 'pointerout') {
+      if (!disposeSurface && nav && !nav.contains(event.relatedTarget)) scheduleIdlePrecapture(observedRoot)
+      return
     }
+    if (nav && (event.type === 'focusin' || event.type === 'focusout')) {
+      // Keep the previous bitmap. Matching its painted nav state decides whether it can be used.
+      if (!disposeSurface) scheduleIdlePrecapture(observedRoot)
+      return
+    }
+    sceneRevision++
+    invalidateActiveCache(observedRoot)
+    if (!disposeSurface) scheduleIdlePrecapture(observedRoot)
+  }
+
+  function onFontsChanged() {
+    sceneRevision++
+    cachedScene = null
+    moduleCache.clear()
+    if (!disposeSurface) scheduleIdlePrecapture(observedRoot)
+  }
+
+  function onSceneMutations(root, records) {
+    if (!changedScene(records)) return
+    sceneRevision++
+    if (disposeSurface && !cachedScene) return
+    invalidateActiveCache(root)
+    if (!disposeSurface) scheduleIdlePrecapture(root)
   }
 
   function attachSceneObserver(root) {
@@ -258,25 +352,17 @@ export function createLiquidTransition(canvas, getScene) {
     detachSceneObserver()
     observedRoot = root
     domObserver = new MutationObserver(records => {
-      if (disposeSurface) return
-      let meaningful = false
-      for (const r of records) {
-        if (r.type === 'attributes' && (r.attributeName === 'data-flow-transitioning' ||
-          r.attributeName === 'data-flow-rev' || r.attributeName === 'data-flow-palette')) continue
-        const el = r.target?.nodeType === 1 ? r.target : r.target?.parentElement
-        if (el?.closest?.('.flow-liquid-overlay, .st-backdrop-wrap, .ls-backdrop-wrap')) continue
-        meaningful = true
-        break
+      if (captureMutations) {
+        for (const record of records) captureMutations.push(record)
       }
-      if (meaningful) {
-        invalidateActiveCache(root)
-        scheduleIdlePrecapture(root)
-      }
+      else onSceneMutations(root, records)
     })
-    domObserver.observe(root, { childList: true, subtree: true, attributes: true, characterData: true })
-    for (const ev of ['scroll', 'wheel', 'input', 'keydown', 'pointerdown']) {
+    domObserver.observe(root, { childList: true, subtree: true, attributes: true, attributeOldValue: true,
+      characterData: true, characterDataOldValue: true })
+    for (const ev of sceneActivityEvents) {
       root.addEventListener(ev, onSceneActivity, { capture: true, passive: true })
     }
+    root.ownerDocument.fonts?.addEventListener('loadingdone', onFontsChanged)
   }
 
   function detachSceneObserver() {
@@ -284,31 +370,62 @@ export function createLiquidTransition(canvas, getScene) {
     domObserver?.disconnect()
     domObserver = null
     if (observedRoot) {
-      for (const ev of ['scroll', 'wheel', 'input', 'keydown', 'pointerdown']) {
+      observedRoot.ownerDocument.fonts?.removeEventListener('loadingdone', onFontsChanged)
+      for (const ev of sceneActivityEvents) {
         observedRoot.removeEventListener(ev, onSceneActivity, { capture: true })
       }
       observedRoot = null
     }
   }
 
-  async function capture(root, rect, signal, fast = true, maxDensity = .85) {
+  function snapshotIsCurrent(snapshot) {
+    const { key, revision } = snapshot
+    return !disposed && getScene() === key.root && key.root.isConnected && revision === sceneRevision &&
+      sameCapture(key, captureKey(key.root, key.root.getBoundingClientRect()))
+  }
+
+  async function capture(root, rect, signal, maxDensity, idle = false, live = null, fresh = false) {
     if (signal.aborted || disposed || rect.height < 1) return null
     const key = captureKey(root, rect)
-    const isCurrent = () => !disposed && root.isConnected && sameCapture(key, captureKey(root, rect))
+    const revision = sceneRevision
+    const density = Math.min(maxDensity, canvas.width / rect.width, canvas.height / rect.height)
+    const isCurrent = () => !disposed && getScene() === root && root.isConnected &&
+      sameScene(key, captureKey(root, root.getBoundingClientRect()))
     try {
-      const image = await queueCapture(key, async () => {
-        if (!isCurrent()) return null
+      let ownsCapture = false
+      const snapshot = await queueCapture({ scene: key, revision, density, live, fresh }, async () => {
+        ownsCapture = true
         const { snapdom } = await loadSnapdom()
         if (!isCurrent()) return null
-        const density = Math.min(maxDensity, canvas.width / rect.width, canvas.height / rect.height)
-        return snapdom.toCanvas(root, sceneCaptureOptions(rect, density, window.scrollX, window.scrollY, fast))
+        const paintKey = captureKey(root, rect)
+        const paintRevision = sceneRevision
+        // SnapDOM temporarily edits live text and inline styles to measure layout. Compare the
+        // first value to the restored value before invalidating a snapshot for those writes.
+        const records = captureMutations = []
+        let image
+        const slot = live && liveCapturePlugin(live)
+        try {
+          const options = sceneCaptureOptions(rect, density, key.scrollX, key.scrollY, false)
+          if (slot) options.plugins.push(slot.plugin)
+          image = await snapdom.toCanvas(root, options)
+        } finally {
+          captureMutations = null
+          if (observedRoot === root) onSceneMutations(root, records.concat(domObserver?.takeRecords() || []))
+        }
+        return image && matchesSceneAspect(image, rect)
+          ? { key: paintKey, revision: paintRevision, image, live: slot?.template(), density }
+          : null
       }, {
         signal,
         timeoutMs: CAPTURE_BUDGET_MS,
-        skipBusy: true
+        skipBusy: idle
       })
-      if (!isCurrent()) return null
-      return image && matchesSceneAspect(image, rect) ? image : null
+      if (!snapshot || signal.aborted || !isCurrent()) return null
+      // An input or a real DOM update may have made a shared idle result stale while it was in flight.
+      if (!ownsCapture && !idle && !snapshotIsCurrent(snapshot)) {
+        return capture(root, rect, signal, maxDensity, false, live, true)
+      }
+      return snapshot
     } catch { return null }
   }
 
@@ -324,7 +441,16 @@ export function createLiquidTransition(canvas, getScene) {
     renderer ||= createLiquidRenderer(canvas)
     renderer.resize(rect.width, rect.height)
     const cachedOutgoing = matchCachedScene(root, rect)
-    const outgoing = cachedOutgoing || await capture(root, rect, signal, false, .85)
+    let outgoing = cachedOutgoing?.image
+    if (cachedOutgoing?.live) {
+      try {
+        outgoing = await renderLiveCapture(cachedOutgoing.live, cachedOutgoing.density)
+        if (!outgoing || !matchesSceneAspect(outgoing, rect)) outgoing = null
+      } catch {
+        // Keep the full-scene capture available if the prepared SVG cannot be painted.
+      }
+    }
+    if (!outgoing && !signal.aborted) outgoing = (await capture(root, rect, signal, .85))?.image
     cachedScene = null
     if (signal.aborted || disposed || !root.isConnected ||
       document.hidden || !sameSceneRect(rect, root.getBoundingClientRect())) return null
@@ -344,6 +470,7 @@ export function createLiquidTransition(canvas, getScene) {
     let destinationBackdrop
     let releaseSource
     let releaseDestination
+    let cancelPaintWait
     let finish
     const finished = new Promise(resolve => { finish = resolve })
 
@@ -352,6 +479,7 @@ export function createLiquidTransition(canvas, getScene) {
       active = false
       disposeSurface = null
       cancelAnimationFrame(raf)
+      cancelPaintWait?.()
       signal.removeEventListener('abort', cleanup)
       window.removeEventListener('resize', cleanup)
       document.removeEventListener('visibilitychange', cleanup)
@@ -371,7 +499,7 @@ export function createLiquidTransition(canvas, getScene) {
           endTransitioning(root, rTok)
           endTransitioning(doneTarget, tTok)
           const settled = getScene()
-          if (settled && !disposeSurface && !cachedScene) scheduleIdlePrecapture(settled)
+          if (settled && !disposeSurface) scheduleIdlePrecapture(settled)
         })
       }
       try {
@@ -381,6 +509,22 @@ export function createLiquidTransition(canvas, getScene) {
         releaseDestination?.()
         finish()
       }
+    }
+
+    function nextPaint() {
+      return new Promise(resolve => {
+        let timer
+        const done = () => {
+          cancelPaintWait = null
+          resolve()
+        }
+        const frame = requestAnimationFrame(() => { timer = setTimeout(done, 0) })
+        cancelPaintWait = () => {
+          cancelAnimationFrame(frame)
+          clearTimeout(timer)
+          done()
+        }
+      })
     }
 
     function tick(now) {
@@ -466,13 +610,16 @@ export function createLiquidTransition(canvas, getScene) {
         try {
           // 若重访保活模块（大纲/设定）且版本、调色与视口未变，直接零耗时复用高清缓存帧；否则按 1.5x 分帧采集。
           const cachedIncoming = matchModuleCache(next, rect)
-          const incoming = cachedIncoming || await capture(next, rect, signal, false, 1.5)
+          // On a miss, let the opening wave reach the compositor before starting the full DOM walk.
+          if (!cachedIncoming) await nextPaint()
+          if (!active) return
+          const incoming = cachedIncoming || await capture(next, rect, signal, 1.5)
           if (active && incoming && sameSceneRect(rect, next.getBoundingClientRect())) {
             // Yield a frame between SVG rasterization and WebGL mipmap upload so opening frames stay smooth.
-            if (!cachedIncoming) await new Promise(resolve => requestAnimationFrame(resolve))
+            if (!cachedIncoming) await nextPaint()
             if (active && sameSceneRect(rect, next.getBoundingClientRect())) {
-              renderer.setScene(incoming, 'incoming')
-              storeCachedScene(next, rect, incoming, true)
+              renderer.setScene(incoming.image, 'incoming')
+              storeCachedScene(cachedIncoming ? { ...incoming, revision: sceneRevision } : incoming)
               attachSceneObserver(next)
             }
           }

@@ -1,3 +1,5 @@
+<!-- 设定工作区统一页头：展示历史前进/后退、常规面包屑或星系层级面包屑，
+     提供视图切换（节点大纲/阅读视图/视觉导图）、引用链接面板开关及导图工具条插槽。 -->
 <script setup>
 import { computed } from 'vue'
 import OIcon from '../OIcon.vue'
@@ -52,8 +54,9 @@ function enter(id) { emit('focus-branch', id) }
   border: 0;
 }
 
-.lore-head--map .lore-head-main {
-  flex: 1 1 220px;
+.lore-head.lore-free-head.lore-head--map > .lore-head-main {
+  flex: 1 0 180px;
+  max-width: 100%;
   min-width: 0;
 }
 
@@ -116,12 +119,15 @@ function enter(id) { emit('focus-branch', id) }
   grid-template-columns: minmax(0, 1fr) auto;
   width: fit-content;
   max-width: 100%;
+  min-width: 0;
+  margin-left: auto;
   padding: 0;
   gap: 6px 8px;
 }
 
-.lore-head--map .lore-switch {
+.lore-head.lore-head--map .lore-switch {
   grid-area: 1 / 1;
+  justify-self: end;
 }
 
 .lore-head--map .lore-links-toggle {
@@ -132,6 +138,8 @@ function enter(id) { emit('focus-branch', id) }
   grid-area: 2 / 1 / 3 / -1;
   justify-content: flex-end;
   flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
   min-height: 0;
   padding: 0;
   gap: 6px 8px;
@@ -144,7 +152,8 @@ function enter(id) { emit('focus-branch', id) }
 }
 
 .lore-head.lore-head--map :is(.lore-switch, :deep(.lore-map-modes)) {
-  width: auto;
+  width: fit-content;
+  max-width: 100%;
   min-width: 0;
   padding: 3px;
   border-color: rgb(255 255 255 / .14);
@@ -159,8 +168,13 @@ function enter(id) { emit('focus-branch', id) }
   white-space: nowrap;
 }
 
-.lore-head.lore-head--map :is(.lore-switch, :deep(.lore-map-modes)) button:hover {
+.lore-head.lore-head--map :is(.lore-switch, :deep(.lore-map-modes)) button:hover:not(:disabled) {
   color: var(--canvas-title);
+}
+
+.lore-head.lore-head--map :is(.lore-switch, :deep(.lore-map-modes)) button:disabled {
+  opacity: .42;
+  cursor: default;
 }
 
 .lore-head.lore-head--map :is(.lore-switch, :deep(.lore-map-modes)) button.on {
@@ -180,6 +194,11 @@ function enter(id) { emit('focus-branch', id) }
 @media (max-width: 559px) {
   .lore-head.lore-head--map > .lore-head-actions {
     flex-basis: 100%;
+    width: 100%;
+  }
+
+  .lore-head.lore-head--map .lore-switch {
+    justify-self: stretch;
     width: 100%;
   }
 

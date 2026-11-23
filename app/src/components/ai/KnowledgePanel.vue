@@ -1,3 +1,6 @@
+<!--
+  KnowledgePanel.vue — 作品知识库概览、增量构建触发、实体归并及派生卡片人工纠错面板。
+-->
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { NButton, NInput, NSelect, NModal } from 'naive-ui'

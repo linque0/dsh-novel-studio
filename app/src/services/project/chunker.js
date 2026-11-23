@@ -1,3 +1,7 @@
+/**
+ * 文本确定性切片器与段落锚点生成器：
+ * 按中文句末标点与换行切分语义单元，在 Token 预算与重叠滑窗约束下产出稳定 chunk ID。
+ */
 import { hashContent, tokens } from './text.js'
 
 export const CHUNKER_VERSION = 1

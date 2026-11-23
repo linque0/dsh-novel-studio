@@ -1,3 +1,7 @@
+/**
+ * 写作分析视图的数据归一化构建器：
+ * 将源库多表记录统一映射为带复合键（analysisKey）的卷、章、码字流水、历史快照、大纲容器与设定分支。
+ */
 import { countWords, stripTags } from './wordcount.js'
 import { primaryRole, uniqTags } from './character-tags.js'
 export const analysisKey=(work,id)=>JSON.stringify([work,id])

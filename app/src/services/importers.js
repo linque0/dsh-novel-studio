@@ -1,3 +1,8 @@
+/**
+ * 作品文件导入与格式解析管线：
+ * 支持 TXT（自动探测 UTF-16/UTF-8/GB18030 与智能分章）、Markdown、DOCX（经主进程 mammoth）、
+ * EPUB（JSZip 解包 OPF/Spine 与封面）及 PDF（文本提取与扫描件分页栅格化）。
+ */
 import JSZip from 'jszip'
 
 /* ================= 文本解码（中文编码兼容） ================= */

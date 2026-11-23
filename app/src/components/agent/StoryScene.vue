@@ -1,3 +1,6 @@
+<!--
+  StoryScene.vue — 「恍然梦-入梦」沉浸式故事现场主视图（章节导览、流式落笔、多版本切换、审阅与自动化推进）。
+-->
 <script setup>
 import {ref,computed,watch,onMounted,onBeforeUnmount,nextTick} from 'vue'
 import {NConfigProvider,NModal,darkTheme} from 'naive-ui'

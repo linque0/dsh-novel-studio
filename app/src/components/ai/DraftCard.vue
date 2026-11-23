@@ -1,3 +1,6 @@
+<!--
+  DraftCard.vue — 章节续写/扩写/改写草稿提案卡（支持行内微调、上下文对照预览、锚点采纳、撤销及触发记忆提取）。
+-->
 <script setup>
 import { computed, ref } from 'vue'
 import { NButton, NDropdown, NInput, NSelect } from 'naive-ui'

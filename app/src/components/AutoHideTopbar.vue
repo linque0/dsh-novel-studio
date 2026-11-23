@@ -1,3 +1,5 @@
+<!-- 可自动隐藏顶栏宿主容器：收起态仅保留顶部 8px 感应条，悬停/聚焦展开时回流占位以防遮挡下方工具条，
+     并在检测 Naive UI 跨节点浮层菜单展开时延迟自动收起。 -->
 <script setup>
 import { ref, watch, nextTick, onBeforeUnmount } from 'vue'
 
@@ -11,7 +13,7 @@ let pointerInside = false
 let dismissed = false
 
 function cancelHide() { clearTimeout(hideTimer) }
-function reveal() { cancelHide(); if (!dismissed) expanded.value = true }
+function reveal() { cancelHide(); if (props.autoHide && !dismissed) expanded.value = true }
 function activate() {
   dismissed = false
   reveal()

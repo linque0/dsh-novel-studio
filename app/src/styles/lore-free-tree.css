@@ -62,8 +62,10 @@
 .ob-drag-handle{position:absolute;top:6px;left:calc(var(--depth)*22px + 2px);height:25px;padding:2px;opacity:0;color:var(--ink-faint);cursor:grab}
 .ob-row:is(:hover,:focus-within) .ob-drag-handle{opacity:.75}
 .lore-shell[data-view] .lore-main .ob-row .ob-guide{border-left-color:rgb(255 255 255/.11)}
-.lore-heading-menu{display:flex;flex-direction:column;min-width:130px;padding:5px}
-.lore-heading-menu button{padding:9px;text-align:left;font-size:13px}
+.lore-heading-menu{display:flex;flex-direction:column;gap:2px;min-width:130px;padding:5px}
+.lore-heading-menu button{padding:7px 10px;border-radius:6px;text-align:left;font-size:12.5px}
+.lore-heading-menu button:hover{background:rgb(255 255 255/.08)}
+.lore-heading-menu button.on{background:rgb(158 195 172/.16);color:var(--lore-green)}
 .lore-shell>.lore-pane.lore-main:has(>.lore-reference-pane){display:grid;grid-template-columns:minmax(0,1fr) 292px;grid-template-rows:auto minmax(0,1fr)}
 .lore-main:has(>.lore-reference-pane)>.lore-head{grid-column:1;grid-row:1}
 .lore-main:has(>.lore-reference-pane)>.lore-views{grid-column:1;grid-row:2;min-width:0;min-height:0}

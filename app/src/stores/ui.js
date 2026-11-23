@@ -1,3 +1,8 @@
+/**
+ * 全局界面偏好与会话态 Pinia Store：
+ * 管理皮肤、主题、字体/纸面排版、各工作区栏宽与收起态、设定三视图导航栈、
+ * 灵感草稿引擎及自动保存/偏好重试状态，并通过 broadcastAppEvent 实现跨窗口即时同步。
+ */
 import { defineStore } from 'pinia'
 import { DEFAULT_FLOW_SPEED, normalizeFlowSpeed } from '../services/latent/flow-motion.js'
 import { normalizePanelTheme } from '../services/latent/panel-theme.js'

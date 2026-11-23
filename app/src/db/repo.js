@@ -13,6 +13,7 @@ import { STATS_TABLES, buildWritingStats, chapterWordChange, statsDates } from '
  * 后续迁移到 SQLite（Electron 主进程）时只需替换本模块实现，stores 无需改动。
  */
 
+/** 一次性读取单部作品的全部关联表记录，供 work store 打开作品或快照投影使用。 */
 export async function loadWorkBundle(workId) {
   const [
     works, volumes, chapters, outlines, characters, relations,

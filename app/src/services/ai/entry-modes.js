@@ -1,3 +1,6 @@
+/**
+ * entry-modes.js — 沉浸式创作「入梦模式（Agent 工作台）」与「浅眠模式（写作抽屉）」切换守卫。
+ */
 async function flushCurrent({ui,work,flush}){
   const id=work.work?.id
   if(!id)throw new Error('请先打开作品')

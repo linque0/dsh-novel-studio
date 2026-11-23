@@ -1,3 +1,6 @@
+<!--
+  SettingsAboutPage.vue — 设置中心「关于与快捷键」页（版本号、更新检查、帮助与数据概览弹窗入口）。
+-->
 <script setup>
 /* 关于页（总稿 app.mjs:30 aboutPage）。
  * 版本号取自构建注入的 __NS_VERSION__（settings-version.js），不手抄；右侧键盘面板把

@@ -1,3 +1,6 @@
+/**
+ * writing-anchor.js — TipTap 正文选区/插入点锚点捕获与写回前版本一致性校验。
+ */
 import { chapterHash, hashContent, normalizeText, plainChapter } from '../project/text.js'
 
 export function captureWritingAnchor(editor,{workId,chapterId,chapter,mode='insert'}={}) {

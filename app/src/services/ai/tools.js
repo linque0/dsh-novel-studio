@@ -1,3 +1,7 @@
+/**
+ * tools.js — AI 只读作品检索工具注册表（TOOL_REGISTRY）与执行入口。
+ * 为对话模型提供全文检索、文档分页读取、人物/状态查询及大纲设定子树访问能力。
+ */
 import { kbQuery } from './retrieval'
 import { retrievalTask } from './retrieval-policy.js'
 import { knowledgeSnapshot, replayForeshadows, ordered } from './knowledge'

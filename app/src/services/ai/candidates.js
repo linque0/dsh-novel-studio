@@ -1,3 +1,6 @@
+/**
+ * candidates.js — 对话消息多候选（Swipe）结果快照的捕获、保存与切换逻辑。
+ */
 import { copy } from "./presets";
 const FIELDS = [
   "content",

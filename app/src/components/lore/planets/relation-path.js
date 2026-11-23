@@ -1,3 +1,6 @@
+/**
+ * relation-path.js — 设定星系三维/投影关系曲线生成器（表面测地弧、星系波纹弦线与跨星系弧线裁剪）。
+ */
 import { Vector3 } from 'three'
 import { clamp, TUNING } from './planet-scene.js'
 

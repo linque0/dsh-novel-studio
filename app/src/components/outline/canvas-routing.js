@@ -1,4 +1,8 @@
 /* Shared visible geometry for the outline canvas. No DOM/Vue dependencies. */
+/**
+ * 大纲画布连线可见几何与采样计算（零 DOM/Vue 依赖）：
+ * 提供形状四向端口、贝塞尔/圆角折线分段扁平化、弧长参数化采样（routePoint）及最近点投影（projectOnRoute）。
+ */
 const EPS = 1e-5
 const dist = (a,b) => Math.hypot(a.x-b.x,a.y-b.y)
 const mix = (a,b,t) => ({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t})

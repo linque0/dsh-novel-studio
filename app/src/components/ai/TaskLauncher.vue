@@ -1,3 +1,6 @@
+<!--
+  TaskLauncher.vue — 各功能模块顶部的「恍然梦助手」快捷入口按钮（隐现皮肤下 Teleport 至顶栏动作区）。
+-->
 <script setup>
 import {NButton} from 'naive-ui'
 import {useWorkStore} from '../../stores/work'

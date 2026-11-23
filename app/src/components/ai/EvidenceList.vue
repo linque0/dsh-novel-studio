@@ -1,3 +1,6 @@
+<!--
+  EvidenceList.vue — AI 提案与知识卡片的原文证据列表，支持核验源哈希并点击跳转至正文/大纲/设定位置。
+-->
 <script setup>
 import { nextTick, computed } from 'vue'
 import { locateEditorPatch } from '../../services/ai/application'

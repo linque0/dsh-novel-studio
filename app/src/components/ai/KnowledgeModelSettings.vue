@@ -1,3 +1,6 @@
+<!--
+  KnowledgeModelSettings.vue — 知识库语义检索与向量（Embedding）模型开关配置页。
+-->
 <script setup>
 /* 知识库模型设置：把原先散落在供应商预设参数里的「语义检索 / 向量模型」独立成一页。
  * 向量模型仍跟随当前供应商预设的连接（Base URL / API Key），不新增第二套连接配置。 */

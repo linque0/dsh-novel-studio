@@ -1,3 +1,6 @@
+/**
+ * workbench-view.js — 入梦 Agent 工作台页面导航常量与单章创作阶段状态推导。
+ */
 import { assertReviewCurrent } from './review-cycle.js'
 import { assertCandidateDependencies, assertRecheckCurrent } from './workflow-core.js'
 

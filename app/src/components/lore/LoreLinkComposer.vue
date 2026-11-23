@@ -1,3 +1,6 @@
+<!--
+  LoreLinkComposer.vue — 设定文本编辑器中的 `[[` 双链触发弹窗（支持检索已有条目或直接新建引用）。
+-->
 <script setup>
 import { computed, onActivated, onBeforeUnmount, onDeactivated, onMounted, ref, nextTick } from 'vue'
 import { useWorkStore } from '../../stores/work'

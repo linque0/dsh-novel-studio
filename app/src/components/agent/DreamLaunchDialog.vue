@@ -1,3 +1,6 @@
+<!--
+  DreamLaunchDialog.vue — 从书架进入「恍然梦-入梦」模式的启动弹窗（新建故事或续写已有作品）。
+-->
 <script setup>
 import {computed,ref} from 'vue'
 import {NModal,NButton,NInput} from 'naive-ui'

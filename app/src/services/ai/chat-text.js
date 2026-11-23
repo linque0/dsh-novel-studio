@@ -1,3 +1,6 @@
+/**
+ * chat-text.js — AI 聊天 Markdown 安全渲染（DOMPurify 白名单过滤）与纯文本提取。
+ */
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 export function renderChat(text) {

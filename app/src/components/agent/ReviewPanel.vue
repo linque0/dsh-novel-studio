@@ -1,3 +1,6 @@
+<!--
+  ReviewPanel.vue — 独立审稿意见勾选确认、修改意见编辑、定向复核与引文定位面板。
+-->
 <script setup>
 import {computed,ref} from 'vue'
 import {useCreativeWorkflowStore} from '../../stores/creative-workflow.js'

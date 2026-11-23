@@ -1,3 +1,6 @@
+<!--
+  StatsInspector.vue — 写作统计右侧明细检视器（展示选中章节、单日记录或实体节点的保存/版本流水）。
+-->
 <script setup>
 import { computed, ref, watch } from 'vue'
 import StatsTrend from './StatsTrend.vue'

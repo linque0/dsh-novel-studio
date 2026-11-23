@@ -1,7 +1,12 @@
+/**
+ * 幻流液态转场 WebGL2 渲染管线（两遍绘制：半分辨率网格流体底色 → 全分辨率波动平流与画面融墨合成）。
+ * 离场与进场页面分别作为 u_oldInk / u_newInk 纹理传入，沿对角线流场产生墨水融散与聚拢效果。
+ */
 import { FLOW_DITHER_FRAGMENT, FLOW_MESH_FRAGMENT } from './flow-shaders.js'
 
 export const LIQUID_DURATION = 1000
 
+/** 计算转场期间流场相位的积分增量，使结束接管时实景背景能无缝续接动画进度。 */
 export function liquidPhase(elapsed, speed, hold = 0) {
   // Integrate the speed pulse so the live backdrop can resume at the last rendered phase.
   const bell = elapsed / 2 - Math.sin(2 * Math.PI * elapsed) / (4 * Math.PI)
@@ -186,6 +191,7 @@ void main() {
   vec3 color = compositeScene(material, frosted, p, refraction, crest, fiber);
   gl_FragColor = vec4(color * opacity, opacity);`))
 
+/** 初始化 WebGL2 渲染器、离屏网格 FBO 与双场景 Mipmap 纹理，返回 resize / setScene / draw / clear / dispose。 */
 export function createLiquidRenderer(canvas) {
   const gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: false })
   if (!gl) throw new Error('WebGL2 is unavailable.')

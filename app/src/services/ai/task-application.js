@@ -1,3 +1,7 @@
+/**
+ * task-application.js — 专用创作任务工作流（Workflow）提案的事务写回、撤销与记忆确认。
+ * 使用应用锁租约与 IndexedDB 事务确保多表原子更新，并保留完整审计记录以支持撤销。
+ */
 import { db, uid } from '../../db/database.js'
 import { autosave } from '../autosave.js'
 import { leaseJob, updateJob } from '../../db/ai-repo.js'
@@ -28,6 +32,7 @@ function sync(work,changes,undo=false) {
     else if(index>=0)work[c.table].splice(index,1)
   }
 }
+/** 将已验证的专用任务工作流提案原子写入 IndexedDB 并同步内存状态与审计记录。 */
 export async function applyWorkflow(work,card,options={}) {
   if(card.kind!=='workflow'||card.status==='applied'||card.status==='rejected'||card.complete===false)throw new Error('提案不可应用')
   if(work.work?.id!==card.workId||card.source?.taskRequest?.type!==card.taskType||taskProfile(card.taskType).module!==card.task)throw new Error('任务类型或作品不匹配')
@@ -56,6 +61,7 @@ export async function applyWorkflow(work,card,options={}) {
     return {ok:true,auditId,affected:changes.map(c=>c.id)}
   } finally {await updateJob(leaseId,owner,{owner:null,leaseUntil:0,status:'completed'})}
 }
+/** 基于审计记录撤销已应用的工作流变更（若后续无人工二次修改）。 */
 export async function undoWorkflow(work,audit) {
   if(work.work?.id!==audit.workId)throw new Error('撤销记录属于其他作品')
   await autosave.flushAll()
@@ -81,6 +87,7 @@ export async function undoWorkflow(work,audit) {
   } finally {await updateJob(leaseId,owner,{owner:null,leaseUntil:0,status:'completed'})}
 }
 
+/** 作者人工确认派生的章节摘要（aisum）或知识卡片（aikb）记录。 */
 export async function confirmDerived(work, table, id) {
   if (!['aisum','aikb'].includes(table) || !work.work) throw new Error('确认目标无效')
   await autosave.flushAll()

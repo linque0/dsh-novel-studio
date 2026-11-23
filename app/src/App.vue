@@ -1,3 +1,5 @@
+<!-- 应用根壳层：按运行模式分发主工作台（书架/创作区）与独立面板窗口（PanelHost / 写作分析），
+     统一装配 Naive UI 主题覆盖、全局弹窗、自动更新安装屏障（__updateSaveBarrier）及液态转场层。 -->
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { NConfigProvider, NMessageProvider, NDialogProvider, NButton, zhCN, dateZhCN, darkTheme } from 'naive-ui'

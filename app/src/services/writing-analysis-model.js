@@ -1,3 +1,8 @@
+/**
+ * 独立写作分析窗口的纯状态机与视图模型：
+ * 计算时间线累计净字数、章节结构/修订日历矩阵、多作品对比曲线，
+ * 并通过 transition(state, action) 统一驱动下钻、回退、时间范围与筛选联动。
+ */
 export function createWritingAnalysisModel(D) {
   const scoped=(rows,work)=>rows.filter(row=>work==='all'||row.work===work)
   const total=(rows,fn)=>rows.reduce((sum,row)=>sum+fn(row),0)

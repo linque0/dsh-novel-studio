@@ -1,3 +1,8 @@
+/**
+ * 幻流写作统计（WritingStatsDialog）纯计算引擎：
+ * 汇总作品/分卷字数、近 N 日码字流水（wordlog）、大纲事件完成度、设定分支体量、
+ * 人物孤立度与灵感标签分布，并挂载深度写作分析数据。
+ */
 import { primaryRole, uniqTags } from './character-tags.js'
 import { countWords, stripTags } from './wordcount.js'
 import { buildWritingAnalysis } from './writing-analysis-data.js'

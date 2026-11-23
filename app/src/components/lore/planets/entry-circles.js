@@ -1,3 +1,6 @@
+/**
+ * entry-circles.js — 设定星系中行星内部条目圆圈的尺寸缩放上限与圆内多行文字折行排版算法。
+ */
 export const MIN_ENTRY_RADIUS = 1
 
 export function entryCircleGlyphs(text) {

@@ -1,3 +1,8 @@
+/**
+ * 灵感拼板命令总线与跨表撤销/重做引擎：
+ * 把灵感捕获、正文编辑、分组拖放与「转为章节/设定」封装为带指纹乐观锁的事务变更集（applyChanges），
+ * 并在撤销新建产物前全库核查是否已被其他实体引用，避免破坏跨模块关联。
+ */
 import {db,uid,now} from '../db/database'
 import {putRow} from '../db/repo'
 import {SOURCE_TABLES} from './project/normalize.js'

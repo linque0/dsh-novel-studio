@@ -1,3 +1,7 @@
+/**
+ * 故事工作稿（story-document）的序列化保存、版本绑定校验与确认状态恢复仓。
+ * 借助 per-doc 串行队列及 incarnation + version 双重校验防止跨窗或备份恢复后的迟到覆盖。
+ */
 import {db} from './database.js'
 import {chapterHash,rowHash} from '../services/project/text.js'
 const saves=new Map()
@@ -5,6 +9,7 @@ const copy=v=>JSON.parse(JSON.stringify(v))
 export const STORY_WINDOW_ORIGIN=crypto.randomUUID()
 export const storyDocumentId=(workId,chapterId)=>'story-document:'+workId+':'+chapterId
 export async function readStoryDocument(workId,chapterId){return db.airuns.get(storyDocumentId(workId,chapterId))}
+/** 按文档 ID 串行入队保存故事工作稿，并在落库后广播给其他窗口刷新。 */
 export function saveStoryDocument(doc){
   const task=(saves.get(doc.id)||Promise.resolve()).catch(()=>{}).then(async()=>{
     const value=copy(doc)
@@ -22,14 +27,17 @@ export function saveStoryDocument(doc){
   })
   saves.set(doc.id,task);return task
 }
+/** 审读前核对内存中的工作稿与库内最新版本及正文文本完全一致。 */
 export async function assertStoryStored(doc){
   const stored=await db.airuns.get(doc.id)
   if(!stored||stored.incarnation!==doc.incarnation||stored.version!==doc.version||stored.revision!==doc.revision||stored.text!==doc.text||stored.html!==doc.html)throw new Error('工作稿来源已变化，请重新审读')
 }
+/** 采纳前核对绑定快照未漂移，防止应用到过期工作稿。 */
 export async function assertStoryBinding(binding){
   const stored=await db.airuns.get(binding.id)
   if(!stored||stored.type!=='story-document'||stored.incarnation!==binding.incarnation||stored.version!==binding.version||stored.revision!==binding.revision||stored.text!==binding.text||stored.html!==binding.html)throw new Error('待确认工作稿版本已变化，拒绝应用旧快照')
 }
+/** 若写回章节已成功落库但确认状态未及时回写工作稿（如中途中断），依据应用审计记录自愈为 confirmed。 */
 export async function recoverStoryConfirmation(doc){
   if(doc.status==='confirmed')return doc
   return db.transaction('rw',db.airuns,db.chapters,async()=>{

@@ -1,3 +1,8 @@
+/**
+ * 作品实体与语义关系图谱（aientity / aiedge）投影器：
+ * 从人物、设定、人物关系、条目关联、大纲连线、双链、附件引用及正文中显式提及构建统一图谱，
+ * 同时记录孤立关系、歧义双链、未解析附件等数据健康问题（issues）。
+ */
 import {snippetReferences} from '../snippet-links.js'
 import { hashContent, rowHash, stableStringify, normalizeText } from './text.js'
 import { outlineConnections } from './outline-connections.js'

@@ -1,3 +1,8 @@
+/**
+ * 幻流液态转场时序控制器：
+ * 串行协调离场捕捉（play）→ 路由/状态提交（commit）→ 进场揭示（reveal），
+ * 并在连续快速切换导航时支持就地复用或中断旧转场，防止多路由竞态撕裂。
+ */
 function defaultReducedMotion() {
   return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 }

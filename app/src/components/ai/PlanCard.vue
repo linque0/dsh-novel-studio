@@ -1,3 +1,6 @@
+<!--
+  PlanCard.vue — 通用大纲扩展提案卡片，展示子节点结构与连线意图并绑定至生成时的大纲锚点。
+-->
 <script setup>
 /* 通用大纲提案：固定生成锚点、空 edge 不连线，整套应用与撤销走作品 store。 */
 import { computed } from 'vue'

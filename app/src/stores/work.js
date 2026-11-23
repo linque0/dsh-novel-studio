@@ -1,3 +1,11 @@
+/**
+ * 作品核心状态 Pinia Store（useWorkStore）：
+ * 统一托管当前打开作品的卷/章、旧大纲、自由画布节点（olnodes）、人物与关系、
+ * 幕布设定（mubu）、条目级关联关系（lorelinks）、灵感、批注与资产链接。
+ *
+ * 约定：所有变更通过 autosave.mark() 纳入防抖落库管线；大纲节点与设定树自带历史撤销栈，
+ * AI 提案写回统一经 applyAiProposal / undoAiApplication 审计执行。
+ */
 import { planLoreMove } from '../services/lore-move.js'
 import { lorePath, validLoreMove, createLoreHistory, checkpointLore, stepLoreHistory } from '../services/lore-core.js'
 import { initialExpandedContainers } from '../components/outline/outline-layout.js'
@@ -949,6 +957,18 @@ export const useWorkStore = defineStore('work', {
         if (!this.mubuChildren(n.id).length) continue
         if (n.fold !== v) {
           n.fold = v
+          autosave.mark('mubu', n)
+        }
+      }
+    },
+
+    mubuSetFoldMap(foldedIds, scopeIds = null) {
+      for (const n of this.liveMubu()) {
+        if (scopeIds && !scopeIds.has(n.id)) continue
+        if (!this.mubuChildren(n.id).length) continue
+        const next = foldedIds.has(n.id)
+        if (!!n.fold !== next) {
+          n.fold = next
           autosave.mark('mubu', n)
         }
       }

@@ -1,3 +1,7 @@
+/**
+ * dialogue.js — AI 助手多轮对话调度器与工具调用（Tool Use）循环。
+ * 管理只读检索工具执行、提案草稿提取、上下文预算回退与 prefill 兜底策略。
+ */
 import { chatStream } from "./provider";
 import { TOOL_REGISTRY, executeTool } from "./tools";
 import { fitBlocks, estimate, copy } from "./presets";
@@ -33,6 +37,7 @@ const text = { type: "string" },
     limit: { ...number, maximum: 50 },
     cursor: number,
   };
+/** 返回当前任务允许挂载的 AI 对话工具 Schema 列表。 */
 export function dialogueTools(task = null) {
   const schemas = {
     search_book:{...queryProps,sourceType:text},
@@ -106,6 +111,7 @@ export function makeDraft(
     createdAt: Date.now(),
   };
 }
+/** 将模型工具调用参数归一化为标准结构化修改提案（Proposal）。 */
 export function proposalFromTool(args, work, frozen, runId) {
   const { type, targetId, data } = args;
   if (!data || typeof data !== "object" || Array.isArray(data))
@@ -237,6 +243,7 @@ export function proposalFromTool(args, work, frozen, runId) {
     note: String(data.note || ""),
   };
 }
+/** 执行带工具调用循环与超限回退的流式对话主流程。 */
 export async function runDialogue({
   compiled,
   work,

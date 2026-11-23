@@ -1,3 +1,6 @@
+/**
+ * writing-directions.js — 剧情多方向流式解析、增量合并（保留作者手动编辑）与方向选择快照。
+ */
 const text=(value,max)=>{
   if(typeof value!=='string'||!value.trim()||value.length>max)throw new Error('剧情方向标题或演变为空或过长')
   return value.trim()

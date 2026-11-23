@@ -1,3 +1,6 @@
+/**
+ * material-budget.js — 上下文材料 Token 预算账本，记录纳入与因预算省略的条目明细。
+ */
 import { tokens } from '../project/text.js'
 
 export function materialBudget(limit) {

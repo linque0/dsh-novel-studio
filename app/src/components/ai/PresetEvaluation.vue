@@ -1,3 +1,6 @@
+<!--
+  PresetEvaluation.vue — 双预设对照盲测（A/B 各生成三次）与评估结果导出面板。
+-->
 <script setup>
 import { ref } from "vue";
 import { NButton, NInput, NSelect, NInputNumber } from "naive-ui";

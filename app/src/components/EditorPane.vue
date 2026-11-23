@@ -1,3 +1,6 @@
+<!-- 正文编辑器主面板（EditorPane）：
+     基于 TipTap 承载章节富文本编辑、双链标记（DlLinkMark）、批注锚点（AnnotationMark）、
+     左栏目录与右栏批注/写作辅助抽屉、纸面装帧与字体排版，以及光标/滚动位置记忆恢复。 -->
 <script setup>
 const nsPlugin = __NS_PLUGIN__
 const chapterControlSlot = nsPlugin ? 'more-end' : 'bar-end'

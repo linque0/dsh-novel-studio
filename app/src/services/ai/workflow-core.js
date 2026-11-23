@@ -1,3 +1,6 @@
+/**
+ * workflow-core.js — 多章批处理创作工作流状态机、阶段租约校验、候选依赖图验证与基准重定位判定。
+ */
 import { freezeDraft, protocolHash } from './review-cycle.js'
 
 export const MAX_BATCH_CHAPTERS = 10

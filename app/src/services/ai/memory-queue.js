@@ -1,3 +1,6 @@
+/**
+ * memory-queue.js — 章节记忆与摘要后台串行任务队列调度器（含租约心跳、来源防陈旧校验与延迟重试）。
+ */
 import { db, uid } from '../../db/database.js'
 import { readSourceSnapshot } from '../../db/project-repo.js'
 import { sourceManifest } from '../project/normalize.js'

@@ -1,3 +1,6 @@
+<!--
+  StageSettings.vue — 五阶段独立供应商/模型/预设绑定与文本 Skill 查看及导入管理面板。
+-->
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { NButton, NSelect } from 'naive-ui'

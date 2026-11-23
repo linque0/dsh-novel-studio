@@ -1,3 +1,6 @@
+/**
+ * chapter-editor-bridge.js — 独立窗口与主编辑器之间的章节编辑会话桥接器。
+ */
 // The domain command names the target explicitly. Each window supplies its
 // shared editor session; no dependency on the hand-writing page being open.
 let current = null

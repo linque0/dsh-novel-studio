@@ -1,3 +1,6 @@
+<!--
+  StatsChapterChart.vue — 写作统计「章节矩阵」子视图（分卷/状态筛选 + 逐日净增字数热力网格）。
+-->
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
 import StatsSectionHead from './StatsSectionHead.vue'

@@ -1,3 +1,7 @@
+/**
+ * 设定幕布 / 导图富文本 DOM 工具集：
+ * 负责 HTML 消毒与双链不可编辑标记加固、内嵌图片显隐与宽度修改、以及选区光标读写与回车拆行。
+ */
 import DOMPurify from 'dompurify'
 const imageSelector = 'img.lore-image'
 const hiddenImageAttribute = 'data-lore-image-hidden'

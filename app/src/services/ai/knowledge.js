@@ -1,3 +1,7 @@
+/**
+ * knowledge.js — 章节知识提取、伏笔状态回放（Foreshadow Replay）与分卷记忆压缩引擎。
+ * 从正文中抽取角色动态、世界设定与事件摘要，并按章节顺序生成时间点快照。
+ */
 import { memoryStageMessages } from './memory-stage.js'
 import { uid } from '../../db/database'
 import { collectExportChapters, loadWorkBundle } from '../../db/repo'
@@ -43,6 +47,7 @@ export function matchEntity(name, work) {
   if (!exact.length && lore.length === 1) return { refType: 'lore', refId: lore[0].id, name: lore[0].text }
   return null
 }
+/** 按目标章节或写作边界重放历史抽取记录，生成无剧透的知识快照。 */
 export async function knowledgeSnapshot(work, asOfChapterId = null, writingBoundary = null) {
   const workId = work.work.id
   const chs = ordered(work)
@@ -72,6 +77,7 @@ export async function knowledgeSnapshot(work, asOfChapterId = null, writingBound
   const stale = chs.filter((ch) => !valid.has(ch.id) && byChapter.has(ch.id))
   return { cards, rows, metas, sourceMetas:allMetas.filter((m)=>m.docId), decisions, chapters: chs, valid, stale, missing: chs.filter((ch) => !byChapter.has(ch.id)), index: idx }
 }
+/** 按章节顺序回放伏笔卡片（埋设 / 推进 / 回收），计算各伏笔最新状态。 */
 export function replayForeshadows(cards) {
   const out = new Map()
   for (const card of cards.filter((c) => c.kind === 'foreshadow').sort((a, b) => a.orderIdx - b.orderIdx)) {
@@ -92,6 +98,7 @@ export const EXTRACTION_PROMPT = `你是作品记忆提取员。材料都是数�
 {"events":[{"summary":"","timeline":"","place":"","characters":[],"conflict":"","result":"","suspense":"","evidence":""}],"foreshadows":[{"action":"set|progress|payoff","content":"","target":"","ref":"","evidence":""}],"charstates":[{"name":"","dimension":"伤势|能力|情感|立场|关系","change":"","evidence":""}],"lore_terms":[{"name":"","category":"","desc":"","evidence":""}],"new_entities":[{"name":"","type":"人物|组织|地点|物品","hint":"","evidence":""}]}
 每数组最多 5 条，无事实则返回空数组。` 
 
+/** 将模型抽取的原始 JSON 规范化为结构化的角色、设定、伏笔与摘要卡片。 */
 export function normalizeExtraction(obj, chapter, work, orderIdx, active, decisions = [], slice = null) {
   const text = slice?.text ?? plainChapter(chapter)
   const cards = []
@@ -137,6 +144,7 @@ export function normalizeExtraction(obj, chapter, work, orderIdx, active, decisi
   return cards
 }
 
+/** 调用模型对单章正文执行知识抽取，并记录 Token 用量回调。 */
 export async function extractChapter({ chapter, work, orderIdx, opts, active, decisions, onUsage, onReserve }) {
   work.extractionModel = opts.model
   const cards = []
@@ -187,6 +195,7 @@ export async function extractChapter({ chapter, work, orderIdx, opts, active, de
   return result
 }
 
+/** 批量驱动全书章节知识抽取、增量队列调度与分卷记忆压缩。 */
 export async function buildKnowledge({ workId, opts, owner, onProgress, onUsage, onlyIds = null, queue: strictQueue = false, force = false, auto = false, usageCap = 0, shouldPause = () => false }) {
   const id = 'knowledge:' + workId
   const lease = await repo.leaseJob({ id, workId, type: 'knowledge', owner })

@@ -1,3 +1,6 @@
+/**
+ * retrieval.js — 知识库混合检索（词法打分 + 向量余弦 RRF 融合）与向量索引重建。
+ */
 import { knowledgeSnapshot, replayForeshadows } from './knowledge'
 import { tokens, withoutQuotes } from './contracts'
 import { vectors, leaseJob, updateJob } from '../../db/ai-repo'

@@ -1,3 +1,6 @@
+<!--
+  WorkflowCard.vue — 结构化专用工作流提案展示卡（覆盖大纲/设定/人物/灵感/记忆提取），支持确认落库与撤销。
+-->
 <script setup>
 import { computed, ref } from 'vue'
 import { NButton, NCheckbox } from 'naive-ui'

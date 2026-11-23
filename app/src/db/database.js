@@ -1,3 +1,9 @@
+/**
+ * Dexie（IndexedDB）数据库定义与全局变更监听底座：
+ * - 维护 v1~v12 增量表结构（作品实体、大纲节点、幕布设定、批注、AI 知识库与读模型投影）；
+ * - 按宿主隔离库名（桌面版 novel-studio / DSH 插件 novel-studio@dsh）；
+ * - 挂载 SOURCE_TABLES 事务级写钩子，统一驱动 AI 投影标脏与跨端作品库同步 tap。
+ */
 import Dexie from 'dexie'
 import { SOURCE_TABLES } from '../services/project/normalize.js'
 import { notifySourceChanged } from '../services/project/events.js'

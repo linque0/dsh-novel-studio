@@ -1,3 +1,8 @@
+/**
+ * 作品读模型投影仓（aiindex / aidoc / aichunk / aientity / aiedge）：
+ * 将源表数据增量或全代（generation）投影为 AI 检索与关系图所需的只读索引，
+ * 通过租约心跳、epoch 与源数据 manifest 哈希防止读旧写新或并发撕裂。
+ */
 import { db, uid } from './database.js'
 import { SOURCE_TABLES, projectBook, sourceManifest, PROJECTION_VERSION } from '../services/project/normalize.js'
 import { projectGraph } from '../services/project/graph.js'
@@ -5,8 +10,10 @@ import { checkAbort, sourceChanged, rowHash } from '../services/project/text.js'
 
 let epoch = 0, paused = false
 const pending = new Map()
+/** 导入/恢复备份期间挂起投影并递增 epoch，使在途构建自动失效退出。 */
 export function suspendProjection() { paused = true; epoch++; pending.clear() }
 export function resumeProjection() { paused = false; epoch++ }
+/** 在只读事务内收集单部作品全量源表快照（assets 剔除二进制 blob）。 */
 async function bundleInTransaction(workId) {
   const work = await db.works.get(workId), bundle = { work }
   for (const table of SOURCE_TABLES.filter((t) => !['works','links'].includes(t))) {
@@ -18,6 +25,7 @@ async function bundleInTransaction(workId) {
   return bundle
 }
 export const readSourceSnapshot = (workId) => db.transaction('r', SOURCE_TABLES.map((t) => db.table(t)), () => bundleInTransaction(workId))
+/** 源表变更后标脏索引，等待下次查询或后台任务重建投影。 */
 export async function markProjectionDirty(workId) {
   if (!workId || paused) return
   await db.transaction('rw', db.aiindex, async () => {
@@ -25,6 +33,7 @@ export async function markProjectionDirty(workId) {
     await db.aiindex.put({ ...row, workId, status: 'dirty', dirtyRevision: (row?.dirtyRevision || 0) + 1, updatedAt: Date.now() })
   })
 }
+/** 按当前生效 generation 原子读取作品全部投影表，避免混读跨代残片。 */
 export async function readProjection(workId) {
   return db.transaction('r', [db.aiindex, db.aidoc, db.aichunk, db.aientity, db.aiedge], async () => {
     const index = await db.aiindex.get(workId)
@@ -37,6 +46,7 @@ export async function readProjection(workId) {
     return { index, docs: docs.sort((a,b) => a.orderKey.localeCompare(b.orderKey)), chunks, entities, edges }
   })
 }
+/** 保证投影与当前源数据一致：复用同作品在途 Promise，否则抢占租约并启动构建。 */
 export async function ensureProjection(workId, { force = false, signal } = {}) {
   if (paused) throw sourceChanged()
   if (pending.has(workId)) return pending.get(workId)
@@ -44,6 +54,7 @@ export async function ensureProjection(workId, { force = false, signal } = {}) {
   pending.set(workId, run)
   try { return await run } finally { if (pending.get(workId) === run) pending.delete(workId) }
 }
+/** 抢占 projection:<workId> 分布式租约并维持 20s 心跳，确保单作品同一时刻仅一个构建写库。 */
 async function rebuild(workId, options) {
   const id='projection:'+workId, owner=uid()
   const leased=await db.transaction('rw',db.airuns,async()=>{
@@ -62,6 +73,11 @@ async function rebuild(workId, options) {
     await db.transaction('rw',db.airuns,async()=>{const row=await db.airuns.get(id);if(row?.owner===owner)await db.airuns.update(id,{owner:null,leaseUntil:0,status:'completed'})})
   }
 }
+/**
+ * 执行投影计算与落库：
+ * - 若源哈希、投影版本与裁决哈希均未变，仅把 dirty 状态复位为 ready；
+ * - 否则按同代增量 diff 或新代分批写入，提交事务前再次校验租约与源哈希，失败则回滚半成品。
+ */
 async function buildProjection(workId, { force, signal, epochAtStart, leaseId, leaseOwner }) {
   const startedEpoch = epochAtStart, bundle = await readSourceSnapshot(workId), manifest = sourceManifest(bundle)
   checkAbort(signal)

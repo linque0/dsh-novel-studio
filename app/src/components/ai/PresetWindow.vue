@@ -1,3 +1,7 @@
+<!--
+  PresetWindow.vue — AI 预设管理弹窗（模型参数、提示词库/编排顺序、正则后处理与 SillyTavern JSON 导入导出）。
+  绑定 ai store 与 presets/regex 服务，支持实时预览发送消息。
+-->
 <script setup>
 import { computed, onMounted, ref } from "vue";
 import {

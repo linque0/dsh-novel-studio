@@ -1,3 +1,6 @@
+<!--
+  MubuTree.vue — 设定模块左侧层级大纲导航树，支持全文过滤、拖拽归根、右键菜单与星系定位联动。
+-->
 <script setup>
 import { computed, ref, onActivated, onBeforeUnmount, onDeactivated, onMounted } from 'vue'
 import { useWorkStore } from '../stores/work'

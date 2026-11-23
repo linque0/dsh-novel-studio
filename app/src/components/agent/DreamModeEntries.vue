@@ -1,3 +1,6 @@
+<!--
+  DreamModeEntries.vue — 顶部导航栏「入梦 / 浅眠」双模式快速切换按钮组。
+-->
 <script setup>
 import OIcon from '../OIcon.vue'
 defineProps({shelf:Boolean,active:{type:String,default:''},disabled:Boolean})

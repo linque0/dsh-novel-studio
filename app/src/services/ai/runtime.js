@@ -1,3 +1,7 @@
+/**
+ * runtime.js — AI 跨窗口事件分发中心与后台投射/记忆队列协调器。
+ * 监听 Electron 广播事件，同步多窗口间的故事工作稿、工作流、预设与知识库状态。
+ */
 import { runMemoryQueue, cancelMemoryJobs, recoverMemoryQueue } from './memory-queue.js';
 import { useAiStore } from "../../stores/ai";
 import { useWorkStore } from "../../stores/work";

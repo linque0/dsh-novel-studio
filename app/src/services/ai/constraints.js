@@ -1,3 +1,6 @@
+/**
+ * constraints.js — 作品约束包构建器：聚合适用规则、关联大纲计划与截至当前位置的人物已验证状态。
+ */
 import { ruleCandidates } from './book-memory.js'
 import { tokens } from '../project/text.js'
 import { documentView } from './booksource.js'

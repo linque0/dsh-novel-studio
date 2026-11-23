@@ -1,3 +1,6 @@
+/**
+ * canvas-route-cache.js — 大纲画布正交避障连线路径的包围盒脏区增量缓存。
+ */
 const intersects=(a,b)=>a.x<=b.x+b.w&&a.x+a.w>=b.x&&a.y<=b.y+b.h&&a.y+a.h>=b.y
 const bounds=g=>{
   const pts=g.samples||[g.a,g.b],xs=pts.map(p=>p.x),ys=pts.map(p=>p.y)

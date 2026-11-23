@@ -1,3 +1,6 @@
+<!-- 幻流写作统计入口与完整写作分析壳层：
+     同时承载右下角/顶栏触发的「写作速览」浮窗与全屏/独立面板「写作分析」视图，
+     通过 Dexie liveQuery 实时订阅字数统计快照，并保持 WAAPI 过渡动画与焦点可访问性。 -->
 <script setup>
 import { computed,nextTick,onBeforeUnmount,onMounted,ref,shallowRef,watch } from 'vue'
 import { liveQuery } from 'dexie'

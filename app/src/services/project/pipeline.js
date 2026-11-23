@@ -1,3 +1,7 @@
+/**
+ * AI 投影后台防抖调度管线：
+ * 监听 book-source-changed 事件将作品标脏并在 3~10s 窗口内合并重建读模型，仅在主窗口运行。
+ */
 import { db } from '../../db/database.js'
 import { ensureProjection, markProjectionDirty, suspendProjection, resumeProjection } from '../../db/project-repo.js'
 

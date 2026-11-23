@@ -1,3 +1,6 @@
+<!-- 作品创作主工作台（Workbench）：
+     协调顶部模块导航与自动隐藏顶栏、正文/大纲/设定/人物/灵感五大模块切换、
+     幻流 WebGL 流动背景与液态转场挂载，以及右侧「恍然梦」AI 助手停靠列与分窗锁联动。 -->
 <script setup>
 import { computed, nextTick, ref, provide, onMounted, onBeforeUnmount, watch } from 'vue'
 import { NButton, useMessage } from 'naive-ui'

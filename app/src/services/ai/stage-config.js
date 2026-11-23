@@ -1,3 +1,6 @@
+/**
+ * stage-config.js — 分阶段模型/预设/Skill 配置解析、脱敏冻结与安全文本 Skill 导入校验。
+ */
 /** Text-only writing guidance. Never loads modules, runs commands, or stores credentials. */
 import { BUILTIN_WRITING_SKILLS } from './builtin-writing-skills.js'
 export { BUILTIN_WRITING_SKILLS }

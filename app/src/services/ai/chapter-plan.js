@@ -1,3 +1,6 @@
+/**
+ * chapter-plan.js — 整章场景规划（Scene Plan）数据结构校验与归一化。
+ */
 import { protocolHash } from './review-cycle.js'
 
 // Author-editable candidate data; this protocol never writes chapter content.

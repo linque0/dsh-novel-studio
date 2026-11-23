@@ -1,3 +1,6 @@
+/**
+ * task-profiles.js — 工坊全部专用 AI 任务类型（TASK_PROFILES）定义、输入规范化及系统提示词构造。
+ */
 import { orderedChapters } from '../project/normalize.js'
 import { normalizeText } from '../project/text.js'
 import { normalizeWritingAnchor } from './writing-anchor.js'

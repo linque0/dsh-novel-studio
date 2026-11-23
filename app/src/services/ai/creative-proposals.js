@@ -1,3 +1,6 @@
+/**
+ * creative-proposals.js — 工作流阶段产物（场景计划 / 独立审稿 / 定向复核）校验与提案包装。
+ */
 import { normalizeReview, normalizeRecheck } from './review-cycle.js'
 import { normalizeChapterPlan } from './chapter-plan.js'
 import { projectBook } from '../project/normalize.js'

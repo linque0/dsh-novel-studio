@@ -1,3 +1,6 @@
+<!--
+  StoryEditor.vue — 入梦故事现场内嵌的 TipTap 正文实时编辑器，与 story store 双向受控同步。
+-->
 <script setup>
 import {watch,onBeforeUnmount,ref} from 'vue'
 import {useEditor,EditorContent} from '@tiptap/vue-3'

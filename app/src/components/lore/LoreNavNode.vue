@@ -25,7 +25,7 @@ function drop(e) {
   <div class="lore-nav-branch" role="treeitem" :aria-level="depth + 1" :aria-expanded="children.length ? !closed : undefined" :aria-selected="current">
     <div class="lore-nav-row" :class="{ current }" :style="{ '--nav-depth': depth }" @dragover.prevent @drop.prevent.stop="drop" @contextmenu.prevent="emit('menu', { node, event: $event })">
       <button v-if="children.length" class="lore-nav-fold" :class="{ folded: closed }" :aria-label="(closed ? '展开' : '折叠') + node.text" @click="fold"><OIcon name="caret-right" :size="11" /></button><span v-else class="lore-nav-fold-space" />
-      <button class="lore-nav-node" :class="depth === 0 ? 'category' : 'nav-entry'" :data-id="node.id" :data-kind="kindOf(node).kind" :title="node.text" draggable="true" @dragstart="start" @click="emit('pick', node.id)"><OIcon v-if="depth === 0" :name="kindOf(node).icon" :size="14" /><i v-else /><span>{{ node.text || '未命名节点' }}</span></button>
+      <button class="lore-nav-node" :class="depth === 0 ? 'category' : 'nav-entry'" :data-id="node.id" :data-kind="kindOf(node).kind" :title="node.text" draggable="true" @dragstart="start" @click="emit('pick', node.id)"><i v-if="depth > 0" /><span>{{ node.text || '未命名节点' }}</span></button>
       <button class="lore-nav-more" :aria-label="(node.text || '节点') + '的操作'" @click="emit('menu', { node, event: $event })"><OIcon name="dots" :size="13" /></button>
     </div>
     <div v-if="!closed && children.length" role="group"><LoreNavNode v-for="child in children" :key="child.id" :node="child" :depth="depth + 1" @menu="emit('menu', $event)" @pick="emit('pick', $event)" @moved="emit('moved', $event)" /></div>

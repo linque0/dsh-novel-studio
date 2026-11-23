@@ -1,3 +1,6 @@
+<!--
+  CandidateEditor.vue — 创作工作流章节候选稿独立全屏编辑器（支持对照、编辑、放弃、采纳与转入手写精修）。
+-->
 <script setup>
 import {computed,ref} from 'vue'
 import {useCreativeWorkflowStore} from '../../stores/creative-workflow.js'

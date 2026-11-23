@@ -1,3 +1,6 @@
+/**
+ * task-proposals.js — 专用创作任务输出（大纲/设定/人物/记忆/章节草稿）的证据校验、结构化规范化与变更集计算。
+ */
 import { projectBook, orderedChapters } from '../project/normalize.js'
 import { chapterHash, rowHash, hashContent } from '../project/text.js'
 import { taskProfile, normalizeTaskRequest } from './task-profiles.js'

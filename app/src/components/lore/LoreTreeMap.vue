@@ -1,10 +1,13 @@
+<!-- 设定层级视觉导图（LoreTreeMap）：
+     基于纯函数 layoutLoreTree 计算单向/双向分支与肘形/贝塞尔连线，通过 ResizeObserver 实时回测卡片尺寸，
+     并支持平移缩放、层级折叠、行内富文本编辑（LoreMapEditor）及拖拽跨层级重挂接（planLoreMove）。 -->
 <script setup>
 import { computed, nextTick, onActivated, onBeforeUnmount, onDeactivated, onMounted, ref, shallowRef, watch } from 'vue'
 import { useWorkStore } from '../../stores/work'
 import { useUiStore } from '../../stores/ui'
 import { usePanZoom } from '../../services/graphview'
 import { loreMapContent } from '../../services/lore-editor-dom'
-import { layoutLoreTree } from '../../services/lore-tree-layout'
+import { layoutLoreTree, loreActiveFoldLevel, loreFoldedIdsForLevel, loreTreeMaxDepth } from '../../services/lore-tree-layout'
 import { planLoreMove } from '../../services/lore-move'
 import LoreImageHiddenNotice from '../LoreImageHiddenNotice.vue'
 import LoreMapEditor from './LoreMapEditor.vue'
@@ -133,11 +136,25 @@ function focusActive() {
   centerNode(node)
 }
 
+const childrenOf = id => entries.value.get(id)?.children || []
+const maxDepth = computed(() => Math.max(1, loreTreeMaxDepth(roots.value, childrenOf)))
+const foldLevel = computed(() => loreActiveFoldLevel(roots.value, childrenOf, folded.value))
+
 function toggleFold(id) {
   const next = new Set(folded.value)
   if (next.has(id)) next.delete(id)
   else next.add(id)
   folded.value = next
+}
+
+function foldToLevel(level) {
+  folded.value = loreFoldedIdsForLevel(roots.value, childrenOf, level)
+  if (editing.value && !layout.value.nodes.some(node => node.id === editing.value.id)) editing.value = null
+  nextTick(fitAll)
+}
+
+function foldAll(value) {
+  foldToLevel(value ? 0 : Infinity)
 }
 
 function startEdit(node, event) {
@@ -306,7 +323,7 @@ onBeforeUnmount(() => {
   observer?.disconnect()
 })
 
-defineExpose({ zoomIn, zoomOut, zoomReset, fitAll, focusActive, zoom })
+defineExpose({ zoomIn, zoomOut, zoomReset, fitAll, focusActive, foldAll, foldToLevel, maxDepth, foldLevel, zoom })
 </script>
 
 <template>

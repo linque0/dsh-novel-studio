@@ -1,5 +1,10 @@
 /* The cover painter keeps its original mesh and parameters. The animated backdrop uses
    the Paper Shaders 0.0.80 adaptation in flow-shaders.js. */
+/**
+ * 幻流 WebGL 背景与书封绘制引擎：
+ * - createCoverPainter：单离屏上下文批量渲染书架 3D/流动封面贴图，避免逐本新建 WebGL 上下文超限；
+ * - createLatentBackdrop：全屏双阶段动态背景（MeshGradient + Dithering），带帧率自适应降采样与上下文丢弃保护。
+ */
 import { DEFAULT_FLOW_PALETTE } from './palette.js'
 import { FLOW_MESH_FRAGMENT, FLOW_DITHER_FRAGMENT } from './flow-shaders.js'
 import { advanceFlowTime, flowBufferSize, normalizeFlowSpeed } from './flow-motion.js'

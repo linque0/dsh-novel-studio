@@ -1,3 +1,5 @@
+<!-- 正文导出对话框：按卷/章勾选范围，支持 TXT / Markdown / Word(.docx) 三种格式，
+     并在超出大批量阈值时分流为「单文件合并」「ZIP 分章打包」或「逐章分批写入同目录」。 -->
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { NModal, NButton, NCheckbox, NInputNumber, useMessage } from 'naive-ui'

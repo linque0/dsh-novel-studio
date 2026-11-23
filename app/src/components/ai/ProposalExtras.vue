@@ -1,3 +1,6 @@
+<!--
+  ProposalExtras.vue — AI 提案卡片附加区（引用依据、风险提醒、原创实体草案登记及整批撤销按钮）。
+-->
 <script setup>
 import { useWorkStore } from '../../stores/work'
 import EvidenceList from './EvidenceList.vue'

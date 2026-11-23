@@ -9,6 +9,7 @@
 import '../../styles/lore-free-tree.css'
 import { autosave } from '../../services/autosave'
 import { computed, nextTick, onActivated, onBeforeUnmount, onDeactivated, onMounted, ref, watch } from 'vue'
+import { NPopover } from 'naive-ui'
 import OIcon from '../OIcon.vue'
 import MubuView from '../MubuView.vue'
 import MubuTree from '../MubuTree.vue'
@@ -25,7 +26,7 @@ import LoreImageControls from '../LoreImageControls.vue'
 import LoreInspector from './LoreInspector.vue'
 import LoreDivider from './LoreDivider.vue'
 import { loreWidths } from './lore-layout.js'
-import { jumpTo } from '../../services/doublelinks'
+import { jumpTo, jumpToOutlineCitation } from '../../services/doublelinks'
 import { useWorkStore } from '../../stores/work'
 import { useUiStore } from '../../stores/ui'
 
@@ -201,13 +202,24 @@ async function pickGalaxyNode(id) {
   }
 }
 const mapFocus = computed(() => ui.loreScope === 'all' ? null : ui.loreRootId)
-const mapContext = computed(() => mapFocus.value ? '聚焦分支' : '全部条目')
 function afterMapMove(id) {
   const path = work.mubuPath(id).map(node => node.id)
   if (mapFocus.value && !path.includes(mapFocus.value)) showAllEntries()
   selectNode(id)
 }
 const zoomPercent = computed(() => Math.round((Number(treeMap.value?.zoom) || 1) * 100))
+const treeFoldMenuOpen = ref(false)
+const treeMaxDepth = computed(() => Math.max(1, treeMap.value?.maxDepth || 1))
+const treeFoldLevel = computed(() => treeMap.value?.foldLevel ?? Infinity)
+const treeFoldLabel = computed(() => {
+  if (treeFoldLevel.value === Infinity) return '全部'
+  if (Number.isInteger(treeFoldLevel.value)) return `${treeFoldLevel.value}级`
+  return '级别'
+})
+function applyTreeFoldLevel(level) {
+  treeMap.value?.foldToLevel(level)
+  treeFoldMenuOpen.value = false
+}
 function setMapMode(mode) {
   resetScreen()
   if (mode === 'hierarchy' && mapMode.value !== 'hierarchy') {
@@ -221,6 +233,7 @@ function openRelPanel(id) {
 function openGalaxyTarget(target) {
   const resolved = targetById(target.kind, target.id)
   if (!resolved) return
+  if (resolved.kind === 'olnode') return jumpToOutlineCitation(resolved)
   jumpTo(resolved)
 }
 
@@ -262,6 +275,7 @@ watch(() => work.mubu.map(n => [n.id,n.parentId,n.deletedAt].join(':')).join('|'
 /* 换视图即收抽屉并重置两屏：抽屉里点条目后主区就不该再被遮 */
 watch(() => ui.loreView, () => {
   drawer.value = false
+  treeFoldMenuOpen.value = false
   resetScreen()
 })
 /** 窄档：点常驻细轨（含 MubuTree 输出的 .lore-rail / data-rail）→ 开抽屉；
@@ -407,7 +421,10 @@ watch(() => ui.loreRestoreTick, () => nextTick(() => {
               <button type="button" role="tab" :class="{ on: mapMode === 'hierarchy' }" :aria-selected="mapMode === 'hierarchy'" @click="setMapMode('hierarchy')">层级导图</button>
               <button type="button" role="tab" :class="{ on: mapMode === 'relations' }" :aria-selected="mapMode === 'relations'" @click="setMapMode('relations')">关系星系</button>
             </div>
-            <span v-if="mapMode === 'hierarchy'" class="lore-map-context">{{ mapContext }}</span>
+            <div v-if="mapMode === 'hierarchy'" class="lore-map-modes lore-map-scope" role="group" aria-label="层级导图范围">
+              <button type="button" :class="{ on: !mapFocus }" :aria-pressed="!mapFocus" @click="showAllEntries()">全部条目</button>
+              <button type="button" :class="{ on: !!mapFocus }" :aria-pressed="!!mapFocus" :disabled="!mapFocus && !ui.loreActiveId" @click="focusBranch()">聚焦分支</button>
+            </div>
             <div v-if="mapMode === 'hierarchy'" class="lore-map-modes lore-tree-direction" role="group" aria-label="层级导图排布">
               <button type="button" :class="{ on: ui.loreTreeDirection === 'single' }" :aria-pressed="ui.loreTreeDirection === 'single'" @click="ui.loreTreeDirection = 'single'">单侧</button>
               <button type="button" :class="{ on: ui.loreTreeDirection === 'double' }" :aria-pressed="ui.loreTreeDirection === 'double'" @click="ui.loreTreeDirection = 'double'">双侧</button>
@@ -416,8 +433,6 @@ watch(() => ui.loreRestoreTick, () => nextTick(() => {
               <button type="button" :class="{ on: ui.loreTreeEdgeStyle === 'elbow' }" :aria-pressed="ui.loreTreeEdgeStyle === 'elbow'" @click="ui.loreTreeEdgeStyle = 'elbow'">折线</button>
               <button type="button" :class="{ on: ui.loreTreeEdgeStyle === 'curve' }" :aria-pressed="ui.loreTreeEdgeStyle === 'curve'" @click="ui.loreTreeEdgeStyle = 'curve'">曲线</button>
             </div>
-            <button v-if="mapMode === 'hierarchy'" type="button" class="lore-btn quiet" :disabled="!mapFocus && !ui.loreActiveId"
-              @click="mapFocus ? showAllEntries() : focusBranch()">{{ mapFocus ? '全部条目' : '聚焦分支' }}</button>
             <button v-if="mapMode === 'hierarchy'" class="lore-mobile-back" type="button" @click="toScreen('insp')">摘要</button>
           </div>
           </template>
@@ -458,13 +473,31 @@ watch(() => ui.loreRestoreTick, () => nextTick(() => {
               </svg>
               父子层级
             </span>
-            <div class="lore-zoom">
-              <button type="button" title="缩小" @click="treeMap?.zoomOut()">−</button>
-              <button type="button" title="恢复 100%" @click="treeMap?.zoomReset()">{{ zoomPercent }}%</button>
-              <button type="button" title="放大" @click="treeMap?.zoomIn()">+</button>
-              <i />
-              <button type="button" title="适应当前内容" @click="treeMap?.fitAll()">适应</button>
-              <button type="button" title="聚焦当前条目" @click="treeMap?.focusActive()">聚焦</button>
+            <div class="lore-map-foot-tools">
+              <div class="lore-zoom lore-map-foldbar" role="group" aria-label="层级折叠与展开">
+                <button type="button" title="全部折叠" @click="treeMap?.foldAll(true)">折叠</button>
+                <button type="button" title="全部展开" @click="treeMap?.foldAll(false)">展开</button>
+                <i />
+                <NPopover v-model:show="treeFoldMenuOpen" trigger="click" placement="top" :show-arrow="false">
+                  <template #trigger>
+                    <button type="button" class="lore-fold-level-trigger" title="按节点层级折叠或展开">{{ treeFoldLabel }}⌄</button>
+                  </template>
+                  <div class="lore-tm-fold-menu" role="menu" aria-label="按层级展开">
+                    <button type="button" role="menuitem" :class="{ on: treeFoldLevel === 0 }" @click="applyTreeFoldLevel(0)">全部折叠</button>
+                    <button v-for="lvl in treeMaxDepth" :key="lvl" type="button" role="menuitem"
+                      :class="{ on: treeFoldLevel === lvl }" @click="applyTreeFoldLevel(lvl)">展开至 {{ lvl }} 级</button>
+                    <button type="button" role="menuitem" :class="{ on: treeFoldLevel === Infinity }" @click="applyTreeFoldLevel(Infinity)">全部展开</button>
+                  </div>
+                </NPopover>
+              </div>
+              <div class="lore-zoom">
+                <button type="button" title="缩小" @click="treeMap?.zoomOut()">−</button>
+                <button type="button" title="恢复 100%" @click="treeMap?.zoomReset()">{{ zoomPercent }}%</button>
+                <button type="button" title="放大" @click="treeMap?.zoomIn()">+</button>
+                <i />
+                <button type="button" title="适应当前内容" @click="treeMap?.fitAll()">适应</button>
+                <button type="button" title="聚焦当前条目" @click="treeMap?.focusActive()">聚焦</button>
+              </div>
             </div>
           </div>
         </div>
@@ -495,5 +528,79 @@ watch(() => ui.loreRestoreTick, () => nextTick(() => {
 .lore-shell-wrap { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; }
 :global(.lore-shell[data-view='map'][data-map-mode='relations']) {
   grid-template-columns: var(--lore-nav-w, 220px) 16px minmax(0, 1fr);
+}
+:global(.lore-shell[data-view='map'][data-map-mode='relations'] .lore-map-stage) {
+  padding: 10px 14px 14px;
+  box-sizing: border-box;
+}
+.lore-map-view > .lore-map-foot {
+  height: auto;
+  min-height: 58px;
+  padding-block: 10px;
+  flex-wrap: wrap;
+}
+.lore-map-view > .lore-map-foot .lore-map-legend {
+  color: var(--canvas-muted);
+}
+.lore-map-foot-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+.lore-map-view > .lore-map-foot .lore-zoom {
+  color: var(--canvas-title);
+  border-color: rgb(255 255 255 / .14);
+  background: var(--canvas-control);
+}
+.lore-map-view > .lore-map-foot .lore-zoom button {
+  color: inherit;
+}
+.lore-map-view > .lore-map-foot .lore-zoom button:hover {
+  background: var(--canvas-control-hover);
+}
+.lore-map-foldbar .lore-fold-level-trigger {
+  min-width: 52px;
+}
+:global(body[data-skin='dsh'] .n-popover:has(.lore-tm-fold-menu)),
+:global(body[data-skin='dsh'] .n-popover:has(.lore-fold-menu)) {
+  border: 1px solid rgb(228 208 241 / .22);
+  border-radius: 14px;
+  background: linear-gradient(158deg, rgb(103 87 117 / .26), transparent 68%), rgb(34 28 44 / .92);
+  backdrop-filter: blur(22px) saturate(1.25);
+  box-shadow: 0 14px 36px rgb(10 7 18 / .42);
+  padding: 5px;
+}
+:global(.lore-tm-fold-menu),
+:global(.lore-heading-menu.lore-fold-menu) {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 126px;
+}
+:global(.lore-tm-fold-menu button),
+:global(.lore-heading-menu.lore-fold-menu button) {
+  appearance: none;
+  border: 0;
+  border-radius: 8px;
+  padding: 7px 11px;
+  background: transparent;
+  color: #e4daee;
+  font-family: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+:global(.lore-tm-fold-menu button:hover),
+:global(.lore-heading-menu.lore-fold-menu button:hover) {
+  background: rgb(255 255 255 / .09);
+  color: #fff;
+}
+:global(.lore-tm-fold-menu button.on),
+:global(.lore-heading-menu.lore-fold-menu button.on) {
+  background: rgb(164 207 192 / .18);
+  color: #a4cfc0;
+  font-weight: 500;
 }
 </style>

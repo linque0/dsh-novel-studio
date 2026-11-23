@@ -1,3 +1,6 @@
+<!--
+  DiffCard.vue — 设定与人物提案的结构化 Diff 预览卡片（支持 LCS 行对照与逐字段勾选应用）。
+-->
 <script setup>
 /* diff 预览卡（方案 §五.3/§五.4）：两种形态——
  * - 设定扩展（subject:'lore'）：mode='add' 新增条目草案（子节点树）；mode='expand' 现有节点扩写

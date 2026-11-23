@@ -1,3 +1,7 @@
+/**
+ * contracts.js — AI 子系统的基础契约工具集。
+ * 提供作品快照、Token 估算、消息裁剪、游标分页、隐私脱敏及原文证据核验。
+ */
 import { hashContent } from './summarize'
 import { plainChapter as normalizedChapter, rowHash } from '../project/text.js'
 import { projectBook, TABLE_FOR_TYPE } from '../project/normalize.js'

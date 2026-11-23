@@ -1,3 +1,6 @@
+<!--
+  AssistantTaskParameters.vue — 浅眠侧栏创作任务参数区（定位方式、方向数量、目标条目与读取章节范围）。
+-->
 <script setup>
 import {computed} from 'vue'
 import {NButton,NSelect} from 'naive-ui'

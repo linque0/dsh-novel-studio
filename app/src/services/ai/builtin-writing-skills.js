@@ -1,3 +1,6 @@
+/**
+ * builtin-writing-skills.js — 内置经过审校的五阶段写作指导 Skill（仅纯文本指导，不可执行或越权）。
+ */
 import { SKILL_SOURCES } from './skill-sources.js'
 
 // Reviewed, independently adapted guidance. Never install an upstream workflow

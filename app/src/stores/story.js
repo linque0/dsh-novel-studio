@@ -1,3 +1,8 @@
+/**
+ * 故事工作稿（Story Authoring）Pinia 状态管理：
+ * 管理逐章「推进 / 推演 / 审读 / 修稿 / 复核」交互与最多 6 轮自动创作循环，
+ * 并在作者确认后经 applyAiProposal 正式写回章节正文与记忆任务队列。
+ */
 import {defineStore} from 'pinia'
 import {useWorkStore} from './work.js'
 import {useAiStore} from './ai.js'

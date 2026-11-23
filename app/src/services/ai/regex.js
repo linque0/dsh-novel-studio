@@ -1,3 +1,6 @@
+/**
+ * regex.js — 基于 Web Worker 的超时受控正则管线与三视图文本生成（regular / display / prompt）。
+ */
 import { applies } from "./regex-core";
 export function processRegex(
   text,

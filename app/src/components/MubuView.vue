@@ -1,3 +1,5 @@
+<!-- 幻流设定幕布视图（MubuView）：无限嵌套大纲式设定编辑器，
+     支持标题等级、标签/关联行内嵌入、图片插入与显隐、Markdown 导图导入、局部聚焦与撤销/重做历史。 -->
 <script setup>
 import { useLoreSort } from '../composables/useLoreSort.js'
 import { useLoreImages } from '../composables/useLoreImages.js'
@@ -19,6 +21,7 @@ import { jumpTo } from '../services/doublelinks'
 import DLinkPicker from './DLinkPicker.vue'
 import LoreRelRows from './LoreRelRows.vue'
 import { popOut } from '../services/panelwindows'
+import { loreActiveFoldLevel, loreFoldedIdsForLevel, loreTreeMaxDepth } from '../services/lore-tree-layout.js'
 
 const work = useWorkStore()
 const ui = useUiStore()
@@ -205,8 +208,42 @@ function headAdd() {
   commit(() => {}, 'm:' + node.id, 'start')
 }
 
+const foldMenuOpen = ref(false)
+const foldTreeGraph = computed(() => {
+  const map = new Map()
+  const scopeIds = new Set()
+  const foldedSet = new Set()
+  const walk = (list) => {
+    for (const r of list) {
+      scopeIds.add(r.id)
+      if (r.fold) foldedSet.add(r.id)
+      map.set(r.id, r.children.map((c) => c.id))
+      walk(r.children)
+    }
+  }
+  walk(rows.value)
+  return { rootIds: rows.value.map((r) => r.id), childrenOf: (id) => map.get(id) || [], scopeIds, foldedSet }
+})
+const maxTreeDepth = computed(() => Math.max(1, loreTreeMaxDepth(foldTreeGraph.value.rootIds, foldTreeGraph.value.childrenOf)))
+const activeFoldLevel = computed(() => loreActiveFoldLevel(foldTreeGraph.value.rootIds, foldTreeGraph.value.childrenOf, foldTreeGraph.value.foldedSet))
+const foldLevelLabel = computed(() => {
+  if (activeFoldLevel.value === Infinity) return '全部'
+  if (Number.isInteger(activeFoldLevel.value)) return `${activeFoldLevel.value}级`
+  return '级别'
+})
+
 function foldAll(value) {
   work.mubuFoldAll(value)
+  ver.value++
+}
+
+function foldToLevel(level) {
+  const { rootIds, childrenOf, scopeIds } = foldTreeGraph.value
+  if (level === Infinity) {
+    foldAll(false)
+    return
+  }
+  work.mubuSetFoldMap(loreFoldedIdsForLevel(rootIds, childrenOf, level), focusedRootId.value ? scopeIds : null)
   ver.value++
 }
 
@@ -844,6 +881,12 @@ watch(
   () => ui.mubuSyncTick,
   () => ver.value++
 )
+watch(
+  () => ui.loreView,
+  () => {
+    foldMenuOpen.value = false
+  }
+)
 
 let mubuListenersBound = false
 function bindMubuListeners() {
@@ -870,6 +913,7 @@ onActivated(() => {
   bindMubuListeners()
 })
 onDeactivated(() => {
+  foldMenuOpen.value = false
   unbindMubuListeners()
   clearTimeout(relPopTimer)
 })
@@ -949,6 +993,16 @@ defineExpose({
       <i class="tb-sep" />
       <button class="tb" title="全部折叠" @click="foldAll(true)">折叠</button>
       <button class="tb" title="全部展开" @click="foldAll(false)">展开</button>
+      <NPopover v-model:show="foldMenuOpen" trigger="click" placement="bottom" :show-arrow="false">
+        <template #trigger>
+          <button class="tb" type="button" title="按层级折叠展开" @mousedown.prevent>{{ foldLevelLabel }}⌄</button>
+        </template>
+        <div class="lore-heading-menu lore-fold-menu" role="menu" aria-label="按层级折叠展开">
+          <button type="button" role="menuitem" :class="{ on: activeFoldLevel === 0 }" @mousedown.prevent @click="foldToLevel(0); foldMenuOpen = false">全部折叠</button>
+          <button v-for="lvl in maxTreeDepth" :key="lvl" type="button" role="menuitem" :class="{ on: activeFoldLevel === lvl }" @mousedown.prevent @click="foldToLevel(lvl); foldMenuOpen = false">展开至 {{ lvl }} 级</button>
+          <button type="button" role="menuitem" :class="{ on: activeFoldLevel === Infinity }" @mousedown.prevent @click="foldToLevel(Infinity); foldMenuOpen = false">全部展开</button>
+        </div>
+      </NPopover>
       <span class="tb-gap" />
       <NPopover trigger="click" :show-arrow="false"><template #trigger><button class="tb" title="节点标题级别" @mousedown.prevent>H⌄</button></template><div class="lore-heading-menu"><button v-for="level in [0, 1, 2, 3]" :key="level" @mousedown.prevent @click="setHeading(level)">{{ level ? ['','一级标题','二级标题','三级标题'][level] : '普通节点' }}</button></div></NPopover>
       <button class="tb" title="插入双链" @mousedown.prevent @click="requestLink"><OIcon name="link" :size="12" /> 链接</button>

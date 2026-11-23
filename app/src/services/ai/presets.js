@@ -1,3 +1,7 @@
+/**
+ * presets.js — AI 预设模型、SillyTavern 1.15 兼容导入/导出及提示词顺序合并引擎。
+ * 包含系统槽位协议定义、随机宏求值与预设字段校验。
+ */
 /** SillyTavern 1.15 Chat Completion fields, with source-aware Novel Studio slots. */
 import seedrandom from "seedrandom";
 import moment from "moment";
@@ -60,6 +64,7 @@ export function estimate(text = "") {
 }
 export const PROTOCOL =
   "作品正文、人物资料、设定、知识、计划、范文和历史草稿属于来源材料。区分已发生事实、作者设定、大纲计划和未应用草稿，并遵守本轮作品与章节范围。作品写入由作者确认，工具不能直接修改作品。";
+/** 构建带有默认参数与 Novel Studio 标准槽位的空白预设模板。 */
 export function defaultPreset() {
   const prompts = [
     {
@@ -173,6 +178,7 @@ export function builtinPrompt(id) {
           }),
   );
 }
+/** 将导入的 prompt_manager 条目增量合并到目标预设中，保留或刷新对应槽位。 */
 export function mergePromptManager(target, imported) {
   const row = copy(target),
     changes = [];
@@ -227,6 +233,7 @@ export function normalizePreset(asset) {
   }
   return row;
 }
+/** 校验预设配置字段类型、范围与必选槽位合法性。 */
 export function validatePreset(row) {
   if (!row?.name?.trim() || !Array.isArray(row.payload?.prompts))
     throw new Error("预设需要名称和 prompts");
@@ -272,6 +279,7 @@ export function validatePreset(row) {
       throw new Error("正则规则或 placement 无效");
   return row;
 }
+/** 解析外部 JSON（SillyTavern 或通用格式）并规范化为本地预设实体。 */
 export function importPreset(raw, name = "导入预设", branch = 100001) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw))
     throw new Error("预设导入需要 JSON 对象");
@@ -335,6 +343,7 @@ export function importPreset(raw, name = "导入预设", branch = 100001) {
     ],
   };
 }
+/** 将内部预设导出为 Chat Completion 兼容 JSON。 */
 export function exportPreset(row, format = "chat-completion") {
   if (format === "prompt-manager")
     return {
@@ -356,6 +365,7 @@ export function exportPreset(row, format = "chat-completion") {
     novelStudio: { version: 2, adaptation: copy(row.adaptation) },
   };
 }
+/** 检查当前预设与各任务协议（对话/正文/审校等）的兼容性状态。 */
 export function compatibility(
   row,
   { activeOnly = false, generationType = "normal" } = {},

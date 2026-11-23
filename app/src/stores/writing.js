@@ -1,3 +1,8 @@
+/**
+ * 正文续写 / 改写专用任务（Writing Session）Pinia 状态管理：
+ * 在异步准备前冻结编辑器选区锚点（captureWritingAnchor），支持多方向剧情生成、
+ * 候选正文接续及与正文撤销栈的双向状态对账（reconcile）。
+ */
 import { defineStore } from 'pinia'
 import { useWorkStore } from './work.js'
 import { useAiStore } from './ai.js'

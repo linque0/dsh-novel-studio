@@ -1,3 +1,7 @@
+/**
+ * application.js — AI 普通提案与草稿的应用/撤销引擎。
+ * 在持久化写回作品表（章节/大纲/设定/人物/关系）前校验版本哈希、窗口锁与编辑锚点。
+ */
 import { nextTick } from 'vue'
 import { autosave } from '../autosave'
 import { isPopped } from '../panelwindows'
@@ -30,6 +34,7 @@ function targetOf(work, card) {
   const rows = type === 'chapter' ? work.chapters : type === 'outline' ? work.olnodes : type === 'lore' ? work.mubu : work.characters
   return { type, row: rows.find((r) => r.id === card.anchorId && !r.deletedAt) }
 }
+/** 应用前安全守卫：校验作品、章节顺序、依赖版本哈希、窗口锁与写回权限。 */
 export function proposalGuard(work, card, action) {
   if(card.workflowStage)throw new Error('这是工作流阶段材料，请在创作任务中确认最终候选');
   if (card.source?.taskRequest && !taskApplyActions(card.source.taskRequest.type, card.original,card.source.taskRequest.writingAnchor).includes(action)) throw new Error('当前专用任务不允许此写回操作')
@@ -58,6 +63,7 @@ export function proposalGuard(work, card, action) {
   if (action === 'outline' && isPopped(work, 'outline', '')) throw new Error('大纲已被其他窗口锁定')
   return row
 }
+/** 在 TipTap 编辑器文档中唯一定位待替换原文片段，并检测是否包含双链/批注等受保护标记。 */
 export function locateEditorPatch(editor, original, {wholeChapter=false}={}) {
   if(wholeChapter){
     if(normalizeText(editor.getHTML(),'html')!==original)throw new Error('整章正文与候选源稿不一致，请重新生成')
