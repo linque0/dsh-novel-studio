@@ -228,6 +228,14 @@ function focusTo(index) {
   const work = list.value[next]
   if (work) focusId.value = work.id
 }
+function focusWork(workId) {
+  const work = props.works.find((item) => item.id === workId)
+  if (!work) return
+  if (status.value !== '全部' && status.value !== work.status) status.value = '全部'
+  focusId.value = work.id
+}
+defineExpose({ focusWork })
+
 function moveFocus(delta) { focusTo(focusIndex.value + delta) }
 function openFocused() {
   if (props.busy || props.loading) return
