@@ -16,9 +16,11 @@ import {
   planetSizeValue,
   relaxSetEntries,
   rotation,
+  stablePhase,
   TUNING,
   worldToOrbitUV
 } from './planet-scene.js'
+import { entryWeightMeta, entryWeightRank, normalizeEntryWeight } from '../../../services/lore-weights.js'
 import { entryCircleGlyphs, entryCircleScale, entryDisplayRadius, layoutEntryCircleText } from './entry-circles.js'
 import { trimProjected } from './relation-path.js'
 import {
@@ -36,7 +38,7 @@ import {
 import { CONTOUR_POINTS, galaxyTerrain, MESH_STYLES, terrainDepth } from './galaxy-terrain.js'
 
 const TAU = 2 * Math.PI
-const TIER_RADII = [0, 7.8, 5.4, 3.8]
+const BASE_ENTRY_RADIUS = 6.0
 const canvasTextWidths = new WeakMap()
 
 function textWidth(ctx, value) {
@@ -175,8 +177,13 @@ export function paintNetwork(ctx, size, data, scene, state = {}) {
     const saved = state.entryRadii?.[node.id]
     const scale = entryScale * planetScale
     const manual = Number.isFinite(saved) && Number.isFinite(saved * scale)
-    const tierBase = TIER_RADII[node.tier ?? 3]
-    const radius = manual ? entryDisplayRadius(saved, scale) : Math.min(cap, tierBase * (.78 + .42 * point.depthNorm) * crystalScale * planetScale)
+    const weightMeta = entryWeightMeta(node.weight)
+    const baseR = BASE_ENTRY_RADIUS * (.78 + .42 * point.depthNorm) * crystalScale * planetScale
+    const weightedR = baseR * weightMeta.scale
+    const autoRadius = weightMeta.id === 'trivial'
+      ? Math.max(4.0, Math.min(cap, weightedR))
+      : Math.min(cap, weightedR)
+    const radius = manual ? entryDisplayRadius(saved, scale) : autoRadius
     return {
       radius, glyphRadius: Math.min(radius, cap),
       multiline: manual && detailText,
@@ -250,9 +257,17 @@ export function paintNetwork(ctx, size, data, scene, state = {}) {
       const front = facing >= 0
       const priority = node.id === state.nodeId || node.id === resize?.id ? 4
         : node.id === state.hoverId ? 3 : front ? 1 : 0
-      const geom = entryGeometry(node, point, 1, caliperRadius * (node.tier === 1 ? .22 : .16))
+      const weightId = normalizeEntryWeight(node.weight)
+      const capFactor = weightId === 'core' ? .24 : weightId === 'key' ? .20 : .17
+      const geom = entryGeometry(node, point, 1, caliperRadius * capFactor)
+      const isNodeHov = node.id === state.hoverId || node.id === state.nodeId || node.id === state.draggingNodeId
+      const hoverKey = `hov:${node.id}`
+      const prevHover = state.focusWeights?.get(hoverKey) ?? (isNodeHov ? 1 : 0)
+      const hoverT = approach(prevHover, isNodeHov ? 1 : 0)
+      state.focusWeights?.set(hoverKey, hoverT)
+      animationPending ||= hoverT !== (isNodeHov ? 1 : 0)
       const entry = {
-        ...point, ...geom, world, center, orientation, facing, front, local,
+        ...point, ...geom, world, center, orientation, facing, front, local, hoverT,
         primary: planet.coreEntryId === node.id, priority, id: node.id, node, planetId: planet.id, sphereRadius: radius
       }
       projected.set(node.id, entry)
@@ -266,7 +281,13 @@ export function paintNetwork(ctx, size, data, scene, state = {}) {
       : planet.id === state.hoverId || planet.id === state.rimHoverId || planet.id === state.resizingSetId ? 3 : 1
     const anchor = { ...pos, ...geometry, world: center, center, planetId: planet.id, front: true, id: planet.id, priority }
     if (leaf) {
-      leafPoints.push({ ...anchor, node: planet, facing: 1 })
+      const isLeafHov = planet.id === state.hoverId || planet.id === state.nodeId || planet.id === state.draggingNodeId
+      const hoverKey = `hov:${planet.id}`
+      const prevHover = state.focusWeights?.get(hoverKey) ?? (isLeafHov ? 1 : 0)
+      const hoverT = approach(prevHover, isLeafHov ? 1 : 0)
+      state.focusWeights?.set(hoverKey, hoverT)
+      animationPending ||= hoverT !== (isLeafHov ? 1 : 0)
+      leafPoints.push({ ...anchor, node: planet, facing: 1, hoverT })
     } else {
       hits.push({
         ...anchor,
@@ -469,6 +490,7 @@ export function paintNetwork(ctx, size, data, scene, state = {}) {
         y: point.y,
         z: point.z,
         radius: point.radius,
+        hitRadius: Math.max(point.radius + 5, 10),
         resizable: true,
         planetId: point.planetId
       })
@@ -487,7 +509,7 @@ export function paintNetwork(ctx, size, data, scene, state = {}) {
   }
 
   // 10. 去胶囊化建筑测绘铭牌与 2D 防碰撞条目微标签
-  drawTopologyLabels(ctx, width, height, work, bodies, bodyById, [...nodeList, ...leafPoints], satellites, hits, state, satAlpha, overview, scene)
+  drawTopologyLabels(ctx, width, height, work, bodies, bodyById, [...nodeList, ...leafPoints], satellites, hits, state, satAlpha, overview, scene, data.routes)
 
   ctx.globalAlpha = 1
   return { hits, camera, work, projected, bodyPoints, orbits, animationPending }
@@ -628,13 +650,18 @@ function drawTopologyGravityMesh(ctx, width, height, scene, camera, bodies, fiel
       || state.resizingSetId === p.id || state.planetSettingsId === p.id
     drawPlumb(b.pos, b.uv.u, b.uv.v, p.color, (p.total ? 1 : .56) * b.dim, hi)
   }
-  // 重点或悬停条目测高垂线
+  // 条目测高垂线：核心常显；关键在聚焦/悬停所属星域或中近距缩放显现；其余在直接悬停/选中时显现
+  const plumbZoom = scene.entryZoom ?? scene.zoom
   for (const n of nodeList) {
-    const hi = state.hoverId === n.id || state.nodeId === n.id
-    const hub = (n.node.links?.length || 0) >= 2 && (n.planetId === state.hoverId || n.planetId === state.nodeId)
-    if (!hi && !hub) continue
+    const w = normalizeEntryWeight(n.node.weight)
+    const hi = state.hoverId === n.id || state.nodeId === n.id || state.draggingNodeId === n.id
+    const domainActive = n.planetId === state.hoverId || n.planetId === state.nodeId || n.reveal > 0.5
+    const showCore = w === 'core'
+    const showKey = w === 'key' && (domainActive || plumbZoom >= 1.12)
+    if (!hi && !showCore && !showKey) continue
     const { x, z } = n.world.clone().applyQuaternion(camera.inverse)
-    drawPlumb(n, x, z, n.node.color || '#8CB4FF', hi ? .96 : .62, hi)
+    const baseA = hi ? .96 : showCore ? .62 : .42
+    drawPlumb(n, x, z, n.node.color || '#8CB4FF', baseA * (n.dim ?? 1), hi)
   }
 
   ctx.restore()
@@ -995,25 +1022,34 @@ function drawPrismCore(ctx, camera, origin, view, center, title, glow, spectrum,
   if (light > 0) drawStar(coreArm * 1.42, rgbaString(coreGlowRgb, clamp(0.32 * light * breathGain, 0.10, 0.48)))
   drawStar(coreArm, rgbaString(platinum, clamp(0.76 + 0.24 * light, 0.64, 1)))
 
-  // 6. 中心铭牌（恢复设计稿深空柔影冷铂排印并同步高饱和主彩微标）
+  // 6. 中心铭牌（零 shadowBlur 深空柔影径向衬底 + 冷铂排印 + 高饱和主彩微标）
   const labelY = clamp(center.y + r * 1.58, 24, height - 28)
   const labelX = clamp(center.x, 70, width - 70)
-  ctx.globalAlpha = 0.98
   const fontSize = Math.round(clamp(r * .32, 11, 13.5) * 2) / 2
   ctx.font = `600 ${fontSize}px "PingFang SC", "Microsoft YaHei", sans-serif`
+  const fitTitle = fitText(ctx, title || '设定集总览', Math.min(200, width * 0.42))
+  const backingR = Math.max(46, textWidth(ctx, fitTitle) * 0.65 + 16)
+  const backing = ctx.createRadialGradient?.(labelX, labelY + 5, 4, labelX, labelY + 5, backingR)
+  if (backing?.addColorStop) {
+    backing.addColorStop(0, 'rgba(4, 7, 13, 0.72)')
+    backing.addColorStop(0.65, 'rgba(4, 7, 13, 0.34)')
+    backing.addColorStop(1, 'rgba(4, 7, 13, 0)')
+    ctx.fillStyle = backing
+    ctx.globalAlpha = 1
+    ctx.beginPath()
+    ctx.ellipse(labelX, labelY + 5, backingR, 22, 0, 0, TAU)
+    ctx.fill()
+  }
+  ctx.globalAlpha = 0.98
   ctx.fillStyle = rgbaString(platinum, 0.98)
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.shadowColor = '#04070D'
-  ctx.shadowBlur = 7
-  const fitTitle = fitText(ctx, title || '设定集总览', Math.min(200, width * 0.42))
   outlinedText(ctx, fitTitle, labelX, labelY)
 
   ctx.font = '500 9px "JetBrains Mono", Consolas, monospace'
   ctx.fillStyle = rgbaString(primaryTint, 0.86)
   ctx.globalAlpha = 1
   outlinedText(ctx, 'PRISM CORE // 00', labelX, labelY + 13)
-  ctx.shadowBlur = 0
   ctx.restore()
 }
 
@@ -1572,18 +1608,26 @@ function drawTopologySatellite(ctx, satellite, state, satAlpha) {
 }
 
 function drawCrystalNode(ctx, point, state) {
-  const emphasized = point.priority >= 3 || point.id === state.nodeId || point.id === state.hoverId
-  const hub = point.node.tier === 1
+  const emphasized = point.priority >= 3 || point.id === state.nodeId || point.id === state.hoverId || point.id === state.draggingNodeId
+  const hoverT = point.hoverT ?? (emphasized ? 1 : 0)
+  const isHovered = hoverT > 0.04 || emphasized
+  const weight = normalizeEntryWeight(point.node?.weight)
   const light = clamp((point.facing + 0.15) / 0.3, 0, 1)
-  const alpha = (emphasized ? 1 : .66 + .34 * light) * point.dim
+  const alpha = (isHovered ? 1 : .68 + .32 * light) * point.dim
   const col = point.node?.color || '#8CB4FF'
-  const r = point.glyphRadius ?? point.radius
+  const baseR = point.glyphRadius ?? point.radius
+  const r = baseR * (1 + 0.18 * hoverT)
   const x = point.x, y = point.y
+  const clock = state.reduced ? 0 : (state.nodeMotionTime ?? 0)
+  const phase = stablePhase(point.id)
 
+  ctx.save()
+  ctx.lineJoin = 'miter'
+  ctx.lineCap = 'butt'
   ctx.globalAlpha = alpha
 
   // 手动拖拽调大后展示极细校准外圈（方便视觉识别可拖拽边）
-  if (emphasized) {
+  if (emphasized && point.manual) {
     ctx.strokeStyle = '#47D7E8'
     ctx.lineWidth = 0.95
     ctx.setLineDash([2.5, 3])
@@ -1593,22 +1637,23 @@ function drawCrystalNode(ctx, point, state) {
     ctx.setLineDash([])
   }
 
-  if (hub) {
-    const spike = r * (emphasized ? 2.65 : 2.05)
-    ctx.strokeStyle = emphasized ? '#47D7E8' : col
-    ctx.lineWidth = emphasized ? 0.95 : 0.72
-    ctx.globalAlpha = alpha * (emphasized ? 0.88 : 0.52)
+  /* 1. core（核心 · 1.38×）—— 双层四芒十字星核 */
+  if (weight === 'core') {
+    const spikeLen = r * (2.05 + 0.60 * hoverT)
+    ctx.strokeStyle = isHovered ? '#47D7E8' : col
+    ctx.lineWidth = 0.72 + 0.23 * hoverT
+    ctx.globalAlpha = alpha * (0.52 + 0.36 * hoverT)
     ctx.beginPath()
-    ctx.moveTo(x - spike, y); ctx.lineTo(x + spike, y)
-    ctx.moveTo(x, y - spike); ctx.lineTo(x, y + spike)
+    ctx.moveTo(x - spikeLen, y); ctx.lineTo(x + spikeLen, y)
+    ctx.moveTo(x, y - spikeLen); ctx.lineTo(x, y + spikeLen)
     ctx.stroke()
 
-    const outR = r * 1.24
-    const waist = r * 0.36
+    const outR = r * 1.32
+    const waist = r * 0.38
     ctx.globalAlpha = alpha
-    ctx.fillStyle = 'rgba(4, 9, 18, 0.90)'
-    ctx.strokeStyle = emphasized ? '#47D7E8' : '#EAF3FF'
-    ctx.lineWidth = emphasized ? 1.45 : 1.1
+    ctx.fillStyle = 'rgba(4, 9, 18, 0.92)'
+    ctx.strokeStyle = isHovered ? '#47D7E8' : '#EAF3FF'
+    ctx.lineWidth = 1.15 + 0.30 * hoverT
     ctx.beginPath()
     ctx.moveTo(x, y - outR)
     ctx.lineTo(x + waist, y - waist)
@@ -1623,55 +1668,315 @@ function drawCrystalNode(ctx, point, state) {
     ctx.stroke()
 
     const inR = r * 0.62
-    ctx.strokeStyle = emphasized ? '#EAF3FF' : col
-    ctx.lineWidth = .85
+    ctx.strokeStyle = isHovered ? '#EAF3FF' : col
+    ctx.lineWidth = 0.85
     ctx.beginPath()
     ctx.moveTo(x, y - inR); ctx.lineTo(x + inR, y)
     ctx.lineTo(x, y + inR); ctx.lineTo(x - inR, y)
     ctx.closePath()
     ctx.stroke()
 
-    const coreD = 1.9
-    ctx.fillStyle = '#EAF3FF'
+    const coreD = Math.max(1.9, r * 0.20)
+    ctx.fillStyle = isHovered ? '#FFFFFF' : '#EAF3FF'
     ctx.beginPath()
     ctx.moveTo(x, y - coreD); ctx.lineTo(x + coreD, y)
     ctx.lineTo(x, y + coreD); ctx.lineTo(x - coreD, y)
     ctx.closePath()
     ctx.fill()
-  } else {
-    const ry = r * 1.14
-    const rx = r * .84
-    if (emphasized) {
-      const lockR = ry * 1.55
+
+    ctx.restore()
+    return
+  }
+
+  /* 2. key（关键 · 1.18×）—— 方案 H · 日蚀星环（严格分层：后半轨 → 球核与日蚀弦月 → 前半轨与伴星） */
+  if (weight === 'key') {
+    const coreR = r * 0.68
+    const tilt = (-26 * Math.PI) / 180
+    const rx = r * (1.42 + 0.14 * hoverT)
+    const ry = r * (0.44 + 0.04 * hoverT)
+    const orbAng = (clock * 0.0011 + phase * 1.9 + 0.55) % TAU
+    const satX = Math.cos(orbAng) * rx
+    const satY = Math.sin(orbAng) * ry
+    const satIsBack = Math.sin(orbAng) < 0
+    const satBehindSphere = satIsBack && Math.hypot(satX, satY) < coreR * 0.94
+
+    // 悬停外扩两段对角 70° 冰青断弧光晕
+    if (hoverT > 0.04) {
+      const haloR = r * (1.44 + 0.12 * hoverT)
+      const halfSpan = (35 * Math.PI) / 180
       ctx.strokeStyle = '#47D7E8'
-      ctx.lineWidth = .9
-      ctx.globalAlpha = alpha * .82
+      ctx.lineWidth = 0.75
+      ctx.globalAlpha = alpha * 0.62 * hoverT
+      for (let q = 0; q < 2; q++) {
+        const midA = q * Math.PI - Math.PI * 0.25 + clock * 0.00035
+        ctx.beginPath()
+        ctx.arc(x, y, haloR, midA - halfSpan, midA + halfSpan)
+        ctx.stroke()
+      }
+    }
+
+    // ① 后半段 3D 椭圆轨道（球体背面）
+    ctx.save()
+    ctx.translate(x, y)
+    ctx.rotate(tilt)
+    ctx.strokeStyle = `rgba(71, 215, 232, ${0.32 + 0.23 * hoverT})`
+    ctx.lineWidth = 0.85
+    ctx.globalAlpha = alpha
+    ctx.beginPath()
+    ctx.ellipse(0, 0, rx, ry, 0, Math.PI, TAU)
+    ctx.stroke()
+
+    if (satIsBack && !satBehindSphere) {
+      const sr = clamp(r * 0.20, 1.5, 2.1)
+      ctx.globalAlpha = alpha * 0.82
+      ctx.fillStyle = '#DCEEFF'
       ctx.beginPath()
-      ctx.moveTo(x, y - lockR); ctx.lineTo(x + lockR * .82, y)
-      ctx.lineTo(x, y + lockR); ctx.lineTo(x - lockR * .82, y)
-      ctx.closePath()
-      ctx.stroke()
+      ctx.arc(satX, satY, sr, 0, TAU)
+      ctx.fill()
+    }
+    ctx.restore()
+
+    // ② 不透明深空暗玻璃球核 + 左上渐细发光日蚀弦月高光弧
+    const coreGrad = ctx.createRadialGradient?.(
+      x - coreR * 0.32, y - coreR * 0.32, coreR * 0.08,
+      x, y, coreR
+    )
+    if (coreGrad?.addColorStop) {
+      coreGrad.addColorStop(0, '#162438')
+      coreGrad.addColorStop(0.58, '#070E1B')
+      coreGrad.addColorStop(1, '#050A14')
+      ctx.fillStyle = coreGrad
+    } else {
+      ctx.fillStyle = '#070E1B'
     }
     ctx.globalAlpha = alpha
-    ctx.fillStyle = emphasized ? '#EAF3FF' : col
     ctx.beginPath()
-    ctx.moveTo(x, y - ry); ctx.lineTo(x, y + ry); ctx.lineTo(x - rx, y)
+    ctx.arc(x, y, coreR, 0, TAU)
+    ctx.fill()
+
+    ctx.strokeStyle = isHovered ? 'rgba(71, 215, 232, 0.72)' : 'rgba(234, 243, 255, 0.48)'
+    ctx.lineWidth = 0.75
+    ctx.beginPath()
+    ctx.arc(x, y, coreR, 0, TAU)
+    ctx.stroke()
+
+    // 左上渐细日蚀弦月高光弧（约 195° ~ 295°）
+    const aStart = (192 * Math.PI) / 180
+    const aEnd = (302 * Math.PI) / 180
+    const steps = 16
+    const maxThick = coreR * (0.24 + 0.06 * hoverT)
+    const outerPts = new Array(steps + 1)
+    const innerPts = new Array(steps + 1)
+    for (let i = 0; i <= steps; i++) {
+      const u = i / steps
+      const ang = aStart + (aEnd - aStart) * u
+      const ca = Math.cos(ang), sa = Math.sin(ang)
+      const thick = maxThick * Math.pow(Math.sin(Math.PI * u), 0.82)
+      outerPts[i] = [x + ca * (coreR + 0.2), y + sa * (coreR + 0.2)]
+      innerPts[i] = [x + ca * (coreR - thick), y + sa * (coreR - thick)]
+    }
+    const cresGrad = ctx.createLinearGradient?.(
+      x - coreR * 0.9, y - coreR * 0.9,
+      x + coreR * 0.6, y + coreR * 0.4
+    )
+    if (cresGrad?.addColorStop) {
+      cresGrad.addColorStop(0, '#FFFFFF')
+      cresGrad.addColorStop(0.55, '#EAF3FF')
+      cresGrad.addColorStop(1, '#47D7E8')
+      ctx.fillStyle = cresGrad
+    } else {
+      ctx.fillStyle = '#EAF3FF'
+    }
+    ctx.globalAlpha = alpha
+    ctx.beginPath()
+    ctx.moveTo(outerPts[0][0], outerPts[0][1])
+    for (let i = 1; i <= steps; i++) ctx.lineTo(outerPts[i][0], outerPts[i][1])
+    for (let i = steps; i >= 0; i--) ctx.lineTo(innerPts[i][0], innerPts[i][1])
     ctx.closePath()
     ctx.fill()
 
-    ctx.fillStyle = emphasized ? '#47D7E8' : hexToRgba(col, .46)
+    // ③ 前半段 3D 椭圆轨道（球体正面）+ 前景巡游伴星珠
+    ctx.save()
+    ctx.translate(x, y)
+    ctx.rotate(tilt)
+    ctx.strokeStyle = isHovered ? '#EAF3FF' : '#47D7E8'
+    ctx.lineWidth = 0.95 + 0.30 * hoverT
+    ctx.globalAlpha = alpha * (0.84 + 0.14 * hoverT)
     ctx.beginPath()
-    ctx.moveTo(x, y - ry); ctx.lineTo(x + rx, y); ctx.lineTo(x, y + ry)
+    ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI)
+    ctx.stroke()
+
+    if (!satIsBack) {
+      const sr = clamp(1.8 + 0.4 * hoverT, 1.8, 2.4)
+      ctx.strokeStyle = '#47D7E8'
+      ctx.lineWidth = 0.78
+      ctx.globalAlpha = alpha * 0.76
+      ctx.beginPath()
+      ctx.arc(satX, satY, sr * 1.55, 0, TAU)
+      ctx.stroke()
+
+      ctx.fillStyle = '#EAF3FF'
+      ctx.globalAlpha = alpha
+      ctx.beginPath()
+      ctx.arc(satX, satY, sr, 0, TAU)
+      ctx.fill()
+    }
+    ctx.restore()
+
+    ctx.restore()
+    return
+  }
+
+  /* 3. accent（点缀 · 0.80×）—— 双星共轭结（±28° 半透细长双微菱轻盈交叠 + 炽白微星点） */
+  if (weight === 'accent') {
+    const exp = 1 + 0.08 * hoverT
+    const ly = r * 1.26 * exp
+    const lx = r * 0.48 * exp
+    const tiltRad = ((28 + 6 * hoverT) * Math.PI) / 180
+    const shift = r * (0.06 + 0.10 * hoverT)
+
+    const drawShard = (cx, cy, ang, fill, stroke) => {
+      ctx.save()
+      ctx.translate(cx, cy)
+      ctx.rotate(ang)
+      ctx.fillStyle = fill
+      ctx.strokeStyle = stroke
+      ctx.lineWidth = 0.85
+      ctx.beginPath()
+      ctx.moveTo(0, -ly)
+      ctx.lineTo(lx, 0)
+      ctx.lineTo(0, ly)
+      ctx.lineTo(-lx, 0)
+      ctx.closePath()
+      ctx.fill()
+      ctx.stroke()
+      ctx.restore()
+    }
+
+    ctx.globalAlpha = alpha
+    drawShard(
+      x - shift * 0.45,
+      y + shift * 0.25,
+      -tiltRad,
+      hexToRgba(isHovered ? '#47D7E8' : col, 0.20 + 0.10 * hoverT),
+      isHovered ? '#47D7E8' : col
+    )
+    drawShard(
+      x + shift * 0.45,
+      y - shift * 0.25,
+      tiltRad,
+      `rgba(234, 243, 255, ${0.17 + 0.09 * hoverT})`,
+      `rgba(234, 243, 255, ${0.72 + 0.23 * hoverT})`
+    )
+
+    if (hoverT > 0.04) {
+      const glint = 4.0 * hoverT
+      ctx.strokeStyle = '#FFFFFF'
+      ctx.lineWidth = 0.72
+      ctx.globalAlpha = alpha * 0.88 * hoverT
+      ctx.beginPath()
+      ctx.moveTo(x - glint, y); ctx.lineTo(x + glint, y)
+      ctx.moveTo(x, y - glint); ctx.lineTo(x, y + glint)
+      ctx.stroke()
+    }
+
+    const cR = 1.7 + 0.7 * hoverT
+    ctx.globalAlpha = alpha
+    ctx.fillStyle = '#EAF3FF'
+    ctx.beginPath()
+    ctx.moveTo(x, y - cR); ctx.lineTo(x + cR, y)
+    ctx.lineTo(x, y + cR); ctx.lineTo(x - cR, y)
     ctx.closePath()
     ctx.fill()
 
-    ctx.strokeStyle = emphasized ? '#FFFFFF' : '#EAF3FF'
-    ctx.lineWidth = emphasized ? 1.15 : .8
+    ctx.restore()
+    return
+  }
+
+  /* 4. trivial（末节 · 0.62×）—— 方案 N · 悬涡星屑（双 180° 错位 75° 细旋弧 + 1.8px 炽白针尖核） */
+  if (weight === 'trivial') {
+    const arcR = clamp(baseR * 1.02, 4.2, 7.2) * (1 + 0.22 * hoverT)
+    const arcSpan = (75 * Math.PI) / 180
+    const rot = clock * 0.00048 + phase
+
+    ctx.lineCap = 'round'
+    for (let k = 0; k < 2; k++) {
+      const a0 = rot + k * Math.PI
+      const a1 = a0 + arcSpan
+      ctx.strokeStyle = k === 0 ? (isHovered ? '#FFFFFF' : '#EAF3FF') : '#47D7E8'
+      ctx.lineWidth = 0.92 + 0.23 * hoverT
+      ctx.globalAlpha = alpha * (0.84 + 0.16 * hoverT)
+      ctx.beginPath()
+      ctx.arc(x, y, arcR, a0, a1)
+      ctx.stroke()
+
+      const leadX = x + Math.cos(a1) * arcR
+      const leadY = y + Math.sin(a1) * arcR
+      ctx.fillStyle = k === 0 ? '#FFFFFF' : '#47D7E8'
+      ctx.beginPath()
+      ctx.arc(leadX, leadY, 0.9, 0, TAU)
+      ctx.fill()
+    }
+    ctx.lineCap = 'butt'
+
+    if (hoverT > 0.04) {
+      const glint = 4.2 * hoverT
+      ctx.strokeStyle = '#FFFFFF'
+      ctx.lineWidth = 0.75
+      ctx.globalAlpha = alpha * 0.92 * hoverT
+      ctx.beginPath()
+      ctx.moveTo(x - glint, y); ctx.lineTo(x + glint, y)
+      ctx.moveTo(x, y - glint); ctx.lineTo(x, y + glint)
+      ctx.stroke()
+    }
+
+    const coreR = 1.8 + 0.4 * hoverT
+    ctx.globalAlpha = alpha
+    ctx.fillStyle = '#EAF3FF'
     ctx.beginPath()
-    ctx.moveTo(x, y - ry); ctx.lineTo(x + rx, y); ctx.lineTo(x, y + ry); ctx.lineTo(x - rx, y)
+    ctx.arc(x, y, coreR, 0, TAU)
+    ctx.fill()
+
+    ctx.restore()
+    return
+  }
+
+  /* 5. standard（标准 · 1.00×，默认）—— 经典双切面实心菱晶 */
+  const ry = r * 1.16
+  const rx = r * 0.86
+  if (hoverT > 0.04) {
+    const lockR = ry * (1.36 + 0.19 * hoverT)
+    ctx.strokeStyle = '#47D7E8'
+    ctx.lineWidth = 0.9
+    ctx.globalAlpha = alpha * 0.84 * hoverT
+    ctx.beginPath()
+    ctx.moveTo(x, y - lockR); ctx.lineTo(x + lockR * 0.82, y)
+    ctx.lineTo(x, y + lockR); ctx.lineTo(x - lockR * 0.82, y)
     ctx.closePath()
     ctx.stroke()
   }
+
+  ctx.globalAlpha = alpha
+  ctx.fillStyle = isHovered ? '#EAF3FF' : col
+  ctx.beginPath()
+  ctx.moveTo(x, y - ry); ctx.lineTo(x, y + ry); ctx.lineTo(x - rx, y)
+  ctx.closePath()
+  ctx.fill()
+
+  ctx.fillStyle = isHovered ? '#47D7E8' : hexToRgba(col, 0.46)
+  ctx.beginPath()
+  ctx.moveTo(x, y - ry); ctx.lineTo(x + rx, y); ctx.lineTo(x, y + ry)
+  ctx.closePath()
+  ctx.fill()
+
+  ctx.strokeStyle = isHovered ? '#FFFFFF' : '#EAF3FF'
+  ctx.lineWidth = 0.8 + 0.4 * hoverT
+  ctx.beginPath()
+  ctx.moveTo(x, y - ry); ctx.lineTo(x + rx, y); ctx.lineTo(x, y + ry); ctx.lineTo(x - rx, y)
+  ctx.closePath()
+  ctx.stroke()
+
+  ctx.restore()
 }
 
 function drawBridgeBadge(ctx, x, y, text, active) {
@@ -1736,7 +2041,7 @@ function findLabelBox6(point, boxW, boxH, width, height, occupied, obstacles = [
   return box
 }
 
-function drawTopologyLabels(ctx, width, height, work, bodies, bodyById, nodes, satellites, hits, state, satAlpha, overview, scene) {
+function drawTopologyLabels(ctx, width, height, work, bodies, bodyById, nodes, satellites, hits, state, satAlpha, overview, scene, routes = []) {
   const occupied = []
   // Pre-seed HUD safe zones (top legend, bottom hint bar, bottom-right zoom toolbar + 10px padding).
   if (Array.isArray(state.hudBoxes) && state.hudBoxes.length) {
@@ -1768,18 +2073,51 @@ function drawTopologyLabels(ctx, width, height, work, bodies, bodyById, nodes, s
   const active = id => id === state.hoverId || id === state.nodeId || id === state.draggingNodeId
     || id === state.rimHoverId || id === state.resizingSetId || id === state.planetSettingsId
   const hoveredTargetId = state.draggingNodeId || state.hoverId
+  const connectedToHover = new Set()
+  if (hoveredTargetId || state.bridgeId) {
+    for (const route of routes || []) {
+      const fromId = route.from?.id
+      const toId = route.to?.id
+      if (!fromId || !toId) continue
+      const hitBridge = Boolean(route.bridgeId && (route.bridgeId === state.bridgeId || route.bridgeId === hoveredTargetId))
+      if (hitBridge || fromId === hoveredTargetId || toId === hoveredTargetId) {
+        connectedToHover.add(fromId)
+        connectedToHover.add(toId)
+      }
+    }
+  }
   const zoomLevel = scene.entryZoom ?? scene.zoom
-  const zoomReveal2 = clamp((zoomLevel - 1.14) / .14, 0, 1)
-  const zoomReveal3 = clamp((zoomLevel - 1.22) / .12, 0, 1)
+
+  const labelVisibilityFor = node => {
+    const hi = active(node.id)
+    if (hi) return 1
+    const w = normalizeEntryWeight(node.node.weight)
+    if (w === 'core') return 1
+    if (w === 'key') {
+      const zRev = zoomLevel >= 1.12 ? clamp((zoomLevel - 1.08) / 0.08, 0.35, 1) : 0
+      return !overview ? 1 : Math.max(node.reveal, zRev)
+    }
+    if (w === 'standard') {
+      const zRev = zoomLevel >= 1.25 ? clamp((zoomLevel - 1.21) / 0.08, 0.35, 1) : 0
+      return !overview ? 1 : Math.max(node.reveal, zRev)
+    }
+    if (w === 'accent') {
+      const zRev = zoomLevel >= 1.42 ? clamp((zoomLevel - 1.38) / 0.08, 0.35, 1) : 0
+      return Math.max(node.reveal, zRev)
+    }
+    // trivial：仅直接悬停该节点、悬停关联连线或深度缩放 zoom >= 1.65 时展开
+    if (connectedToHover.has(node.id)) return 1
+    return zoomLevel >= 1.65 ? clamp((zoomLevel - 1.61) / 0.08, 0.35, 1) : 0
+  }
 
   const drawNodeLabel = (node, allowFallback = false) => {
     const hi = active(node.id)
-    const tier = node.node.tier ?? 3
-    const core = tier === 1
-    const zoomRev = tier <= 1 ? 1 : tier === 2 ? zoomReveal2 : zoomReveal3
-    const visibility = hi ? 1 : (!overview && tier <= 2 ? 1 : Math.max(node.reveal, tier <= 1 ? 1 : zoomRev))
+    const weight = normalizeEntryWeight(node.node.weight)
+    const core = weight === 'core'
+    const keyNode = weight === 'key'
+    const visibility = labelVisibilityFor(node)
     if (visibility < .03) return
-    ctx.font = `${hi || core ? 600 : 500} ${hi || core ? 11.2 : 10.2}px "PingFang SC", "Microsoft YaHei", sans-serif`
+    ctx.font = `${hi || core || keyNode ? 600 : 500} ${hi || core ? 11.2 : weight === 'trivial' ? 9.8 : 10.2}px "PingFang SC", "Microsoft YaHei", sans-serif`
     const title = fitText(ctx, cleanAndTruncateTitle(node.node.title, 7), 96)
     const labelWidth = textWidth(ctx, title)
     const hostBody = bodyById.get(node.planetId)
@@ -1788,7 +2126,7 @@ function drawTopologyLabels(ctx, width, height, work, bodies, bodyById, nodes, s
     const box = findLabelBox6(node, labelWidth + 10, 18, width, height, occupied, otherDomains, toward, allowFallback)
     if (!box) return
     ctx.globalAlpha = visibility * node.dim * (hi ? .96 : .84)
-    ctx.strokeStyle = hi ? '#47D7E8' : node.node.color
+    ctx.strokeStyle = hi || keyNode ? '#47D7E8' : node.node.color
     ctx.lineWidth = hi ? .95 : .72
     const attachX = clamp(node.x, box.x1 + 2, box.x2 - 2)
     const attachY = box.y + (core || hi ? 8.5 : 0)
@@ -1803,8 +2141,8 @@ function drawTopologyLabels(ctx, width, height, work, bodies, bodyById, nodes, s
       ctx.lineTo(box.x2 - 4, box.y + 8.5)
     }
     ctx.stroke()
-    ctx.globalAlpha = visibility * node.dim * (hi ? 1 : .92)
-    ctx.fillStyle = hi ? '#FFFFFF' : (core ? '#EAF3FF' : '#d6e6fa')
+    ctx.globalAlpha = visibility * node.dim * (hi ? 1 : weight === 'trivial' ? .84 : .92)
+    ctx.fillStyle = hi ? '#FFFFFF' : core ? '#EAF3FF' : keyNode ? '#D2F5FA' : '#d6e6fa'
     ctx.textAlign = 'center'
     outlinedText(ctx, title, box.x, box.y)
   }
@@ -1951,12 +2289,12 @@ function drawTopologyLabels(ctx, width, height, work, bodies, bodyById, nodes, s
       halfWidth: (chosenSet.x2 - chosenSet.x1) * .5, halfHeight: (chosenSet.y2 - chosenSet.y1) * .5 })
   }
 
-  // 3. Priority #3..#5: Tier 1 > Tier 2 > Tier 3 entry labels (skip non-hovered on collision).
+  // 3. Priority #3..#7: 严格按权重占坑（核心 > 关键 > 标准 > 点缀 > 末节），放不下即隐藏
   const sortedNodes = nodes
     .filter(node => node !== hoveredNode)
-    .filter(node => (node.node.tier ?? 3) <= 1 || zoomReveal2 >= .03 || node.reveal >= .03 || active(node.id))
+    .filter(node => labelVisibilityFor(node) >= .03)
     .sort((a, b) => Number(active(b.id)) - Number(active(a.id))
-      || (a.node.tier ?? 3) - (b.node.tier ?? 3)
+      || entryWeightRank(b.node.weight) - entryWeightRank(a.node.weight)
       || b.reveal - a.reveal
       || b.depthNorm - a.depthNorm)
   for (const node of sortedNodes) {

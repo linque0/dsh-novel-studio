@@ -7,7 +7,7 @@ import { useWorkStore } from '../../stores/work'
 import { useUiStore } from '../../stores/ui'
 import { usePanZoom } from '../../services/graphview'
 import { loreMapContent } from '../../services/lore-editor-dom'
-import { layoutLoreTree, loreActiveFoldLevel, loreFoldedIdsForLevel, loreTreeMaxDepth } from '../../services/lore-tree-layout'
+import { layoutLoreTree, loreActiveFoldLevel, loreFoldedIdsForLevel, loreInitialFoldedIds, loreTreeMaxDepth } from '../../services/lore-tree-layout'
 import { planLoreMove } from '../../services/lore-move'
 import LoreImageHiddenNotice from '../LoreImageHiddenNotice.vue'
 import LoreMapEditor from './LoreMapEditor.vue'
@@ -28,7 +28,11 @@ const gesture = shallowRef(null)
 const dropTarget = shallowRef(null)
 const hoveredId = ref('')
 const CENTER = Symbol('work-center')
-const minZoom = 0.08
+const FIT_MIN_ZOOM = 0.08
+const READABLE_MIN_ZOOM = 0.6
+const DEFAULT_READABLE_ZOOM = 0.75
+const FOCUS_TARGET_ZOOM = 0.85
+const minZoom = FIT_MIN_ZOOM
 const { zoom, tx, ty, onWheel, onPanStart, fit, centerOn } = usePanZoom(canvasEl, { minZoom })
 const innerStyle = computed(() => {
   const z = Math.round((zoom.value || 1) * 1000) / 1000
@@ -48,6 +52,9 @@ const nodes = new Map()
 const cache = new Map()
 let observer
 let initialFrame = true
+let userFoldTouched = false
+let initialFoldKey = ''
+let fitOverflowHintShown = false
 
 const roots = computed(() => props.focusId ? [props.focusId] : work.mubuRoots().map(node => node.id))
 const entries = computed(() => {
@@ -113,8 +120,51 @@ function trackNode(id, el) {
   }
 }
 
+function anchorCamera(preferredNode = null) {
+  const target = preferredNode ||
+    layout.value.nodes.find(item => item.id === props.activeId) ||
+    layout.value.nodes[0]
+  if (target) {
+    centerNode(target)
+    return
+  }
+  const c = layout.value.center
+  centerOn(c.x + c.width / 2, c.y + c.height / 2)
+}
+
+function frameReadableAnchor() {
+  const el = canvasEl.value
+  const activeNode = layout.value.nodes.find(item => item.id === props.activeId)
+  if (activeNode) {
+    centerNode(activeNode)
+    return
+  }
+  if (el && props.direction === 'single') {
+    const c = layout.value.center
+    tx.value = Math.round(el.clientWidth * 0.16 - c.x * zoom.value)
+    ty.value = Math.round(el.clientHeight / 2 - (c.y + c.height / 2) * zoom.value)
+    return
+  }
+  anchorCamera(layout.value.nodes[0] || null)
+}
+
+function idealZoomFor(bounds, maxZoom = 1.1) {
+  const el = canvasEl.value
+  if (!el || !bounds.w || !bounds.h || !el.clientWidth || !el.clientHeight) return 1
+  return Math.min(maxZoom, el.clientWidth / (bounds.w + 80), el.clientHeight / (bounds.h + 80))
+}
+
 function fitAll() {
-  fit(layout.value.bounds, { minZoom: 0 })
+  const bounds = layout.value.bounds
+  const ideal = idealZoomFor(bounds, 1.2)
+  fit(bounds, { minZoom: FIT_MIN_ZOOM })
+  if (ideal < FIT_MIN_ZOOM) {
+    frameReadableAnchor()
+    if (!fitOverflowHintShown) {
+      fitOverflowHintShown = true
+      window.$msg?.info('当前展开条目较多，可按层级折叠或聚焦单个分支浏览')
+    }
+  }
 }
 
 function centerNode(node) {
@@ -126,13 +176,27 @@ function frameTree() {
   if (window.innerWidth <= 559 && node) {
     zoom.value = 0.8
     centerNode(node)
-  } else fitAll()
+    return
+  }
+  const bounds = layout.value.bounds
+  const ideal = idealZoomFor(bounds, 1.1)
+  if (ideal >= READABLE_MIN_ZOOM) {
+    fit(bounds, { minZoom: READABLE_MIN_ZOOM })
+  } else {
+    zoom.value = Math.max(READABLE_MIN_ZOOM, DEFAULT_READABLE_ZOOM)
+    frameReadableAnchor()
+  }
 }
 
-function focusActive() {
+async function focusActive() {
+  if (props.activeId) {
+    const beforeSize = folded.value.size
+    openPath(props.activeId)
+    if (folded.value.size !== beforeSize) await nextTick()
+  }
   const node = layout.value.nodes.find(item => item.id === props.activeId)
-  if (!node) return fitAll()
-  if (window.innerWidth <= 559) zoom.value = Math.max(0.8, zoom.value)
+  if (!node) return frameTree()
+  if (zoom.value < 0.75) zoom.value = FOCUS_TARGET_ZOOM
   centerNode(node)
 }
 
@@ -140,7 +204,26 @@ const childrenOf = id => entries.value.get(id)?.children || []
 const maxDepth = computed(() => Math.max(1, loreTreeMaxDepth(roots.value, childrenOf)))
 const foldLevel = computed(() => loreActiveFoldLevel(roots.value, childrenOf, folded.value))
 
+const loadedWorkId = computed(() => {
+  const wid = work.work?.id || ''
+  const first = work.liveMubu()[0]
+  return !first || first.workId === wid ? wid : ''
+})
+
+function applyInitialFold(force = false) {
+  const wid = loadedWorkId.value
+  if (!wid && work.work?.id) return
+  const scopeKey = `${wid}:${props.focusId || ''}`
+  if (!force && (userFoldTouched || initialFoldKey === scopeKey)) return
+  if (!roots.value.length) return
+  initialFoldKey = scopeKey
+  userFoldTouched = false
+  folded.value = loreInitialFoldedIds(roots.value, childrenOf, { activeId: props.activeId })
+}
+applyInitialFold(true)
+
 function toggleFold(id) {
+  userFoldTouched = true
   const next = new Set(folded.value)
   if (next.has(id)) next.delete(id)
   else next.add(id)
@@ -148,9 +231,10 @@ function toggleFold(id) {
 }
 
 function foldToLevel(level) {
+  userFoldTouched = true
   folded.value = loreFoldedIdsForLevel(roots.value, childrenOf, level)
   if (editing.value && !layout.value.nodes.some(node => node.id === editing.value.id)) editing.value = null
-  nextTick(fitAll)
+  nextTick(frameTree)
 }
 
 function foldAll(value) {
@@ -247,21 +331,50 @@ async function onCanvasKey(event) {
   openPath(props.activeId)
 }
 
+function setZoomAtCenter(next) {
+  const el = canvasEl.value
+  const prev = zoom.value || 1
+  if (el && prev > 0) {
+    const cx = el.clientWidth / 2
+    const cy = el.clientHeight / 2
+    tx.value = cx - ((cx - tx.value) * next) / prev
+    ty.value = cy - ((cy - ty.value) * next) / prev
+  }
+  zoom.value = next
+}
+
 function zoomIn() {
-  zoom.value = Math.min(2, zoom.value * 1.2)
+  const step = zoom.value < 0.25 ? 1.45 : 1.2
+  setZoomAtCenter(Math.min(2, zoom.value * step))
 }
 function zoomOut() {
-  zoom.value = Math.max(Math.min(minZoom, zoom.value), zoom.value / 1.2)
+  const step = zoom.value <= 0.25 ? 1.45 : 1.2
+  setZoomAtCenter(Math.max(Math.min(minZoom, zoom.value), zoom.value / step))
 }
 function zoomReset() {
   zoom.value = 1
+  anchorCamera()
 }
 
-watch(() => [props.focusId, props.direction, work.work?.id], () => {
+watch(() => [props.focusId, loadedWorkId.value], () => {
   editing.value = null
   endMove(null, false)
-  initialFrame = !sizes.value.size
+  fitOverflowHintShown = false
+  applyInitialFold(true)
+  initialFrame = true
   nextTick(frameTree)
+})
+watch(() => props.direction, () => {
+  editing.value = null
+  endMove(null, false)
+  nextTick(frameTree)
+})
+watch(roots, () => {
+  const wid = loadedWorkId.value
+  if (!userFoldTouched && roots.value.length && wid && initialFoldKey !== `${wid}:${props.focusId || ''}`) {
+    applyInitialFold()
+    nextTick(frameTree)
+  }
 })
 watch(() => props.activeId, id => {
   openPath(id)
@@ -289,6 +402,7 @@ function unbindTreeMapListeners() {
 }
 onMounted(() => {
   bindTreeMapListeners()
+  applyInitialFold()
   observer = new ResizeObserver(changes => {
     const next = new Map(sizes.value)
     let changed = false
@@ -308,7 +422,8 @@ onMounted(() => {
     }
   })
   for (const node of nodes.values()) observer.observe(node)
-  if (!nodes.size) frameTree()
+  measureAll()
+  nextTick(frameTree)
 })
 onActivated(() => {
   bindTreeMapListeners()

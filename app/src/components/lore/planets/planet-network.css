@@ -143,6 +143,7 @@
 .lpn-hover-badge {
   display: inline-flex;
   align-items: center;
+  gap: 5px;
   padding: 1px 6px;
   border-radius: 2px;
   border: 1px solid color-mix(in srgb, var(--badge-color, #47D7E8) 62%, transparent);
@@ -151,6 +152,17 @@
   font-size: 9.5px;
   font-weight: 600;
   letter-spacing: .03em;
+}
+.lpn-weight-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.lpn-weight-chip.is-core,
+.lpn-weight-chip.is-key {
+  border-color: rgba(71, 215, 232, 0.48);
+  background: rgba(71, 215, 232, 0.14);
+  color: #EAF3FF;
 }
 .lpn-hover-rel {
   color: var(--lpn-muted);

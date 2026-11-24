@@ -12,6 +12,8 @@ import {
 } from './planet-scene.js'
 import { galaxyFraming, galaxyProjection, paintNetwork } from './draw-planets.js'
 import PlanetSizeControl from './PlanetSizeControl.vue'
+import LoreWeightIcon from '../../LoreWeightIcon.vue'
+import { entryWeightMeta, normalizeEntryWeight } from '../../../services/lore-weights.js'
 import {
   advanceCenterGlow,
   blendCenterSpectrum,
@@ -115,7 +117,19 @@ let spectrumFrom = null
 let spectrumTo = null
 let spectrumStart = 0
 let centerGlowTime = 0
+let nodeMotionTime = 0
 const reduced = ref(false)
+const hasAnimatedWeightedNodes = computed(() => {
+  for (const planet of system.value.planets) {
+    const pw = normalizeEntryWeight(planet.weight)
+    if (!planet.entries.length && planet.parent && (pw === 'key' || pw === 'trivial')) return true
+    for (const entry of planet.entries) {
+      const w = normalizeEntryWeight(entry.weight)
+      if (w === 'key' || w === 'trivial') return true
+    }
+  }
+  return false
+})
 
 watch(targetCenterSpectrum, next => {
   if (!activeCenterSpectrum || reduced.value || document.hidden || spectrumDistance(activeCenterSpectrum, next) <= 0.5) {
@@ -361,7 +375,7 @@ function draw() {
     planetSizes: planetSizes.value, planetSettingsId: speedMenu.value?.body.id,
     nodeId: nodeId.value, bridgeId: bridgeId.value, hoverId,
     workTitle: props.workTitle, reduced: reduced.value, satelliteId: satelliteId.value,
-    centerGlow: centerGlow.value, centerGlowTime,
+    centerGlow: centerGlow.value, centerGlowTime, nodeMotionTime,
     centerSpectrum: activeCenterSpectrum || targetCenterSpectrum.value,
     backdropPalette: props.backdropPalette,
     motionPhases, focusWeights, focusDt, hudBoxes: cachedHudBoxes,
@@ -375,6 +389,7 @@ function draw() {
   syncCanvasHud(now)
 }
 
+/* ---------- 星系实时布局与相机/动画循环 ---------- */
 function refreshFraming(view = overviewView()) {
   if (!size.width || !size.height) return
   scene.framing = galaxyFraming(size, system.value, framingPositions.value, view,
@@ -422,6 +437,8 @@ function animate(now) {
   const spectrumMoved = stepCenterSpectrum(now)
   const glowRunning = !reduced.value && !document.hidden && centerGlow.value.speed > 0
   if (glowRunning) centerGlowTime = advanceCenterGlow(centerGlowTime, dt, centerGlow.value.speed)
+  const nodeMotionRunning = !reduced.value && !document.hidden && !motionPaused.value && hasAnimatedWeightedNodes.value
+  if (!reduced.value && !document.hidden && !motionPaused.value) nodeMotionTime += dt
 
   if (flight && !moving) {
     const next = flight
@@ -443,7 +460,7 @@ function animate(now) {
       || selected.value || bridge.value || satellite.value
       || layoutOpen.value || orbitEditing.value || speedMenu.value || centerMenu.value
     )
-    let needPaint = glowRunning || spectrumMoved
+    let needPaint = glowRunning || nodeMotionRunning || spectrumMoved
     if (shouldPause) {
       if (idleSpeed > 0.001) {
         idleSpeed *= Math.exp(-dt / 180)
@@ -686,6 +703,7 @@ function saveOrbitSettings() {
   reportSave(props.onOrbitSettingsChange?.(orbitSettings.value), '', '当前无法保存轨道设置')
 }
 
+/* ---------- 轨道改径 / 并轨提交与角度重排 ---------- */
 function commitOrbits(track) {
   const current = currentOrbitSettings.value
   const { radius, target, planetId, angle } = orbitPreview
@@ -1077,11 +1095,12 @@ function startOrbitDrag(hit, point) {
   draw()
 }
 
+/* ---------- 命中测试与指针手势（拖拽条目 / 改轨 / 卡尺缩放 / 旋转 / 平移） ---------- */
 function hitAt(point) {
   const hits = painted?.hits || []
   const distance = hit => Math.hypot(point.x - hit.x, point.y - hit.y)
   const marker = hits.findLast(hit => {
-    if (hit.kind === 'node') return distance(hit) <= hit.radius
+    if (hit.kind === 'node') return distance(hit) <= (hit.hitRadius ?? hit.radius)
     if (hit.kind !== 'satellite') return false
     return Math.abs(point.x - hit.x) + Math.abs(point.y - hit.y) <= hit.radius
   })
@@ -1254,11 +1273,15 @@ function buildHoverCard(activeHit, id) {
     if (!item) return null
     const linkCount = item.links?.length || 0
     const satCount = (system.value.rolledSatellites?.get(item.id) ?? item.satellites ?? []).length
+    const weightMeta = entryWeightMeta(item.weight)
+    const domainTitle = item.parent?.title ? item.parent.title.slice(0, 10) : ''
+    const badge = domainTitle ? `${domainTitle} · ${weightMeta.label}` : weightMeta.label
     return {
       kind: 'node',
-      badge: item.entries?.length ? `条目 · ${item.entries.length} 子项` : (linkCount >= 2 ? '核心枢纽' : '设定条目'),
-      badgeColor: item.color || '#8CB4FF',
-      relation: `${linkCount} 条关系${satCount ? ` · ${satCount} 关联` : ''}`,
+      weight: weightMeta.id,
+      badge,
+      badgeColor: weightMeta.id === 'core' || weightMeta.id === 'key' ? '#47D7E8' : (item.color || '#8CB4FF'),
+      relation: `${linkCount} 条关系${satCount ? ` · ${satCount} 关联` : ''}${item.entries?.length ? ` · ${item.entries.length} 子项` : ''}`,
       title: item.title,
       summary: distinctSummary(item.title, item.summary),
       hint: '单击查看摘要 · 拖拽调整位置',
@@ -1637,7 +1660,10 @@ onBeforeUnmount(() => {
             :data-edge="hoverLabel.x < 126 ? 'left' : hoverLabel.x > size.width - 126 ? 'right' : undefined"
             :style="{ left: clamp(hoverLabel.x, 12, size.width - 12) + 'px', top: Math.max(46, hoverLabel.y) + 'px' }">
             <div class="lpn-hover-head">
-              <span class="lpn-hover-badge" :style="{ '--badge-color': hoverLabel.badgeColor }">{{ hoverLabel.badge }}</span>
+              <span class="lpn-hover-badge" :style="{ '--badge-color': hoverLabel.badgeColor }">
+                <LoreWeightIcon v-if="hoverLabel.weight" :weight="hoverLabel.weight" :size="12" />
+                <span>{{ hoverLabel.badge }}</span>
+              </span>
               <small v-if="hoverLabel.relation" class="lpn-hover-rel">{{ hoverLabel.relation }}</small>
             </div>
             <strong class="lpn-hover-title">{{ hoverLabel.title }}</strong>
@@ -1789,8 +1815,12 @@ onBeforeUnmount(() => {
                 </template>
               </nav>
               <h2 :class="{ 'is-long': selectedTitle.length > 24 }">{{ selectedTitle }}</h2>
-              <div v-if="selected && (!selected.parent || selected.entries?.length || (selected.tags || []).length)" class="lpn-inspector-meta">
+              <div v-if="selected && (!selected.parent || selected.entries?.length || (selected.tags || []).length || normalizeEntryWeight(selected.weight) !== 'standard')" class="lpn-inspector-meta">
                 <span v-if="!selected.parent" class="lpn-meta-chip is-accent">设定集</span>
+                <span v-if="normalizeEntryWeight(selected.weight) !== 'standard'" class="lpn-meta-chip lpn-weight-chip" :class="`is-${normalizeEntryWeight(selected.weight)}`">
+                  <LoreWeightIcon :weight="selected.weight" :size="12" />
+                  <span>{{ entryWeightMeta(selected.weight).label }}</span>
+                </span>
                 <span v-if="selected.entries?.length" class="lpn-meta-chip">{{ selected.entries.length }} 个下级条目</span>
                 <span v-for="tag in (selected.tags || []).slice(0, 6)" :key="tag" class="lpn-meta-chip lpn-tag-chip">{{ tag }}</span>
               </div>

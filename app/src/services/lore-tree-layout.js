@@ -6,6 +6,9 @@ const MIN_COLUMN_WIDTH = 320
 const COLUMN_GAP = 76
 const BRANCH_GAP = 24
 const ROOT_GAP = 64
+const COMPACT_BRANCH_GAP = 14
+const COMPACT_ROOT_GAP = 36
+const COMPACT_VISIBLE_THRESHOLD = 120
 const PADDING = 48
 
 function edgePath(start, y1, end, y2, trunk, direction, edgeStyle) {
@@ -89,8 +92,79 @@ export function loreActiveFoldLevel(rootIds, childrenOf, folded) {
   return minCollapsedDepth + 1
 }
 
+/** 按当前作用域节点规模计算初始折叠集合：
+ *  - ≤40 节点：全展开（保持小树原有观感）；
+ *  - 41–150 节点：自动收敛至可见节点 ≤ maxVisible 的最深层级（保底至少 2 级）；
+ *  - >150 节点：默认展开至 2 级骨架；
+ *  - 若传入作用域内的 activeId，自动展开其祖先链确保目标可见。 */
+export function loreInitialFoldedIds(rootIds, childrenOf, { maxVisible = 48, activeId = null } = {}) {
+  const roots = rootIds || []
+  const visited = new Set()
+  const parentOf = new Map()
+  let maxDepth = 0
+
+  const scan = (id, depth, parent) => {
+    if (visited.has(id)) return
+    visited.add(id)
+    if (parent != null) parentOf.set(id, parent)
+    if (depth > maxDepth) maxDepth = depth
+    for (const childId of childrenOf(id) || []) scan(childId, depth + 1, id)
+  }
+  for (const id of roots) scan(id, 1, null)
+
+  const total = visited.size
+  if (total <= 40) return new Set()
+
+  const countVisible = (folded) => {
+    const seen = new Set()
+    const walk = (id) => {
+      if (seen.has(id)) return
+      seen.add(id)
+      if (folded.has(id)) return
+      for (const childId of childrenOf(id) || []) walk(childId)
+    }
+    for (const id of roots) walk(id)
+    return seen.size
+  }
+
+  let level = 2
+  if (total <= 150) {
+    for (let candidate = Math.max(2, maxDepth); candidate >= 2; candidate--) {
+      if (countVisible(loreFoldedIdsForLevel(roots, childrenOf, candidate)) <= maxVisible) {
+        level = candidate
+        break
+      }
+    }
+  }
+
+  const folded = loreFoldedIdsForLevel(roots, childrenOf, level)
+  if (activeId && visited.has(activeId)) {
+    let cur = parentOf.get(activeId)
+    const guard = new Set()
+    while (cur != null && !guard.has(cur)) {
+      guard.add(cur)
+      folded.delete(cur)
+      cur = parentOf.get(cur)
+    }
+  }
+  return folded
+}
+
 /** 执行两遍树布局（先自底向上度量子树纵向跨度与列宽，再自顶向下落定节点坐标与连线路径）。 */
 export function layoutLoreTree(rootIds, entries, folded, sizes, { mode = 'single', edgeStyle = 'elbow', centerWidth = 132, centerHeight = 42 } = {}) {
+  const visibleSeen = new Set()
+  const countVisible = (id) => {
+    const entry = entries.get(id)
+    if (!entry || visibleSeen.has(id)) return
+    visibleSeen.add(id)
+    if (folded.has(id)) return
+    for (const child of entry.children) countVisible(child)
+  }
+  for (const id of rootIds) countVisible(id)
+  const compact = visibleSeen.size > COMPACT_VISIBLE_THRESHOLD
+  const branchGap = compact ? COMPACT_BRANCH_GAP : BRANCH_GAP
+  const rootGap = compact ? COMPACT_ROOT_GAP : ROOT_GAP
+
   const seen = new Set()
   const sides = { left: { columns: [], trees: [] }, right: { columns: [], trees: [] } }
   const center = { x: Math.round(-centerWidth / 2), y: Math.round(-centerHeight / 2), width: centerWidth, height: centerHeight }
@@ -109,7 +183,7 @@ export function layoutLoreTree(rootIds, entries, folded, sizes, { mode = 'single
     let bottom = 0
     const bands = children.map(child => {
       const band = { child, offset: bottom }
-      bottom += child.extent + BRANCH_GAP
+      bottom += child.extent + branchGap
       return band
     })
     const first = bands[0], last = bands.at(-1)
@@ -117,7 +191,7 @@ export function layoutLoreTree(rootIds, entries, folded, sizes, { mode = 'single
     const shift = Math.max(0, height / 2 - mid)
     return {
       id, depth, width, height, bands, shift, mid: mid + shift, collapsed, childCount: entry.children.length,
-      extent: shift + Math.max(mid + height / 2, bottom - BRANCH_GAP)
+      extent: shift + Math.max(mid + height / 2, bottom - branchGap)
     }
   }
 
@@ -162,11 +236,11 @@ export function layoutLoreTree(rootIds, entries, folded, sizes, { mode = 'single
       column.edge = x
       x += direction * (column.width + COLUMN_GAP)
     }
-    const height = side.trees.reduce((sum, tree) => sum + tree.extent + ROOT_GAP, -ROOT_GAP)
+    const height = side.trees.reduce((sum, tree) => sum + tree.extent + rootGap, -rootGap)
     let y = -height / 2
     for (const tree of side.trees) {
       place(tree, y, center, side, name)
-      y += tree.extent + ROOT_GAP
+      y += tree.extent + rootGap
     }
   }
   return {

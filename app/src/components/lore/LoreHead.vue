@@ -8,10 +8,12 @@ import { useUiStore } from '../../stores/ui'
 defineProps({ compact: Boolean, narrow: Boolean, navOpen: Boolean, galaxy: Object })
 const emit = defineEmits(['view', 'scope', 'new', 'clear-filter', 'nav', 'focus-branch', 'galaxy-center'])
 const work = useWorkStore(), ui = useUiStore()
-const current = computed(() => work.mubu.find(n => n.id === (ui.loreView === 'write' ? ui.loreRootId : ui.loreActiveId) && !n.deletedAt))
+const current = computed(() => work.mubuIndex.byId.get(ui.loreView === 'write' ? ui.loreRootId : ui.loreActiveId))
 const all = computed(() => ui.loreScope === 'all' && ui.loreView === 'write')
 const title = computed(() => ui.loreView === 'map' ? '视觉导图' : all.value ? '全部条目' : current.value?.text || '世界设定')
 const path = computed(() => all.value ? [] : work.mubuPath(current.value?.id).filter(n => !n.deletedAt))
+const childCount = computed(() => work.mubuChildren(current.value?.id).length)
+const descendantCount = computed(() => work.mubuDescendants(current.value?.id).length)
 function enter(id) { emit('focus-branch', id) }
 </script>
 <template>
@@ -33,7 +35,7 @@ function enter(id) { emit('focus-branch', id) }
         <p v-if="galaxy.stats" class="lore-meta">{{ galaxy.stats }}</p>
       </template>
       <h1 v-else class="lore-h1">{{ title }}</h1>
-      <div v-if="!galaxy" class="lore-meta"><template v-if="all">{{ work.liveMubu().length }} 个节点</template><template v-else-if="current">{{ work.mubuChildren(current.id).length }} 个子节点 <i>·</i> {{ work.mubuDescendants(current.id).length }} 个后代节点 <span v-if="current.tags?.length"><i>·</i> {{ current.tags.join(' / ') }}</span></template><template v-else>自由记录与整理你的世界</template><span v-if="ui.mubuQuery">筛选「{{ ui.mubuQuery }}」 <button @click="emit('clear-filter')">清除</button></span></div>
+      <div v-if="!galaxy" class="lore-meta"><template v-if="all">{{ work.mubuIndex.live.length }} 个节点</template><template v-else-if="current">{{ childCount }} 个子节点 <i>·</i> {{ descendantCount }} 个后代节点 <span v-if="current.tags?.length"><i>·</i> {{ current.tags.join(' / ') }}</span></template><template v-else>自由记录与整理你的世界</template><span v-if="ui.mubuQuery">筛选「{{ ui.mubuQuery }}」 <button @click="emit('clear-filter')">清除</button></span></div>
     </div>
     <div class="lore-head-actions"><nav class="lore-switch" role="tablist" aria-label="设定视图"><button v-for="v in [{ id: 'write', label: '节点大纲' }, { id: 'detail', label: '阅读视图' }, { id: 'map', label: '视觉导图' }]" :key="v.id" role="tab" :aria-selected="ui.loreView === v.id" :class="{ on: ui.loreView === v.id }" :data-lore-view="v.id" @click="emit('view', v.id)">{{ v.label }}</button></nav><button class="lore-icon lore-links-toggle" :class="{ active: ui.loreLinksOpen }" :aria-pressed="ui.loreLinksOpen" aria-label="链接与引用" title="链接与引用" @click="ui.loreLinksOpen = !ui.loreLinksOpen"><OIcon name="link" :size="15" /></button><button v-if="ui.loreView === 'write'" class="lore-btn primary" aria-label="新建节点" @click="emit('new')"><OIcon name="plus" :size="12" /><span class="lore-new-long">新建节点</span><span class="lore-new-short" aria-hidden="true">新建</span></button>
       <slot name="map-tools" />

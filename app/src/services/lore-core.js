@@ -1,5 +1,55 @@
 // Pure tree/history/reference rules shared by the setting workspace and its regressions.
 export const captureLoreNodes = (nodes) => JSON.parse(JSON.stringify(nodes))
+export function indexLoreTree(nodes) {
+  const live = nodes.filter(node => !node.deletedAt)
+    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+  const byId = new Map()
+  const children = new Map()
+  for (const node of live) {
+    byId.set(node.id, node)
+    const parent = node.parentId || null
+    if (!children.has(parent)) children.set(parent, [])
+    children.get(parent).push(node)
+  }
+  return { live, byId, children }
+}
+
+export function loreRowAtOffset(offsets, offset) {
+  let low = 0, high = offsets.length - 1
+  while (low < high) {
+    const mid = (low + high) >>> 1
+    if (offsets[mid + 1] <= offset) low = mid + 1
+    else high = mid
+  }
+  return low
+}
+
+export function loreViewportIndices(offsets, top, height, overscan, pinned) {
+  const count = offsets.length - 1
+  const start = loreRowAtOffset(offsets, top - overscan)
+  const bottom = top + height + overscan
+  const indices = new Set(pinned.filter(index => index >= 0 && index < count))
+  for (let index = start; index < count && offsets[index] < bottom; index++) indices.add(index)
+  return [...indices].sort((a, b) => a - b)
+}
+
+export function loreDescendants(children, id) {
+  const result = []
+  const seen = new Set([id])
+  const pending = (children.get(id || null) || []).slice().reverse()
+  while (pending.length) {
+    const node = pending.pop()
+    if (seen.has(node.id)) continue
+    seen.add(node.id)
+    result.push(node)
+    const branch = children.get(node.id)
+    if (branch) {
+      for (let i = branch.length - 1; i >= 0; i--) pending.push(branch[i])
+    }
+  }
+  return result
+}
+
 export function lorePath(nodes, id) {
   const byId = nodes instanceof Map ? nodes : new Map(nodes.map(n => [n.id, n])), seen = new Set(), result = []
   let n = byId.get(id)

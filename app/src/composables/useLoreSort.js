@@ -268,8 +268,9 @@ function preview(drag, target) {
   drag.headerMode = target?.mode
 }
 
-export function useLoreSort(editor, work, context, refresh, checkpoint, { freeEntries = false } = {}) {
+export function useLoreSort(editor, work, context, refresh, checkpoint, { freeEntries = false, prepareLift } = {}) {
   return usePointerRowSort(editor, {
+    prepareLift,
     structure: () => JSON.stringify([
       context(), work.work?.id, work.mubuSetId,
       work.liveMubu().map(node => [node.id, node.parentId, node.sortOrder, node.fold])

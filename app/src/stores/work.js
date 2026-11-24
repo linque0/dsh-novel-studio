@@ -7,7 +7,15 @@
  * AI 提案写回统一经 applyAiProposal / undoAiApplication 审计执行。
  */
 import { planLoreMove } from '../services/lore-move.js'
-import { lorePath, validLoreMove, createLoreHistory, checkpointLore, stepLoreHistory } from '../services/lore-core.js'
+import { indexLoreTree, loreDescendants, lorePath, validLoreMove, createLoreHistory, checkpointLore, stepLoreHistory } from '../services/lore-core.js'
+import {
+  DEFAULT_ENTRY_WEIGHT,
+  normalizeEntryWeight,
+  resolveEntryWeight,
+  tagMetaCreatedAt,
+  tagMetaWeight,
+  tagWeightOf
+} from '../services/lore-weights.js'
 import { initialExpandedContainers } from '../components/outline/outline-layout.js'
 import { normalizeCanvasOpacity } from '../services/canvas-appearance.js'
 import { relationTransaction, flattenRelations } from '../components/outline/canvas-relations.js'
@@ -95,6 +103,8 @@ export const useWorkStore = defineStore('work', {
   }),
 
   getters: {
+    mubuIndex: (state) => indexLoreTree(state.mubu),
+    mubuPathIndex: (state) => new Map(state.mubu.map(node => [node.id, node])),
     liveVolumes: (s) => s.volumes.filter((v) => !v.deletedAt).sort((a, b) => a.sortOrder - b.sortOrder),
     liveChapters: (s) => s.chapters.filter((c) => !c.deletedAt).sort((a, b) => a.sortOrder - b.sortOrder),
     liveBookmarks: (s) =>
@@ -146,7 +156,7 @@ export const useWorkStore = defineStore('work', {
         done: goal > 0 && current >= goal
       }
     },
-    /** 设定标签池（由节点派生）：[{ name, color, count, createdAt }]，同名恒同色；
+    /** 设定标签池（由节点派生）：[{ name, color, count, createdAt, weight }]，同名恒同色；
      *  按创建时间升序（历史标签无记录视为最早），某标签从所有节点移除后自动消失 */
     mubuTags() {
       const map = new Map()
@@ -155,7 +165,13 @@ export const useWorkStore = defineStore('work', {
           if (!t) continue
           const hit = map.get(t)
           if (hit) hit.count++
-          else map.set(t, { name: t, color: tagColor(t), count: 1, createdAt: this.mubuTagMeta[t] || 0 })
+          else map.set(t, {
+            name: t,
+            color: tagColor(t),
+            count: 1,
+            createdAt: tagMetaCreatedAt(this.mubuTagMeta[t]),
+            weight: tagMetaWeight(this.mubuTagMeta[t])
+          })
         }
       }
       return [...map.values()].sort((a, b) => a.createdAt - b.createdAt || a.name.localeCompare(b.name))
@@ -734,7 +750,7 @@ export const useWorkStore = defineStore('work', {
       await db.appconfig.put({ key: flagKey, value: 1 })
     },
 
-    mubuPath(id) { return lorePath(this.mubu, id) },
+    mubuPath(id) { return lorePath(this.mubuPathIndex, id) },
     mubuHistory() {
       const id = this.work?.id || ''
       return this.loreHistories[id] || (this.loreHistories[id] = createLoreHistory())
@@ -759,13 +775,11 @@ export const useWorkStore = defineStore('work', {
       autosave.mark('mubu', n); this.mubuRevision++
     },
     liveMubu() {
-      return this.mubu
-        .filter((n) => !n.deletedAt)
-        .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+      return this.mubuIndex.live.slice()
     },
 
     mubuChildren(parentId) {
-      return this.liveMubu().filter((n) => (n.parentId || null) === (parentId || null))
+      return this.mubuIndex.children.get(parentId || null)?.slice() || []
     },
 
     /* ---------- 设定集：每个顶层节点即一个设定集，条目都在集内 ---------- */
@@ -774,10 +788,11 @@ export const useWorkStore = defineStore('work', {
     },
     /** 节点所属设定集根（沿 parentId 上溯；节点不存在返回 null） */
     mubuRootOf(id) {
-      let cur = this.mubu.find((n) => n.id === id && !n.deletedAt) || null
+      const byId = this.mubuIndex.byId
+      let cur = byId.get(id)
       let guard = 0
       while (cur?.parentId && guard++ < 100) {
-        cur = this.mubu.find((n) => n.id === cur.parentId && !n.deletedAt) || null
+        cur = byId.get(cur.parentId)
       }
       return cur && !cur.parentId ? cur : null
     },
@@ -942,6 +957,33 @@ export const useWorkStore = defineStore('work', {
           .map((t) => String(t ?? '').trim().slice(0, 20))
           .filter(Boolean)
       )].slice(0, 12)
+      this.mubuRevision++
+      autosave.mark('mubu', n)
+    },
+
+    /** 查询设定标签权重（缺省或历史旧数据一律回退 'standard'） */
+    mubuTagWeight(name) {
+      return tagWeightOf(this.mubuTagMeta, name)
+    },
+
+    /** 查询设定条目最终生效权重（条目显式 weight 优先，否则按绑定标签推导，默认 'standard'） */
+    mubuEntryWeight(nodeOrId) {
+      const n = typeof nodeOrId === 'string'
+        ? this.mubu.find((x) => x.id === nodeOrId && !x.deletedAt)
+        : nodeOrId
+      return resolveEntryWeight(n, this.mubuTagMeta)
+    },
+
+    /** 直接设置/清除设定条目的显式权重（传 null 表示清除覆盖、自动跟随绑定标签权重） */
+    mubuSetWeight(id, weight) {
+      const n = this.mubu.find((x) => x.id === id)
+      if (!n) return
+      const next = weight == null ? undefined : normalizeEntryWeight(weight)
+      if ((n.weight ?? undefined) === next) return
+      this.mubuCheckpoint()
+      if (next === undefined) delete n.weight
+      else n.weight = next
+      this.mubuRevision++
       autosave.mark('mubu', n)
     },
 
@@ -975,10 +1017,7 @@ export const useWorkStore = defineStore('work', {
     },
 
     mubuDescendants(id) {
-      const out = []
-      const walk = (pid) => this.mubuChildren(pid).forEach((n) => (out.push(n), walk(n.id)))
-      walk(id)
-      return out
+      return loreDescendants(this.mubuIndex.children, id)
     },
 
     mubuDrop(id, targetId, mode, checkpoint = () => this.mubuCheckpoint(), placement) {
@@ -1462,15 +1501,32 @@ export const useWorkStore = defineStore('work', {
       if (!this.work) return
       await db.appconfig.put({ key: 'mubutagmeta:' + this.work.id, value: JSON.parse(JSON.stringify(this.mubuTagMeta)) })
     },
-    /** 新建标签（标签面板创建栏入口）：同名不重复计时；返回清洗后的标签名（空串 = 无效输入） */
-    async mubuCreateTag(name) {
+    /** 新建标签（标签面板创建栏入口）：支持附带权重（默认 standard）；返回清洗后的标签名（空串 = 无效输入） */
+    async mubuCreateTag(name, weight = DEFAULT_ENTRY_WEIGHT) {
       const t = String(name ?? '').trim().slice(0, 20)
       if (!t) return ''
-      if (!this.mubuTagMeta[t]) {
-        this.mubuTagMeta = { ...this.mubuTagMeta, [t]: now() }
+      const normalized = normalizeEntryWeight(weight)
+      const prev = this.mubuTagMeta[t]
+      const createdAt = tagMetaCreatedAt(prev) || now()
+      const prevWeight = tagMetaWeight(prev)
+      if (!prev || prevWeight !== normalized) {
+        this.mubuTagMeta = { ...this.mubuTagMeta, [t]: { createdAt, weight: normalized } }
+        this.mubuRevision++
         await this.saveMubuTagMeta()
       }
       return t
+    },
+    /** 编辑已有标签的权重并即时持久化 */
+    async mubuSetTagWeight(name, weight) {
+      const t = String(name ?? '').trim().slice(0, 20)
+      if (!t) return
+      const normalized = normalizeEntryWeight(weight)
+      const prev = this.mubuTagMeta[t]
+      const createdAt = tagMetaCreatedAt(prev) || now()
+      if (prev && tagMetaWeight(prev) === normalized) return
+      this.mubuTagMeta = { ...this.mubuTagMeta, [t]: { createdAt, weight: normalized } }
+      this.mubuRevision++
+      await this.saveMubuTagMeta()
     },
 
     /* ---------- 关联关系（关系链接）：条目级「设定↔设定 / 设定↔人物」关系 ---------- */

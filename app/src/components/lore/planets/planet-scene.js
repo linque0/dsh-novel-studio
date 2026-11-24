@@ -4,6 +4,7 @@
  * 行星轨道排布与防碰撞（spacePlanets）、条目球面松弛分布（relaxSetEntries）及势阱深度计算。
  */
 import { Euler, Quaternion, Vector3 } from 'three'
+import { entryWeightMeta, entryWeightRank, normalizeEntryWeight } from '../../../services/lore-weights.js'
 
 export const TUNING = Object.freeze({
   idleDelay: 1500, spinPeriod: 120000, orbitPeriod: 240000, transition: 300,
@@ -159,14 +160,18 @@ export function networkModel(sets, nodes, links, satellites = []) {
   let colorIndex = 0
   function styleBody(body, color) {
     body.color = color
-    const weightOf = entry => entry.links.length * 3 + entry.satellites.length * 2 + entry.total
-    const ranked = [...body.entries].sort((a, b) => weightOf(b) - weightOf(a))
+    body.weight = normalizeEntryWeight(body.weight)
+    body.weightRank = entryWeightRank(body.weight)
+    body.tier = entryWeightMeta(body.weight).tier
+    const scoreOf = entry => entry.links.length * 3 + entry.satellites.length * 2 + entry.total
+    for (const entry of body.entries) {
+      entry.weight = normalizeEntryWeight(entry.weight)
+      entry.weightRank = entryWeightRank(entry.weight)
+      entry.tier = entryWeightMeta(entry.weight).tier
+    }
+    const ranked = [...body.entries].sort((a, b) => b.weightRank - a.weightRank || scoreOf(b) - scoreOf(a))
     body.coreEntryId = ranked[0]?.id
-    ranked.forEach((entry, index) => {
-      entry.tier = index === 0 || (index === 1 && ranked.length >= 5 && weightOf(entry) >= 2)
-        ? 1 : index < Math.ceil(ranked.length / 2) ? 2 : 3
-      styleBody(entry, color)
-    })
+    for (const entry of ranked) styleBody(entry, color)
     body.triangles = constellationTriangles(body.entries, 7)
   }
   for (const planet of planets) styleBody(planet, planet.total ? domainColors[colorIndex++ % domainColors.length] : '#7E97B8')
@@ -845,23 +850,39 @@ export function relaxSetEntries(planet, saved, scale) {
   // same body-local coordinate system used by saved positions and dragging.
   const view = overviewView().multiply(rotation(.24, stablePhase(planet.id)))
   const inverse = view.clone().invert()
-  const ranked = [...entries.keys()].sort((a, b) => entries[a].tier - entries[b].tier
-    || entries[b].links.length - entries[a].links.length || a - b)
-  const cores = ranked.filter(i => entries[i].tier === 1).length
+  const ranked = [...entries.keys()].sort((a, b) =>
+    entryWeightRank(entries[b].weight) - entryWeightRank(entries[a].weight)
+    || entries[b].links.length - entries[a].links.length
+    || a - b
+  )
+  // 按五级权重分组计算各档径向层级：核心(0.12-0.32R) → 关键(0.30-0.52R) → 标准(0.46-0.70R) → 点缀(0.62-0.80R) → 末节(0.72-0.86R)
+  const tierGroups = new Map()
+  for (const i of ranked) {
+    const w = normalizeEntryWeight(entries[i].weight)
+    if (!tierGroups.has(w)) tierGroups.set(w, [])
+    tierGroups.get(w).push(i)
+  }
   const anchors = []
   const points = []
   const fixed = []
-  const minSep = Math.min(.29, 1.48 / Math.sqrt(entries.length)) * scale ** -.18
+  const bounds = []
+  const minSep = Math.min(.29, 1.48 / Math.sqrt(Math.max(1, entries.length))) * scale ** -.18
   for (const [rank, i] of ranked.entries()) {
     const node = entries[i]
-    const fraction = (rank - cores + .5) / Math.max(1, entries.length - cores)
-    const radius = rank < cores ? Math.min(.36, .22 + rank * .08) : Math.sqrt(.38 ** 2 + fraction * (.80 ** 2 - .38 ** 2))
+    const meta = entryWeightMeta(node.weight)
+    const group = tierGroups.get(meta.id) || [i]
+    const groupIdx = group.indexOf(i)
+    const frac = group.length <= 1 ? 0.5 : (groupIdx + 0.5) / group.length
+    const rMin = meta.radialMin
+    const rMax = meta.radialMax
+    const radius = Math.sqrt(rMin * rMin + frac * (rMax * rMax - rMin * rMin))
     const angle = rank * golden
     const height = .14 * Math.sin(rank * 2.13)
     anchors[i] = new Vector3(radius * Math.cos(angle), radius * Math.sin(angle), height)
+    bounds[i] = [rMin, rMax]
     fixed[i] = Array.isArray(saved?.[node.id])
     points[i] = fixed[i]
-      ? localPosition(node, { [planet.id]: saved }).clampLength(0, TUNING.detailRadius * .80).applyQuaternion(view).divideScalar(TUNING.detailRadius)
+      ? localPosition(node, { [planet.id]: saved }).clampLength(0, TUNING.detailRadius * .86).applyQuaternion(view).divideScalar(TUNING.detailRadius)
       : anchors[i].clone()
   }
 
@@ -876,8 +897,8 @@ export function relaxSetEntries(planet, saved, scale) {
     }
     for (const [i, point] of points.entries()) {
       if (fixed[i]) continue
-      let fx = (anchors[i].x - point.x) * .16
-      let fy = (anchors[i].y - point.y) * .16
+      let fx = (anchors[i].x - point.x) * .18
+      let fy = (anchors[i].y - point.y) * .18
       const col = Math.floor(point.x / minSep), row = Math.floor(point.y / minSep)
       for (let x = col - 1; x <= col + 1; x++) {
         for (let y = row - 1; y <= row + 1; y++) {
@@ -896,13 +917,13 @@ export function relaxSetEntries(planet, saved, scale) {
       point.y += fy
       const radius = Math.hypot(point.x, point.y)
       if (!radius) continue
-      const core = entries[i].tier === 1
-      const factor = clamp(radius, core ? .22 : .36, core ? .40 : .80) / radius
+      const [rMin, rMax] = bounds[i]
+      const factor = clamp(radius, rMin, rMax) / radius
       point.x *= factor
       point.y *= factor
     }
   }
-  for (const point of points) point.clampLength(0, .80).applyQuaternion(inverse).multiplyScalar(TUNING.detailRadius)
+  for (const point of points) point.clampLength(0, .86).applyQuaternion(inverse).multiplyScalar(TUNING.detailRadius)
   relaxedEntries.set(entries, { saved, scale, points })
   return points
 }

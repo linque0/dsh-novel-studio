@@ -2,14 +2,17 @@
      支持标题等级、标签/关联行内嵌入、图片插入与显隐、Markdown 导图导入、局部聚焦与撤销/重做历史。 -->
 <script setup>
 import { useLoreSort } from '../composables/useLoreSort.js'
+import { useLoreRowWindow } from '../composables/useLoreRowWindow.js'
 import { useLoreImages } from '../composables/useLoreImages.js'
-import { cleanLoreHtml, loreText, loreCaret, setLoreCaret, splitLoreSelection } from '../services/lore-editor-dom.js'
+import { cleanLoreHtml, loreContentHtml, loreText, loreCaret, setLoreCaret, splitLoreSelection } from '../services/lore-editor-dom.js'
 import LoreLinkComposer from './lore/LoreLinkComposer.vue'
 import TaskLauncher from './ai/TaskLauncher.vue'
-import { ref, reactive, computed, watch, nextTick, onMounted, onUpdated, onActivated, onDeactivated, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, watch, nextTick, onMounted, onActivated, onDeactivated, onBeforeUnmount } from 'vue'
 import { NPopover } from 'naive-ui'
 import OIcon from './OIcon.vue'
+import LoreWeightIcon from './LoreWeightIcon.vue'
 import LoreImageHiddenNotice from './LoreImageHiddenNotice.vue'
+import { entryWeightMeta } from '../services/lore-weights.js'
 import { useWorkStore } from '../stores/work'
 import { useUiStore } from '../stores/ui'
 import { useAiStore } from '../stores/ai'
@@ -32,14 +35,20 @@ const props = defineProps({
 })
 const rootEl = ref(null)
 const loreEditor = ref(null)
+const rowSurface = ref(null)
 const mobileToolsOpen = ref(false)
 const ver = ref(0)
 const rows = ref([])
+const workspaceActive = ref(true)
+const editorActive = computed(() => workspaceActive.value && ui.loreView === 'write')
+let builtVersion = -1
 const focusedRootId = computed(() => props.focusNodeId || (ui.loreScope === 'all' ? null : ui.loreRootId))
-const focusNode = computed(() => work.mubu.find(node => node.id === focusedRootId.value && !node.deletedAt) || null)
+const focusNode = computed(() => work.mubuIndex.byId.get(focusedRootId.value) || null)
 const contentRootId = computed(() => focusNode.value?.id || null)
-const pending = reactive({ key: null, offset: 'end' })
+const pending = reactive({ key: null, offset: 'end', reveal: true })
 const focusedId = ref(null)
+const editingKey = ref(null)
+const composingKey = ref(null)
 const ctx = reactive({ open: false, x: 0, y: 0, rowId: null, folded: false, hasChildren: false, linkSearch: false, linkSpan: null })
 const clip = ref(null)
 const cutId = ref(null)
@@ -51,15 +60,7 @@ const HIGHLIGHTS = ['#fff3a3', '#ffd6a5', '#ffa8a8', '#b8f2c9', '#a8d8ff', '#e0c
 
 /* ---------- 组合树（由 store 节点组装） ---------- */
 function build() {
-  const live = work.liveMubu()
-  const byParent = new Map()
-  const byId = new Map()
-  for (const n of live) {
-    byId.set(n.id, n)
-    const p = n.parentId || null
-    if (!byParent.has(p)) byParent.set(p, [])
-    byParent.get(p).push(n)
-  }
+  const { live, byId, children: byParent } = work.mubuIndex
   /* 筛选：命中项保留其祖先链，其余不渲染（ui.mubuQuery 由侧栏搜索与行尾标签共享） */
   const q = String(ui.mubuQuery || '').trim().toLowerCase()
   const keep = new Set()
@@ -85,6 +86,7 @@ function build() {
     html: n.html ?? null,
     heading: n.heading || 0,
     tags: n.tags || [],
+    weight: work.mubuEntryWeight(n),
     fold: !!n.fold,
     hasChildren: (byParent.get(n.id) || []).length > 0,
     parentId: n.parentId || null,
@@ -92,58 +94,51 @@ function build() {
   })
   const roots = focusNode.value ? [focusNode.value] : byParent.get(null) || []
   rows.value = roots.filter(ok).map(make)
-  nextTick(() => {
-    syncAll()
-    checkFocusFlash()
-  })
+  builtVersion = ver.value
 }
-watch(ver, build)
+watch([ver, editorActive], ([version, active]) => {
+  if (active && version !== builtVersion) build()
+})
 watch(() => work.mubuSetId, () => ver.value++)
 watch(focusedRootId, () => ver.value++)
 watch(() => work.mubuRevision, () => ver.value++)
-watch(() => work.mubu.map(n => [n.id,n.parentId,n.sortOrder,n.deletedAt,n.heading,(n.tags||[]).join(',')].join(':')).join('|'), () => ver.value++)
+watch(() => work.mubu.map(n => [n.id,n.parentId,n.sortOrder,n.deletedAt,n.heading,n.weight||'',(n.tags||[]).join(',')].join(':')).join('|'), () => ver.value++)
+watch(() => work.mubuTagMeta, () => ver.value++, { deep: true })
 watch(
   () => work.mubu.length,
   () => ver.value++
 )
-/* 范围切换（set / all）：重建分块、行与计数 */
-watch(
-  () => ui.loreScope,
-  () => ver.value++
-)
-/* 标签变化（含外部 mubuSetTags / 检索联动触发的改动）也要重建行：rows 快照不追踪行内 tags */
-watch(
-  () => work.liveMubu().map((n) => (n.tags || []).join('\u0001')).join('\u0002'),
-  () => ver.value++
-)
+watch(() => ui.mubuQuery, () => ver.value++)
 watch(
   () => ui.loreFocusId,
   (id) => {
     if (!id) return
-    ver.value++
-    nextTick(() => {
-      const el = rootEl.value?.querySelector(`[data-node="m:${id}"]`)
-      if (!el) {
-        work.mubuFoldAll(false)
-        ver.value++
-        nextTick(() => flashNode(id))
-      } else flashNode(id)
-      nextTick(() => focusKeyFn('m:' + id, 'start'))
-    })
+    void locateRow(id, true)
     ui.loreFocusId = null
   }
 )
-function flashNode(id) {
+async function locateRow(id, focus = false) {
+  await nextTick()
+  if (!editorActive.value) return
+  const key = 'm:' + id
+  if (!visible.value.some(row => row.node.key === key)) {
+    for (const ancestor of work.mubuPath(id).slice(0, -1)) {
+      if (ancestor.fold) work.mubuToggleFold(ancestor.id)
+    }
+    ver.value++
+    await nextTick()
+  }
+  rowWindow.reveal(key, true)
+  await nextTick()
+  if (!editorActive.value) return
   const el = rootEl.value?.querySelector(`[data-node="m:${id}"]`)
   if (!el) return
   el.scrollIntoView({ behavior: 'smooth', block: 'center' })
   el.classList.add('ob-flash')
   setTimeout(() => el.classList.remove('ob-flash'), 1600)
+  if (focus) focusKeyFn(key, 'start', false)
 }
-function checkFocusFlash() {
-  if (ui.loreFocusId) flashNode(ui.loreFocusId)
-}
-onMounted(build)
+onMounted(() => { if (editorActive.value && builtVersion < 0) build() })
 
 /* 折叠状态展开成可见行（供 siblingsOf / 光标上下 / 拖拽复用） */
 function flattenRows(list, depth = 0) {
@@ -158,6 +153,17 @@ function flattenRows(list, depth = 0) {
   return out
 }
 const visible = computed(() => flattenRows(rows.value))
+// The toolbar can insert into the selected row or restore its last selection.
+const pinnedRows = computed(() => [
+  visible.value[0]?.node.key,
+  ui.mubuSelectedId && 'm:' + ui.mubuSelectedId,
+  focusedId.value,
+  editingKey.value,
+  composingKey.value,
+  pending.key
+])
+const rowWindow = useLoreRowWindow(loreEditor, rowSurface, visible, pinnedRows)
+const { entries: renderRows, windowed: windowedRows } = rowWindow
 const entryTotal = computed(() => focusNode.value ? work.mubuDescendants(focusNode.value.id).length + 1 : work.liveMubu().length)
 const filterText = computed(() => String(ui.mubuQuery || '').trim())
 function clearFilter() {
@@ -251,16 +257,24 @@ function foldToLevel(level) {
 function pushUndo() { work.mubuCheckpoint() }
 async function undo() { document.activeElement?.blur(); await work.mubuUndo(); ver.value++; nextTick(restorePosition) }
 async function redo() { document.activeElement?.blur(); await work.mubuUndo('redo'); ver.value++; nextTick(restorePosition) }
-function rememberPosition() {
-  if (ui.loreView !== 'write') return
-  const previous = ui.lorePositions[ui.lorePositionKey()] || {}, el = document.activeElement
+function rememberPosition(event) {
+  if (!editorActive.value) return
+  const previous = ui.lorePositions[ui.lorePositionKey()] || {}
+  const el = event?.type === 'blur' ? event.currentTarget : document.activeElement
   const titleId = el?.matches('.lore-h1[data-lore-id]') && rootEl.value?.closest('.lore-shell-wrap')?.contains(el) ? el.dataset.loreId : null
   ui.lorePositions[ui.lorePositionKey()] = { ...previous, scroll: rootEl.value?.querySelector('.ob-editor')?.scrollTop || 0, ...(titleId ? { caretId: titleId, offset: loreCaret(el) } : el?.matches('.ob-text') && rootEl.value?.contains(el) ? { caretId: el.closest('[data-node]').dataset.node.slice(2), offset: loreCaret(el) } : {}) }
 }
 function restorePosition() {
-  nextTick(() => { const saved = ui.lorePositions[ui.lorePositionKey()] || {}; if (ui.loreView !== 'write') return; const el = rootEl.value?.querySelector('.ob-editor'); if (saved.caretId) focusKeyFn('m:' + saved.caretId, saved.offset); nextTick(() => { if (el) el.scrollTop = saved.scroll || 0 }) })
+  const key = ui.lorePositionKey()
+  nextTick(() => {
+    if (!editorActive.value || key !== ui.lorePositionKey()) return
+    const saved = ui.lorePositions[key] || {}
+    if (loreEditor.value) loreEditor.value.scrollTop = saved.scroll || 0
+    rowWindow.updateViewport()
+    if (saved.caretId) focusKeyFn('m:' + saved.caretId, saved.offset, false)
+  })
 }
-watch(() => ui.loreRestoreTick, () => { ver.value++; restorePosition() })
+watch(() => ui.loreRestoreTick, restorePosition)
 function enterNode(id) { rememberPosition(); ui.focusLoreNode(id, work.mubuPath(id)); work.setMubuSet(work.mubuRootOf(id)?.id) }
 function setHeading(level) { const title = document.activeElement?.closest('.lore-h1[data-lore-id]'); const id = title?.dataset.loreId || focusedRow.value?.node.id; if (id) { work.mubuSetHeading(id, level); ver.value++ } }
 function requestLink() { rootEl.value?.dispatchEvent(new CustomEvent('lore-insert-link', { bubbles: true })) }
@@ -300,48 +314,55 @@ function commit(mutate, focusKey = null, offset = 'end') {
   ver.value++
   nextTick(() => {
     playFlip(before)
-    syncAll()
     if (focusKey) focusKeyFn(focusKey, offset)
   })
 }
 
 /* ---------- 焦点 ---------- */
-function focusKeyFn(key, offset = 'end') {
+function focusKeyFn(key, offset = 'end', reveal = true) {
   pending.key = key
   pending.offset = offset
+  pending.reveal = reveal
+  if (reveal) rowWindow.reveal(key)
   nextTick(applyFocus)
 }
 function applyFocus() {
-  if (!pending.key || !rootEl.value) return
+  if (!pending.key || !rootEl.value || !editorActive.value) return
   const el = rootEl.value.querySelector(`[data-node="${pending.key}"] .ob-text`) || (pending.key === 'm:' + ui.loreRootId ? document.querySelector('.lore-main .lore-h1[contenteditable=true]') : null)
   if (!el) {
     pending.key = null
     return
   }
-  el.focus()
+  if (pending.reveal) el.focus()
   setLoreCaret(el, pending.offset === 'start' ? 0 : pending.offset === 'end' ? Infinity : pending.offset)
   pending.key = null
 }
-function syncAll() {
-  const rowMap = new Map(visible.value.map(r => [r.node.key, r]))
-  rootEl.value?.querySelectorAll('.ob-text').forEach((el) => {
-    if (document.activeElement === el) return
-    const key = el.closest('[data-node]')?.dataset.node
-    const row = rowMap.get(key)
-    if (!row) return
-    if (row.node.html != null) {
-      const html = cleanLoreHtml(row.node.html)
-      if (el.innerHTML !== html) el.innerHTML = html
-    } else if (el.textContent !== row.node.text || el.childNodes.length !== 1 || el.firstChild?.nodeType !== Node.TEXT_NODE) {
-      el.textContent = row.node.text
-    }
-  })
+const syncedText = new WeakMap()
+function syncText(el, { value: node }) {
+  if (document.activeElement === el || composingKey.value === node.key) return
+  if (node.html != null) {
+    const previous = syncedText.get(el)
+    const html = previous?.source === node.html ? previous.html : cleanLoreHtml(node.html)
+    if (el.innerHTML !== html) el.innerHTML = html
+    syncedText.set(el, { source: node.html, html })
+  } else if (el.textContent !== node.text || el.childNodes.length > 1 || (el.firstChild && el.firstChild.nodeType !== Node.TEXT_NODE)) {
+    el.textContent = node.text
+  }
 }
-onUpdated(syncAll)
+const vLoreText = { mounted: syncText, updated: syncText }
 function onTextFocus(e) {
   const row = e.currentTarget.closest('[data-node]')
   focusedId.value = row?.dataset.node || null
+  editingKey.value = focusedId.value
   ui.mubuSelectedId = row?.dataset.node?.slice(2) || null
+}
+function onTextBlur(event) {
+  rememberPosition(event)
+  editingKey.value = null
+}
+function onEditorScroll() {
+  rowWindow.updateScroll()
+  rememberPosition()
 }
 /* 焦点行：focusedId 存的是 'm:id' 键，须按键匹配（此前拿它与裸 node.id 比较，永不命中） */
 const focusedRow = computed(() => visible.value.find((r) => r.node.key === focusedId.value) || null)
@@ -350,8 +371,11 @@ const focusedRow = computed(() => visible.value.find((r) => r.node.key === focus
 function onInput(row, e) {
   work.mubuCheckpoint('text:' + row.node.id)
   const el = e.currentTarget
-  work.mubuSetText(row.node.id, loreText(el), cleanLoreHtml(el.innerHTML))
-  row.node.text = loreText(el); row.node.html = cleanLoreHtml(el.innerHTML)
+  const text = loreText(el)
+  const html = cleanLoreHtml(el.innerHTML)
+  work.mubuSetText(row.node.id, text, html)
+  row.node.text = text
+  row.node.html = html
   rememberPosition()
 }
 
@@ -545,11 +569,11 @@ function onBackspace(row) {
   if (prev) {
     // 合并到上一节点（v1.0.22：文本/HTML 一次性合并写入——此前第二次调用回传拷贝里的旧
     // prev.node.text，把刚拼接的文本又覆盖掉，行首 Backspace 会丢掉被并入行的文字）
-    const prevEl = document.querySelector(`[data-node="${prev.node.key}"] .ob-text`)
-    const rowEl = document.querySelector(`[data-node="${row.node.key}"] .ob-text`)
+    const prevEl = rootEl.value?.querySelector(`[data-node="${prev.node.key}"] .ob-text`)
+    const rowEl = rootEl.value?.querySelector(`[data-node="${row.node.key}"] .ob-text`)
     const mergedText = (prevEl ? prevEl.textContent : prev.node.text || '') + (rowEl ? rowEl.textContent : row.node.text || '')
     if (prev.node.html != null || row.node.html != null) {
-      const mergedHtml = (prevEl ? prevEl.innerHTML : '') + (rowEl ? rowEl.innerHTML : (row.node.html || ''))
+      const mergedHtml = (prevEl?.innerHTML ?? loreContentHtml(prev.node)) + (rowEl?.innerHTML ?? loreContentHtml(row.node))
       work.mubuSetText(prev.node.id, mergedText, mergedHtml)
     } else {
       work.mubuSetText(prev.node.id, mergedText)
@@ -569,7 +593,17 @@ function onBackspace(row) {
 /* ---------- 拖拽（三区指示 + 悬停自动展开 + FLIP） ---------- */
 const loreSort = useLoreSort(loreEditor, work, () => [
   contentRootId.value, ui.mubuQuery, ui.loreScope, ui.loreRootId, ui.mubuSelectedId
-], () => ver.value++, undefined, { freeEntries: true })
+], () => ver.value++, undefined, { freeEntries: true, prepareLift: rowWindow.expandForDrag })
+watch(editorActive, (active) => {
+  if (active) {
+    nextTick(rowWindow.updateViewport)
+  } else {
+    loreSort.cancel()
+    pending.key = null
+    editingKey.value = null
+    composingKey.value = null
+  }
+})
 
 /* ---------- 导入 MD / TXT ---------- */
 async function importMd() {
@@ -587,7 +621,7 @@ async function importMd() {
     nodesAdded += countTree(tree)
   }
   ver.value++
-  nextTick(() => anchorId && flashNode(anchorId))
+  if (anchorId) void locateRow(anchorId)
   window.$msg?.success(`导入完成：新增 ${nodesAdded} 个节点`)
 }
 function countTree(list) {
@@ -910,9 +944,11 @@ onMounted(() => {
   bindMubuListeners()
 })
 onActivated(() => {
+  workspaceActive.value = true
   bindMubuListeners()
 })
 onDeactivated(() => {
+  workspaceActive.value = false
   foldMenuOpen.value = false
   unbindMubuListeners()
   clearTimeout(relPopTimer)
@@ -934,20 +970,12 @@ defineExpose({
     return rootEl.value?.querySelector('.ob-editor')?.scrollTop || 0
   },
   setScroll(top) {
-    const el = rootEl.value?.querySelector('.ob-editor')
-    if (el) el.scrollTop = Number(top) || 0
+    if (loreEditor.value) loreEditor.value.scrollTop = Number(top) || 0
+    rowWindow.updateScroll()
   },
-  /** 定位到某条目：展开整棵森林（祖先一定在）→ 滚动到可见 → 闪烁 */
+  /** 展开目标路径，滚动到条目并高亮。 */
   focusNode(id) {
-    if (!id) return
-    ver.value++
-    nextTick(() => {
-      if (!rootEl.value?.querySelector(`[data-node="m:${id}"]`)) {
-        work.mubuFoldAll(false)
-        ver.value++
-        nextTick(() => flashNode(id))
-      } else flashNode(id)
-    })
+    if (id) return locateRow(id)
   }
 })
 </script>
@@ -1011,11 +1039,12 @@ defineExpose({
     </div>
 
     <input ref="imageInput" type="file" :accept="imageAccept" multiple hidden @change="onImageFiles" />
-    <div ref="loreEditor" class="ob-editor" @scroll="rememberPosition" @pointerdown="loreSort.pointerDown" @dragstart.capture="loreSort.nativeDrag" @click.capture="loreSort.click" @dragover="onLoreDragOver" @drop="onLoreDrop">
+    <div ref="loreEditor" class="ob-editor" :class="{ 'lore-windowed': windowedRows }" @scroll="onEditorScroll" @pointerdown="loreSort.pointerDown" @dragstart.capture="loreSort.nativeDrag" @click.capture="loreSort.click" @dragover="onLoreDragOver" @drop="onLoreDrop">
       <section class="write-surface">
+      <div ref="rowSurface">
+      <template v-for="row in renderRows" :key="row.node?.key || row.gapKey">
+      <div v-if="row.node" :ref="el => rowWindow.bind(row.node.key, el)" :data-lore-window-key="row.node.key" class="lore-write-row-slot">
       <div
-        v-for="row in visible"
-        :key="row.node.key"
         class="ob-row"
         :data-depth="row.depth"
         :data-node="row.node.key"
@@ -1041,6 +1070,7 @@ defineExpose({
         <div class="row-content">
         <div
           class="ob-text"
+          v-lore-text="row.node"
           contenteditable="true"
           spellcheck="false"
           :data-ph="row.node.text ? '' : '输入内容，回车新建节点…'"
@@ -1048,12 +1078,23 @@ defineExpose({
           @keydown="onKey(row, $event)"
           @paste="onLorePaste"
           @focus="onTextFocus"
+          @compositionstart="composingKey = row.node.key"
+          @compositionend="composingKey = null"
           @keyup="rememberPosition"
           @mouseup="rememberPosition"
-          @blur="rememberPosition"
+          @blur="onTextBlur"
         />
         <LoreImageHiddenNotice :node-id="row.node.id" :html="row.node.html" />
-        <span v-if="row.node.tags.length" class="ob-tags">
+        <span v-if="row.node.tags.length || row.node.weight !== 'standard'" class="ob-tags">
+          <button
+            v-if="row.node.weight !== 'standard'"
+            class="ob-tag ob-weight-chip"
+            :class="`is-${row.node.weight}`"
+            type="button"
+            :title="`条目权重：${entryWeightMeta(row.node.weight).label}（点击编辑标签与权重）`"
+            @mousedown.prevent
+            @click.stop="openTagPanel(row.node.id, $event.clientX, $event.clientY)"
+          ><LoreWeightIcon :weight="row.node.weight" :size="11" />{{ entryWeightMeta(row.node.weight).label }}</button>
           <button
             v-for="t in row.node.tags"
             :key="t"
@@ -1062,7 +1103,7 @@ defineExpose({
             :title="`筛选标签「${t}」`"
             @mousedown.prevent
             @click.stop="filterByTag(t)"
-          >{{ t }}</button>
+          ><LoreWeightIcon v-if="work.mubuTagWeight(t) !== 'standard'" :weight="work.mubuTagWeight(t)" :size="11" />{{ t }}</button>
         </span>
         </div>
         <span v-if="relSummary.get(relKeyOf(row.node.id))" class="ob-links">
@@ -1083,6 +1124,10 @@ defineExpose({
           <button class="ob-op" title="删除节点" @click.stop="deleteRow(row)"><OIcon name="close" :size="11" /></button>
         </span>
         </div>
+      </div>
+      <div v-else aria-hidden="true" :style="{ height: row.height + 'px' }" />
+      </template>
+      </div>
       <div v-if="!nodeCount" class="empty-shelf" style="padding-top: 50px">
         <template v-if="filterText">
           <div class="big">没有匹配条目</div>

@@ -95,7 +95,7 @@ export function usePointerRowSort(listRef, options) {
       ghost: createGhost(node, sourceRect), frameTime: performance.now(), scrollRemainder: 0
     })
     suppressClick = true
-    list.setPointerCapture(pointerId)
+    if (!drag.preparation) list.setPointerCapture(pointerId)
     list.setAttribute('data-chapter-sort-active', '')
     for (const row of rows) row.el.setAttribute('data-chapter-sort-shifting', '')
     source.el.setAttribute('data-chapter-sort-source', '')
@@ -136,6 +136,7 @@ export function usePointerRowSort(listRef, options) {
       clearPreview(drag)
       landed?.removeAttribute('data-chapter-sort-source')
       ghost.remove()
+      drag.preparation?.release()
       if (finishAnimation === done) finishAnimation = null
     }
     finishAnimation = done
@@ -190,10 +191,13 @@ export function usePointerRowSort(listRef, options) {
     window.removeEventListener('blur', onBlur)
     window.removeEventListener('resize', onBlur)
     drag.list.removeEventListener('lostpointercapture', onCancel)
-    if (!drag.ghost) return
+    if (drag.list.hasPointerCapture(drag.pointerId)) drag.list.releasePointerCapture(drag.pointerId)
+    if (!drag.ghost) {
+      drag.preparation?.release()
+      return
+    }
     cancelAnimationFrame(drag.frame)
     drag.observer?.disconnect()
-    if (drag.list.hasPointerCapture(drag.pointerId)) drag.list.releasePointerCapture(drag.pointerId)
     if (event) {
       drag.x = event.clientX
       drag.y = event.clientY
@@ -202,6 +206,7 @@ export function usePointerRowSort(listRef, options) {
     if (immediate) {
       clearPreview(drag)
       drag.ghost.remove()
+      drag.preparation?.release()
     } else void settle(drag, target)
   }
 
@@ -210,8 +215,18 @@ export function usePointerRowSort(listRef, options) {
     if (!drag || event.pointerId !== drag.pointerId) return
     drag.x = event.clientX
     drag.y = event.clientY
-    if (!drag.ghost && Math.hypot(drag.x - drag.startX, drag.y - drag.startY) >= 5 && !lift(drag)) return stop(false)
-    if (drag.ghost) event.preventDefault()
+    if (!drag.ghost && !drag.preparation && Math.hypot(drag.x - drag.startX, drag.y - drag.startY) >= 5) {
+      drag.preparation = options.prepareLift?.(drag.node)
+      if (drag.preparation) {
+        drag.list.setPointerCapture(drag.pointerId)
+        void drag.preparation.ready.then(() => {
+          if (session === drag && !lift(drag)) stop(false)
+        }).catch(() => {
+          if (session === drag) stop(false)
+        })
+      } else if (!lift(drag)) return stop(false)
+    }
+    if (drag.ghost || drag.preparation) event.preventDefault()
   }
   function onUp(event) {
     if (event.pointerId === session?.pointerId) stop(true, event)
@@ -221,7 +236,7 @@ export function usePointerRowSort(listRef, options) {
   }
   function onBlur() { stop(false) }
   function onKey(event) {
-    if (event.key !== 'Escape' || !session?.ghost) return
+    if (event.key !== 'Escape' || !(session?.ghost || session?.preparation)) return
     event.preventDefault()
     event.stopImmediatePropagation()
     stop(false)
@@ -259,9 +274,10 @@ export function usePointerRowSort(listRef, options) {
   }
 
   watch(structure, () => { if (session) stop(false, null, true) })
-  onBeforeUnmount(() => {
+  function cancel() {
     stop(false, null, true)
     finishAnimation?.()
-  })
-  return { pointerDown, nativeDrag, click }
+  }
+  onBeforeUnmount(cancel)
+  return { pointerDown, nativeDrag, click, cancel }
 }

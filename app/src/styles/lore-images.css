@@ -192,6 +192,13 @@ img.lore-image[data-lore-image-hidden="true"] {
   opacity: 0.72;
 }
 
+.lore-tm-content-node:not(.is-editing):not(.is-selected) .lore-tm-content:not(:has(img.lore-image)) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
 .lore-tm-content-node:not(.is-editing):hover {
   border-color: color-mix(in srgb, var(--lore-ring, var(--accent)) 26%, var(--lore-pane-line, rgb(255 255 255 / .14)));
   background: color-mix(in srgb, var(--lore-ring, var(--accent)) 6%, var(--lore-pane, rgb(255 255 255 / .05)));

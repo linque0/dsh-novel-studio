@@ -5,10 +5,12 @@
 import { computed, ref } from 'vue'
 import OIcon from '../OIcon.vue'
 import LoreRelRows from '../LoreRelRows.vue'
+import LoreWeightIcon from '../LoreWeightIcon.vue'
 import { useWorkStore } from '../../stores/work'
 import { useUiStore } from '../../stores/ui'
 import { jumpTo } from '../../services/doublelinks'
 import { tagColor } from '../../services/tagcolors'
+import { entryWeightMeta } from '../../services/lore-weights.js'
 
 const emit = defineEmits(['open', 'locate', 'back', 'select'])
 const work = useWorkStore()
@@ -80,9 +82,19 @@ function collapse() {
     </header>
     <div v-if="node" class="lore-map-insp-scroll">
       <div class="lore-map-insp-crumbs">{{ crumbs.map((c) => c.text).join(' / ') }}</div>
-      <h2 class="lore-map-insp-title">{{ (node.text || '').trim() || '（空节点）' }}</h2>
-      <div v-if="(node.tags || []).length" class="lore-map-insp-tags">
-        <button v-for="t in node.tags" :key="t" class="lore-detail-tag" type="button" :style="tagStyle(t)" @click="ui.mubuQuery = t">{{ t }}</button>
+      <h2 class="lore-map-insp-title">
+        <LoreWeightIcon v-if="work.mubuEntryWeight(node) !== 'standard'" :weight="work.mubuEntryWeight(node)" :size="13" class="lore-inline-wi" />
+        <span>{{ (node.text || '').trim() || '（空节点）' }}</span>
+      </h2>
+      <div v-if="(node.tags || []).length || work.mubuEntryWeight(node) !== 'standard'" class="lore-map-insp-tags">
+        <span v-if="work.mubuEntryWeight(node) !== 'standard'" class="lore-weight-pill" :class="`is-${work.mubuEntryWeight(node)}`">
+          <LoreWeightIcon :weight="work.mubuEntryWeight(node)" :size="11" />
+          {{ entryWeightMeta(work.mubuEntryWeight(node)).label }}
+        </span>
+        <button v-for="t in node.tags" :key="t" class="lore-detail-tag" type="button" :style="tagStyle(t)" @click="ui.mubuQuery = t">
+          <LoreWeightIcon v-if="work.mubuTagWeight(t) !== 'standard'" :weight="work.mubuTagWeight(t)" :size="11" />
+          {{ t }}
+        </button>
       </div>
       <p v-for="(p, i) in proseList" :key="'p' + i" class="lore-map-insp-p">{{ p }}</p>
       <section class="lore-map-insp-sec">
