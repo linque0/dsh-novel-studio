@@ -21,7 +21,7 @@ export const LATIN_FONTS = {
 export const FONT_MAP = CJK_FONTS
 export const LATIN_MAP = LATIN_FONTS
 
-export const SETTINGS_DEFAULTS = { editorFont: 'song', editorLatin: 'none', fontSize: 17, topbarAutoHide: false, flowSpeed: 1, panelTheme: 'host' }
+export const SETTINGS_DEFAULTS = { editorFont: 'song', editorLatin: 'none', fontSize: 17, topbarAutoHide: false, pageTransitions: true, flowSpeed: 1, panelTheme: 'host' }
 
 /* 总稿 model.mjs:7 的 13–24px 区间与 12 步撤销窗口 */
 const FONT_SIZE_MIN = 13
@@ -39,7 +39,8 @@ export function normalizeSettingsPrefs(p = {}) {
     editorFont: Object.hasOwn(CJK_FONTS, src.editorFont) ? src.editorFont : SETTINGS_DEFAULTS.editorFont,
     editorLatin: Object.hasOwn(LATIN_FONTS, src.editorLatin) ? src.editorLatin : SETTINGS_DEFAULTS.editorLatin,
     fontSize: Number.isFinite(size) ? Math.max(FONT_SIZE_MIN, Math.min(FONT_SIZE_MAX, Math.round(size))) : SETTINGS_DEFAULTS.fontSize,
-    topbarAutoHide: src.topbarAutoHide === true
+    topbarAutoHide: src.topbarAutoHide === true,
+    pageTransitions: src.pageTransitions !== false
   }
 }
 

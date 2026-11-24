@@ -9,7 +9,7 @@ import {SOURCE_TABLES} from './project/normalize.js'
 import {autosave} from './autosave'
 import {countWords} from './wordcount.js'
 import {createSnippetHistory,fingerprint,matchesSnippetContent,snippetContentFingerprint} from './snippet-history.js'
-import {joinContent,splitNote,normalizeTags,normalizeLinks,pickSnipCardColor,tagsAfterGroupMove} from '../components/snippets/snippet-model.js'
+import {joinContent,splitNote,normalizeTags,normalizeLinks,normalizeImages,normalizeWebLinks,pickSnipCardColor,SNIP_CARD_COLORS,tagsAfterGroupMove} from '../components/snippets/snippet-model.js'
 
 const clone=value=>JSON.parse(JSON.stringify(value)),kindTable={chapter:'chapters',mubu:'mubu',character:'characters',snippet:'snippets'}
 const conflict=message=>Object.assign(new Error(message||'内容已在其他位置修改，未覆盖新数据。'),{code:'CONFLICT'})
@@ -98,8 +98,16 @@ export function snippetCommandsFor(work,ui){
    const bundle=await Promise.all(['snippets','chapters','outlines','mubu'].map(t=>db.table(t).where('workId').equals(workId).toArray()))
    if(work.work?.id===workId)['snippets','chapters','outlines','mubu'].forEach((t,i)=>work[t]=bundle[i])
   },
-  capture(content,tags=[],quickContent=content){return run(async workId=>{
-   const t=now(),row={id:uid(),workId,content,tags:normalizeTags(tags),links:[],cardColor:pickSnipCardColor(),createdAt:t,updatedAt:t,deletedAt:null}
+  capture(content,tags=[],quickContent=content,extras={}){return run(async workId=>{
+   const t=now()
+   const cardColor=Object.hasOwn(SNIP_CARD_COLORS,extras?.cardColor)?extras.cardColor:pickSnipCardColor()
+   const images=normalizeImages(extras?.images),webLinks=normalizeWebLinks(extras?.webLinks)
+   const row={
+    id:uid(),workId,content,tags:normalizeTags(tags),links:[],cardColor,
+    ...(images.length?{images}:{}),
+    ...(webLinks.length?{webLinks}:{}),
+    createdAt:t,updatedAt:t,deletedAt:null
+   }
    return {changes:[change('snippets',null,row)],createdIds:[row.id],result:{id:row.id},context:{clearQuick:true,quickContent}}
   })},
   patch(id,patch,{expected,expectedContent,clearDraft=false,submitted}={}){return run(async workId=>{

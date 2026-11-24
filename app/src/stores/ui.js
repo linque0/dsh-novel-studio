@@ -94,6 +94,7 @@ export const useUiStore = defineStore('ui', {
     flowSpeed: DEFAULT_FLOW_SPEED,
     flowSpeedPreview: null,
     topbarAutoHide: false, // 顶栏默认隐藏（跨窗口持久化，悬停临时展开）
+    pageTransitions: true, // 界面切换液态转场动画开关（默认开启）
     outlineLeftWidth: 220,
     outlineRightWidth: 318,
     outlineDetailOpen: true,
@@ -231,6 +232,7 @@ export const useUiStore = defineStore('ui', {
           this.flowSpeed = normalizeFlowSpeed(map.flowSpeed)
         }
         if (map.topbarAutoHide !== undefined) this.topbarAutoHide = map.topbarAutoHide === true
+        this.pageTransitions = map.pageTransitions !== false
         this.outlineLeftWidth = normalizeOutlineWidth('left', map.outlineLeftWidth)
         this.outlineRightWidth = normalizeOutlineWidth('right', map.outlineRightWidth)
         if (map.outlineDetailOpen !== undefined) this.outlineDetailOpen = !!map.outlineDetailOpen

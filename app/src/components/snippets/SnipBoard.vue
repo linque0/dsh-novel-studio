@@ -14,9 +14,10 @@ const props = defineProps({
   selectedId: { type: String, default: '' },
   current: { type: String, default: '' },
   dragging: { type: Object, default: null },
-  dropHint: { type: Object, default: null }
+  dropHint: { type: Object, default: null },
+  assetUrl: { type: Function, default: () => '' }
 })
-const emit = defineEmits(['select', 'edit', 'menu', 'tag', 'compose', 'group', 'dragstart', 'dragend', 'dragover', 'dragleave', 'drop', 'clear'])
+const emit = defineEmits(['select', 'edit', 'menu', 'tag', 'open-url', 'compose', 'group', 'dragstart', 'dragend', 'dragover', 'dragleave', 'drop', 'clear'])
 
 const currentGroup = computed(() => {
   const list = props.groups
@@ -88,12 +89,14 @@ function dragLeave(group, event) {
           draggable
           :group="g.id"
           :selected="n.id === selectedId"
+          :asset-url="assetUrl"
           :class="{ 'snip-drag-source': dragging?.id === n.id && dragging.group === g.id }"
           :data-drop-edge="dropHint?.group === g.id && dropHint.markerId === n.id ? dropHint.edge : undefined"
           @select="emit('select', $event)"
           @edit="emit('edit', $event)"
           @menu="emit('menu', $event)"
           @tag="emit('tag', $event)"
+          @open-url="emit('open-url', $event)"
           @dragstart="emit('dragstart', $event)"
           @dragend="emit('dragend')"
         />

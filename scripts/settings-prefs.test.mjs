@@ -86,10 +86,16 @@ test('search：空查询返回空数组', () => {
 
 /* ---------- 目录完整性 ---------- */
 
-test('目录：12 项、id 唯一、page 全在 SETTINGS_PAGES、每页至少一项', () => {
-  assert.equal(SETTINGS_CATALOG.length, 12)
+test('normalize：pageTransitions 默认 true，仅 false 关闭', () => {
+  assert.equal(normalizeSettingsPrefs({}).pageTransitions, true)
+  assert.equal(normalizeSettingsPrefs({ pageTransitions: true }).pageTransitions, true)
+  assert.equal(normalizeSettingsPrefs({ pageTransitions: false }).pageTransitions, false)
+})
+
+test('目录：条目数一致、id 唯一、page 全在 SETTINGS_PAGES、每页至少一项', () => {
+  assert.equal(SETTINGS_CATALOG.length, 16)
   const ids = SETTINGS_CATALOG.map((x) => x.id)
-  assert.equal(new Set(ids).size, 12, 'id 不唯一：' + ids.join(','))
+  assert.equal(new Set(ids).size, 16, 'id 不唯一：' + ids.join(','))
   assert.deepEqual(SETTINGS_PAGE_KEYS, ['appearance', 'data', 'about'])
   assert.deepEqual(SETTINGS_PAGES.map((p) => p.key), SETTINGS_PAGE_KEYS, '分类顺序即键顺序')
   for (const page of SETTINGS_PAGES) {

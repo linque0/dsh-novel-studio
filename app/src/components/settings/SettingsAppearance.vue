@@ -26,6 +26,9 @@ function onRange(event) {
 function toggleTopbar() {
   ui.applyPref('topbarAutoHide', !ui.topbarAutoHide)
 }
+function togglePageTransitions() {
+  ui.applyPref('pageTransitions', !ui.pageTransitions)
+}
 </script>
 
 <template>
@@ -105,6 +108,15 @@ function toggleTopbar() {
             <p>移至顶部展开，可随时固定</p>
           </div>
           <button type="button" class="switch" id="topbar-switch" role="switch" aria-labelledby="topbar-label" :aria-checked="ui.topbarAutoHide" data-act="toggle-topbar" @click="toggleTopbar">
+            <i></i>
+          </button>
+        </div>
+        <div class="setting-row" data-setting="pageTransitions">
+          <div class="setting-copy">
+            <strong id="transitions-label">界面切换动画</strong>
+            <p>关闭后书架与创作模块间将瞬时切换，不影响背景流动速度</p>
+          </div>
+          <button type="button" class="switch" id="transitions-switch" role="switch" aria-labelledby="transitions-label" :aria-checked="ui.pageTransitions" data-act="toggle-transitions" @click="togglePageTransitions">
             <i></i>
           </button>
         </div>

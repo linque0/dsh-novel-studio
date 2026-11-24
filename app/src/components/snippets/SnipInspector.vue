@@ -3,6 +3,7 @@
 <script setup>
 import { computed,ref,watch } from 'vue'
 import OIcon from '../OIcon.vue'
+import { formatWebLinkHost } from './snippet-model.js'
 
 const props = defineProps({
   note: { type: Object, default: null },
@@ -11,9 +12,10 @@ const props = defineProps({
   saveError: Boolean,
   conflict: Boolean,
   workTitle: { type: String, default: '' },
-  knownTags: { type: Array, default: () => [] }
+  knownTags: { type: Array, default: () => [] },
+  assetUrl: { type: Function, default: () => '' }
 })
-const emit = defineEmits(['close', 'save', 'update-draft', 'add-tag', 'untag', 'unlink', 'open-link', 'convert', 'remove', 'restore', 'preview', 'cancel-edit', 'retry', 'resolve-conflict'])
+const emit = defineEmits(['close', 'save', 'update-draft', 'add-tag', 'untag', 'unlink', 'open-link', 'convert', 'remove', 'restore', 'preview', 'cancel-edit', 'retry', 'resolve-conflict', 'open-editor', 'open-url', 'open-lightbox'])
 
 const draft = computed(() => props.draft || { title: props.note?.title || '', body: props.note?.body || '' })
 const dirty = computed(() => draft.value.title !== props.note?.title || draft.value.body !== props.note?.body)
@@ -38,16 +40,26 @@ function onTag(form) {
 </script>
 
 <template>
-  <div class="snip-inspector scroller" aria-label="片段整理">
+  <div class="snip-inspector" aria-label="片段整理">
     <template v-if="note">
       <div class="snip-inspect-head">
         <div>
           <span class="snip-eyebrow">{{ note.deletedAt ? '回收站' : '片段整理' }}</span>
-          <button type="button" class="snip-round" aria-label="关闭片段详情" @click="emit('close')">×</button>
+          <span class="snip-inspect-head-actions">
+            <button
+              v-if="!note.deletedAt"
+              type="button"
+              class="snip-round"
+              title="打开宽幅编辑窗口"
+              aria-label="打开宽幅编辑窗口"
+              @click="emit('open-editor', note.id)"
+            ><OIcon name="fit" :size="14" /></button>
+            <button type="button" class="snip-round" aria-label="关闭片段详情" @click="emit('close')">×</button>
+          </span>
         </div>
         <h2 v-if="note.deletedAt">{{ note.title }}</h2>
       </div>
-      <div class="snip-inspect-body">
+      <div class="snip-inspect-body scroller">
         <div v-if="saveError" class="snip-save-error" role="alert"><span>保存未完成，内容已保留。</span><button type="button" :disabled="busy" @click="emit('retry')">重试保存</button></div>
         <div v-if="conflict && !note.deletedAt" class="snip-conflict" role="alert">
           <p>原片段已改变，草稿仍保留。请先核对当前版本。</p>
@@ -80,6 +92,41 @@ function onTag(form) {
         </template>
 
         <template v-if="!note.deletedAt">
+          <div v-if="note.images?.length" class="snip-inspector-media">
+            <div class="snip-section-title">参考图片 <span>{{ note.images.length }}</span></div>
+            <div class="snip-inspector-thumbs">
+              <button
+                v-for="(img, idx) in note.images"
+                :key="img.assetId"
+                type="button"
+                class="snip-inspector-thumb"
+                :aria-label="'查看大图 ' + img.name"
+                @click="emit('open-lightbox', { images: note.images, index: idx })"
+              >
+                <img v-if="assetUrl(img.assetId)" :src="assetUrl(img.assetId)" :alt="img.name">
+                <OIcon v-else name="image" :size="14" />
+              </button>
+            </div>
+          </div>
+
+          <div v-if="note.webLinks?.length" class="snip-inspector-media">
+            <div class="snip-section-title">网址链接 <span>{{ note.webLinks.length }}</span></div>
+            <div class="snip-inspector-weblinks">
+              <button
+                v-for="link in note.webLinks"
+                :key="link.id"
+                type="button"
+                class="snip-ref snip-inspector-web"
+                :title="'在默认浏览器中打开 ' + link.url"
+                @click="emit('open-url', link.url)"
+              >
+                <OIcon name="external" :size="14" />
+                <strong>{{ link.title || formatWebLinkHost(link.url) || link.url }}</strong>
+                <i class="arrow">↗</i>
+              </button>
+            </div>
+          </div>
+
           <div class="snip-section-title">标签<span>{{ note.tags.length }}</span></div>
           <div class="snip-tags">
             <span v-for="t in note.tags" :key="t" class="snip-edit-tag"># {{ t }}<button type="button" :aria-label="'移除标签' + t" @click="emit('untag', t)">×</button></span>

@@ -19,6 +19,7 @@ export const SETTINGS_CATALOG = [
   { id: 'flowSpeed', page: 'appearance', title: '流动速度', desc: '调节背景动画速度', terms: '背景 动画 速度 静止' },
   { id: 'panelTheme', page: 'appearance', title: '面板明暗', desc: '跟随宿主或独立选择浅色、深色', terms: '夜间 日间 主题 浅色 深色 宿主' },
   { id: 'topbarAutoHide', page: 'appearance', title: '默认隐藏顶栏', desc: '移至顶部展开，让写作空间更安静', terms: '自动收起 导航 沉浸 界面' },
+  { id: 'pageTransitions', page: 'appearance', title: '界面切换动画', desc: '书架与模块切换时的液态转场效果', terms: '动画 转场 切换 液态 过渡 瞬切 性能' },
   { id: 'storageLocation', page: 'data', title: '作品数据存储位置', desc: '把作品库搬到别的文件夹', terms: '路径 目录 移动 迁移 存储位置 数据目录 磁盘 library 备份盘' },
   { id: 'backup', page: 'data', title: '备份全部数据', desc: '下载作品、章节、人物与设定的完整快照', terms: 'JSON 安全 导出' },
   { id: 'restore', page: 'data', title: '恢复备份', desc: '检查备份内容后，替换当前工作区', terms: 'JSON 覆盖 导入' },

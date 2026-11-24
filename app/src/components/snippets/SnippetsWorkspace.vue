@@ -2,6 +2,8 @@
      数据真源仍是 work.snippets（content 首行 = 标题）与 work.selSnippetId（外部跳转/拆窗锁都用它）；
      每作品状态与未提交草稿落在 appconfig（ui.loadSnipState / loadSnipDrafts）。
      插件版不提供恍然梦入口：设计稿没有模块助手条，这里也不渲染。 -->
+<!-- 灵感拼板工作区主视图：支持标签泳道分组、卡片拖拽排序与跨组迁移（带 FLIP 落点动效）、
+     侧栏详情/浮窗编辑及未提交草稿冲突自愈，所有持久化修改均经 snippetCommandsFor 事务总线执行。 -->
 <script setup>
 import {computed,ref,watch,onMounted,onBeforeUnmount,nextTick,useId} from 'vue'
 import {useWorkStore} from '../../stores/work'
@@ -10,15 +12,20 @@ import {autosave} from '../../services/autosave'
 import {snippetCommandsFor} from '../../services/snippet-commands.js'
 import {matchesSnippetContent,snippetContentFingerprint} from '../../services/snippet-history.js'
 import {previewFor,targetById} from '../../services/doublelinks.js'
+import {openExternalUrl} from '../../services/external-url.js'
+import {pickFiles,arrayBufferToBlob,imageMime,IMAGE_EXTS} from '../../services/fileio'
 import OIcon from '../OIcon.vue'
 import SnipNav from './SnipNav.vue'
 import SnipBoard from './SnipBoard.vue'
 import SnipCardMenu from './SnipCardMenu.vue'
 import SnipInspector from './SnipInspector.vue'
+import SnipEditorModal from './SnipEditorModal.vue'
+import SnipImageLightbox from './SnipImageLightbox.vue'
 import SnipDialog from './SnipDialog.vue'
 import SnipModal from './SnipModal.vue'
 import {
- boardGroups,clampSnipSidebarWidth,joinContent,moveBefore,neighbourId,noteCounts,noteView,normalizeTags,normalizeLinks,
+ boardGroups,clampSnipSidebarWidth,joinContent,moveBefore,moveImageToCover,neighbourId,noteCounts,noteView,
+ normalizeImages,normalizeLinks,normalizeTags,normalizeWebLinks,reconcileOrder,
  snippetDropPlacement,snippetNavGroups,SNIP_CARD_COLORS,SNIP_SIDEBAR,stableTagOrder,splitNote,tagGroupId,UNTAGGED_GROUP,visibleNotes
 } from './snippet-model.js'
 import {createSnippetDragMotion} from './snippet-drag-motion.js'
@@ -32,7 +39,8 @@ const sidebarWidth=computed(()=>sidebarPreview.value??ui.snipSidebarWidth)
 let sidebarDrag=null
 const quickError=ref(''),detailOpen=ref(false),dragging=ref(null),dropHint=ref(null),dialog=ref(null),toast=ref(null),actionBusy=ref(false)
 const dragMotion=createSnippetDragMotion()
-const floatingEditorId=ref('')
+const editorModal=ref(null) // null | { mode: 'edit', id } | { mode: 'compose', tag }
+const lightbox=ref(null) // null | { images, index }
 const commands=snippetCommandsFor(work,ui),revision=ref(0),stopCommands=commands.subscribe(()=>revision.value++)
 let toastTimer=0,lastUndo=null,restoring=false,internalSelection=false,loadingScope=false
 const commandState=computed(()=>{revision.value;return {...commands.history.get(work.work?.id||'')}})
@@ -61,9 +69,14 @@ const groups=computed(()=>{
 })
 const currentGroup=computed(()=>groups.value.some(g=>g.id===ui.snipGroup)?ui.snipGroup:groups.value[0]?.id||'')
 const selectedId=computed(()=>work.selSnippetId||''),selected=computed(()=>notes.value.find(n=>n.id===selectedId.value)||null),draft=computed(()=>ui.snipDrafts.edit[selectedId.value]||null),quick=computed(()=>ui.snipDrafts.quick||'')
-const floatingEdit=computed(()=>!!floatingEditorId.value&&floatingEditorId.value===selectedId.value&&!!selected.value&&!selected.value.deletedAt)
+const editorActive=computed(()=>!!editorModal.value&&(editorModal.value.mode==='compose'||(!!selected.value&&selected.value.id===editorModal.value.id&&!selected.value.deletedAt)))
 const draftConflict=computed(()=>!!draft.value?.base&&!matchesSnippetContent(work.snippets.find(n=>n.id===selectedId.value),draft.value.base))
 const showInspector=computed(()=>narrow.value?detailOpen.value:ui.snipInspector.board),knownTags=computed(()=>counts.value.tags.map(t=>t.tag))
+function assetUrlOf(assetId){void work.urlTick;return work.assetUrl(assetId)}
+watch(notes,rows=>{
+ const ids=[...new Set(rows.flatMap(n=>(n.images||[]).map(i=>i.assetId)).filter(Boolean))]
+ if(ids.length)void work.warmUrls(ids)
+},{immediate:true})
 const navigation=computed(()=>snippetNavGroups(notes.value,ui.snipTagOrder,sort.value,ui.snipOrder))
 const navProps=computed(()=>({
  workTitle:work.work?.title||'',groups:navigation.value,expanded:ui.snipExpandedGroups,selectedId:selectedId.value,
@@ -92,9 +105,13 @@ function openNote(id){
  else if(!ui.snipInspector.board)setState({inspector:{...ui.snipInspector,board:true}})
 }
 function closeDetail(){
- if(floatingEdit.value){floatingEditorId.value='';return}
  if(narrow.value)detailOpen.value=false
  else setState({inspector:{...ui.snipInspector,board:false}})
+}
+function closeEditor(){editorModal.value=null}
+function openCompose(explicitTag){
+ dialog.value=null
+ editorModal.value={mode:'compose',tag:explicitTag===undefined?(tag.value||''):String(explicitTag||'')}
 }
 function toggleGroup(id){
  const expanded=ui.snipExpandedGroups
@@ -157,18 +174,77 @@ async function onCompose(text){
  const result=await capture(text,compose?.tag)
  if(result&&dialog.value===compose)dialog.value=null
 }
-function startEdit(id,floating=false){
+async function createFromEditor({title,body,tags,cardColor,images,webLinks}){
+ const content=joinContent(title,body)
+ const result=await action(()=>commands.capture(content,tags,quick.value,{cardColor,images,webLinks}),'已记录灵感')
+ if(!result)return
+ editorModal.value=null
+ finishCapture(result.result.id)
+}
+function startEdit(id){
  const row=work.snippets.find(n=>n.id===id&&!n.deletedAt);if(!row)return
  pick(id)
- if(floating){
-  floatingEditorId.value=id
-  detailOpen.value=false
- }else if(narrow.value)detailOpen.value=true
- else setState({inspector:{...ui.snipInspector,board:true}})
- nextTick(()=>{
-  const scope=floating||narrow.value?document.querySelector('.snip-native[open] [data-dialog=detail]'):shell.value
-  scope?.querySelector('.snip-edit-form [name=title]')?.focus({preventScroll:true})
- })
+ detailOpen.value=false
+ editorModal.value={mode:'edit',id}
+}
+async function pickSnippetImages(){
+ const files=await pickFiles(IMAGE_EXTS)
+ if(!files?.length)return []
+ const added=[]
+ for(const f of files){
+  const meta=await work.addAssetBlob(arrayBufferToBlob(f.data,imageMime(f.ext)),f.name||'参考图片')
+  added.push({assetId:meta.id,name:meta.name||f.name||'参考图片'})
+ }
+ if(added.length)await work.warmUrls(added.map(i=>i.assetId))
+ return added
+}
+async function uploadSnippetBlobs(files){
+ const added=[]
+ for(const f of files||[]){
+  if(!f||!/^image\//i.test(f.type||''))continue
+  const ext=(f.type||'image/png').split('/')[1]?.replace('jpeg','jpg')||'png'
+  const name=f.name||`粘贴图片.${ext}`
+  const meta=await work.addAssetBlob(f,name)
+  added.push({assetId:meta.id,name:meta.name||name})
+ }
+ if(added.length)await work.warmUrls(added.map(i=>i.assetId))
+ return added
+}
+function addNoteImages(added){
+ if(!selectedId.value||!added?.length)return
+ return action(()=>commands.patch(selectedId.value,row=>({images:normalizeImages([...(row.images||[]),...added])})),'已添加参考图片')
+}
+function removeNoteImage(assetId){
+ if(!selectedId.value||!assetId)return
+ return action(()=>commands.patch(selectedId.value,row=>({images:normalizeImages((row.images||[]).filter(i=>i.assetId!==assetId))})),'已移除图片')
+}
+function setCoverNoteImage(assetId){
+ if(!selectedId.value||!assetId)return
+ return action(()=>commands.patch(selectedId.value,row=>({images:moveImageToCover(row.images||[],assetId)})),'已设为卡片封面')
+}
+function addNoteWebLink(item){
+ if(!selectedId.value||!item?.url)return
+ return action(()=>commands.patch(selectedId.value,row=>({webLinks:normalizeWebLinks([...(row.webLinks||[]),item])})),'已添加网址链接')
+}
+function updateNoteWebLink(item){
+ if(!selectedId.value||!item?.id)return
+ return action(()=>commands.patch(selectedId.value,row=>({webLinks:normalizeWebLinks((row.webLinks||[]).map(l=>l.id===item.id?item:l))})),'已更新网址链接')
+}
+function removeNoteWebLink(id){
+ if(!selectedId.value||!id)return
+ return action(()=>commands.patch(selectedId.value,row=>({webLinks:normalizeWebLinks((row.webLinks||[]).filter(l=>l.id!==id))})),'已移除网址链接')
+}
+function setNoteColor(color){
+ if(!selectedId.value||!Object.hasOwn(SNIP_CARD_COLORS,color))return
+ return action(()=>commands.patch(selectedId.value,{cardColor:color}),'已更新卡片颜色')
+}
+async function handleOpenUrl(url){
+ const res=await openExternalUrl(url)
+ if(!res?.ok)notify('无法打开该网址，请检查链接格式。')
+}
+function openLightbox({images,index}){
+ if(!images?.length)return
+ lightbox.value={images,index:index||0}
 }
 function updateDraft(value){
  const id=selectedId.value,row=work.snippets.find(n=>n.id===id&&!n.deletedAt)
@@ -179,11 +255,11 @@ function updateDraft(value){
 }
 function cancelEdit(){const id=selectedId.value;if(id)ui.setSnipDraft(id,null)}
 function resolveConflict(){const id=selectedId.value,row=work.snippets.find(n=>n.id===id);if(draft.value&&row){ui.setSnipDraft(id,{...draft.value,base:snippetContentFingerprint(row)});commands.history.get(work.work?.id||'').error=null;revision.value++}}
-async function saveEdit({title,body}){
- if(!String(title).trim()){notify('请保留一个标题。');return}
+async function saveEdit({title,body,silent=false}){
+ if(!String(title).trim()){if(!silent)notify('请保留一个标题。');return}
  const id=selectedId.value,workId=work.work?.id,base=draft.value?.base||snippetContentFingerprint(work.snippets.find(n=>n.id===selectedId.value))
  if(draft.value&&!draft.value.base)ui.setSnipDraft(id,{...draft.value,base},workId)
- const result=await action(()=>commands.patch(id,{content:joinContent(title,body)},{expectedContent:base,clearDraft:true,submitted:{title,body}}),'已保存修改')
+ const result=await action(()=>commands.patch(id,{content:joinContent(title,body)},{expectedContent:base,clearDraft:true,submitted:{title,body}}),silent?'':'已保存修改')
  if(result?.empty)ui.setSnipDraft(id,null,workId)
 }
 async function addTag(value){const t=String(value||'').trim().replace(/^#+/,'');if(!t||t.length>30){notify('标签需要 1–30 个字。');return}await action(()=>commands.patch(selectedId.value,row=>({tags:normalizeTags([...(row.tags||[]),t])})),'已添加标签')}
@@ -201,7 +277,7 @@ function previewLink(link){
 }
 const convertOptions=computed(()=>dialog.value?.payload?.kind==='chapter'?[{value:'',label:'未分卷'},...work.liveVolumes.map(v=>({value:v.id,label:'卷 · '+(v.title||'未命名')}))]:[{value:'',label:'新建顶层条目'},...work.liveMubu().map(n=>({value:n.id,label:work.mubuPath(n.id).map(x=>x.text||'未命名').join(' / ')}))])
 async function doConvert(dest){const kind=dialog.value?.payload?.kind,result=await action(()=>commands.convert(selectedId.value,kind,dest||null),kind==='chapter'?'已创建章节':'已创建设定节点');if(result)previewLink(result.result)}
-async function remove(id){const result=await action(()=>commands.patch(id,{deletedAt:Date.now()}),'已移入回收站');if(result){dialog.value=null;if(narrow.value)detailOpen.value=false}}
+async function remove(id){const result=await action(()=>commands.patch(id,{deletedAt:Date.now()}),'已移入回收站');if(result){dialog.value=null;if(editorModal.value?.mode==='edit'&&editorModal.value.id===id)editorModal.value=null;if(narrow.value)detailOpen.value=false}}
 async function restore(id){const result=await action(()=>commands.patch(id,{deletedAt:null}),'已恢复灵感');if(result){dialog.value=null;if(narrow.value)detailOpen.value=false}}
 function materializeOrder(){return visibleNotes(notes.value,{sort:sort.value,order:ui.snipOrder}).map(n=>n.id)}
 async function move(id,group,direction){
@@ -280,7 +356,7 @@ function onMenuAction(key){
  if(menu?.type!=='menu')return
  const {id,group}=menu.payload
  closeCardMenu(true)
- if(key==='edit')startEdit(id,true)
+ if(key==='edit')startEdit(id)
  else if(key==='delete')remove(id)
  else if(key==='restore')restore(id)
  else move(id,group,key==='move-prev'?-1:1)
@@ -301,7 +377,7 @@ function selectGroup(group){cancelDrag();setState({group})}
 function onKeydown(e){
  if(e.isComposing||e.defaultPrevented||work.tab!=='snippets'||!shell.value?.getClientRects().length)return
  const typing=/^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName||'')||e.target?.isContentEditable
- if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();dialog.value=null;detailOpen.value=false;floatingEditorId.value='';nextTick(()=>shell.value?.querySelector('.snip-search input')?.focus());return}
+ if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();dialog.value=null;detailOpen.value=false;editorModal.value=null;lightbox.value=null;nextTick(()=>shell.value?.querySelector('.snip-search input')?.focus());return}
  if(e.key==='Escape'&&dialog.value?.type==='menu'){e.preventDefault();closeCardMenu(true);return}
  if(e.key==='Escape'&&e.target?.closest('.snip-search')&&query.value){e.preventDefault();setSearch('');return}
  if(typing)return
@@ -314,7 +390,7 @@ function onResize(){
  const active=document.activeElement,field=active?.closest('.snip-edit-form')?active.name:null,start=active?.selectionStart,end=active?.selectionEnd,wasOpen=detailOpen.value
  saveScroll();width.value=innerWidth
  if(drawer.value)resetSidebarDrag()
- if(!floatingEdit.value){
+ if(!editorActive.value){
   if(!narrow.value&&wasOpen){detailOpen.value=false;setState({inspector:{...ui.snipInspector,board:true}})}
   else if(narrow.value&&field)detailOpen.value=true
  }
@@ -323,7 +399,7 @@ function onResize(){
 watch(()=>[notes.value,ui.snipStateWorkId,ui.snipPersistence.reading],()=>{if(ui.snipStateWorkId!==work.work?.id||ui.snipPersistence.reading||ui.snipPersistence.readError)return;const order=stableTagOrder(notes.value,ui.snipTagOrder);if(JSON.stringify(order)!==JSON.stringify(ui.snipTagOrder))setState({tagOrder:order})},{immediate:true})
 watch(visible,rows=>{if(loadingScope||ui.snipPersistence.reading||ui.snipStateWorkId!==work.work?.id)return;if(!rows.some(n=>n.id===selectedId.value))pick(rows[0]?.id||null)},{flush:'post'})
 watch(selectedId,id=>{
- if(id!==floatingEditorId.value)floatingEditorId.value=''
+ if(editorModal.value?.mode==='edit'&&id!==editorModal.value.id)editorModal.value=null
  if(loadingScope||ui.snipPersistence.reading||ui.snipStateWorkId!==work.work?.id)return
  setState({selected:id||''})
  if(!id||internalSelection)return;const n=notes.value.find(n=>n.id===id);if(n&&!visible.value.some(n=>n.id===id))resetScope({filter:n.deletedAt?'trash':'all',tag:'',query:''})
@@ -335,7 +411,7 @@ async function loadScope(id){
  pick(valid?saved:visible.value.some(n=>n.id===selectedId.value)?selectedId.value:visible.value[0]?.id||null)
  setState({selected:selectedId.value||''});await nextTick();loadingScope=false;restoreScroll()
 }
-watch(()=>work.work?.id,id=>{cancelDrag();resetSidebarDrag();dialog.value=null;detailOpen.value=false;floatingEditorId.value='';loadScope(id)},{flush:'sync'})
+watch(()=>work.work?.id,id=>{cancelDrag();resetSidebarDrag();dialog.value=null;detailOpen.value=false;editorModal.value=null;lightbox.value=null;loadScope(id)},{flush:'sync'})
 onMounted(async()=>{await loadScope(work.work?.id);width.value=innerWidth;window.addEventListener('resize',onResize);window.addEventListener('keydown',onKeydown);shell.value?.addEventListener('scroll',onWorkspaceScroll,{capture:true,passive:true});restoreScroll();shell.value?.classList.add('snip-arrive')})
 onBeforeUnmount(()=>{cancelDrag();saveScroll();void ui.flushSnipPersistence();shell.value?.removeEventListener('scroll',onWorkspaceScroll,{capture:true});window.removeEventListener('resize',onResize);window.removeEventListener('keydown',onKeydown);clearTimeout(toastTimer);stopCommands()})
 const linkOptions=computed(()=>{const has=new Set((selected.value?.links||[]).map(l=>l.kind+':'+l.id)),out=[];for(const [kind,items,group] of [['chapter',work.liveChapters,'正文'],['mubu',work.liveMubu(),'设定'],['character',work.liveCharacters,'人物']])for(const row of items){const value=kind+':'+row.id;if(!has.has(value))out.push({value,label:kind==='mubu'?work.mubuPath(row.id).map(n=>n.text||'未命名').join(' / '):row.title||row.name||'未命名',group})}return out})
@@ -388,7 +464,7 @@ async function retrySave(){
           <button v-if="query" type="button" class="snip-clear-search" aria-label="清除搜索" @click="resetScope({ query: '' })"><OIcon name="close" :size="15" /></button>
           <span v-else class="snip-key">Ctrl K</span>
         </label>
-        <button v-if="filter !== 'trash'" type="button" class="snip-primary" :disabled="actionBusy" @click="dialog = { type: 'compose' }">＋ 记一条</button>
+        <button v-if="filter !== 'trash'" type="button" class="snip-primary" :disabled="actionBusy" @click="openCompose()">＋ 记一条</button>
       </div>
     </div>
 
@@ -438,11 +514,13 @@ async function retrySave(){
             :current="currentGroup"
             :dragging="dragging"
             :drop-hint="dropHint"
+            :asset-url="assetUrlOf"
             @select="select"
             @edit="startEdit"
             @menu="openMenu"
             @tag="setTag"
-            @compose="dialog = { type: 'compose', tag: $event }"
+            @open-url="handleOpenUrl"
+            @compose="openCompose"
             @group="selectGroup"
             @dragstart="onDragStart"
             @dragend="onDragEnd"
@@ -453,7 +531,7 @@ async function retrySave(){
           />
 
           <SnipInspector
-            v-if="!narrow && !floatingEdit"
+            v-if="!narrow"
             :note="selected"
             :draft="draft"
             :conflict="draftConflict"
@@ -464,7 +542,11 @@ async function retrySave(){
             @retry="retrySave"
             :work-title="work.work?.title || ''"
             :known-tags="knownTags"
+            :asset-url="assetUrlOf"
             @close="closeDetail"
+            @open-editor="startEdit"
+            @open-url="handleOpenUrl"
+            @open-lightbox="openLightbox"
             @save="saveEdit"
             @update-draft="updateDraft"
             @add-tag="addTag"
@@ -498,8 +580,8 @@ async function retrySave(){
         />
       </div>
     </SnipModal>
-    <SnipModal v-if="selected && (floatingEdit || (narrow && showInspector))" :label="floatingEdit ? '编辑片段' : '片段详情'" @close="closeDetail">
-      <div class="snip-dialog snip-detail-dialog" data-dialog="detail" :class="{ 'is-sheet': phone && !floatingEdit, 'snip-floating-editor': floatingEdit }" role="region" :aria-label="floatingEdit ? '编辑片段' : '片段详情'">
+    <SnipModal v-if="selected && narrow && showInspector && !editorActive" label="片段详情" @close="closeDetail">
+      <div class="snip-dialog snip-detail-dialog" data-dialog="detail" :class="{ 'is-sheet': phone }" role="region" aria-label="片段详情">
         <SnipInspector
           :note="selected"
           :draft="draft"
@@ -511,7 +593,11 @@ async function retrySave(){
             @retry="retrySave"
           :work-title="work.work?.title || ''"
           :known-tags="knownTags"
+          :asset-url="assetUrlOf"
           @close="closeDetail"
+          @open-editor="startEdit"
+          @open-url="handleOpenUrl"
+          @open-lightbox="openLightbox"
           @save="saveEdit"
             @update-draft="updateDraft"
           @add-tag="addTag"
@@ -525,6 +611,47 @@ async function retrySave(){
         />
       </div>
     </SnipModal>
+
+    <!-- 统一宽幅居中玻璃专注编辑浮窗（新建 / 编辑合一） -->
+    <SnipEditorModal
+      v-if="editorActive"
+      :mode="editorModal.mode"
+      :note="editorModal.mode === 'edit' ? selected : null"
+      :draft="editorModal.mode === 'edit' ? draft : null"
+      :initial-tag="editorModal.mode === 'compose' ? editorModal.tag : ''"
+      :initial-quick="editorModal.mode === 'compose' ? quick : ''"
+      :busy="actionBusy"
+      :save-error="!!autosaveError"
+      :conflict="editorModal.mode === 'edit' ? draftConflict : false"
+      :work-title="work.work?.title || ''"
+      :known-tags="knownTags"
+      :asset-url="assetUrlOf"
+      :pick-images="pickSnippetImages"
+      :upload-blobs="uploadSnippetBlobs"
+      @close="closeEditor"
+      @create="createFromEditor"
+      @save="saveEdit"
+      @update-draft="updateDraft"
+      @update-quick="ui.saveSnipDrafts({ quick: $event })"
+      @resolve-conflict="resolveConflict"
+      @retry="retrySave"
+      @add-tag="addTag"
+      @untag="removeTag"
+      @set-color="setNoteColor"
+      @add-images="addNoteImages"
+      @remove-image="removeNoteImage"
+      @set-cover="setCoverNoteImage"
+      @add-web-link="addNoteWebLink"
+      @update-web-link="updateNoteWebLink"
+      @remove-web-link="removeNoteWebLink"
+      @open-url="handleOpenUrl"
+      @open-lightbox="openLightbox"
+      @open-link="openLink"
+      @unlink="unlink"
+      @preview="previewLink"
+      @convert="kind => (dialog = { type: 'convert', note: selected, payload: { kind } })"
+      @remove="remove"
+    />
 
     <SnipCardMenu
       v-if="dialog?.type === 'menu'"
@@ -560,6 +687,15 @@ async function retrySave(){
       @update:quick="ui.saveSnipDrafts({ quick: $event })"
       @link="addLink"
       @convert="doConvert"
+    />
+
+    <SnipImageLightbox
+      v-if="lightbox"
+      :images="lightbox.images"
+      :index="lightbox.index"
+      :asset-url="assetUrlOf"
+      @change="index => (lightbox = { ...lightbox, index })"
+      @close="lightbox = null"
     />
 
     <div v-if="toast" class="snip-toast" role="status">

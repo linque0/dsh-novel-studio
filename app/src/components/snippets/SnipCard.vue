@@ -1,19 +1,33 @@
-<!-- 拼板卡片：图钉负责拖动，菜单负责编辑和颜色选择。 -->
+<!-- 拼板卡片：图钉负责拖动，笔图标或双击打开宽幅编辑窗，网址胶囊点击直达默认浏览器。 -->
 <script setup>
 import { computed } from 'vue'
 import OIcon from '../OIcon.vue'
+import { formatWebLinkHost } from './snippet-model.js'
 
 const props = defineProps({
   note: { type: Object, required: true },
   selected: Boolean,
   group: { type: String, default: '' },
-  draggable: Boolean
+  draggable: Boolean,
+  assetUrl: { type: Function, default: () => '' }
 })
-const emit = defineEmits(['select', 'edit', 'menu', 'tag', 'dragstart', 'dragend'])
+const emit = defineEmits(['select', 'edit', 'menu', 'tag', 'open-url', 'dragstart', 'dragend'])
 
 const dateTag = computed(() => (props.note.date || '').slice(5).replace('-', '.'))
-const bodyText = computed(() => (props.note.body?.startsWith(props.note.title+'\n')?props.note.body.slice(props.note.title.length).trimStart():props.note.body) || (props.note.deletedAt ? '还没有正文。' : '还没有正文，点编辑继续写。'))
-const windowSelection=()=>globalThis.getSelection?.()?.toString()
+const images = computed(() => props.note.images || [])
+const webLinks = computed(() => props.note.webLinks || [])
+const coverSrc = computed(() => (images.value[0] ? props.assetUrl(images.value[0].assetId) : ''))
+const visibleWebLinks = computed(() => webLinks.value.slice(0, 2))
+const extraWebCount = computed(() => Math.max(0, webLinks.value.length - 2))
+const bodyText = computed(() => {
+  const raw = props.note.body?.startsWith(props.note.title + '\n')
+    ? props.note.body.slice(props.note.title.length).trimStart()
+    : props.note.body
+  if (raw) return raw
+  if (images.value.length || webLinks.value.length) return ''
+  return props.note.deletedAt ? '还没有正文。' : '还没有正文，点编辑继续写。'
+})
+const windowSelection = () => globalThis.getSelection?.()?.toString()
 function openMenu(event) {
   const trigger = event.currentTarget
   const atPointer = event.type === 'contextmenu' && (event.clientX || event.clientY)
@@ -37,6 +51,7 @@ function openMenu(event) {
     :data-id="note.id"
     :data-card-color="note.cardColor"
     @click="!windowSelection() && emit('select', note.id)"
+    @dblclick="!note.deletedAt && !windowSelection() && emit('edit', note.id)"
     @contextmenu.prevent.stop="openMenu"
     @keydown.shift.f10.self.prevent.stop="openMenu"
     @keydown.enter.self.prevent="emit('select', note.id)"
@@ -51,8 +66,10 @@ function openMenu(event) {
         <button
           v-if="!note.deletedAt"
           type="button"
+          title="打开编辑窗口"
           :aria-label="'编辑 ' + note.title"
           @click.stop="emit('edit', note.id)"
+          @dblclick.stop
         ><OIcon name="edit" :size="14" /></button>
         <button
           v-if="draggable && !note.deletedAt"
@@ -66,11 +83,31 @@ function openMenu(event) {
           @dragstart="emit('dragstart', { id: note.id, group, event: $event })"
           @dragend="emit('dragend')"
           @click.stop
+          @dblclick.stop
         ><OIcon name="pin" :size="15" /></button>
       </span>
     </div>
     <h3>{{ note.title }}</h3>
-    <div class="read-body excerpt">{{ bodyText }}</div>
+    <div v-if="images.length" class="snip-card-cover">
+      <img v-if="coverSrc" :src="coverSrc" :alt="images[0]?.name || note.title" loading="lazy">
+      <span v-else class="snip-card-cover-placeholder"><OIcon name="image" :size="18" /></span>
+      <span v-if="images.length > 1" class="snip-card-cover-more num">+{{ images.length - 1 }}</span>
+    </div>
+    <div v-if="bodyText" class="read-body excerpt">{{ bodyText }}</div>
+    <div v-if="visibleWebLinks.length" class="snip-card-weblinks" @click.stop @dblclick.stop>
+      <button
+        v-for="link in visibleWebLinks"
+        :key="link.id"
+        type="button"
+        class="snip-web-pill"
+        :title="'在默认浏览器中打开 ' + link.url"
+        @click.stop="emit('open-url', link.url)"
+      >
+        <OIcon name="external" :size="11" />
+        <span>{{ link.title || formatWebLinkHost(link.url) || link.url }}</span>
+      </button>
+      <span v-if="extraWebCount > 0" class="snip-web-pill-more num">+{{ extraWebCount }}</span>
+    </div>
     <div class="snip-note-foot">
       <div class="snip-tags">
         <button
@@ -80,6 +117,7 @@ function openMenu(event) {
           class="snip-tag"
           :data-tag="t"
           @click.stop="emit('tag', t)"
+          @dblclick.stop
         >{{ t }}</button>
         <span v-if="!note.tags.length" class="snip-tag-empty">未标记</span>
       </div>

@@ -23,6 +23,7 @@ import LoreRelationPanel from './components/LoreRelationPanel.vue'
 import PrefBridge from './components/PrefBridge.vue'
 import PanelHost from './components/PanelHost.vue'
 import FlowTransitionOverlay from './components/FlowTransitionOverlay.vue'
+import { flowTransition } from './services/latent/flow-transition.js'
 import { installAppBus } from './services/appbus'
 import { useShelfStore } from './stores/shelf'
 import { installAiRuntime } from './services/ai/runtime'
@@ -32,6 +33,9 @@ import { resolveSkin } from './skins/registry'
 const ui = useUiStore()
 const flowScene = ref(null)
 const shelf = useShelfStore()
+watch(() => ui.pageTransitions, (enabled) => {
+  flowTransition.setEnabled(enabled !== false)
+}, { immediate: true })
 
 /* 跨窗口事件（偏好同步 / 书架刷新 / 恢复备份协议）：主窗口与面板窗口都在根组件装一次 */
 installAppBus()
@@ -160,7 +164,7 @@ async function seedDevVerifyBooks() {
           v-if="analysisPanel ? prefsReady : !panelMode"
           :panel-entry="analysisPanel ? panelSpec[2] || '' : null"
         />
-        <FlowTransitionOverlay v-if="!panelMode" :scene="flowScene" />
+        <FlowTransitionOverlay v-if="!panelMode && ui.pageTransitions" :scene="flowScene" />
       </NDialogProvider>
     </NMessageProvider>
   </NConfigProvider>

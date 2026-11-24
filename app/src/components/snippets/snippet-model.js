@@ -106,6 +106,71 @@ export function normalizeLinks(list) {
 
 export const linkKey = (l) => String(l?.kind || '') + ':' + String(l?.id || '')
 
+/** 灵感附带图片归一：保留有序 assetId 数组并按 assetId 去重，首张默认作卡片封面。 */
+export function normalizeImages(list) {
+  const seen = new Set()
+  const out = []
+  for (const raw of Array.isArray(list) ? list : []) {
+    const assetId = String(raw?.assetId || '').trim()
+    if (!assetId || seen.has(assetId)) continue
+    seen.add(assetId)
+    const name = String(raw?.name || '').trim() || '参考图片'
+    out.push({ assetId, name })
+  }
+  return out
+}
+
+/** 将指定图片挪到首张作为卡片封面，保持其余顺序。 */
+export function moveImageToCover(list, assetId) {
+  const images = normalizeImages(list)
+  const key = String(assetId || '').trim()
+  const index = images.findIndex((img) => img.assetId === key)
+  if (index <= 0) return images
+  return [images[index], ...images.slice(0, index), ...images.slice(index + 1)]
+}
+
+/** 外部网址归一与协议白名单校验：缺省补 https://，仅放行 http(s) 且含合法主机名。 */
+export function normalizeExternalUrl(raw) {
+  const s = String(raw ?? '').trim()
+  if (!s || /[\u0000-\u001f\s]/.test(s)) return ''
+  const candidate = /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(s) ? s : 'https://' + s
+  try {
+    const parsed = new URL(candidate)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return ''
+    if (!parsed.hostname) return ''
+    return parsed.href
+  } catch {
+    return ''
+  }
+}
+
+/** 提取适合胶囊与副标题展示的易读域名（去 www. 前缀）。 */
+export function formatWebLinkHost(rawUrl) {
+  const href = normalizeExternalUrl(rawUrl)
+  if (!href) return ''
+  try {
+    return new URL(href).host.replace(/^www\./i, '')
+  } catch {
+    return ''
+  }
+}
+
+/** 灵感外部网址列表归一：校验合法 http(s) 链接并按 href 去重。 */
+export function normalizeWebLinks(list) {
+  const seen = new Set()
+  const out = []
+  let seq = 0
+  for (const raw of Array.isArray(list) ? list : []) {
+    const url = normalizeExternalUrl(raw?.url)
+    if (!url || seen.has(url)) continue
+    seen.add(url)
+    const title = String(raw?.title ?? '').trim().slice(0, 80)
+    const id = String(raw?.id || '').trim() || `wl-${++seq}-${url.slice(0, 24)}`
+    out.push({ id, url, title })
+  }
+  return out
+}
+
 /** 拼板和目录的卡片数据；names 由调用方注入（实时解析目标标题）。 */
 export function noteView(row, names = {}) {
   const { title, body } = splitNote(row)
@@ -117,6 +182,8 @@ export function noteView(row, names = {}) {
     tags: normalizeTags(row.tags),
     cardColor: Object.hasOwn(SNIP_CARD_COLORS, row.cardColor) ? row.cardColor : 'default',
     links: normalizeLinks(row.links).map((l) => ({ ...l, name: names[l.kind + ':' + l.id] || '', missing: !names[l.kind + ':' + l.id] })),
+    images: normalizeImages(row.images),
+    webLinks: normalizeWebLinks(row.webLinks),
     date: at.date,
     time: at.time,
     createdAt: Number(row.createdAt) || 0,
@@ -124,10 +191,17 @@ export function noteView(row, names = {}) {
   }
 }
 
-/** 检索命中：标题、正文、标签、关联目标名（设计稿 column「查找」）。 */
+/** 检索命中：标题、正文、标签、关联目标名、网址链接与图片名（设计稿 column「查找」）。 */
 export function matchesQuery(note, q) {
   if (!q) return true
-  const hay = [note.title, note.body, ...note.tags, ...note.links.map((l) => l.name)].join('\n').toLowerCase()
+  const hay = [
+    note.title,
+    note.body,
+    ...(note.tags || []),
+    ...(note.links || []).map((l) => l.name),
+    ...(note.webLinks || []).flatMap((w) => [w.title, w.url]),
+    ...(note.images || []).map((img) => img.name)
+  ].join('\n').toLowerCase()
   return hay.includes(q)
 }
 

@@ -255,7 +255,7 @@ body[data-skin=dsh] .settings-shell .toast button{color:var(--panel-accent);text
 
 /* ---------- 设置工作区 · 断点 1100–1320（总稿 @media(min-width:1100px) and (max-width:1320px)） ---------- */
 @media(min-width:1100px) and (max-width:1320px){
-body[data-skin=dsh] .settings-shell{grid-template-columns:216px minmax(0,1fr)}
+body[data-skin=dsh] .settings-shell{grid-template-columns:228px minmax(0,1fr)}
 body[data-skin=dsh] .settings-shell .page-head{padding:23px 28px}
 body[data-skin=dsh] .settings-shell .appearance-layout{padding:30px 28px;gap:27px;grid-template-columns:minmax(310px,1fr) minmax(280px,.9fr)}
 body[data-skin=dsh] .settings-shell .preview-column{padding-left:24px}
