@@ -2,9 +2,12 @@
   SnipNav.vue — 灵感工作台左侧分组/标签过滤、排序及卡片尺寸滑块导航栏。
 -->
 <script setup>
-import { computed, ref, useId } from 'vue'
+import { computed, reactive, ref, useId, watch } from 'vue'
 import OIcon from '../OIcon.vue'
 import { SNIP_CARD_SIZE } from './snippet-model.js'
+
+const NAV_INITIAL_LIMIT = 40
+const NAV_EXPAND_STEP = 60
 
 const props = defineProps({
   workTitle: { type: String, default: '' },
@@ -19,11 +22,35 @@ const props = defineProps({
 })
 const emit = defineEmits(['filter', 'tag', 'toggle-group', 'select-note', 'card-size', 'sort'])
 const sizing = ref(false)
+const navLimits = reactive({})
 const sizePanelId = useId()
 const sliderId = sizePanelId + '-slider'
 const sizeFill = computed(() => `${(props.cardSize - SNIP_CARD_SIZE.min) / (SNIP_CARD_SIZE.max - SNIP_CARD_SIZE.min) * 100}%`)
 const openGroups = computed(() => new Set(props.expanded))
 const sorts = { new: '最新', old: '最早', manual: '手动' }
+
+function navLimitFor(group) {
+  let limit = Math.max(NAV_INITIAL_LIMIT, navLimits[group.id] || 0)
+  if (props.selectedId && group.notes.length > limit) {
+    const idx = group.notes.findIndex((n) => n.id === props.selectedId)
+    if (idx >= limit) limit = idx + 10
+  }
+  return limit
+}
+function visibleGroupNotes(group) {
+  const limit = navLimitFor(group)
+  return group.notes.length > limit ? group.notes.slice(0, limit) : group.notes
+}
+function hiddenGroupCount(group) {
+  return Math.max(0, group.notes.length - navLimitFor(group))
+}
+function expandNavGroup(group) {
+  navLimits[group.id] = Math.min(group.notes.length, navLimitFor(group) + NAV_EXPAND_STEP)
+}
+watch(() => props.groups, (list) => {
+  const alive = new Set(list.map((g) => g.id))
+  for (const key of Object.keys(navLimits)) if (!alive.has(key)) delete navLimits[key]
+})
 
 function isActive(group) {
   return group.tag ? props.tag === group.tag : !props.tag && props.filter === group.filter
@@ -70,7 +97,7 @@ function showGroup(group) {
           </div>
 
           <ul v-if="openGroups.has(group.id) && group.notes.length" class="snip-nav-notes">
-            <li v-for="note in group.notes" :key="note.id">
+            <li v-for="note in visibleGroupNotes(group)" :key="note.id">
               <button
                 class="snip-nav-note"
                 type="button"
@@ -79,6 +106,11 @@ function showGroup(group) {
                 :title="note.title || '未命名'"
                 @click="emit('select-note', { group, note })"
               >{{ note.title || '未命名' }}</button>
+            </li>
+            <li v-if="hiddenGroupCount(group) > 0" class="snip-nav-more-item">
+              <button type="button" class="snip-nav-more" @click="expandNavGroup(group)">
+                显示更多（剩余 {{ hiddenGroupCount(group) }} 条）
+              </button>
             </li>
           </ul>
         </div>

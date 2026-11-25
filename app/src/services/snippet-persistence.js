@@ -1,5 +1,28 @@
 import {normalizeDrafts,normalizeSnipState} from '../components/snippets/snippet-model.js'
 const copy=value=>JSON.parse(JSON.stringify(value))
+export function sameSnipValue(a,b){
+ if(Object.is(a,b))return true
+ if(!a||!b||typeof a!=='object'||typeof b!=='object')return false
+ if(Array.isArray(a)||Array.isArray(b)){
+  if(!Array.isArray(a)||!Array.isArray(b)||a.length!==b.length)return false
+  for(let i=0;i<a.length;i++)if(!sameSnipValue(a[i],b[i]))return false
+  return true
+ }
+ const ka=Object.keys(a),kb=Object.keys(b)
+ if(ka.length!==kb.length)return false
+ for(const k of ka)if(!Object.hasOwn(b,k)||!sameSnipValue(a[k],b[k]))return false
+ return true
+}
+/** 仅写回实际发生变更的灵感字段，保持未变数组/对象引用稳定，避免选卡/滚动触发整板派生重算。 */
+export function applySnipSnapshot(store,snapshot,fieldMap){
+ if(store.snipStateWorkId!==snapshot.id)store.snipStateWorkId=snapshot.id
+ for(const [key,field] of Object.entries(fieldMap)){
+  const next=snapshot.state[key]
+  if(!sameSnipValue(store[field],next))store[field]=next
+ }
+ if(!sameSnipValue(store.snipDrafts,snapshot.drafts))store.snipDrafts=snapshot.drafts
+ if(!sameSnipValue(store.snipPersistence,snapshot.status))store.snipPersistence=snapshot.status
+}
 /** Each timer owns a work ID and immutable value. Failed reads never become empty writes. */
 export function createSnippetPersistence({read,write,apply=()=>{},delay=250}){
  const sessions=new Map();let active=null,disposed=false
@@ -31,7 +54,11 @@ export function createSnippetPersistence({read,write,apply=()=>{},delay=250}){
   try{await s.loading}finally{s.loading=null}
  }
  function schedule(id){const s=get(id);clearTimeout(s.timer);s.timer=setTimeout(()=>flush(id),delay)}
- function patchState(id,patch){const s=get(id);Object.assign(s.statePatch,copy(patch));s.state=normalizeSnipState({...s.state,...copy(patch)});s.version.state++;s.dirty.add('state');emit(id);schedule(id)}
+ function patchState(id,patch){
+  const s=get(id),clean=copy(patch),next=normalizeSnipState({...s.state,...clean})
+  if(sameSnipValue(s.state,next))return
+  Object.assign(s.statePatch,clean);s.state=next;s.version.state++;s.dirty.add('state');emit(id);schedule(id)
+ }
  function patchDrafts(id,patch){
   const s=get(id)
   if(Object.hasOwn(patch,'quick')){s.drafts.quick=String(patch.quick||'');s.draftPatch.quick=s.drafts.quick}

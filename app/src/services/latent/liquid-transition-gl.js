@@ -5,6 +5,37 @@
 import { FLOW_DITHER_FRAGMENT, FLOW_MESH_FRAGMENT } from './flow-shaders.js'
 
 export const LIQUID_DURATION = 1000
+export const COVER_DURATION = 260
+export const FALLBACK_HANDOFF_POINT = .42
+
+function clamp01(value) {
+  return Math.min(1, Math.max(0, value))
+}
+
+function smoothstep(edge0, edge1, x) {
+  const t = clamp01((x - edge0) / (edge1 - edge0))
+  return t * t * (3 - 2 * t)
+}
+
+/** 与片元着色器同源的覆盖层不透明度模型，用于单元测试校验盖幕与对角退幕边界。 */
+export function liquidMaskOpacity({
+  progress,
+  sweep = 0,
+  crest = .5,
+  cover = 1,
+  outgoingReady = false,
+  incomingReady = false
+}) {
+  if (!outgoingReady && cover < 1) {
+    const coverP = clamp01((cover * 1.54 - .46 * sweep + .08 * (crest - .5) - .04) / .46)
+    return smoothstep(0, 1, coverP)
+  }
+  if (incomingReady) {
+    return 1 - smoothstep(.90, 1, progress)
+  }
+  const revealP = clamp01((progress - .46 - .28 * sweep + .05 * (crest - .5)) / .18)
+  return 1 - smoothstep(0, 1, revealP)
+}
 
 /** 计算转场期间流场相位的积分增量，使结束接管时实景背景能无缝续接动画进度。 */
 export function liquidPhase(elapsed, speed, hold = 0) {
@@ -34,6 +65,7 @@ function glsl3(source) {
 
 const FLOW_SHARED = `
 uniform float u_progress;
+uniform float u_cover;
 uniform float u_aspect;
 uniform vec3 u_primary;
 uniform vec3 u_accent;
@@ -41,6 +73,8 @@ uniform sampler2D u_oldInk;
 uniform sampler2D u_newInk;
 uniform bool u_outgoingReady;
 uniform bool u_incomingReady;
+uniform bool u_outgoingOpaque;
+uniform bool u_incomingOpaque;
 
 const float PI = 3.141592653589793;
 const vec2 DIAGONAL = vec2(-.8660254, .5);
@@ -60,11 +94,14 @@ vec2 traceFlow(vec2 origin, float length) {
   return origin + length * flow(origin + .5 * length * flow(origin));
 }
 
-float localProgress(vec2 uv) {
+float diagonalSweep(vec2 uv) {
   float horizontal = .8660254 * u_aspect;
   float s = (horizontal * (1.0 - uv.x) + .5 * (1.0 - uv.y)) / (horizontal + .5);
-  s += .37 * s * (1.0 - s) * sin(6.1 * uv.y + 1.7 * s);
-  return clamp((u_progress - .46 * s) / .43, 0.0, 1.0);
+  return s + .37 * s * (1.0 - s) * sin(6.1 * uv.y + 1.7 * s);
+}
+
+float localProgress(float sweep) {
+  return clamp((u_progress - .46 * sweep) / .43, 0.0, 1.0);
 }
 
 vec4 sampleInk(sampler2D image, vec2 uv, float lod) {
@@ -103,7 +140,11 @@ vec3 frostedBackdrop(vec2 uv, vec3 sharpMaterial) {
   return mix(saturated, sharpMaterial, 0.12);
 }
 
-vec3 placeInk(vec3 color, vec3 frosted, vec3 material, vec4 ink, float visibility, float dilution, float frostWeight) {
+vec3 placeInk(vec3 color, vec3 frosted, vec3 material, vec4 ink, float visibility, float dilution, float frostWeight, bool opaqueScene) {
+  if (opaqueScene) {
+    vec3 tint = mix(ink.rgb, material, dilution);
+    return mix(color, tint, visibility);
+  }
   float glass = smoothstep(.05, .24, ink.a) * (1.0 - smoothstep(.92, .99, ink.a)) * frostWeight;
   vec3 base = mix(color, frosted, glass);
   vec3 tint = mix(ink.rgb, material * ink.a, dilution);
@@ -128,19 +169,20 @@ vec3 compositeScene(vec3 material, vec3 frosted, float p, vec2 refraction, float
     vec4 ink = inkAlongFlow(u_oldInk, wet, shift, .085 * melt, .13);
     float drift = smoothstep(.045, .275, p) * (1.0 - smoothstep(.292, .44, p));
     vec3 tint = pigment(material, ink, crest, drift * (.60 + .38 * filament));
-    return placeInk(tint, frosted, tint, ink, 1.0 - erosion, .94 * melt, 1.0 - melt);
+    return placeInk(tint, frosted, tint, ink, 1.0 - erosion, .94 * melt, 1.0 - melt, u_outgoingOpaque);
   }
-  if (u_incomingReady && p > .56) {
-    float structure = smoothstep(.56, .80, p);
+  if (u_incomingReady && p > .52) {
+    // 收尾前于 78% 附近完成清晰与结构收敛，消除尾段从 mipmap 模糊到活 DOM 锐利的视觉断层。
+    float structure = smoothstep(.52, .74, p);
     float gather = 1.0 - structure;
-    float clarity = smoothstep(.66, .90, p);
+    float clarity = smoothstep(.58, .78, p);
     vec2 wet = v_uv + refraction * gather;
     vec4 form = inkAlongFlow(u_newInk, wet, (.126 + .086 * crest) * gather, .085 * gather, .13);
-    vec4 detail = sampleInk(u_newInk, wet, 2.35 * (1.0 - clarity));
+    vec4 detail = sampleInk(u_newInk, wet, 1.85 * (1.0 - clarity));
     vec4 ink = mix(form, detail, structure);
-    float deposition = smoothstep(.56, .664, p) * (1.0 - smoothstep(.75, .91, p));
+    float deposition = smoothstep(.52, .62, p) * (1.0 - smoothstep(.70, .78, p));
     vec3 tint = pigment(material, ink, crest, deposition * (.58 + .42 * filament));
-    return placeInk(tint, frosted, tint, ink, structure, .88 * gather, structure);
+    return placeInk(tint, frosted, tint, ink, structure, .88 * gather, structure, u_incomingOpaque);
   }
   return material;
 }
@@ -149,7 +191,8 @@ vec3 compositeScene(vec3 material, vec3 frosted, float p, vec2 refraction, float
 const FLOW_COMPOSITE = glsl3(FLOW_DITHER_FRAGMENT
   .replace('void main() {', FLOW_SHARED + `
 void main() {
-  float baseProgress = localProgress(v_uv);
+  float sweep = diagonalSweep(v_uv);
+  float baseProgress = localProgress(sweep);
   float bell = sin(PI * u_progress);
   bell *= bell;
   float local = sin(PI * baseProgress);
@@ -181,12 +224,15 @@ void main() {
   vec3 material = mix(undertow, u_accent, current * crest * (.09 + .18 * fiber));
   vec3 frosted = frostedBackdrop(advectedUV, material);
   float opacity = 1.0;
-  if (!u_outgoingReady && p < .44) {
-    opacity = smoothstep(0.0, .44, p);
-  } else if (!u_incomingReady && p > .56) {
-    opacity = 1.0 - smoothstep(.56, 1.0, p);
+  if (!u_outgoingReady && u_cover < 1.0) {
+    float coverP = clamp((u_cover * 1.54 - .46 * sweep + .08 * (crest - .5) - .04) / .46, 0.0, 1.0);
+    opacity = smoothstep(0.0, 1.0, coverP);
   } else if (u_incomingReady) {
-    opacity = 1.0 - smoothstep(.88, 1.0, u_progress);
+    opacity = 1.0 - smoothstep(.90, 1.0, u_progress);
+  } else {
+    // 无目标页缓存纹理时，待旧页融墨结束后沿同源对角波纹自然扫开揭示底下锐利真页面。
+    float revealP = clamp((u_progress - .46 - .28 * sweep + .05 * (crest - .5)) / .18, 0.0, 1.0);
+    opacity = 1.0 - smoothstep(0.0, 1.0, revealP);
   }
   vec3 color = compositeScene(material, frosted, p, refraction, crest, fiber);
   gl_FragColor = vec4(color * opacity, opacity);`))
@@ -253,7 +299,7 @@ export function createLiquidRenderer(canvas) {
   const framebuffer = gl.createFramebuffer()
   gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer)
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, meshTexture, 0)
-  const maxEdge = Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE), 3200)
+  const maxEdge = Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE), 4096)
   const channels = new Float32Array(24)
   let pixelRatio = 1
   let allocated = false
@@ -261,6 +307,8 @@ export function createLiquidRenderer(canvas) {
   let meshHeight = 0
   let outgoingReady = false
   let incomingReady = false
+  let outgoingOpaque = false
+  let incomingOpaque = false
 
   function bindTexture(unit, tex) {
     gl.activeTexture(gl.TEXTURE0 + unit)
@@ -269,8 +317,8 @@ export function createLiquidRenderer(canvas) {
 
   return {
     resize(cssWidth, cssHeight) {
-      const density = Math.min(window.devicePixelRatio || 1, 1.5,
-        maxEdge / Math.max(cssWidth, cssHeight), Math.sqrt(3600000 / (cssWidth * cssHeight)))
+      // 取消 360 万像素强制降采样上限，保证 2560×1440 等桌面高分屏维持 1:1 清晰度不发虚。
+      const density = Math.min(window.devicePixelRatio || 1, 1.5, maxEdge / Math.max(cssWidth, cssHeight))
       const width = Math.max(1, Math.round(cssWidth * density))
       const height = Math.max(1, Math.round(cssHeight * density))
       pixelRatio = Math.min(width / cssWidth, height / cssHeight)
@@ -289,7 +337,7 @@ export function createLiquidRenderer(canvas) {
         allocated = true
       }
     },
-    setScene(image, kind) {
+    setScene(image, kind, { opaque = false } = {}) {
       if (gl.isContextLost()) throw new Error('Transition context lost.')
       const tex = kind === 'outgoing' ? oldInk : newInk
       const size = inkSize[kind]
@@ -305,14 +353,19 @@ export function createLiquidRenderer(canvas) {
           size.h = image.height
         }
         gl.generateMipmap(gl.TEXTURE_2D)
-        if (kind === 'outgoing') outgoingReady = true
-        else incomingReady = true
+        if (kind === 'outgoing') {
+          outgoingReady = true
+          outgoingOpaque = Boolean(opaque)
+        } else {
+          incomingReady = true
+          incomingOpaque = Boolean(opaque)
+        }
       } finally {
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false)
         gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false)
       }
     },
-    draw(time, phase, palette) {
+    draw(time, phase, palette, cover = 1) {
       if (gl.isContextLost()) throw new Error('Transition context lost.')
       if (time === 1) {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null)
@@ -350,8 +403,11 @@ export function createLiquidRenderer(canvas) {
       gl.uniform1f(s.u_time, phase * .1)
       gl.uniform1f(s.u_aspect, width / height)
       gl.uniform1f(s.u_progress, time)
+      gl.uniform1f(s.u_cover, cover)
       gl.uniform1i(s.u_outgoingReady, outgoingReady ? 1 : 0)
       gl.uniform1i(s.u_incomingReady, incomingReady ? 1 : 0)
+      gl.uniform1i(s.u_outgoingOpaque, outgoingOpaque ? 1 : 0)
+      gl.uniform1i(s.u_incomingOpaque, incomingOpaque ? 1 : 0)
       gl.uniform3fv(s.u_primary, primary)
       gl.uniform3fv(s.u_accent, accent)
       gl.uniform3fv(s.u_colorBack, shadow)
@@ -369,6 +425,8 @@ export function createLiquidRenderer(canvas) {
       // Keep texture storage for the next capture, but never sample an image from a previous route.
       outgoingReady = false
       incomingReady = false
+      outgoingOpaque = false
+      incomingOpaque = false
     },
     dispose() {
       gl.deleteTexture(meshTexture)

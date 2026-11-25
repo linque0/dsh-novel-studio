@@ -7,14 +7,18 @@ import { getTransitionBackdrop } from './flow.js'
 import { blendFlowStops } from './flow-color-stops.js'
 import { createFlowCaptureQueue } from './flow-capture-queue.js'
 import { liveCapturePlugin, renderLiveCapture } from './flow-live-capture.js'
-import { createLiquidRenderer, LIQUID_DURATION, liquidPhase } from './liquid-transition-gl.js'
+import { COVER_DURATION, createLiquidRenderer, FALLBACK_HANDOFF_POINT, LIQUID_DURATION, liquidPhase } from './liquid-transition-gl.js'
 
 const CAPTURE_BUDGET_MS = 650
+const IDLE_CAPTURE_BUDGET_MS = 3000
+const MODULE_CACHE_LIMIT = 5
 const HANDOFF_POINT = .86
 const GLIDE_START = .15
 const INCOMING_GATE = .24
 const GLIDE_RATE = .20
+const FALLBACK_MID_RATE = 1.45
 const PRECAPTURE_IDLE_MS = 350
+const hasNativeCapture = () => typeof window !== 'undefined' && typeof window.native?.captureScene === 'function'
 const samePixel = (a, b) => Math.abs(a - b) < 1
 const transitioningTokens = new WeakMap()
 const navButtonSelector = '.app-topnav-item[data-nav]:enabled'
@@ -124,7 +128,7 @@ export function sceneCaptureOptions(rect, density, scrollX, scrollY, fast = true
     outerTransforms: false,
     plugins: [{
       name: 'novel-studio-transition',
-      afterClone({ clone, element }) {
+      afterClone({ clone, element, nodeMap }) {
         if (!clone) return
         clone.style.setProperty('box-sizing', 'border-box', 'important')
         clone.style.setProperty('width', element.offsetWidth + 'px', 'important')
@@ -136,8 +140,31 @@ export function sceneCaptureOptions(rect, density, scrollX, scrollY, fast = true
         for (const backdrop of clone.querySelectorAll('.ls-backdrop-wrap, .st-backdrop-wrap')) {
           backdrop.style.setProperty('display', 'none', 'important')
         }
-        for (const idleControl of clone.querySelectorAll('.oc-rs, .oc-apt, .ob-op, .lore-nav-more')) {
+        for (const idleControl of clone.querySelectorAll('.oc-rs, .oc-apt, .ob-op, .lore-nav-more, .snip-drag-ghost')) {
           idleControl.remove()
+        }
+        // Prune offscreen snippet lanes/cards outside the capture viewport to keep SVG serialization lean.
+        if (nodeMap && rect.width > 0 && rect.height > 0) {
+          const pad = 32
+          const vLeft = rect.left - pad
+          const vTop = rect.top - pad
+          const vRight = rect.left + rect.width + pad
+          const vBottom = rect.top + rect.height + pad
+          const offscreen = (clonedNode) => {
+            const liveNode = nodeMap.get(clonedNode)
+            if (!liveNode || typeof liveNode.getBoundingClientRect !== 'function') return false
+            const b = liveNode.getBoundingClientRect()
+            return b.right < vLeft || b.left > vRight || b.bottom < vTop || b.top > vBottom
+          }
+          for (const lane of clone.querySelectorAll('.snip-lane')) {
+            if (offscreen(lane)) { lane.remove(); continue }
+            for (const card of lane.querySelectorAll('.snip-note')) {
+              if (offscreen(card)) card.remove()
+            }
+          }
+          for (const navItem of clone.querySelectorAll('.snip-nav-notes > li')) {
+            if (offscreen(navItem)) navItem.remove()
+          }
         }
         // In the isolated capture tree there is no live backdrop behind glass panels; skip expensive blur filters.
         const style = clone.ownerDocument.createElement('style')
@@ -187,7 +214,7 @@ export function createLiquidTransition(canvas, getScene) {
     const run = () => {
       warmupIdle = undefined
       if (disposed || document.hidden || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-      loadSnapdom().catch(() => {})
+      if (!hasNativeCapture()) loadSnapdom().catch(() => {})
       if (renderer) return
       try {
         renderer = createLiquidRenderer(canvas)
@@ -236,12 +263,12 @@ export function createLiquidTransition(canvas, getScene) {
     const live = liveGalaxyCanvas(key.root)
     if (!snapshotIsCurrent(snapshot)) return
     if (live) {
-      if (snapshot.live?.canvas === live) cachedScene = { ...snapshot, image: null }
+      if (snapshot.live?.canvas === live || snapshot.opaque) cachedScene = { ...snapshot, image: snapshot.opaque ? snapshot.image : null }
       return
     }
     cachedScene = snapshot
     if (key.rev && key.module) {
-      if (moduleCache.size >= 4 && !moduleCache.has(key.module)) {
+      if (moduleCache.size >= MODULE_CACHE_LIMIT && !moduleCache.has(key.module)) {
         moduleCache.delete(moduleCache.keys().next().value)
       }
       moduleCache.set(key.module, snapshot)
@@ -250,9 +277,10 @@ export function createLiquidTransition(canvas, getScene) {
 
   function matchCachedScene(root, rect) {
     if (!cachedScene || disposed || changedScene(captureMutations)) return null
-    if (liveGalaxyCanvas(root) !== (cachedScene.live?.canvas || null)) return null
+    if (liveGalaxyCanvas(root) !== (cachedScene.live?.canvas || null) && !cachedScene.opaque) return null
     const nowKey = captureKey(root, rect)
-    return sameCapture(cachedScene.key, nowKey) ? cachedScene : null
+    // 忽略顶栏按钮悬停/焦点样式波动，防止移动鼠标准备点击时误击穿刚建好的空闲缓存。
+    return sameScene(cachedScene.key, nowKey) ? cachedScene : null
   }
 
   function matchModuleCache(root, rect) {
@@ -260,7 +288,8 @@ export function createLiquidTransition(canvas, getScene) {
     const nowKey = captureKey(root, rect)
     if (!nowKey.rev || !nowKey.module) return null
     const hit = moduleCache.get(nowKey.module)
-    return hit && sameCapture(hit.key, nowKey) ? hit : null
+    // 跨模块重访时顶栏按钮往往处于悬停/焦点态，按 sameScene 匹配避免误击穿有效模块缓存。
+    return hit && sameScene(hit.key, nowKey) ? hit : null
   }
 
   function invalidateActiveCache(root) {
@@ -283,8 +312,9 @@ export function createLiquidTransition(canvas, getScene) {
       precaptureIdle = undefined
       if (disposed || document.hidden || disposeSurface || !root.isConnected) return
       const live = liveGalaxyCanvas(root)
-      // Only prepare the galaxy shell when the pointer or keyboard focus reaches module navigation.
-      if (live && !root.querySelector(navButtonSelector + ':is(:hover,:focus-visible)')) return
+      const useNative = hasNativeCapture()
+      // Only prepare the SnapDOM galaxy shell when the pointer or keyboard focus reaches module navigation.
+      if (!useNative && live && !root.querySelector(navButtonSelector + ':is(:hover,:focus-visible)')) return
       const rect = root.getBoundingClientRect()
       if (rect.width < 1 || rect.height < 1) return
       if (matchCachedScene(root, rect)) return
@@ -296,10 +326,13 @@ export function createLiquidTransition(canvas, getScene) {
         } catch { return }
       }
       renderer.resize(rect.width, rect.height)
-      // 保活页预采可供目标页复用，星系模板沿用离场截图的采样倍率。
-      capture(root, rect, ac.signal, live ? .85 : 1.5, true, live).then(snapshot => {
+      // 桌面端空闲预采直接走原生 capturePage（~15ms，1:1 清晰度且保留真实毛玻璃）；DSH 插件回落空闲 SnapDOM 预采。
+      const job = useNative
+        ? captureNative(root, rect, ac.signal)
+        : capture(root, rect, ac.signal, live ? .85 : 1.5, true, live, false, IDLE_CAPTURE_BUDGET_MS)
+      job.then(snapshot => {
         if (precaptureAbort === ac) precaptureAbort = null
-        if (snapshot && !ac.signal.aborted && !disposeSurface) storeCachedScene(snapshot)
+        if (snapshot && !ac.signal.aborted && !disposeSurface && canvas.hidden) storeCachedScene(snapshot)
       }).catch(() => {
         if (precaptureAbort === ac) precaptureAbort = null
       })
@@ -318,12 +351,12 @@ export function createLiquidTransition(canvas, getScene) {
     if (isFlowNavigationIntent(event)) return
     const nav = event.target?.closest?.(navButtonSelector)
     if (event.type === 'pointerover' || event.type === 'pointerout') {
-      if (!disposeSurface && nav && !nav.contains(event.relatedTarget)) scheduleIdlePrecapture(observedRoot)
+      // 已有当前缓存时悬停顶栏不再打断或重跑预采；仅星系页面首次悬停导航且无缓存时触发。
+      if (!disposeSurface && !cachedScene && nav && !nav.contains(event.relatedTarget)) scheduleIdlePrecapture(observedRoot)
       return
     }
     if (nav && (event.type === 'focusin' || event.type === 'focusout')) {
-      // Keep the previous bitmap. Matching its painted nav state decides whether it can be used.
-      if (!disposeSurface) scheduleIdlePrecapture(observedRoot)
+      if (!disposeSurface && !cachedScene) scheduleIdlePrecapture(observedRoot)
       return
     }
     sceneRevision++
@@ -381,10 +414,37 @@ export function createLiquidTransition(canvas, getScene) {
   function snapshotIsCurrent(snapshot) {
     const { key, revision } = snapshot
     return !disposed && getScene() === key.root && key.root.isConnected && revision === sceneRevision &&
-      sameCapture(key, captureKey(key.root, key.root.getBoundingClientRect()))
+      sameScene(key, captureKey(key.root, key.root.getBoundingClientRect()))
   }
 
-  async function capture(root, rect, signal, maxDensity, idle = false, live = null, fresh = false) {
+  /** Electron 桌面端原生硬件抓帧（~15–30ms，零主线程克隆、保留真实毛玻璃与 1:1 清晰度）。 */
+  async function captureNative(root, rect, signal) {
+    if (signal.aborted || disposed || rect.width < 1 || rect.height < 1 || !canvas.hidden || disposeSurface) return null
+    const key = captureKey(root, rect)
+    const revision = sceneRevision
+    const density = Math.min(window.devicePixelRatio || 1, 1.5, 4096 / Math.max(rect.width, rect.height))
+    const box = {
+      left: Math.max(0, Math.floor(rect.left)),
+      top: Math.max(0, Math.floor(rect.top)),
+      width: Math.max(1, Math.round(rect.width)),
+      height: Math.max(1, Math.round(rect.height))
+    }
+    try {
+      const bytes = await window.native.captureScene(box)
+      if (!bytes || signal.aborted || disposed || !root.isConnected || !canvas.hidden || disposeSurface) return null
+      const image = await createImageBitmap(new Blob([bytes], { type: 'image/png' }))
+      if (signal.aborted || disposed || !root.isConnected || !matchesSceneAspect(image, rect) ||
+        !sameScene(key, captureKey(root, root.getBoundingClientRect()))) {
+        image.close?.()
+        return null
+      }
+      return { key, revision, image, opaque: true, live: null, density }
+    } catch {
+      return null
+    }
+  }
+
+  async function capture(root, rect, signal, maxDensity, idle = false, live = null, fresh = false, timeoutMs = CAPTURE_BUDGET_MS) {
     if (signal.aborted || disposed || rect.height < 1) return null
     const key = captureKey(root, rect)
     const revision = sceneRevision
@@ -405,7 +465,8 @@ export function createLiquidTransition(canvas, getScene) {
         let image
         const slot = live && liveCapturePlugin(live)
         try {
-          const options = sceneCaptureOptions(rect, density, key.scrollX, key.scrollY, false)
+          // 交互切页用 fast=true 一次性完成克隆，避免按帧让出拉长到 800ms；空闲预采保持 fast=false 不抢交互帧。
+          const options = sceneCaptureOptions(rect, density, key.scrollX, key.scrollY, !idle)
           if (slot) options.plugins.push(slot.plugin)
           image = await snapdom.toCanvas(root, options)
         } finally {
@@ -417,13 +478,13 @@ export function createLiquidTransition(canvas, getScene) {
           : null
       }, {
         signal,
-        timeoutMs: CAPTURE_BUDGET_MS,
+        timeoutMs,
         skipBusy: idle
       })
       if (!snapshot || signal.aborted || !isCurrent()) return null
       // An input or a real DOM update may have made a shared idle result stale while it was in flight.
       if (!ownsCapture && !idle && !snapshotIsCurrent(snapshot)) {
-        return capture(root, rect, signal, maxDensity, false, live, true)
+        return capture(root, rect, signal, maxDensity, false, live, true, timeoutMs)
       }
       return snapshot
     } catch { return null }
@@ -440,23 +501,31 @@ export function createLiquidTransition(canvas, getScene) {
     attachSceneObserver(root)
     renderer ||= createLiquidRenderer(canvas)
     renderer.resize(rect.width, rect.height)
-    const cachedOutgoing = matchCachedScene(root, rect)
+    const cachedOutgoing = matchCachedScene(root, rect) || matchModuleCache(root, rect)
     let outgoing = cachedOutgoing?.image
+    let outgoingOpaque = Boolean(cachedOutgoing?.opaque)
     if (cachedOutgoing?.live) {
       try {
         outgoing = await renderLiveCapture(cachedOutgoing.live, cachedOutgoing.density)
+        outgoingOpaque = false
         if (!outgoing || !matchesSceneAspect(outgoing, rect)) outgoing = null
       } catch {
         // Keep the full-scene capture available if the prepared SVG cannot be painted.
       }
     }
-    if (!outgoing && !signal.aborted) outgoing = (await capture(root, rect, signal, .85))?.image
+    // 桌面端未命中缓存时使用原生 capturePage（~15–30ms，不阻塞主线程）；DSH 插件绝不在点击瞬间同步跑耗时 DOM 克隆。
+    if (!outgoing && !signal.aborted && hasNativeCapture()) {
+      const snap = await captureNative(root, rect, signal)
+      outgoing = snap?.image || null
+      outgoingOpaque = Boolean(snap?.opaque)
+    }
     cachedScene = null
     if (signal.aborted || disposed || !root.isConnected ||
       document.hidden || !sameSceneRect(rect, root.getBoundingClientRect())) return null
     const source = backdrop.transitionFrame()
     if (!source) return null
 
+    const hasOutgoing = Boolean(outgoing)
     let raf
     let active = true
     let rootToken = 0
@@ -465,7 +534,13 @@ export function createLiquidTransition(canvas, getScene) {
     let lastTickNow
     let virtualElapsed = 0
     let incomingDone = false
+    let hasIncoming = false
     let handedOff = false
+    let stage = 'idle'
+    let coverElapsed = 0
+    let coverPhase = source.time
+    let revealPhaseOffset = source.time
+    let resolveCover = null
     let destination
     let destinationBackdrop
     let releaseSource
@@ -480,6 +555,9 @@ export function createLiquidTransition(canvas, getScene) {
       disposeSurface = null
       cancelAnimationFrame(raf)
       cancelPaintWait?.()
+      const pendingCover = resolveCover
+      resolveCover = null
+      pendingCover?.()
       signal.removeEventListener('abort', cleanup)
       window.removeEventListener('resize', cleanup)
       document.removeEventListener('visibilitychange', cleanup)
@@ -531,8 +609,40 @@ export function createLiquidTransition(canvas, getScene) {
       if (!active) return
       const dt = lastTickNow === undefined ? 0 : Math.min(48, Math.max(0, now - lastTickNow))
       lastTickNow = now
+      if (stage === 'cover' || stage === 'hold') {
+        coverPhase += (dt / 1000) * (source.speed + 2.4)
+        if (stage === 'cover') {
+          coverElapsed = Math.min(COVER_DURATION, coverElapsed + dt)
+          const cover = coverElapsed / COVER_DURATION
+          const time = cover * INCOMING_GATE
+          try {
+            renderer.draw(time, coverPhase, source.stops, cover)
+            if (cover >= 1) {
+              stage = 'hold'
+              const done = resolveCover
+              resolveCover = null
+              done?.()
+            }
+            raf = requestAnimationFrame(tick)
+          } catch {
+            cleanup()
+          }
+          return
+        }
+        try {
+          renderer.draw(INCOMING_GATE, coverPhase, source.stops, 1)
+          raf = requestAnimationFrame(tick)
+        } catch {
+          cleanup()
+        }
+        return
+      }
+
       if (incomingDone) {
-        virtualElapsed += dt
+        const rate = !hasOutgoing && !hasIncoming && liquidProgress(virtualElapsed) < FALLBACK_HANDOFF_POINT
+          ? FALLBACK_MID_RATE
+          : 1
+        virtualElapsed += dt * rate
       } else {
         const curProgress = liquidProgress(virtualElapsed)
         if (curProgress < GLIDE_START) {
@@ -540,15 +650,21 @@ export function createLiquidTransition(canvas, getScene) {
         } else if (curProgress < INCOMING_GATE) {
           // 柔和减速滑行窗：等待目标页采集时波浪保持慢速前进而非一帧冻死。
           virtualElapsed = Math.min(INCOMING_GATE * LIQUID_DURATION, virtualElapsed + dt * GLIDE_RATE)
+        } else {
+          revealPhaseOffset += (dt / 1000) * (source.speed + 2.4)
         }
       }
       const time = liquidProgress(virtualElapsed)
-      const phase = source.time + liquidPhase(time, source.speed)
+      const phase = revealPhaseOffset + liquidPhase(time, source.speed)
+      const colorT = hasOutgoing
+        ? time
+        : Math.min(1, Math.max(0, (time - INCOMING_GATE) / (1 - INCOMING_GATE)))
       const stops = destination
-        ? blendFlowStops(source.stops, destination.stops, time, 1)
+        ? blendFlowStops(source.stops, destination.stops, colorT, 1)
         : source.stops
+      const handoffPoint = hasIncoming ? HANDOFF_POINT : FALLBACK_HANDOFF_POINT
       try {
-        if (time >= HANDOFF_POINT && !handedOff) {
+        if (time >= handoffPoint && !handedOff) {
           handedOff = true
           // Sync and wake the live backdrop right before the final fade-out so handoff has zero pop.
           destinationBackdrop?.syncTransitionTime(phase)
@@ -560,7 +676,7 @@ export function createLiquidTransition(canvas, getScene) {
         if (time === 1) {
           cleanup()
         } else {
-          renderer.draw(time, phase, stops)
+          renderer.draw(time, phase, stops, 1)
           raf = requestAnimationFrame(tick)
         }
       } catch {
@@ -569,7 +685,7 @@ export function createLiquidTransition(canvas, getScene) {
     }
 
     try {
-      if (outgoing) renderer.setScene(outgoing, 'outgoing')
+      if (outgoing) renderer.setScene(outgoing, 'outgoing', { opaque: outgoingOpaque })
     } catch (error) {
       renderer?.clear()
       throw error
@@ -586,11 +702,22 @@ export function createLiquidTransition(canvas, getScene) {
         // 冻结源场景在切换与提交阶段的 CSS 过渡，确保顶栏与进场面板在采集前已落定。
         rootToken = beginTransitioning(root)
         releaseSource = backdrop.holdTransition()
-        if (outgoing) {
-          renderer.draw(0, source.time, source.stops)
+        if (hasOutgoing) {
+          renderer.draw(0, source.time, source.stops, 1)
           canvas.hidden = false
+          return Promise.resolve()
         }
-        return Promise.resolve()
+        // 无旧页快照时必须先以液态浪涌盖严真实旧页，再放行 commit()，杜绝新界面提前露底。
+        stage = 'cover'
+        coverElapsed = 0
+        coverPhase = source.time
+        lastTickNow = undefined
+        renderer.draw(0, coverPhase, source.stops, 0)
+        canvas.hidden = false
+        return new Promise(resolve => {
+          resolveCover = resolve
+          raf = requestAnimationFrame(tick)
+        })
       },
       async reveal() {
         if (!active) return
@@ -602,27 +729,33 @@ export function createLiquidTransition(canvas, getScene) {
         destination = destinationBackdrop?.transitionFrame()
         if (destinationBackdrop !== backdrop) releaseDestination = destinationBackdrop?.holdTransition()
         if (canvas.hidden) {
-          renderer.draw(0, source.time, source.stops)
+          renderer.draw(0, source.time, source.stops, 1)
           canvas.hidden = false
         }
-        // Start the diagonal wave immediately: incoming isn't sampled until u_progress > 0.24.
-        raf = requestAnimationFrame(tick)
+        if (hasOutgoing) {
+          stage = 'reveal'
+          virtualElapsed = 0
+          revealPhaseOffset = source.time
+          lastTickNow = undefined
+          // Start the diagonal wave immediately: incoming isn't sampled until u_progress > 0.24.
+          raf = requestAnimationFrame(tick)
+        } else {
+          // 承接 cover/hold 阶段已运行中的 rAF，无缝续接相位与 u_progress = INCOMING_GATE。
+          stage = 'reveal'
+          virtualElapsed = INCOMING_GATE * LIQUID_DURATION
+          revealPhaseOffset = coverPhase - liquidPhase(INCOMING_GATE, source.speed)
+        }
         try {
-          // 若重访保活模块（大纲/设定）且版本、调色与视口未变，直接零耗时复用高清缓存帧；否则按 1.5x 分帧采集。
+          // 命中 moduleCache 时 0ms 上传原生/预采高清帧实现完整「旧页融墨 + 新页聚墨」；
+          // 首访冷目标绝不在 rAF 期间跑阻塞主线程的 DOM 克隆，由同源对角波纹自然扫开直接揭示底下锐利真页面，
+          // 页面稳定后后台以 capturePage / 空闲预采写入 moduleCache 供后续往返复用。
           const cachedIncoming = matchModuleCache(next, rect)
-          // On a miss, let the opening wave reach the compositor before starting the full DOM walk.
-          if (!cachedIncoming) await nextPaint()
-          if (!active) return
-          const incoming = cachedIncoming || await capture(next, rect, signal, 1.5)
-          if (active && incoming && sameSceneRect(rect, next.getBoundingClientRect())) {
-            // Yield a frame between SVG rasterization and WebGL mipmap upload so opening frames stay smooth.
-            if (!cachedIncoming) await nextPaint()
-            if (active && sameSceneRect(rect, next.getBoundingClientRect())) {
-              renderer.setScene(incoming.image, 'incoming')
-              storeCachedScene(cachedIncoming ? { ...incoming, revision: sceneRevision } : incoming)
-              attachSceneObserver(next)
-            }
+          if (cachedIncoming && active && sameSceneRect(rect, next.getBoundingClientRect())) {
+            renderer.setScene(cachedIncoming.image, 'incoming', { opaque: Boolean(cachedIncoming.opaque) })
+            hasIncoming = true
+            storeCachedScene({ ...cachedIncoming, revision: sceneRevision })
           }
+          attachSceneObserver(next)
         } catch {
           // The same moving flow can uncover the live page if its texture cannot be uploaded.
         } finally {

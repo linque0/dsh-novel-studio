@@ -139,6 +139,9 @@
 }
 .snip-nav-note::before { content: ''; display: inline-block; width: 5px; height: 5px; margin: 0 6px 2px 0; border-radius: 50%; background: var(--snip-card-accent, var(--snip-quiet)); }
 .snip-nav :is(.snip-nav-note:hover, .snip-nav-note[aria-current='true']) { background: rgb(189 229 206 / .12); color: var(--snip-mint); }
+.snip-nav-more-item { margin-top: 4px; }
+.snip-nav .snip-nav-more { width: 100%; display: block; text-align: left; padding: 5px 7px; border-radius: 6px; color: var(--snip-quiet); font-size: 11px; transition: background-color .12s, color .12s; }
+.snip-nav .snip-nav-more:hover { background: rgb(255 255 255 / .06); color: var(--snip-mint); }
 .snip-nav-footer { flex: none; display: grid; gap: 7px; padding: 11px 10px 12px; border-top: 1px solid var(--snip-rule); background: rgb(255 255 255 / .02); font-size: 11px; }
 .snip-nav-control { display: flex; align-items: center; gap: 7px; color: var(--snip-muted); }
 .snip-nav-options { flex: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; padding: 2px; border: 1px solid var(--snip-border-soft); background: rgb(255 255 255 / .03); border-radius: 8px; }
@@ -238,6 +241,9 @@ body[data-skin='dsh'] .snip-shell .snip-size-slider input[type='range']:focus-vi
 .snip-lane-head h2 { font-size: 17px; overflow-wrap: anywhere; }
 .snip-lane-head span { font-size: 11px; color: var(--snip-quiet); margin-left: 8px; }
 .snip-lane-head button { width: 28px; height: 28px; color: var(--snip-quiet); font-size: 20px; }
+.snip-lane-more-wrap { padding: 2px 0 10px; }
+.snip-shell .snip-lane-more { width: 100%; padding: 9px 12px; border: 1px dashed var(--snip-border-soft); border-radius: 10px; background: rgb(255 255 255 / .03); color: var(--snip-muted); font-size: 12px; transition: border-color .15s, background-color .15s, color .15s; }
+.snip-shell .snip-lane-more:hover { border-color: rgb(189 229 206 / .42); background: rgb(189 229 206 / .08); color: var(--snip-mint); }
 .snip-lane:nth-child(2) { --snip-lane-color: rgb(42 33 50 / .68); }
 .snip-lane:nth-child(3) { --snip-lane-color: rgb(33 31 50 / .68); }
 .snip-lane .snip-note { padding: calc(18px * var(--snip-card-scale, 1)); border-radius: 13px; background: var(--snip-card-color, var(--snip-lane-color, rgb(36 30 48 / .68))); }

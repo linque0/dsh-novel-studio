@@ -30,7 +30,7 @@ import {
 } from './snippet-model.js'
 import {createSnippetDragMotion} from './snippet-drag-motion.js'
 import '../../styles/snippets-fusion.css'
-const work=useWorkStore(),ui=useUiStore(),shell=ref(null),width=ref(innerWidth)
+const work=useWorkStore(),ui=useUiStore(),shell=ref(null),boardRef=ref(null),width=ref(innerWidth)
 const narrow=computed(()=>width.value<1200),drawer=computed(()=>width.value<950),phone=computed(()=>width.value<=680)
 const sidebarId = useId()
 const sidebarLabel = computed(() => ui.snipSidebarOpen ? '收起灵感侧栏' : '展开灵感侧栏')
@@ -73,10 +73,11 @@ const editorActive=computed(()=>!!editorModal.value&&(editorModal.value.mode==='
 const draftConflict=computed(()=>!!draft.value?.base&&!matchesSnippetContent(work.snippets.find(n=>n.id===selectedId.value),draft.value.base))
 const showInspector=computed(()=>narrow.value?detailOpen.value:ui.snipInspector.board),knownTags=computed(()=>counts.value.tags.map(t=>t.tag))
 function assetUrlOf(assetId){void work.urlTick;return work.assetUrl(assetId)}
-watch(notes,rows=>{
- const ids=[...new Set(rows.flatMap(n=>(n.images||[]).map(i=>i.assetId)).filter(Boolean))]
- if(ids.length)void work.warmUrls(ids)
-},{immediate:true})
+function warmAssetIds(ids){
+ const list=[...new Set((ids||[]).filter(Boolean))]
+ if(list.length)void work.warmUrls(list)
+}
+watch(()=>selected.value?.images,imgs=>{if(imgs?.length)warmAssetIds(imgs.map(i=>i.assetId))},{immediate:true})
 const navigation=computed(()=>snippetNavGroups(notes.value,ui.snipTagOrder,sort.value,ui.snipOrder))
 const navProps=computed(()=>({
  workTitle:work.work?.title||'',groups:navigation.value,expanded:ui.snipExpandedGroups,selectedId:selectedId.value,
@@ -126,6 +127,7 @@ async function selectNavNote({group,note}){
  setState({group:lane.id})
  if(dialog.value?.type==='directory')dialog.value=null
  openNote(note.id)
+ boardRef.value?.ensureVisible(lane.id,note.id)
  await nextTick()
  const card=[...shell.value?.querySelectorAll('.snip-lane .snip-note')||[]].find(
   card=>card.dataset.id===note.id&&card.closest('.snip-lane').dataset.group===lane.id
@@ -328,6 +330,7 @@ async function onDrop({group,event}){
    const inScope=groups.value.some(g=>g.id===group&&g.notes.some(n=>n.id===drag.id))
    setState(inScope?{group}:{group,filter:'all',tag:'',query:''})
   }
+  boardRef.value?.ensureVisible(group,drag.id)
   await nextTick()
   await dragMotion.land(landing,paneEl(),{id:drag.id,group,sameGroup,compact:phone.value})
  }finally{
@@ -506,6 +509,7 @@ async function retrySave(){
         </div>
         <div class="snip-grid" :class="{ 'no-inspector': !showInspector || narrow }">
           <SnipBoard
+            ref="boardRef"
             :groups="groups"
             :card-size="ui.snipCardSize"
             :trash="filter === 'trash'"
@@ -515,6 +519,7 @@ async function retrySave(){
             :dragging="dragging"
             :drop-hint="dropHint"
             :asset-url="assetUrlOf"
+            @rendered-assets="warmAssetIds"
             @select="select"
             @edit="startEdit"
             @menu="openMenu"

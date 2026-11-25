@@ -16,7 +16,7 @@ import { normalizeWritingLayout } from '../components/writing-layout/layout.mjs'
 import { useWorkStore } from './work'
 import { resolveLoreFocus, resolveLoreGalaxy } from '../services/lore-core.js'
 import { normalizeCharPrefs, normalizeCharState } from '../components/characters/char-layout.js'
-import { createSnippetPersistence } from '../services/snippet-persistence.js'
+import { applySnipSnapshot, createSnippetPersistence } from '../services/snippet-persistence.js'
 import { SNIP_CARD_SIZE } from '../components/snippets/snippet-model.js'
 import { registerFlushHook } from '../services/autosave'
 import { normalizeDrafts, normalizeSnipState } from '../components/snippets/snippet-model.js'
@@ -48,11 +48,7 @@ function snippetsFor(store) {
     const engine=createSnippetPersistence({
       read:async key=>(await db.appconfig.get(key))?.value,
       write:async(key,value)=>db.appconfig.put({key,value:plainPref(value)}),
-      apply:snapshot=>{
-        store.snipStateWorkId=snapshot.id
-        for(const [key,field] of Object.entries(SNIP_FIELD))store[field]=snapshot.state[key]
-        store.snipDrafts=snapshot.drafts;store.snipPersistence=snapshot.status
-      }
+      apply:snapshot=>applySnipSnapshot(store,snapshot,SNIP_FIELD)
     })
     snippetPersistence.set(storeId,engine)
     registerFlushHook(()=>engine.flushAll())

@@ -1,6 +1,6 @@
 /**
  * 作品文件导入与格式解析管线：
- * 支持 TXT（自动探测 UTF-16/UTF-8/GB18030 与智能分章）、Markdown、DOCX（经主进程 mammoth）、
+ * 支持 TXT（自动探测 UTF-16/UTF-8/GB18030 与智能分章）、Markdown、DOCX（桌面端经主进程 mammoth，网页端经浏览器 mammoth）、
  * EPUB（JSZip 解包 OPF/Spine 与封面）及 PDF（文本提取与扫描件分页栅格化）。
  */
 import JSZip from 'jszip'
@@ -323,6 +323,24 @@ export const DOC_EXTS = ['txt', 'md', 'markdown', 'docx', 'pdf', 'epub']
 export const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'svg', 'avif']
 const baseName = (n) => n.replace(/\.[^.]+$/, '')
 
+async function docxToHtml(data) {
+  if (window.native?.docxToHtml) {
+    return window.native.docxToHtml(data)
+  }
+  const mod = await import('mammoth/mammoth.browser.min.js')
+  const mammoth = mod?.convertToHtml ? mod : mod?.default
+  if (!mammoth?.convertToHtml) {
+    throw new Error('Word(.docx) 浏览器解析器加载失败')
+  }
+  const arrayBuffer =
+    data instanceof ArrayBuffer
+      ? data
+      : data?.buffer
+        ? data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
+        : data
+  return mammoth.convertToHtml({ arrayBuffer })
+}
+
 export async function parseImportFiles(files, onProgress = () => {}) {
   const docs = []
   const images = []
@@ -339,8 +357,7 @@ export async function parseImportFiles(files, onProgress = () => {}) {
       const { text } = decodeText(f.data)
       docs.push({ file: f.name, encoding: 'utf-8', sections: splitMarkdown(text, baseName(f.name)) })
     } else if (f.ext === 'docx') {
-      if (!window.native?.docxToHtml) throw new Error('网页版暂不支持 Word(.docx) 导入，请使用桌面版')
-      const r = await window.native.docxToHtml(f.data)
+      const r = await docxToHtml(f.data)
       docs.push({ file: f.name, encoding: 'docx', sections: splitHtmlByHeadings(r.html, baseName(f.name)) })
     } else if (f.ext === 'epub') {
       const r = await parseEpub(f.data)

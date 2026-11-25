@@ -79,6 +79,10 @@ const latentFlowPalette = computed(() =>
 )
 const latentFlowRev = computed(() => {
   const common = `${work.work?.id || ''}|${work.tab}|${saveState.value}|${ui.aiDrawerOpen ? 1 : 0}|${ui.focusMode ? 1 : 0}|${modulePopped.value ? 1 : 0}`
+  if (work.tab === 'chapters') {
+    const ch = work.activeChapter
+    return `${common}|${work.selVolumeId || ''}|${work.selChapterId || ''}|${ch?.updatedAt || 0}|${ch?.title || ''}|${ch?.content?.length || 0}|${ui.sidePanelOpen ? 1 : 0}|${ui.rightPanelOpen ? 1 : 0}|${ui.readMode ? 1 : 0}|${ui.sideWidth}|${story.active?.id || ''}|${story.formalView ? 1 : 0}|${ui.agentCandidateId || ''}|${work.liveChapters.length}`
+  }
   if (work.tab === 'outline') {
     const oSum = work.olnodes.reduce((s, n) => s + (n.updatedAt || 0), 0)
     const cSum = work.chapters.reduce((s, c) => s + (c.updatedAt || 0), 0)
@@ -87,6 +91,16 @@ const latentFlowRev = computed(() => {
   if (work.tab === 'lore') {
     const mSum = work.mubu.reduce((s, n) => s + (n.updatedAt || 0), 0)
     return `${common}|${ui.loreView}|${ui.loreMapMode}|${ui.loreNavClosed ? 1 : 0}|${ui.loreInspectClosed ? 1 : 0}|${ui.loreScope}|${ui.loreRootId || ''}|${ui.loreActiveId || ''}|${work.mubuRevision}|${work.mubu.length}|${mSum}`
+  }
+  if (work.tab === 'characters') {
+    const chSum = work.characters.reduce((s, c) => s + (c.updatedAt || 0) + (c.deletedAt ? 1 : 0), 0)
+    const rSum = work.relations.reduce((s, r) => s + (r.updatedAt || 0), 0)
+    return `${common}|${work.charView}|${work.selCharacterId || ''}|${ui.charQuery || ''}|${ui.charRole || ''}|${ui.charTag || ''}|${ui.charScope}|${work.characters.length}|${work.relations.length}|${chSum}|${rSum}|${work.urlTick}`
+  }
+  if (work.tab === 'snippets') {
+    const sSum = work.snippets.reduce((s, n) => s + (n.updatedAt || 0) + (n.deletedAt ? 1 : 0), 0)
+    const sb = ui.snipScroll?.board
+    return `${common}|${ui.snipFilter}|${ui.snipTag}|${ui.snipSort}|${ui.snipGroup}|${ui.snipQuery || ''}|${work.selSnippetId || ''}|${ui.snipSidebarOpen ? 1 : 0}|${ui.snipSidebarWidth}|${ui.snipInspector?.board ? 1 : 0}|${ui.snipCardSize}|${ui.snipExpandedGroups.join(',')}|${ui.snipOrder.length}|${sb?.top || 0},${sb?.left || 0}|${work.snippets.length}|${sSum}|${work.urlTick}`
   }
   return ''
 })
