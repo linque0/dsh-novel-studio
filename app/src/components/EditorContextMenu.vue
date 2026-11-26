@@ -480,6 +480,7 @@ defineExpose({ open, close })
           <div class="swatch-grid">
             <button v-for="c in COLORS" :key="c" class="swatch" :style="{ background: c }" :title="c" @click="run(() => chain().setColor(c).run())" />
           </div>
+          <div class="ctx-item" @click="run(() => chain().unsetColor().run())"><span>恢复默认颜色</span></div>
         </div>
       </div>
 

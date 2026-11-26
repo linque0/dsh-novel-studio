@@ -38,7 +38,7 @@ function paged(items, cursor, limit) {
 
 async function requireWork(library, workId) {
   const works = await library.works();
-  if (!works.length) return { error: '作品库还没有作品；请先在小说工坊里新建或从软件版迁移' };
+  if (!works.length) return { error: '作品库还没有作品；请先在空想书典里新建或从软件版迁移' };
   const id = workId || works[0].id;
   const found = await library.readEntity('works', id);
   if (!found) return { error: '作品不存在：' + id };
@@ -48,7 +48,7 @@ async function requireWork(library, workId) {
 export function createTools(library) {
   const studioWorks = {
     name: 'studio_works',
-    description: '列出或打开小说工坊作品库里的作品。op=list 返回书目；op=open 返回该作品的卷与章节目录。写入请用 studio_propose/studio_apply。',
+    description: '列出或打开空想书典作品库里的作品。op=list 返回书目；op=open 返回该作品的卷与章节目录。写入请用 studio_propose/studio_apply。',
     parameters: {
       type: 'object',
       additionalProperties: false,

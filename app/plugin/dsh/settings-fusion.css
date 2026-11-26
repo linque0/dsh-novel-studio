@@ -98,6 +98,12 @@ body[data-skin=dsh] .settings-shell .size-stepper button{width:32px;height:30px;
 body[data-skin=dsh] .settings-shell .size-stepper button:hover:not(:disabled){background:var(--panel-hover)}
 body[data-skin=dsh] .settings-shell .size-stepper output{min-width:65px;text-align:center;font-size:13px;font-variant-numeric:tabular-nums}
 body[data-skin=dsh] .settings-shell .size-stepper output small{font-size:11px;color:var(--set-faint);margin-left:2px}
+body[data-skin=dsh] .settings-shell .scale-presets{width:100%;display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+body[data-skin=dsh] .settings-shell .scale-preset-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border:1px solid var(--panel-control);border-radius:999px;background:var(--panel-hover);color:var(--panel-ink);font-size:12px;line-height:1.35;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+body[data-skin=dsh] .settings-shell .scale-preset-btn small{font-size:11px;color:var(--set-faint);font-variant-numeric:tabular-nums}
+body[data-skin=dsh] .settings-shell .scale-preset-btn:hover{border-color:var(--panel-accent);background:var(--panel-raised)}
+body[data-skin=dsh] .settings-shell .scale-preset-btn.active{border-color:var(--panel-accent);background:color-mix(in srgb,var(--panel-accent) 18%,transparent);color:var(--panel-ink);font-weight:500}
+body[data-skin=dsh] .settings-shell .scale-preset-btn.active small{color:var(--panel-accent)}
 body[data-skin=dsh] .settings-shell .size-range-row{width:100%;display:flex;align-items:center;gap:13px;margin-top:2px}
 body[data-skin=dsh] .settings-shell .size-range-row>span{font-size:11px;color:var(--set-faint);font-variant-numeric:tabular-nums}
 body[data-skin=dsh] .settings-shell .size-range-row input{min-width:0;width:100%;accent-color:var(--panel-accent);cursor:pointer;height:18px}
@@ -105,6 +111,14 @@ body[data-skin=dsh] .settings-shell .switch{width:40px;height:23px;border:1px so
 body[data-skin=dsh] .settings-shell .switch>i{display:block;width:15px;height:15px;border-radius:50%;background:var(--panel-ink);transition:transform .18s}
 body[data-skin=dsh] .settings-shell .switch[aria-checked=true]{background:var(--panel-accent);border-color:var(--panel-accent)}
 body[data-skin=dsh] .settings-shell .switch[aria-checked=true]>i{transform:translateX(16px);background:var(--panel-base)}
+body[data-skin=dsh] .settings-shell .theme-segmented{position:relative;display:inline-grid;grid-template-columns:1fr 1fr;padding:3px;border:1px solid var(--panel-control);border-radius:999px;background:var(--panel-hover);flex:none;isolation:isolate}
+body[data-skin=dsh] .settings-shell .theme-segmented-thumb{position:absolute;top:3px;bottom:3px;left:3px;width:calc(50% - 3px);border-radius:999px;background:var(--panel-accent);box-shadow:0 2px 10px rgb(0 0 0/.24),inset 0 1px 0 rgb(255 255 255/.35);transition:transform .22s cubic-bezier(.22,1,.36,1),background-color .18s;pointer-events:none;z-index:0}
+body[data-skin=dsh] .settings-shell .theme-segmented[data-theme-value=dark] .theme-segmented-thumb{transform:translateX(100%)}
+body[data-skin=dsh] .settings-shell .theme-segmented-opt{position:relative;z-index:1;display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:68px;height:30px;padding:0 12px;border-radius:999px;font-size:12px;font-weight:500;line-height:1;white-space:nowrap;color:var(--panel-muted);transition:color .18s}
+body[data-skin=dsh] .settings-shell .theme-segmented-opt:hover{color:var(--panel-ink)}
+body[data-skin=dsh] .settings-shell .theme-segmented-opt[aria-checked=true]{color:#1c1f2b;font-weight:600}
+body[data-skin=dsh] .settings-shell .theme-segmented-opt:active:not(:disabled){transform:none}
+@media (prefers-reduced-motion:reduce){body[data-skin=dsh] .settings-shell .theme-segmented-thumb{transition:none}}
 body[data-skin=dsh] .settings-shell .setting-row.target{animation:dsh-set-target 1.2s ease-out}
 body[data-skin=dsh] .settings-shell .reset-inline-note{display:flex;gap:8px;align-items:flex-start;color:var(--set-faint);font-size:11px;margin-top:15px;line-height:1.8}
 body[data-skin=dsh] .settings-shell .reset-inline-note>svg{margin-top:2px}

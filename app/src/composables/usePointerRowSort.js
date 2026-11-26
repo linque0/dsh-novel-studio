@@ -10,7 +10,7 @@ const GHOST_PROPERTIES = [
   '-webkit-box-orient', '-webkit-line-clamp', 'overflow', 'opacity', 'fill', 'stroke'
 ]
 
-function createGhost(source, rect) {
+function createGhost(source, rect, descendantCount = 0) {
   const ghost = document.createElement('div')
   ghost.dataset.chapterSortGhost = ''
   ghost.setAttribute('aria-hidden', 'true')
@@ -38,6 +38,12 @@ function createGhost(source, rect) {
     ghost.style.color = selected.color
   }
   ghost.append(copy)
+  if (descendantCount > 0) {
+    const badge = document.createElement('span')
+    badge.className = 'lore-sort-branch-badge'
+    badge.textContent = `含 ${descendantCount} 个子节点`
+    ghost.append(badge)
+  }
   document.body.append(ghost)
   return ghost
 }
@@ -47,15 +53,18 @@ function moveGhost(ghost, x, y) {
 }
 
 export function usePointerRowSort(listRef, options) {
-  const { structure, collectRows, getTarget, preview, commit, slotTop, sourceSelector, rowKey, sourceRows } = options
+  const { structure, collectRows, getTarget, preview, commit, slotTop, sourceSelector, rowKey, sourceRows, virtualized = false } = options
   let session
   let finishAnimation
   let suppressClick = false
+
   function frame(time) {
     const drag = session
     if (!drag?.ghost) return
     if (!drag.list.isConnected) return stop(false)
-    const bounds = drag.list.getBoundingClientRect()
+
+    const bounds = drag.bounds || (drag.bounds = drag.list.getBoundingClientRect())
+    let pixels = 0
     if (drag.x >= bounds.left && drag.x < bounds.right && drag.y >= bounds.top && drag.y < bounds.bottom) {
       const edge = Math.min(38, bounds.height / 3)
       const start = Math.max(0, 1 - (drag.y - bounds.top) / edge)
@@ -63,25 +72,39 @@ export function usePointerRowSort(listRef, options) {
       const elapsed = Math.min(32, time - drag.frameTime)
       const distance = (end ** 2 - start ** 2) * elapsed * .65
       const accumulated = distance ? distance + drag.scrollRemainder : 0
-      const pixels = Math.trunc(accumulated)
+      pixels = Math.trunc(accumulated)
       drag.scrollRemainder = accumulated - pixels
       if (pixels) drag.list.scrollTop += pixels
     } else {
       drag.scrollRemainder = 0
     }
     drag.frameTime = time
-    const target = getTarget(drag, bounds)
-    moveGhost(drag.ghost, options.ghostX?.(drag, target) ?? drag.x - drag.grabX, drag.y - drag.grabY)
-    if (target?.id !== drag.target?.id || target?.mode !== drag.target?.mode ||
-        target?.slot !== drag.target?.slot || target?.snap !== drag.target?.snap) preview(drag, target)
-    drag.target = target
+
+    const scrollTop = drag.list.scrollTop
+    const dirty = !drag.hasFrame || pixels !== 0 || drag.x !== drag.lastX || drag.y !== drag.lastY || scrollTop !== drag.lastScrollTop
+    if (dirty) {
+      drag.hasFrame = true
+      drag.lastX = drag.x
+      drag.lastY = drag.y
+      drag.lastScrollTop = scrollTop
+      const target = getTarget(drag, bounds)
+      moveGhost(drag.ghost, options.ghostX?.(drag, target) ?? drag.x - drag.grabX, drag.y - drag.grabY)
+      if (target?.id !== drag.target?.id || target?.mode !== drag.target?.mode ||
+          target?.slot !== drag.target?.slot || target?.snap !== drag.target?.snap) {
+        preview(drag, target)
+      }
+      drag.target = target
+    }
     drag.frame = requestAnimationFrame(frame)
   }
 
   function lift(drag) {
     const { list, node, pointerId } = drag
-    const rows = collectRows(list, list.getBoundingClientRect().top)
-    const from = rows.findIndex((row) => row.node === node)
+    const bounds = list.getBoundingClientRect()
+    const collected = collectRows(list, bounds.top, node)
+    const rows = Array.isArray(collected) ? collected : collected.rows
+    if (!Array.isArray(collected) && collected.meta) drag.meta = collected.meta
+    const from = rows.findIndex((row) => row.node === node || (node.dataset?.loreSortRow && row.id === node.dataset.loreSortRow))
     if (from < 0) return false
     const source = rows[from]
     const sourceRect = node.getBoundingClientRect()
@@ -89,22 +112,33 @@ export function usePointerRowSort(listRef, options) {
     const last = branch.at(-1)
     const following = rows[from + branch.length]
     const gap = following && (sourceRows || following.chapter) ? Math.max(0, following.top - last.bottom) : 0
+    const descendantCount = drag.preparation?.descendantCount || 0
+    const extent = virtualized ? source.height : (last.bottom - source.top + gap)
     Object.assign(drag, {
-      rows, from, branch, sourceRect, extent: last.bottom - source.top + gap,
+      rows, from, branch, sourceRect, bounds, extent,
       grabX: drag.startX - sourceRect.left, grabY: drag.startY - sourceRect.top,
-      ghost: createGhost(node, sourceRect), frameTime: performance.now(), scrollRemainder: 0
+      ghost: createGhost(node, sourceRect, descendantCount),
+      frameTime: performance.now(), scrollRemainder: 0,
+      hasFrame: false, lastX: NaN, lastY: NaN, lastScrollTop: NaN
     })
     suppressClick = true
     if (!drag.preparation) list.setPointerCapture(pointerId)
     list.setAttribute('data-chapter-sort-active', '')
-    for (const row of rows) row.el.setAttribute('data-chapter-sort-shifting', '')
-    source.el.setAttribute('data-chapter-sort-source', '')
-    for (const row of branch.slice(1)) row.el.setAttribute('data-lore-sort-branch', '')
-    drag.observer = new MutationObserver(() => {
-      const current = collectRows(list, list.getBoundingClientRect().top)
-      if (current.length !== rows.length || rows.some((row, i) => row.node !== current[i].node)) stop(false)
-    })
-    drag.observer.observe(list, { childList: true, subtree: true })
+    if (options.onLift) {
+      options.onLift(drag)
+    } else {
+      for (const row of rows) row.el?.setAttribute('data-chapter-sort-shifting', '')
+      source.el?.setAttribute('data-chapter-sort-source', '')
+      for (const row of branch.slice(1)) row.el?.setAttribute('data-lore-sort-branch', '')
+    }
+    if (!virtualized) {
+      drag.observer = new MutationObserver(() => {
+        const current = collectRows(list, list.getBoundingClientRect().top, node)
+        const listNow = Array.isArray(current) ? current : current.rows
+        if (listNow.length !== rows.length || rows.some((row, i) => row.node !== listNow[i].node)) stop(false)
+      })
+      drag.observer.observe(list, { childList: true, subtree: true })
+    }
     frame(performance.now())
     return true
   }
@@ -113,12 +147,29 @@ export function usePointerRowSort(listRef, options) {
     options.clearPreview?.(drag)
     drag.list.removeAttribute('data-chapter-sort-active')
     drag.header?.removeAttribute('data-chapter-sort-target')
-    for (const row of drag.rows) {
-      row.el.removeAttribute('data-chapter-sort-shifting')
-      row.el.removeAttribute('data-chapter-sort-source')
-      row.el.removeAttribute('data-lore-sort-branch')
-      row.el.style.removeProperty('--chapter-sort-shift')
+    if (!options.clearMounted) {
+      for (const row of drag.rows) {
+        if (!row.el) continue
+        row.el.removeAttribute('data-chapter-sort-shifting')
+        row.el.removeAttribute('data-chapter-sort-source')
+        row.el.removeAttribute('data-lore-sort-branch')
+        row.el.style.removeProperty('--chapter-sort-shift')
+      }
+    } else {
+      options.clearMounted(drag)
     }
+  }
+
+  function snapshotMountedTops(drag) {
+    const map = new Map()
+    if (options.snapshotVisual) {
+      options.snapshotVisual(drag, map)
+      return map
+    }
+    for (const row of drag.rows) {
+      if (row.el) map.set(rowKey(row), row.el.getBoundingClientRect().top)
+    }
+    return map
   }
 
   async function settle(drag, target) {
@@ -126,51 +177,82 @@ export function usePointerRowSort(listRef, options) {
     const { ghost, list, rows, from } = drag
     const bounds = list.getBoundingClientRect()
     const fallback = { left: drag.sourceRect.left, top: bounds.top + slotTop(drag, target) - list.scrollTop }
-    const visual = target ? new Map(rows.map((row) => [rowKey(row), row.el.getBoundingClientRect().top])) : null
+    const visual = target ? snapshotMountedTops(drag) : null
+    const sourceId = rowKey(rows[from])
     let landed
     let timer
     const animations = []
+    let released = false
+    const releasePrep = () => {
+      if (released) return
+      released = true
+      drag.preparation?.release()
+    }
     const done = () => {
       clearTimeout(timer)
       for (const animation of animations) animation.cancel()
       clearPreview(drag)
       landed?.removeAttribute('data-chapter-sort-source')
       ghost.remove()
-      drag.preparation?.release()
+      releasePrep()
       if (finishAnimation === done) finishAnimation = null
     }
     finishAnimation = done
     let committed = false
     if (target) {
       try {
-        committed = await commit(rowKey(rows[from]), target)
+        committed = await commit(sourceId, target)
       } catch (error) {
         window.$msg?.error('排序未能完成：' + (error?.message || error))
       }
     }
     if (finishAnimation !== done) return
-    let destination = rows[from].node.getBoundingClientRect()
+    let destination = drag.node?.isConnected ? drag.node.getBoundingClientRect() : fallback
     if (committed) {
       clearPreview(drag)
+      releasePrep()
       await nextTick()
       if (finishAnimation !== done) return
-      const updated = collectRows(list, list.getBoundingClientRect().top)
-      for (const row of updated) {
-        if (rowKey(row) === rowKey(rows[from])) {
-          landed = row.el
-          destination = row.node.getBoundingClientRect()
-          continue
+      if (virtualized && options.collectMountedRows) {
+        const mounted = options.collectMountedRows(list)
+        for (const row of mounted) {
+          if (row.id === sourceId) {
+            landed = row.el
+            destination = row.rect
+            continue
+          }
+          const prevTop = visual.get(row.id)
+          if (prevTop == null) continue
+          const delta = prevTop - row.rect.top
+          if (duration && Number.isFinite(delta) && Math.abs(delta) > 1) {
+            animations.push(row.el.animate(
+              [{ transform: `translate3d(0, ${delta}px, 0)` }, { transform: 'translate3d(0, 0, 0)' }],
+              { duration, easing: EASING }
+            ))
+          }
         }
-        const delta = visual.get(rowKey(row)) - row.el.getBoundingClientRect().top
-        if (duration && Number.isFinite(delta) && Math.abs(delta) > 1) {
-          animations.push(row.el.animate(
-            [{ transform: `translateY(${delta}px)` }, { transform: 'translateY(0)' }],
-            { duration, easing: EASING }
-          ))
+        if (landed) landed.setAttribute('data-chapter-sort-source', '')
+        else destination = mounted.find(row => row.id === target.id)?.rect || fallback
+      } else {
+        const updated = collectRows(list, list.getBoundingClientRect().top, drag.node)
+        const updatedRows = Array.isArray(updated) ? updated : updated.rows
+        for (const row of updatedRows) {
+          if (rowKey(row) === sourceId) {
+            landed = row.el
+            destination = row.node.getBoundingClientRect()
+            continue
+          }
+          const delta = visual.get(rowKey(row)) - row.el.getBoundingClientRect().top
+          if (duration && Number.isFinite(delta) && Math.abs(delta) > 1) {
+            animations.push(row.el.animate(
+              [{ transform: `translate3d(0, ${delta}px, 0)` }, { transform: 'translate3d(0, 0, 0)' }],
+              { duration, easing: EASING }
+            ))
+          }
         }
+        if (landed) landed.setAttribute('data-chapter-sort-source', '')
+        else destination = (sourceRows && updatedRows.find(row => rowKey(row) === target.id)?.node.getBoundingClientRect()) || fallback
       }
-      if (landed) landed.setAttribute('data-chapter-sort-source', '')
-      else destination = (sourceRows && updated.find(row => rowKey(row) === target.id)?.node.getBoundingClientRect()) || fallback
     } else {
       preview(drag, null)
     }
@@ -184,6 +266,8 @@ export function usePointerRowSort(listRef, options) {
     const drag = session
     if (!drag) return
     session = null
+    drag.stopStructureWatch?.()
+    drag.stopStructureWatch = null
     window.removeEventListener('pointermove', onMove, true)
     window.removeEventListener('pointerup', onUp, true)
     window.removeEventListener('pointercancel', onCancel, true)
@@ -249,10 +333,16 @@ export function usePointerRowSort(listRef, options) {
     const node = handle && (options.sourceNode ? options.sourceNode(handle) : handle)
     if (options.available?.() === false || !node || !list?.contains(node)) return
     finishAnimation?.()
-    session = {
+    const currentSession = {
       list, node, structure: structure(), pointerId: event.pointerId,
-      startX: event.clientX, startY: event.clientY, x: event.clientX, y: event.clientY
+      startX: event.clientX, startY: event.clientY, x: event.clientX, y: event.clientY,
+      stopStructureWatch: null
     }
+    session = currentSession
+    // 仅在拖拽会话激活期间监听结构变更，非拖拽期零开销
+    currentSession.stopStructureWatch = watch(structure, () => {
+      if (session === currentSession) stop(false, null, true)
+    })
     window.addEventListener('pointermove', onMove, { capture: true, passive: false })
     window.addEventListener('pointerup', onUp, true)
     window.addEventListener('pointercancel', onCancel, true)
@@ -273,7 +363,6 @@ export function usePointerRowSort(listRef, options) {
     event.stopPropagation()
   }
 
-  watch(structure, () => { if (session) stop(false, null, true) })
   function cancel() {
     stop(false, null, true)
     finishAnimation?.()

@@ -12,13 +12,13 @@
 .snip-shell {
   --snip-bg: #171520;
   --snip-surface: #1b1924;
-  --snip-surface-a: rgb(27 25 36 / .65);
+  --snip-surface-a: rgb(21 19 30 / .82);
   --snip-main-glass: rgb(30 25 40 / .48);
-  --snip-raised: rgb(32 27 44 / .88);
+  --snip-raised: rgb(32 27 44 / .90);
   --snip-glass-filter: blur(24px) saturate(1.25);
-  --snip-text: #f4eef7;
-  --snip-muted: #c9bed4;
-  --snip-quiet: #ac9fb9;
+  --snip-text: #faf7fc;
+  --snip-muted: #e3dce9;
+  --snip-quiet: #cbc1d8;
   --snip-mint: #bde5ce;
   --snip-rose: #edb6b8;
   --snip-lav: #c7b7e4;

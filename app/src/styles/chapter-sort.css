@@ -5,8 +5,9 @@
 
 [data-chapter-sort-shifting],
 body[data-skin='crimson'] .crimson-rail-chapters .crimson-rail-chapter.current[data-chapter-sort-shifting] {
-  transform: translateY(var(--chapter-sort-shift, 0px));
+  transform: translate3d(0, var(--chapter-sort-shift, 0px), 0);
   transition: transform 160ms cubic-bezier(.22, .61, .36, 1);
+  will-change: transform;
 }
 
 [data-chapter-sort-source] {
@@ -89,6 +90,20 @@ body[data-skin='crimson'] [data-chapter-sort-ghost] {
   color: var(--text, #eee9f0);
   font: 12px/1.5 system-ui, sans-serif;
   white-space: nowrap;
+}
+.lore-sort-branch-badge {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  padding: 2px 8px;
+  border: 1px solid color-mix(in srgb, var(--accent, #9ec3ac) 48%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent, #9ec3ac) 18%, rgb(24 22 32 / .92));
+  color: var(--accent, #cde8d8);
+  font: 500 11px/1.4 'Microsoft YaHei', system-ui, sans-serif;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,9 +1,7 @@
 export function normalizePanelTheme(value) {
-  return value === 'light' || value === 'dark' ? value : 'host'
+  return value === 'light' ? 'light' : 'dark'
 }
 
-export function resolvePanelTheme(value, hostDark) {
-  const mode = normalizePanelTheme(value)
-  if (mode !== 'host') return mode
-  return hostDark ? 'dark' : 'light'
+export function resolvePanelTheme(value) {
+  return normalizePanelTheme(value)
 }

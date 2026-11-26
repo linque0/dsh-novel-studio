@@ -114,3 +114,127 @@ export function splitLoreSelection(el) {
   const a = document.createElement('div'), b = document.createElement('div'); a.append(before.cloneContents()); b.append(after.cloneContents())
   return { beforeText: loreText(a), beforeHtml: cleanLoreHtml(a.innerHTML), afterText: loreText(b), afterHtml: cleanLoreHtml(b.innerHTML) }
 }
+
+const isProtectedInline = el => Boolean(el?.classList?.contains('dl-link') || el?.getAttribute?.('contenteditable') === 'false')
+const hasInlineColor = (el, kind) => {
+  if (!el || el.nodeType !== 1 || isProtectedInline(el)) return false
+  if (kind === 'color') return Boolean((el.nodeName === 'FONT' && el.hasAttribute('color')) || el.style?.color)
+  return Boolean(el.nodeName === 'MARK' || el.style?.backgroundColor || (el.style?.background && el.style.background !== 'none'))
+}
+const isEmptyShell = el => {
+  if (!el || el.nodeType !== 1 || isProtectedInline(el)) return false
+  if (el.querySelector('img, br, .dl-link, [contenteditable="false"]')) return false
+  return el.textContent === ''
+}
+function unwrapNode(el) {
+  const parent = el?.parentNode
+  if (!parent) return
+  while (el.firstChild) parent.insertBefore(el.firstChild, el)
+  parent.removeChild(el)
+}
+function stripInlineColorFromEl(el, kind) {
+  if (!el || el.nodeType !== 1 || isProtectedInline(el)) return false
+  let changed = false
+  if (kind === 'color') {
+    if (el.nodeName === 'FONT' && el.hasAttribute('color')) { el.removeAttribute('color'); changed = true }
+    if (el.style?.color) { el.style.removeProperty('color'); changed = true }
+  } else {
+    if (el.style?.backgroundColor) { el.style.removeProperty('background-color'); changed = true }
+    if (el.style?.background) { el.style.removeProperty('background'); changed = true }
+    if (el.nodeName === 'MARK') changed = true
+  }
+  if (el.hasAttribute('style') && !el.getAttribute('style').trim()) el.removeAttribute('style')
+  if (!changed) return false
+  if (kind === 'background' && el.nodeName === 'MARK') {
+    if (el.attributes.length === 0) unwrapNode(el)
+    else {
+      const span = el.ownerDocument.createElement('span')
+      for (const attr of Array.from(el.attributes)) span.setAttribute(attr.name, attr.value)
+      while (el.firstChild) span.appendChild(el.firstChild)
+      el.parentNode?.replaceChild(span, el)
+    }
+  } else if ((el.nodeName === 'SPAN' || el.nodeName === 'FONT') && el.attributes.length === 0) {
+    unwrapNode(el)
+  }
+  return true
+}
+function splitColoredAncestorsAt(rootEl, marker, placeBefore, kind) {
+  let top = null
+  let cur = marker.parentNode
+  while (cur && cur !== rootEl) {
+    if (isProtectedInline(cur)) return
+    if (hasInlineColor(cur, kind)) top = cur
+    cur = cur.parentNode
+  }
+  if (!top || !top.parentNode) return
+  const doc = rootEl.ownerDocument
+  const r = doc.createRange()
+  if (placeBefore) r.setStartBefore(marker)
+  else r.setStartAfter(marker)
+  r.setEndAfter(top)
+  const afterFrag = r.extractContents()
+  const nextSibling = top.nextSibling
+  top.parentNode.insertBefore(afterFrag, nextSibling)
+  const inserted = top.nextSibling
+  if (isEmptyShell(top)) top.remove()
+  if (inserted && isEmptyShell(inserted)) inserted.remove()
+}
+/** 精准移除选区（或光标所在节点）的文字颜色或底色，保留加粗/斜体/下划线/删除线/双链及另一种颜色。 */
+export function clearLoreInlineColor(rootEl, kind = 'color') {
+  if (!rootEl || (kind !== 'color' && kind !== 'background')) return false
+  const doc = rootEl.ownerDocument
+  const win = doc.defaultView || (typeof window !== 'undefined' ? window : null)
+  const sel = win?.getSelection?.()
+  const range = sel?.rangeCount ? sel.getRangeAt(0) : null
+  if (!range || !rootEl.contains(range.commonAncestorContainer)) return false
+
+  if (range.collapsed) {
+    const ancestors = []
+    let cur = range.startContainer.nodeType === 3 ? range.startContainer.parentNode : range.startContainer
+    while (cur && cur !== rootEl) {
+      if (isProtectedInline(cur)) return false
+      if (hasInlineColor(cur, kind)) ancestors.push(cur)
+      cur = cur.parentNode
+    }
+    let changed = false
+    for (const el of ancestors) changed = stripInlineColorFromEl(el, kind) || changed
+    return changed
+  }
+
+  const sMark = doc.createComment('lore-clr-s')
+  const eMark = doc.createComment('lore-clr-e')
+  const endRange = range.cloneRange()
+  endRange.collapse(false)
+  endRange.insertNode(eMark)
+  const startRange = range.cloneRange()
+  startRange.collapse(true)
+  startRange.insertNode(sMark)
+
+  splitColoredAncestorsAt(rootEl, sMark, true, kind)
+  splitColoredAncestorsAt(rootEl, eMark, false, kind)
+
+  const selRange = doc.createRange()
+  selRange.setStartAfter(sMark)
+  selRange.setEndBefore(eMark)
+
+  const targets = []
+  const walker = doc.createTreeWalker(rootEl, 1 /* SHOW_ELEMENT */)
+  let node = walker.nextNode()
+  while (node) {
+    if (hasInlineColor(node, kind) && selRange.intersectsNode(node)) targets.push(node)
+    node = walker.nextNode()
+  }
+  let changed = false
+  for (let i = targets.length - 1; i >= 0; i--) {
+    changed = stripInlineColorFromEl(targets[i], kind) || changed
+  }
+
+  const restore = doc.createRange()
+  restore.setStartAfter(sMark)
+  restore.setEndBefore(eMark)
+  sel.removeAllRanges()
+  sel.addRange(restore)
+  sMark.remove()
+  eMark.remove()
+  return changed
+}

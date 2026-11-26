@@ -598,7 +598,7 @@ onMounted(async () => {
         </aside>
       </section>
       <section v-if="tab === 'adaptation'">
-        <h3>小说工坊材料来源</h3>
+        <h3>空想书典材料来源</h3>
         <div class="fields">
           <label
             >前情章数<NInputNumber

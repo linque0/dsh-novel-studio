@@ -3,14 +3,23 @@
 import { computed, nextTick, onBeforeUnmount, onDeactivated, ref, watch } from 'vue'
 import { NPopover } from 'naive-ui'
 import { useWorkStore } from '../../stores/work'
+import { TAG_PALETTE } from '../../services/tagcolors'
 import Glyph from './OutlineGlyph.vue'
 import { CONTAINER_COLORS, EVENT_SHAPES } from './outline-paper'
 const props=defineProps({node:{type:Object,default:null},path:{type:Array,default:()=>[]},stats:{type:Object,default:()=>({total:0,done:0,blocks:0,depth:0})},connections:{type:Array,default:()=>[]},parent:{type:Object,default:null},isMini:Boolean})
 const emit=defineEmits(['close','edit-node','chapter','shape','status','color','enter','toggle-inline','move-out','remove','reveal','inline-edit','text'])
-const work=useWorkStore(),editing=ref(''),editingNodeId=ref(null),draft=ref(''),input=ref(null),showMore=ref(false),showStatus=ref(false),armed=ref(false)
-const isContainer=computed(()=>props.node?.kind==='container'),isEvent=computed(()=>props.node?.kind==='event')
-const statusOptions=[['planned','待展开'],['writing','进行中'],['done','已完成'],['revise','待修改']]
-const status=computed(()=>Object.fromEntries(statusOptions)[props.node?.status]||'待展开')
+const work=useWorkStore(),editing=ref(''),editingNodeId=ref(null),draft=ref(''),input=ref(null),showMore=ref(false),armed=ref(false)
+const tagInput=ref(''),tagDraftColor=ref(''),tagColorTarget=ref(null)
+const isContainer=computed(()=>props.node?.kind==='container'),isEvent=computed(()=>props.node?.kind==='event'),isNote=computed(()=>props.node?.kind==='note'),isTaggable=computed(()=>isEvent.value||isNote.value)
+const nodeTags=computed(()=>(Array.isArray(props.node?.tags)?props.node.tags:[]).map(name=>({name,color:work.olTagColorOf(name)})))
+const allWorkTags=computed(()=>work.olAllTags())
+const activeTagColor=computed(()=>tagColorTarget.value?work.olTagColorOf(tagColorTarget.value):(tagDraftColor.value||(tagInput.value.trim()?work.olTagColorOf(tagInput.value.trim()):TAG_PALETTE[0])))
+const activeTagHasCustom=computed(()=>tagColorTarget.value?Boolean(work.olTagColors?.[tagColorTarget.value]):Boolean(tagDraftColor.value))
+function tagPillStyle(t){const c=t?.color||'#8fb9b0';return {'--tag-color':c,color:`color-mix(in srgb, ${c} 58%, #ffffff)`,borderColor:`color-mix(in srgb, ${c} 54%, transparent)`,background:`color-mix(in srgb, ${c} 22%, transparent)`}}
+function addTag(){const name=tagInput.value.trim().slice(0,16);if(!props.node||!name)return;if(tagDraftColor.value)work.olTagSetColor(name,tagDraftColor.value);work.olnodeSetTags(props.node.id,[...(props.node.tags||[]),name]);tagInput.value='';tagDraftColor.value='';tagColorTarget.value=name}
+function removeTag(name){if(!props.node)return;work.olnodeSetTags(props.node.id,(props.node.tags||[]).filter(t=>t!==name));if(tagColorTarget.value===name)tagColorTarget.value=null}
+function toggleTag(name){if(!props.node)return;const cur=props.node.tags||[];work.olnodeSetTags(props.node.id,cur.includes(name)?cur.filter(t=>t!==name):[...cur,name])}
+function setTagColor(color){if(tagColorTarget.value)work.olTagSetColor(tagColorTarget.value,color);else tagDraftColor.value=color}
 const kind=computed(()=>({event:'事件',note:'便签',cite:'引用',anchor:'章节',volume:'卷',container:'容器',textbox:'文本框'})[props.node?.kind]||'模块')
 const parentPath=computed(()=>props.path.filter(p=>p.id).map(p=>p.title).join(' / ')||'全书情节')
 const linkedNodes=computed(()=>props.connections.map(c=>({connection:c,node:work.olnodes.find(n=>n.id===c.otherId&&!n.deletedAt)})))
@@ -26,7 +35,7 @@ const people=computed(()=>{
 })
 function chapterTitle(chapter){const m=/^(第\s*.+?章)[\s·：:—-]*(.*)$/.exec(chapter.title||'');return m?{heading:m[1],sub:m[2]||`${chapter.wordCount||0} 字`}:{heading:chapter.title,sub:`${chapter.wordCount||0} 字`}}
 let timer
-watch(()=>props.node?.id,()=>{commit();showMore.value=false;showStatus.value=false;armed.value=false;clearTimeout(timer)})
+watch(()=>props.node?.id,()=>{commit();showMore.value=false;armed.value=false;tagInput.value='';tagDraftColor.value='';tagColorTarget.value=null;clearTimeout(timer)})
 onDeactivated(()=>{commit();clearTimeout(timer)})
 onBeforeUnmount(()=>{commit();clearTimeout(timer)})
 async function edit(field){editingNodeId.value=props.node.id;draft.value=field==='title'?props.node.title||'':props.node.text||'';editing.value=field;await nextTick();input.value?.focus()}
@@ -40,7 +49,24 @@ function armDelete(){if(!armed.value){armed.value=true;timer=setTimeout(()=>arme
    <span class="tiny-label">{{parentPath}}</span>
    <input v-if="editing==='title'" ref="input" v-model="draft" class="detail-title-input" data-edit="title" aria-label="标题" maxlength="45" @blur="commit" @keydown.enter.prevent="commit" @keydown.esc.prevent="editing=''"/>
    <h2 v-else><button type="button" class="detail-title" aria-label="编辑标题" @click="edit('title')">{{node.title||'未命名'+kind}}</button></h2>
-   <NPopover v-if="isEvent" v-model:show="showStatus" trigger="click" :show-arrow="false"><template #trigger><button type="button" class="detail-status"><i></i>{{status}}</button></template><div class="draft-status-options"><button v-for="[value,label] in statusOptions" :key="value" type="button" @click="emit('status',value);showStatus=false">{{label}}</button></div></NPopover>
+   <div v-if="isTaggable" class="detail-tags">
+    <div v-if="nodeTags.length" class="detail-tags-list">
+     <span v-for="t in nodeTags" :key="t.name" class="detail-tag-chip" :class="{active:tagColorTarget===t.name}" :style="tagPillStyle(t)" :title="'点击调整「'+t.name+'」颜色'" @click="tagColorTarget=tagColorTarget===t.name?null:t.name"><i :style="{background:t.color}"/>{{t.name}}<button type="button" :aria-label="'移除标签 '+t.name" @click.stop="removeTag(t.name)">×</button></span>
+    </div>
+    <form class="detail-tag-form" @submit.prevent="addTag">
+     <input v-model="tagInput" maxlength="16" placeholder="添加自定义标签…" aria-label="添加自定义标签"/>
+     <button type="submit" :disabled="!tagInput.trim()">添加</button>
+    </form>
+    <div class="detail-tag-colors">
+     <span>{{tagColorTarget?`「${tagColorTarget}」配色`:'标签配色'}}</span>
+     <button v-for="c in TAG_PALETTE" :key="c" type="button" class="detail-tag-sw" :class="{on:activeTagColor.toLowerCase()===c.toLowerCase()&&activeTagHasCustom}" :style="{background:c}" :title="'设为 '+c" @click="setTagColor(c)"/>
+     <input type="color" class="detail-tag-colorpick" aria-label="自定义标签颜色" title="自由取色" :value="activeTagColor" @input="setTagColor($event.target.value)"/>
+     <button v-if="activeTagHasCustom" type="button" class="detail-tag-creset" title="恢复自动配色" @click="setTagColor('')">↺</button>
+    </div>
+    <div v-if="allWorkTags.length" class="detail-tag-reuse">
+     <button v-for="t in allWorkTags" :key="t.name" type="button" class="detail-tag-reuse-chip" :class="{chosen:(node.tags||[]).includes(t.name)}" :style="tagPillStyle(t)" @click="toggleTag(t.name)"><i :style="{background:t.color}"/>{{t.name}}</button>
+    </div>
+   </div>
    <section><h3>{{isContainer?'故事摘要':isEvent?'情节梗概':'内容'}}</h3><textarea v-if="editing==='body'" ref="input" v-model="draft" class="detail-body-input" data-edit="body" aria-label="情节梗概" rows="6" @blur="commit" @keydown.ctrl.enter.prevent="commit" @keydown.esc.prevent="editing=''"/><button v-else type="button" class="detail-prose" aria-label="编辑情节梗概" @click="edit('body')"><p v-for="(line,i) in (node.text||'写下这一幕发生的事…').split('\n').filter(Boolean)" :key="i">{{line}}</p></button></section>
    <section v-if="isContainer" class="detail-container"><h3>容器故事 <span>{{stats.total}} 个事件</span></h3><div class="detail-container-actions"><button type="button" @click="emit('toggle-inline')">{{isMini?'收起内容':'就地展开'}}</button><button type="button" @click="emit('enter')">进入容器 ↗</button><button v-if="parent" type="button" @click="emit('move-out')">移出上一层</button></div><p>已完成 {{stats.done}} / {{stats.total}}<template v-if="stats.blocks"> · {{stats.blocks}} 个子容器</template></p></section>
    <section><h3>关联章节 <span>{{chapters.length}}</span></h3><button v-for="row in chapters" :key="row.chapter.id" type="button" class="relation-row" @click="work.navTo('chapters',row.chapter.id)"><Glyph name="anchor" :size="15"/><div>{{chapterTitle(row.chapter).heading}}<span>{{chapterTitle(row.chapter).sub}}</span></div><Glyph name="chevron" :size="13"/></button><p v-if="!chapters.length" class="detail-empty-note">暂无关联章节</p></section>

@@ -138,7 +138,7 @@ async function openFull(action){
   if(quickDate.value)params.set('date',quickDate.value)
   let opened
   try{
-   opened=await window.native.panelOpen({type:'writing-analysis',workId:'app',entityId:params.toString(),title:'小说工坊 · 写作分析'})
+   opened=await window.native.panelOpen({type:'writing-analysis',workId:'app',entityId:params.toString(),title:'空想书典 · 写作分析'})
   }catch{
    // The inline page can still open when the window bridge is unavailable.
   }finally{
@@ -369,7 +369,7 @@ onBeforeUnmount(()=>{
   <WritingStatsAnalysis v-if="ready" :stats="payload.stats" :data="data" :model="model" :state="s" :choices="choices" @patch="patch" @detail="select" @chapter="chapterSelect" @day="chapterSelect" @drill="drill">
    <aside class="panel inspector-inline"><StatsInspector :detail="contextDetail" :data="data" :model="model" :state="s" :work-name="name" :closable="!!s.detail" @close="closeDetail" @chapter="historyChapter" @detail="select" @chapter-day="chapterSelect"/></aside>
   </WritingStatsAnalysis>
-  <footer><span>小说工坊 · 幻流</span><span>已保存的本地数据</span></footer>
+  <footer><span>空想书典 · 幻流</span><span>已保存的本地数据</span></footer>
   </main>
  </div>
  </section>

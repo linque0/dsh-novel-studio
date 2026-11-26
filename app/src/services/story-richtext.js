@@ -44,7 +44,7 @@ export function reviseStoryHTML(html,before,after){
     if(from==null||to==null)throw new Error('修改跨越无法精确定位的段落边界，原稿保留，修稿结果请在旅程记录对照')
     let protectedMark=false
     e.state.doc.nodesBetween(from,to,n=>{if(n.marks?.some(m=>/dl|link|note|annotation/i.test(m.type.name)))protectedMark=true})
-    if(protectedMark)throw new Error('修改范围包含链接或批注，原稿保留，请在工坊中手动核对修稿')
+    if(protectedMark)throw new Error('修改范围包含链接或批注，原稿保留，请在书典中手动核对修稿')
     const replacement=after.slice(start,newEnd)
     const content=replacement.includes('\n')?storyHtml(replacement):replacement?{type:'text',text:replacement,marks:(e.state.doc.nodeAt(from)?.marks||[]).map(m=>m.toJSON())}:[]
     if(!e.commands.insertContentAt({from,to},content))throw new Error('无损修稿事务未提交')

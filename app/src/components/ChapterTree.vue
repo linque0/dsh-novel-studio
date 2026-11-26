@@ -6,6 +6,7 @@ import { useWorkStore } from '../stores/work'
 import { useUiStore } from '../stores/ui'
 import { autosave } from '../services/autosave'
 import { useChapterSort } from '../composables/useChapterSort'
+import { findCharacterAliasSuggestion, highlightChapterSegments, searchChapters } from '../services/chapter-search.js'
 
 const work = useWorkStore()
 const ui = useUiStore()
@@ -14,9 +15,12 @@ const emit=defineEmits(['read','window','collapse'])
 const canCollapse=computed(()=>(!props.inPanel||props.collapsiblePanel)&&!props.navigationOnly)
 const deleteConfirm=ref(false)
 const deleteTarget=ref(null)
-/* 查找：只过滤喂给 NTree 的数据，key 不变，拖拽 / 右键 / 定位语义照旧。 */
+/* 查找：标题 + 正文联合全文检索（按全书章序，支持多词组合与人物别名可选扩展） */
 const q = ref('')
-const hitKw = (text) => String(text || '').toLowerCase().includes(q.value.trim().toLowerCase())
+const includeAliases = ref(false)
+const searchCursor = ref(0)
+const searchLimit = ref(80)
+const searchInputEl = ref(null)
 
 /* 树数据：书签章节加 ★ 前缀 */
 const treeData = computed(() => {
@@ -34,18 +38,95 @@ const treeData = computed(() => {
     }))
   }))
 })
-/* 过滤后的树：卷名命中就整卷保留，否则只留命中的章；两样都不中的卷整卷收起。 */
-const filteredTree = computed(() => {
-  if (!q.value.trim()) return treeData.value
-  const out = []
-  for (const v of treeData.value) {
-    const volumeHit = hitKw(v.label)
-    const children = volumeHit ? (v.children || []) : (v.children || []).filter((c) => hitKw(c.label))
-    if (!volumeHit && !children.length) continue
-    out.push({ ...v, children })
-  }
-  return out
+const bookmarkedSet = computed(() => new Set((work.liveBookmarks || []).map((b) => b.targetId)))
+const aliasSuggestion = computed(() => findCharacterAliasSuggestion(q.value, work.liveCharacters))
+const chapterSearchState = computed(() =>
+  searchChapters({
+    volumes: work.liveVolumes,
+    chapters: work.liveChapters,
+    query: q.value,
+    aliasSuggestion: aliasSuggestion.value,
+    includeAliases: includeAliases.value,
+    bookmarkedIds: bookmarkedSet.value
+  })
+)
+const isSearching = computed(() => chapterSearchState.value.tokens.length > 0)
+const searchResults = computed(() => chapterSearchState.value.results)
+const visibleSearchResults = computed(() => searchResults.value.slice(0, searchLimit.value))
+const hasMoreSearchResults = computed(() => searchResults.value.length > visibleSearchResults.value.length)
+const aliasExtraPreview = computed(() => {
+  const list = aliasSuggestion.value?.extraTerms || []
+  return list.length > 3 ? `${list.slice(0, 3).join('、')} 等 ${list.length} 个` : list.join('、')
 })
+
+function clearChapterSearchQuery(focusInput = false) {
+  q.value = ''
+  includeAliases.value = false
+  ui.clearChapterSearch()
+  if (focusInput) nextTick(() => searchInputEl.value?.focus())
+}
+function toggleAliasSearch() {
+  if (!aliasSuggestion.value) return
+  includeAliases.value = !includeAliases.value
+  searchCursor.value = 0
+  if (ui.chapterSearch.active && work.selChapterId) {
+    ui.openChapterSearchHit({
+      query: chapterSearchState.value.query,
+      terms: chapterSearchState.value.highlightTerms,
+      includeAliases: includeAliases.value,
+      chapterId: work.selChapterId,
+      matchIndex: 0
+    })
+  }
+}
+function jumpToSearchResult(item, occurrenceIndex = 0, idx = null) {
+  if (!item) return
+  if (idx != null) searchCursor.value = idx
+  work.selChapterId = item.chapterId
+  if (item.chapter) work.selVolumeId = item.chapter.volumeId
+  selNode.value = { type: 'chapter', id: item.chapterId, key: 'c:' + item.chapterId }
+  ui.openChapterSearchHit({
+    query: chapterSearchState.value.query,
+    terms: chapterSearchState.value.highlightTerms,
+    includeAliases: includeAliases.value && Boolean(aliasSuggestion.value),
+    chapterId: item.chapterId,
+    matchIndex: occurrenceIndex
+  })
+}
+function scrollSearchCursor() {
+  nextTick(() => {
+    const el = sideListRef.value?.querySelector(`[data-chapter-hit-index="${searchCursor.value}"]`)
+    el?.scrollIntoView({ block: 'nearest' })
+  })
+}
+function onSearchKeydown(e) {
+  if (e.isComposing) return
+  if (e.key === 'Escape' && q.value) {
+    e.preventDefault()
+    e.stopPropagation()
+    clearChapterSearchQuery(true)
+    return
+  }
+  if (!isSearching.value || !searchResults.value.length) return
+  if (e.key === 'ArrowDown') {
+    e.preventDefault()
+    const next = Math.min(searchResults.value.length - 1, searchCursor.value + 1)
+    if (next >= searchLimit.value) searchLimit.value = next + 40
+    searchCursor.value = next
+    scrollSearchCursor()
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault()
+    searchCursor.value = Math.max(0, searchCursor.value - 1)
+    scrollSearchCursor()
+  } else if (e.key === 'Enter') {
+    e.preventDefault()
+    const hit = searchResults.value[searchCursor.value] || searchResults.value[0]
+    if (hit) jumpToSearchResult(hit, 0, searchCursor.value)
+  }
+}
+function searchSegs(text) {
+  return highlightChapterSegments(text, chapterSearchState.value.highlightTerms)
+}
 
 // NTree 的 default-expand-all 会随 data 重算，显式保留用户折叠的卷。
 const collapsedVolumes = ref(new Set())
@@ -55,8 +136,20 @@ const expandedKeys = computed(() => {
   if (q.value.trim()) return searchExpandedKeys.value ?? keys
   return keys.filter((key) => !collapsedVolumes.value.has(key))
 })
-watch(q, () => { searchExpandedKeys.value = null }, { flush: 'sync' })
-watch(() => work.work?.id, () => { collapsedVolumes.value = new Set() })
+watch(q, (val) => {
+  searchExpandedKeys.value = null
+  includeAliases.value = false
+  searchCursor.value = 0
+  searchLimit.value = 80
+  if (sideListRef.value) sideListRef.value.scrollTop = 0
+  if (!String(val || '').trim()) ui.clearChapterSearch()
+}, { flush: 'sync' })
+watch(() => work.work?.id, () => {
+  collapsedVolumes.value = new Set()
+  q.value = ''
+  includeAliases.value = false
+  ui.clearChapterSearch()
+})
 function onExpanded(keys, _options, { node, action }) {
   if (q.value.trim()) {
     searchExpandedKeys.value = keys
@@ -316,10 +409,10 @@ const renameSaving=ref(false),renameComposing=ref(false)
 <template>
   <div class="ct-root" :class="[canCollapse?'collapsible':null]" style="display: flex; flex-direction: column; height: 100%; position: relative">
     <div class="side-head">
-      <span class="ct-search">
+      <span class="ct-search" :class="{ active: isSearching }">
         <OIcon name="search" :size="12" aria-hidden="true" />
-        <input v-model="q" type="search" placeholder="查找章节…" aria-label="查找章节" />
-        <button v-if="q" type="button" title="清除查找" aria-label="清除查找" @click="q = ''">×</button>
+        <input ref="searchInputEl" v-model="q" type="search" placeholder="搜索章节或正文…" aria-label="搜索章节或正文" @keydown="onSearchKeydown" />
+        <button v-if="q" type="button" title="清除查找 (Esc)" aria-label="清除查找" @click.stop.prevent="clearChapterSearchQuery(true)">×</button>
       </span>
       <span class="ct-tools">
         <NDropdown trigger="click" :options="bookmarkOptions" @select="openBookmark">
@@ -330,9 +423,67 @@ const renameSaving=ref(false),renameComposing=ref(false)
         <button v-if="canCollapse" type="button" class="side-fold" title="收起章节栏" aria-label="收起章节栏" aria-controls="writing-directory" aria-expanded="true" @click="emit('collapse')"><OIcon name="caret-right" :size="13" style="transform:rotate(180deg)" /></button>
       </span>
     </div>
+    <div v-if="isSearching" class="ct-search-meta">
+      <div class="ct-search-head">
+        <span class="ct-search-summary">找到 <b>{{ searchResults.length }}</b> 章<template v-if="chapterSearchState.totalHits > 0"> · {{ chapterSearchState.totalHits }} 处</template></span>
+        <button type="button" class="ct-search-reset" @click="clearChapterSearchQuery(false)">清除</button>
+      </div>
+      <button
+        v-if="aliasSuggestion"
+        type="button"
+        class="ct-alias-toggle"
+        :class="{ on: includeAliases }"
+        :aria-pressed="includeAliases"
+        :title="`点击${includeAliases ? '取消' : ''}并入「${aliasSuggestion.name}」的别名检索`"
+        @click="toggleAliasSearch"
+      >
+        <span class="ct-alias-dot" aria-hidden="true" />
+        <span class="ct-alias-text">含「{{ aliasSuggestion.name }}」别名：{{ aliasExtraPreview }}</span>
+      </button>
+    </div>
     <div ref="sideListRef" class="side-list" @pointerdown="chapterSort.pointerDown" @dragstart.capture="chapterSort.nativeDrag" @click.capture="chapterSort.click">
+      <template v-if="isSearching">
+        <div v-if="searchResults.length" class="ct-search-list" role="listbox" aria-label="正文检索结果">
+          <div
+            v-for="(item, idx) in visibleSearchResults"
+            :key="item.chapterId"
+            role="option"
+            tabindex="0"
+            :aria-selected="work.selChapterId === item.chapterId"
+            :data-chapter-hit-index="idx"
+            :data-chapter-hit-id="item.chapterId"
+            class="ct-search-item"
+            :class="{ current: work.selChapterId === item.chapterId, 'kb-active': searchCursor === idx }"
+            @click="jumpToSearchResult(item, 0, idx)"
+            @keydown.enter.prevent="jumpToSearchResult(item, 0, idx)"
+          >
+            <div class="ct-search-item-head">
+              <span class="ct-search-title" :title="item.title"><template v-if="item.bookmarked">★ </template><template v-for="(seg, sIdx) in searchSegs(item.title)" :key="sIdx"><mark v-if="seg.mark" class="ct-search-mark">{{ seg.text }}</mark><template v-else>{{ seg.text }}</template></template></span>
+              <span class="ct-hit-badge" :class="{ 'is-title': !item.bodyHitCount }">{{ item.bodyHitCount > 0 ? `${item.bodyHitCount} 处` : '标题' }}</span>
+            </div>
+            <div v-if="item.volumeTitle" class="ct-search-vol">
+              <template v-for="(seg, vIdx) in searchSegs(item.volumeTitle)" :key="vIdx"><mark v-if="seg.mark" class="ct-search-mark">{{ seg.text }}</mark><template v-else>{{ seg.text }}</template></template>
+            </div>
+            <div v-if="item.excerpts.length" class="ct-search-excerpts">
+              <button
+                v-for="(ex, eIdx) in item.excerpts"
+                :key="eIdx"
+                type="button"
+                class="ct-search-excerpt"
+                @click.stop="jumpToSearchResult(item, ex.occurrenceIndex, idx)"
+              ><template v-for="(seg, tIdx) in searchSegs(ex.text)" :key="tIdx"><mark v-if="seg.mark" class="ct-search-mark">{{ seg.text }}</mark><template v-else>{{ seg.text }}</template></template></button>
+            </div>
+          </div>
+          <button v-if="hasMoreSearchResults" type="button" class="ct-search-more" @click="searchLimit = searchResults.length">显示全部 {{ searchResults.length }} 章</button>
+        </div>
+        <div v-else class="ct-empty ct-search-empty">
+          <p>没有包含「{{ chapterSearchState.query }}」的章节</p>
+          <button type="button" class="ct-search-reset" @click="clearChapterSearchQuery(true)">清除搜索</button>
+        </div>
+      </template>
       <NTree
-        :data="filteredTree"
+        v-else
+        :data="treeData"
         block-line
         draggable
         :expanded-keys="expandedKeys"
@@ -348,7 +499,6 @@ const renameSaving=ref(false),renameComposing=ref(false)
         @drop="onDrop"
       />
     </div>
-    <p v-if="q && !filteredTree.length" class="ct-empty">没有匹配的章节。</p>
     <div class="side-foot">
       <NButton class="sp-new" size="small" @click="addCh">＋ 新建章</NButton>
       <button class="sp-ghost" type="button" @click="addVol">新建卷</button>

@@ -29,7 +29,7 @@ const nsPlugin = __NS_PLUGIN__
 const navItems = computed(() => APP_NAVIGATION.filter(item => item.key !== 'settings'))
 /* 窄栏（<560，由 dsh 皮肤 CSS 打开）只留 作品名 + 当前模块名 + ⋯；导航与锁定键收进下拉。 */
 const currentLabel = computed(() => APP_NAVIGATION.find(item => item.key === props.active)?.label || '')
-const narrowTitle = computed(() => (props.hasWork && props.targetTitle) ? props.targetTitle : '小说工坊')
+const narrowTitle = computed(() => (props.hasWork && props.targetTitle) ? props.targetTitle : '空想书典')
 const SAVE_LABEL = { saved: '已保存', saving: '保存中', dirty: '未保存', error: '保存失败' }
 const saveLabel = computed(() => SAVE_LABEL[props.saveState] || SAVE_LABEL.saved)
 /* ⋯ 菜单分两区：「动作」由工作台注入（窄栏把顶栏按钮收进来），「模块」才是 APP_NAVIGATION。
@@ -182,8 +182,8 @@ watch(() => [props.active, ui.skin], async () => {
 <template>
   <AutoHideTopbar class="app-topbar-shell" :class="{ 'is-auxiliary': navigationLabel }" :auto-hide="!navigationLabel && ui.topbarAutoHide" @update:auto-hide="value => ui.setPref('topbarAutoHide', value)">
     <header class="app-topbar" :data-topbar-page="active">
-      <button type="button" class="app-topbar-brand" :title="navigationLabel ? '关闭写作分析' : '返回书架'" :aria-label="navigationLabel ? '小说工坊，关闭写作分析' : '小说工坊，返回书架'" :disabled="busy" @click="navigate('shelf')">
-        <span class="app-topbar-brand-text">小说工坊<small>幻流</small></span>
+      <button type="button" class="app-topbar-brand" :title="navigationLabel ? '关闭写作分析' : '返回书架'" :aria-label="navigationLabel ? '空想书典，关闭写作分析' : '空想书典，返回书架'" :disabled="busy" @click="navigate('shelf')">
+        <span class="app-topbar-brand-text">空想书典<small>幻流</small></span>
         <span class="app-topbar-narrow-title" :title="narrowTitle">{{ narrowTitle }}</span>
       </button>
       <nav ref="nav" class="app-topnav" :role="navigationLabel ? 'tablist' : undefined" :aria-label="navigationLabel || '功能模块'" :data-ovf="navOvf || null" :style="navBudget ? {maxWidth:navBudget+'px'} : undefined" @wheel="onNavWheel" @scroll="measureNav">

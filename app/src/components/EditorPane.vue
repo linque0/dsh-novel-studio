@@ -40,6 +40,7 @@ import OIcon from './OIcon.vue'
 import { hashContent } from '../services/project/text.js'
 import { restoreWritingSelection } from '../services/writing-position-core.js'
 import { registerWritingCapture, queueWritingPosition, flushWritingPositions } from '../services/writing-position.js'
+import { collectProseMatchRanges } from '../services/chapter-search.js'
 
 const work = useWorkStore()
 const ui = useUiStore()
@@ -278,7 +279,8 @@ function mountEditor() {
   const ch = work.activeChapter
   if (!ch) return
   const id = ch.id
-  const position = work.writingRestore?.chapterId===id ? work.writingRestore : null
+  const searchingThisChapter = Boolean(ui.chapterSearch?.active && ui.chapterSearch?.terms?.length && ui.chapterSearch?.chapterId === id)
+  const position = (work.writingRestore?.chapterId===id && !searchingThisChapter) ? work.writingRestore : null
   work.writingRestore = null
   editor.value = new Editor({
     content: toEditorHtml(ch),
@@ -312,6 +314,7 @@ function mountEditor() {
         work.setChapterContent(id, ed.getHTML(), 'html')
         window.dispatchEvent(new Event('writing-document-changed'))
         if (writingSession?.ed===ed) writingSession.edited()
+        if (chapterSearchActive.value) scheduleChapterSearchSync()
       }
     },
     onSelectionUpdate: ({ editor: ed }) => { if (writingSession?.ed===ed) writingSession.selectionChanged() }
@@ -320,7 +323,116 @@ function mountEditor() {
   window.__ns.editorTarget = {workId:work.work.id,chapterId:id}
   setActiveEditor(editor.value) // 右侧批注栏据此操作正文标记
   bindWritingPosition(editor.value,ch,position)
+  if (chapterSearchActive.value) {
+    void syncChapterSearchAfterMount(searchingThisChapter ? ui.chapterSearch.matchIndex : 0, true)
+  }
 }
+
+/* ---------- 正文检索无侵入双层高亮与章内跳转 ---------- */
+const searchMatchTotal = ref(0)
+const searchMatchIndex = ref(0)
+const chapterSearchActive = computed(() => Boolean(ui.chapterSearch?.active && ui.chapterSearch?.terms?.length && !chapterPopped.value && work.activeChapter))
+let searchRanges = []
+let searchSyncTimer = null
+
+function clearChapterHighlights() {
+  searchRanges = []
+  searchMatchTotal.value = 0
+  searchMatchIndex.value = 0
+  if (typeof CSS !== 'undefined' && CSS.highlights) {
+    CSS.highlights.delete('chapter-search')
+    CSS.highlights.delete('chapter-search-active')
+  }
+}
+function applyChapterHighlights(activeIdx) {
+  if (typeof CSS === 'undefined' || !CSS.highlights || typeof Highlight === 'undefined') return
+  if (!searchRanges.length) {
+    CSS.highlights.delete('chapter-search')
+    CSS.highlights.delete('chapter-search-active')
+    return
+  }
+  CSS.highlights.set('chapter-search', new Highlight(...searchRanges))
+  const target = searchRanges[activeIdx]
+  if (target) CSS.highlights.set('chapter-search-active', new Highlight(target))
+  else CSS.highlights.delete('chapter-search-active')
+}
+function scrollToSearchRange(range) {
+  const ed = editor.value
+  if (!ed?.view?.dom || !range) return
+  const host = ed.view.dom.closest('.crimson-page')?.querySelector('.rich-inner') || ed.view.dom.closest('.rich-host')
+  if (!host) return
+  const rect = range.getBoundingClientRect()
+  if (!rect || (!rect.width && !rect.height)) return
+  const hostRect = host.getBoundingClientRect()
+  const targetTop = host.scrollTop + (rect.top - hostRect.top) - Math.max(48, hostRect.height * 0.32)
+  host.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' })
+}
+function syncChapterSearch({ scroll = false, targetIndex = null } = {}) {
+  const ed = editor.value
+  if (!chapterSearchActive.value || !ed?.view?.dom || !ed.view.dom.isConnected) {
+    clearChapterHighlights()
+    return
+  }
+  searchRanges = collectProseMatchRanges(ed.view.dom, ui.chapterSearch.terms)
+  searchMatchTotal.value = searchRanges.length
+  if (!searchRanges.length) {
+    searchMatchIndex.value = 0
+    applyChapterHighlights(0)
+    return
+  }
+  const desired = targetIndex != null ? targetIndex : searchMatchIndex.value
+  const clamped = Math.max(0, Math.min(searchRanges.length - 1, desired))
+  searchMatchIndex.value = clamped
+  applyChapterHighlights(clamped)
+  if (scroll) scrollToSearchRange(searchRanges[clamped])
+}
+async function syncChapterSearchAfterMount(targetIndex = 0, scroll = true) {
+  await nextTick()
+  await nextFrame()
+  await nextFrame()
+  syncChapterSearch({ scroll, targetIndex })
+}
+function scheduleChapterSearchSync() {
+  clearTimeout(searchSyncTimer)
+  searchSyncTimer = setTimeout(() => syncChapterSearch({ scroll: false }), 120)
+}
+function stepChapterSearch(delta) {
+  if (!searchRanges.length) syncChapterSearch({ scroll: false })
+  if (!searchRanges.length) return
+  const next = (searchMatchIndex.value + delta + searchRanges.length) % searchRanges.length
+  searchMatchIndex.value = next
+  applyChapterHighlights(next)
+  scrollToSearchRange(searchRanges[next])
+}
+function closeEditorSearch() {
+  ui.clearChapterSearch()
+  clearChapterHighlights()
+}
+function onSearchNavKey(e) {
+  if (!chapterSearchActive.value || e.defaultPrevented) return
+  if (e.key === 'F3') {
+    e.preventDefault()
+    stepChapterSearch(e.shiftKey ? -1 : 1)
+    return
+  }
+  if (e.key === 'Escape') {
+    const t = e.target
+    if (t?.closest?.('.ct-search, .n-modal')) return
+    e.preventDefault()
+    closeEditorSearch()
+  }
+}
+watch(
+  () => [ui.chapterSearch.active, ui.chapterSearch.nonce, (ui.chapterSearch.terms || []).join('|'), chapterPopped.value],
+  ([active]) => {
+    if (!active || chapterPopped.value) {
+      clearChapterHighlights()
+      return
+    }
+    const targetIdx = ui.chapterSearch.chapterId === work.selChapterId ? ui.chapterSearch.matchIndex : 0
+    void syncChapterSearchAfterMount(targetIdx, true)
+  }
+)
 
 watch(
   () => work.selChapterId,
@@ -333,9 +445,12 @@ watch(
 onMounted(() => {
   mountEditor()
   window.addEventListener('keydown', onReadKey)
+  window.addEventListener('keydown', onSearchNavKey)
   window.addEventListener('chapter-edit-handoff',prepareHandoff)
 })
 onBeforeUnmount(() => {
+  clearTimeout(searchSyncTimer)
+  clearChapterHighlights()
   detachWritingPosition()
   flushWritingPositions().catch(e=>console.warn('[writing-position]',e))
   autosave.flushAll()
@@ -343,6 +458,7 @@ onBeforeUnmount(() => {
   editor.value?.destroy()
   editor.value = null
   window.removeEventListener('keydown', onReadKey)
+  window.removeEventListener('keydown', onSearchNavKey)
   window.removeEventListener('chapter-edit-handoff',prepareHandoff)
 })
 
@@ -462,6 +578,19 @@ async function clearGoal() {
           </div>
         </template>
       </EditorToolbar>
+      <div v-if="chapterSearchActive" class="ed-search-bar" role="region" aria-label="章内检索定位">
+        <span class="ed-search-kw" :title="ui.chapterSearch.terms.join(' / ')">
+          <OIcon name="search" :size="12" aria-hidden="true" />
+          <strong>{{ ui.chapterSearch.query }}</strong>
+          <em v-if="ui.chapterSearch.includeAliases" class="ed-search-alias-tag">含别名</em>
+        </span>
+        <span class="ed-search-stat">{{ searchMatchTotal > 0 ? `第 ${searchMatchIndex + 1} / ${searchMatchTotal} 处` : '本章正文 0 处' }}</span>
+        <span class="ed-search-nav">
+          <button type="button" class="ed-search-btn" :disabled="searchMatchTotal <= 1" title="上一处 (Shift+F3)" aria-label="上一处" @click="stepChapterSearch(-1)">↑</button>
+          <button type="button" class="ed-search-btn" :disabled="searchMatchTotal <= 1" title="下一处 (F3)" aria-label="下一处" @click="stepChapterSearch(1)">↓</button>
+          <button type="button" class="ed-search-btn ed-search-close" title="关闭章内高亮 (Esc)" aria-label="关闭章内高亮" @click="closeEditorSearch">×</button>
+        </span>
+      </div>
       <div ref="paperFrame" v-show="!chapterPopped" class="writing-paper-frame" :data-custom-height="paperFrameStyle ? true : undefined" :style="paperFrameStyle">
       <div class="rich-host paper-texture writing-paper-surface" @mousedown.capture="onMouseDownCapture" @contextmenu.capture="onContextMenu">
         <div class="ed-read-col">

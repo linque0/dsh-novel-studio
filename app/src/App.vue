@@ -3,7 +3,7 @@
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { NConfigProvider, NMessageProvider, NDialogProvider, NButton, zhCN, dateZhCN, darkTheme } from 'naive-ui'
-import { useDshOverrides } from '../plugin/dsh/theme.js'
+import { useDshOverrides, scaleNaiveOverrides } from '../plugin/dsh/theme.js'
 import { useUiStore } from './stores/ui'
 import { startAutosave } from './services/autosave'
 import { installLibrarySync } from './services/library-sync'
@@ -57,9 +57,14 @@ const overrides = {}
 const nsPlugin = __NS_PLUGIN__
 const dshThemeState = nsPlugin ? useDshOverrides(() => ui.panelTheme) : null
 const dshNaiveTheme = computed(() => (dshThemeState && dshThemeState.value.dark ? darkTheme : null))
-const dshOverrides = computed(() => (dshThemeState ? dshThemeState.value.overrides : {}))
+const dshOverrides = computed(() => (dshThemeState ? scaleNaiveOverrides(dshThemeState.value.overrides, ui.uiFontScale) : {}))
 
 watch(activeSkin, skin => { document.body.dataset.skin = skin.id }, { immediate: true })
+watch(() => ui.uiFontScale, (pct) => {
+  const s = Math.max(0.85, Math.min(1.4, (Number(pct) || 100) / 100))
+  document.documentElement.style.setProperty('--ui-font-scale', String(s))
+  document.documentElement.dataset.uiScale = String(Math.round(s * 100))
+}, { immediate: true })
 const effectiveTheme = computed(() => {
   if (!nsPlugin) return ui.theme
   return dshThemeState.value.dark ? 'night' : 'xuan'
@@ -141,7 +146,7 @@ async function seedDevVerifyBooks() {
           <div v-if="ui.dbError" class="empty-shelf" style="padding-top: 16vh">
             <div class="big">数据的另一扇门被占用了</div>
             <p>
-              本地数据库暂时无法打开——很可能是另一个「小说工坊」窗口正在运行。<br />
+              本地数据库暂时无法打开——很可能是另一个「空想书典」窗口正在运行。<br />
               你的全部数据都安全地保存在本地，不会被覆盖。关闭其他窗口后重试即可。
             </p>
             <NButton type="primary" @click="boot">重试</NButton>

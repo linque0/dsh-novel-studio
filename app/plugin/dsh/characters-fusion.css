@@ -18,11 +18,11 @@
       外壳只换底：流动背板（flow-shell.css）要能透上来，所以 .char-shell 自身不落实底。 */
 body[data-skin=dsh] .char-shell {
   --char-pane-line: var(--ns-border-2, rgb(255 255 255 / .17));
-  --char-pane-bg: rgb(29 25 39 / .68);
+  --char-pane-bg: rgb(21 19 30 / .82);
   --char-main-bg: rgb(33 27 44 / .55);
-  --char-ink: var(--ns-label-1, #f4eef7);
-  --char-dim: var(--ns-label-3, #b1a4bd);
-  --char-hover: var(--ns-hover, rgb(255 255 255 / .055));
+  --char-ink: var(--ns-label-1, #faf7fc);
+  --char-dim: #d0c6de;
+  --char-hover: var(--ns-hover, rgb(255 255 255 / .075));
   --char-accent: var(--ns-accent, #bad6c6);
   background: transparent;
   color: var(--char-ink);
@@ -34,11 +34,11 @@ body[data-skin=dsh] .char-shell {
 body[data-skin=dsh] .char-pane {
   --char-serif: var(--lore-serif, var(--ls-serif, "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", serif));
   border: 1px solid rgb(255 255 255 / .17);
-  background: rgb(29 25 39 / .68);
+  background: rgb(21 19 30 / .82);
   -webkit-backdrop-filter: blur(24px) saturate(1.25);
   backdrop-filter: blur(24px) saturate(1.25);
   box-shadow: var(--ns-shadow, 0 18px 48px rgb(10 6 28 / .45));
-  color: var(--ns-label-1, #f4eef7);
+  color: var(--ns-label-1, #faf7fc);
 }
 
 /* 主区（卷宗正文 / 关系画布）：studio.css .main-pane 原值 rgb(33 27 44/.55)。

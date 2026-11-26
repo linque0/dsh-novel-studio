@@ -46,7 +46,7 @@ function onInput(event) {
       <button type="button" class="btn small" data-act="show-results" @click="emit('results')">查看 {{ resultCount }} 项结果</button>
     </div>
 
-    <p class="nav-caption">工坊偏好</p>
+    <p class="nav-caption">书典偏好</p>
 
     <nav class="category-nav" aria-label="设置页面">
       <button
@@ -73,7 +73,7 @@ function onInput(event) {
     </nav>
 
     <footer class="nav-foot">
-      <strong>小说工坊 · {{ APP_VERSION }}</strong>
+      <strong>空想书典 · {{ APP_VERSION }}</strong>
       <p>本地优先 · 自动保存</p>
     </footer>
   </aside>

@@ -3,6 +3,8 @@
 
 export const SCOPE_METRICS = {
   cardW: 460,
+  singleColW: 320,
+  threeColW: 680,
   cardMinW: 260,
   cardMaxW: 720,
   headH: 108,
@@ -10,10 +12,12 @@ export const SCOPE_METRICS = {
   footH: 38,
   padY: 8,
   collapsedH: 178,
+  emptyOpenH: 186,
   containerMinH: 220,
   miniGap: 12,
   miniPad: 16,
   miniCols: 2,
+  miniMaxCols: 3,
   miniLeafH: 112,
   miniContainerH: 124,
   miniOpenGap: 8
@@ -122,15 +126,37 @@ export function cardWidth(n) {
   return Math.max(M.cardMinW, Math.min(M.cardMaxW, Number(n.w) || M.cardW))
 }
 
-function miniColumns(contentW) {
-  /* 旧作品容器常见 300px 宽：两列会只剩 128px 卡宽，改为单列保证可读。 */
-  const cols = contentW >= 360 ? M.miniCols : 1
+function miniColumns(contentW, childCount = null) {
+  /* 旧作品容器常见 300px 宽：两列会只剩 128px 卡宽，改为单列保证可读；
+   * 内容较多且宽度足够时扩展到 3 列，单卡则保持 1 列占满容器内宽。 */
+  let cols = M.miniCols
+  if (childCount === 1) cols = 1
+  else if ((childCount == null || childCount >= 5) && contentW >= 580) cols = M.miniMaxCols
+  else if (contentW < 360) cols = 1
   const colW = (contentW - M.miniGap * (cols - 1)) / cols
   return { colW, cols, fullW: contentW }
 }
 
 function miniBaseHeight(n) {
   return isContainer(n) ? M.miniContainerH : M.miniLeafH
+}
+
+export function adaptiveContainerWidth(nodes, node, expanded, visiting = new Set()) {
+  if (!isContainer(node) || !expanded.has(node.id)) return cardWidth(node)
+  if (node.manualW && Number(node.w) > 0) return cardWidth(node)
+  if (visiting.has(node.id)) return M.cardW
+  const nextVisiting = new Set(visiting)
+  nextVisiting.add(node.id)
+  const kids = childrenOf(nodes, node.id)
+  const openNested = kids.filter((k) => isContainer(k) && expanded.has(k.id))
+  let target = M.cardW
+  if (kids.length <= 1 && !openNested.length) target = M.singleColW
+  else if (kids.length >= 5) target = M.threeColW
+  for (const nested of openNested) {
+    const nestedW = adaptiveContainerWidth(nodes, nested, expanded, nextVisiting)
+    target = Math.max(target, nestedW + M.miniPad * 2)
+  }
+  return Math.max(M.cardMinW, Math.min(M.cardMaxW, target))
 }
 
 /** 迷你容器展开时的高度（含递归子网格）。 */
@@ -155,7 +181,8 @@ export function layoutMiniChildren(nodes, parent, parentRect, expanded, opts = {
   const contentX = parentRect.x + pad
   const contentW = Math.max(80, parentRect.w - pad * 2)
   const startY = parentRect.y + topOffset
-  const { colW, cols, fullW } = miniColumns(contentW)
+  const kids = childrenOf(nodes, parent.id)
+  const { colW, cols, fullW } = miniColumns(contentW, kids.length)
   const items = []
   let y = startY
   let col = 0
@@ -165,7 +192,7 @@ export function layoutMiniChildren(nodes, parent, parentRect, expanded, opts = {
     items.push({ node, rect, depth, parentId, mini: true, clipId: opts.clipId || null })
   }
 
-  for (const child of childrenOf(nodes, parent.id)) {
+  for (const child of kids) {
     const open = isContainer(child) && expanded.has(child.id)
     if (open) {
       if (col > 0) {
@@ -203,33 +230,56 @@ export function layoutMiniChildren(nodes, parent, parentRect, expanded, opts = {
   return { items, height: Math.max(0, y - startY - M.miniGap + bottomPad - M.padY) }
 }
 
+export function shouldShowContainerContent(nodes, node, width, height, expanded = new Set()) {
+  if (!isContainer(node)) return false
+  const kids = childrenOf(nodes, node.id)
+  if (!kids.length) return false
+  const w = Math.max(M.cardMinW, Math.min(M.cardMaxW, Number(width) || M.cardW))
+  const grid = layoutMiniChildren(nodes, node, { x: 0, y: 0, w, h: 0 }, expanded, {
+    topOffset: M.headH + M.progressH + M.padY,
+    pad: M.miniPad,
+    bottomPad: M.padY
+  })
+  if (grid.height <= 0) return false
+  const chromeH = M.headH + M.progressH + M.padY * 2 + M.footH
+  const availH = Math.max(0, Number(height) - chromeH)
+  return availH >= Math.ceil(grid.height * 0.5)
+}
+
 export function containerCardSize(nodes, node, expanded, width) {
-  const w = width ?? cardWidth(node)
   const open = isContainer(node) && expanded.has(node.id)
-  /* 无手动高度时按内容自动；有手动高度时保留，最小高度由折叠/展开状态决定。
-   * 展开后允许比内容矮，多出的迷你卡由画布的滚动内容区承接。 */
+  const w = width ?? adaptiveContainerWidth(nodes, node, expanded)
+  const kids = open ? childrenOf(nodes, node.id) : []
+  /* 无手动高度时按内容自动贴合；空容器采用紧凑空态高度，不再硬留大片空白。 */
   let autoH = M.collapsedH
   if (open) {
-    const rect = { x: 0, y: 0, w, h: 0 }
-    const grid = layoutMiniChildren(nodes, node, rect, expanded, {
-      topOffset: M.headH + M.progressH + M.padY,
-      pad: M.miniPad,
-      bottomPad: M.padY
-    })
-    autoH = M.headH + M.progressH + M.padY + grid.height + M.padY + M.footH
+    if (!kids.length) {
+      autoH = M.emptyOpenH
+    } else {
+      const rect = { x: 0, y: 0, w, h: 0 }
+      const grid = layoutMiniChildren(nodes, node, rect, expanded, {
+        topOffset: M.headH + M.progressH + M.padY,
+        pad: M.miniPad,
+        bottomPad: M.padY
+      })
+      autoH = M.headH + M.progressH + M.padY + grid.height + M.padY + M.footH
+    }
   }
-  const minH = open ? M.containerMinH : M.collapsedH
+  const minH = open ? (kids.length ? M.containerMinH : M.emptyOpenH) : M.collapsedH
   const manualH = Number(node.h) > 0 ? Math.max(minH, Number(node.h)) : null
   return { w, h: manualH ?? autoH }
 }
 
-/** 旧作品容器间距可能只有 320px：显式宽度优先，否则在相邻容器之间自适应收窄，
- * 避免 460 固定卡宽把同一排容器压在一起。 */
-function layerWidths(nodes, layer) {
+/** 旧作品容器间距可能只有 320px：折叠态或显式宽度按既有逻辑；展开态未锁宽时按内容自适应。 */
+function layerWidths(nodes, layer, expanded) {
   const out = new Map()
   const containers = layer.filter(isContainer).sort((a, b) => (Number(a.canvasX) || 0) - (Number(b.canvasX) || 0))
   for (let i = 0; i < containers.length; i++) {
     const n = containers[i]
+    if (expanded.has(n.id) && !n.manualW) {
+      out.set(n.id, adaptiveContainerWidth(nodes, n, expanded))
+      continue
+    }
     const base = Number(n.w) ? cardWidth(n) : M.cardW
     const next = containers[i + 1]
     const avail = next ? (Number(next.canvasX) || 0) - (Number(n.canvasX) || 0) - 20 : Infinity
@@ -247,16 +297,15 @@ function layerWidths(nodes, layer) {
 export function buildLayerLayout(nodes, scopeId, expanded, opts = {}) {
   const layer = layerNodes(nodes, scopeId)
   const sizes = new Map()
-  const widths = layerWidths(nodes, layer)
+  const widths = layerWidths(nodes, layer, expanded)
   const mini = { items: [], byId: new Map() }
   for (const n of layer) {
     const drag = opts.sizeOf?.(n)
     if (isContainer(n)) {
       if (drag) {
-        const minH = expanded.has(n.id) ? M.containerMinH : M.collapsedH
         sizes.set(n.id, {
           w: Math.max(M.cardMinW, Math.min(M.cardMaxW, Number(drag.w) || M.cardW)),
-          h: Math.max(minH, Number(drag.h) || minH)
+          h: Math.max(M.collapsedH, Number(drag.h) || M.collapsedH)
         })
       } else {
         sizes.set(n.id, containerCardSize(nodes, n, expanded, widths.get(n.id)))
@@ -322,16 +371,38 @@ export function projectRelations(entries, nodes, scopeId, layerLayout) {
     return null
   }
 
+  const byRelId = new Map(entries.map((e) => [e.rel.id, e]))
+  const hostDirectCache = new Map()
+  const hostDirect = (relId, visiting = new Set()) => {
+    if (!relId) return false
+    if (hostDirectCache.has(relId)) return hostDirectCache.get(relId)
+    if (visiting.has(relId)) return false
+    const entry = byRelId.get(relId)
+    if (!entry) return false
+    visiting.add(relId)
+    const { owner, rel } = entry
+    const srcOk = rel.fromJunction ? hostDirect(rel.fromJunction.relId, visiting) : Boolean(owner?.id && visible.has(owner.id))
+    const dstOk = rel.toJunction ? hostDirect(rel.toJunction.relId, visiting) : Boolean(rel.toId && visible.has(rel.toId))
+    const ok = srcOk && dstOk
+    visiting.delete(relId)
+    hostDirectCache.set(relId, ok)
+    return ok
+  }
+
   for (const { owner, rel } of entries) {
+    const fromDirectJunc = Boolean(rel.fromJunction && hostDirect(rel.fromJunction.relId))
+    const toDirectJunc = Boolean(rel.toJunction && hostDirect(rel.toJunction.relId))
     const fromRaw = rel.fromJunction?.ownerId || owner?.id
     const toRaw = rel.toJunction?.ownerId || rel.toId
     if (!fromRaw || !toRaw) continue
-    if (!inside.has(fromRaw) && !inside.has(toRaw)) continue
-    const from = project(fromRaw, 'in')
-    const to = project(toRaw, 'out')
-    if (!from || !to || from.id === to.id) continue
+    if (!fromDirectJunc && !toDirectJunc && !inside.has(fromRaw) && !inside.has(toRaw)) continue
+    const from = fromDirectJunc ? { id: fromRaw, projected: false } : project(fromRaw, 'in')
+    const to = toDirectJunc ? { id: toRaw, projected: false } : project(toRaw, 'out')
+    if (!from || !to) continue
+    if (!fromDirectJunc && !toDirectJunc && from.id === to.id) continue
     const kind = rel.kind || '关联'
-    const key = `${from.id}|${to.id}|${kind}`
+    const hasDirectJunction = fromDirectJunc || toDirectJunc || (Boolean(rel.junctions?.length) && !from.projected && !to.projected)
+    const key = hasDirectJunction ? `rel:${rel.id}` : `${from.id}|${to.id}|${kind}`
     if (!groups.has(key)) {
       groups.set(key, {
         key,
@@ -343,7 +414,9 @@ export function projectRelations(entries, nodes, scopeId, layerLayout) {
         relations: [],
         projected: false,
         projectedFrom: false,
-        projectedTo: false
+        projectedTo: false,
+        fromJunction: fromDirectJunc ? rel.fromJunction : null,
+        toJunction: toDirectJunc ? rel.toJunction : null
       })
     }
     const g = groups.get(key)
@@ -355,7 +428,29 @@ export function projectRelations(entries, nodes, scopeId, layerLayout) {
     g.projected = g.projectedFrom || g.projectedTo
   }
 
-  return { groups: [...groups.values()], external, visibleIds: visible }
+  /* 拓扑序：普通宿主边（深度 0）先于挂在连接点上的分支边（深度 1..N），确保连接点直接复用宿主渲染几何。 */
+  const list = [...groups.values()]
+  const groupByRelId = new Map()
+  for (const g of list) if (g.relations.length === 1) groupByRelId.set(g.relations[0].rel.id, g)
+  const depthMemo = new Map()
+  const depthOf = (g, visiting = new Set()) => {
+    if (depthMemo.has(g.key)) return depthMemo.get(g.key)
+    if (visiting.has(g.key)) return 0
+    visiting.add(g.key)
+    let d = 0
+    for (const ref of [g.fromJunction, g.toJunction]) {
+      if (!ref) continue
+      const host = groupByRelId.get(ref.relId)
+      if (host) d = Math.max(d, 1 + depthOf(host, visiting))
+    }
+    visiting.delete(g.key)
+    depthMemo.set(g.key, d)
+    return d
+  }
+  const indexed = list.map((g, i) => ({ g, i, d: depthOf(g) }))
+  indexed.sort((a, b) => a.d - b.d || a.i - b.i)
+
+  return { groups: indexed.map((x) => x.g), external, visibleIds: visible }
 }
 
 /** 容器跨边界关系（设置面板 / 接续列表）。 */

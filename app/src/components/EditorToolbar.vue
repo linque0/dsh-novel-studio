@@ -10,10 +10,23 @@ const props = defineProps({ editor: { type: Object, required: true }, compact: {
 const toolbar=ref(null),toolbarWidth=ref(0)
 const isCompact=computed(()=>props.compact||props.paperControls&&toolbarWidth.value<1100)
 const moreShow = ref(false)
+const EDITOR_FS_MIN = 13
+const EDITOR_FS_MAX = 24
+const EDITOR_FS_DEFAULT = 17
+const fsPopShow = ref(false)
 let widthObserver
 const work = useWorkStore()
 const ai = useAiStore()
 const ui = useUiStore()
+function setEditorFontSize(val) {
+  const n = Math.round(Number(val))
+  if (!Number.isFinite(n)) return
+  const next = Math.max(EDITOR_FS_MIN, Math.min(EDITOR_FS_MAX, n))
+  if (next !== ui.fontSize) ui.applyPref('fontSize', next)
+}
+function stepEditorFontSize(delta) {
+  setEditorFontSize((Number(ui.fontSize) || EDITOR_FS_DEFAULT) + delta)
+}
 
 const tick = ref(0)
 const onTr = () => tick.value++
@@ -97,6 +110,51 @@ const isActive = (name, attrs) => {
     <button class="tb" data-act="h1" :class="{ on: isActive('heading', { level: 1 }) }" title="标题一" @click="chain().toggleHeading({ level: 1 }).run()">H1</button>
     <button class="tb" data-act="h2" :class="{ on: isActive('heading', { level: 2 }) }" title="标题二" @click="chain().toggleHeading({ level: 2 }).run()">H2</button>
     <button class="tb" data-act="h3" :class="{ on: isActive('heading', { level: 3 }) }" title="标题三" @click="chain().toggleHeading({ level: 3 }).run()">H3</button>
+    <span class="tb-sep" />
+
+    <NPopover trigger="click" :show-arrow="false" placement="bottom-start" v-model:show="fsPopShow">
+      <template #trigger>
+        <button
+          type="button"
+          class="tb tb-editor-fs"
+          :class="{ on: fsPopShow }"
+          data-act="editor-font-size"
+          title="正文字号：调整正文编辑与阅读文字大小（13–24px）"
+          @click.stop
+        ><span>字号</span><b>{{ ui.fontSize }}px</b></button>
+      </template>
+      <div class="tb-fs-pop" @click.stop @mousedown.stop>
+        <div class="tb-fs-head">
+          <span>正文字号</span>
+          <button
+            v-if="ui.fontSize !== EDITOR_FS_DEFAULT"
+            type="button"
+            class="tb-fs-reset"
+            title="恢复默认 17px"
+            @click="setEditorFontSize(EDITOR_FS_DEFAULT)"
+          >默认 17px</button>
+        </div>
+        <div class="tb-fs-stepper">
+          <button type="button" data-act="editor-fs-down" aria-label="减小正文字号" :disabled="ui.fontSize <= EDITOR_FS_MIN" @click="stepEditorFontSize(-1)">−</button>
+          <output>{{ ui.fontSize }}<small>px</small></output>
+          <button type="button" data-act="editor-fs-up" aria-label="增大正文字号" :disabled="ui.fontSize >= EDITOR_FS_MAX" @click="stepEditorFontSize(1)">＋</button>
+        </div>
+        <div class="tb-fs-range">
+          <span>{{ EDITOR_FS_MIN }}</span>
+          <input
+            type="range"
+            :min="EDITOR_FS_MIN"
+            :max="EDITOR_FS_MAX"
+            step="1"
+            aria-label="正文字号"
+            :value="ui.fontSize"
+            @input="setEditorFontSize($event.target.value)"
+          />
+          <span>{{ EDITOR_FS_MAX }}</span>
+        </div>
+        <p class="tb-fs-note">调整正文编辑与阅读呈现大小，不改动文档格式</p>
+      </div>
+    </NPopover>
     <span class="tb-sep" />
 
     <NPopover trigger="click" :show-arrow="false" placement="bottom-start" v-model:show="moreShow">

@@ -1,5 +1,5 @@
 /**
- * 小说工坊使用手册结构化数据源（零 DOM 依赖）：
+ * 空想书典使用手册结构化数据源（零 DOM 依赖）：
  * - 按 4 大分组组织全部已上线功能，服务于 HelpManual.vue 双栏阅读与关键词检索；
  * - 文案遵循「说人话、动词开头、卡片标题 ≤ 8 字、说明 ≤ 35 字」规范。
  */
@@ -637,7 +637,7 @@ export const MANUAL_SECTIONS = {
       title: '本地路径与开发者说明',
       hint: '默认收起 · 面向源码运行、调试隔离与进阶排障',
       rows: [
-        { mode: '正式安装版', entry: 'novel-studio-setup-x.x.x.exe', purpose: '日常创作与分发', path: '%APPDATA%\\小说工坊' },
+        { mode: '正式安装版', entry: 'reverie-fiction-setup-x.x.x.exe', purpose: '日常创作与分发', path: '%APPDATA%\\小说工坊（兼容旧目录名）' },
         { mode: '生产源码启动', entry: 'npm start', purpose: '本地源码运行正式端', path: '%APPDATA%\\小说工坊' },
         { mode: '开发调试版', entry: 'npm run dev', purpose: '热更新调试（与正式库隔离）', path: '%APPDATA%\\小说工坊-dev' },
         { mode: '多开独立目录', entry: '--profile=自定义名称', purpose: '多实例隔离运行防锁库', path: '%APPDATA%\\小说工坊-自定义名称' }

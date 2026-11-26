@@ -4,7 +4,7 @@
 import { useLoreSort } from '../composables/useLoreSort.js'
 import { useLoreRowWindow } from '../composables/useLoreRowWindow.js'
 import { useLoreImages } from '../composables/useLoreImages.js'
-import { cleanLoreHtml, loreContentHtml, loreText, loreCaret, setLoreCaret, splitLoreSelection } from '../services/lore-editor-dom.js'
+import { cleanLoreHtml, clearLoreInlineColor, loreContentHtml, loreText, loreCaret, setLoreCaret, splitLoreSelection } from '../services/lore-editor-dom.js'
 import LoreLinkComposer from './lore/LoreLinkComposer.vue'
 import TaskLauncher from './ai/TaskLauncher.vue'
 import { ref, reactive, computed, watch, nextTick, onMounted, onActivated, onDeactivated, onBeforeUnmount } from 'vue'
@@ -25,6 +25,7 @@ import DLinkPicker from './DLinkPicker.vue'
 import LoreRelRows from './LoreRelRows.vue'
 import { popOut } from '../services/panelwindows'
 import { loreActiveFoldLevel, loreFoldedIdsForLevel, loreTreeMaxDepth } from '../services/lore-tree-layout.js'
+import { parseLoreQuery, searchLoreNodes } from '../services/lore-search.js'
 
 const work = useWorkStore()
 const ui = useUiStore()
@@ -59,26 +60,21 @@ const COLORS = ['#3c3427', '#8c6f4e', '#c0392b', '#d35400', '#27ae60', '#2980b9'
 const HIGHLIGHTS = ['#fff3a3', '#ffd6a5', '#ffa8a8', '#b8f2c9', '#a8d8ff', '#e0c3fc']
 
 /* ---------- 组合树（由 store 节点组装） ---------- */
+const searchHitCount = ref(0)
+const searchTokens = computed(() => parseLoreQuery(ui.mubuQuery))
+const isSearching = computed(() => searchTokens.value.length > 0)
+function isTagSearchHit(tag) {
+  if (!isSearching.value) return false
+  const low = String(tag || '').toLowerCase()
+  return searchTokens.value.some((tok) => low.includes(tok))
+}
 function build() {
   const { live, byId, children: byParent } = work.mubuIndex
-  /* 筛选：命中项保留其祖先链，其余不渲染（ui.mubuQuery 由侧栏搜索与行尾标签共享） */
-  const q = String(ui.mubuQuery || '').trim().toLowerCase()
-  const keep = new Set()
-  if (q) {
-    for (const n of live) {
-      const text = String(n.text || '').toLowerCase()
-      const tags = (n.tags || []).map((t) => String(t).toLowerCase())
-      if (!text.includes(q) && !tags.some((t) => t.includes(q))) continue
-      keep.add(n.id)
-      let cur = n
-      let guard = 0
-      while (cur?.parentId && guard++ < 200) {
-        keep.add(cur.parentId)
-        cur = byId.get(cur.parentId) || null
-      }
-    }
-  }
-  const ok = (n) => !q || keep.has(n.id)
+  /* 筛选：命中项保留其祖先链，其余不渲染（ui.mubuQuery 由侧栏搜索与行尾标签共享）；搜索时自动在整库范围检索 */
+  const { tokens, hitIds, keepIds } = searchLoreNodes(live, byId, ui.mubuQuery)
+  const hasQuery = tokens.length > 0
+  searchHitCount.value = hitIds.size
+  const ok = (n) => !hasQuery || keepIds.has(n.id)
   const make = (n) => ({
     key: 'm:' + n.id,
     id: n.id,
@@ -90,24 +86,26 @@ function build() {
     fold: !!n.fold,
     hasChildren: (byParent.get(n.id) || []).length > 0,
     parentId: n.parentId || null,
+    searchHit: hasQuery && hitIds.has(n.id),
+    searchContext: hasQuery && !hitIds.has(n.id),
     children: (byParent.get(n.id) || []).filter(ok).map(make)
   })
-  const roots = focusNode.value ? [focusNode.value] : byParent.get(null) || []
+  const roots = hasQuery ? (byParent.get(null) || []) : (focusNode.value ? [focusNode.value] : byParent.get(null) || [])
   rows.value = roots.filter(ok).map(make)
   builtVersion = ver.value
 }
+let localTextMutating = false
 watch([ver, editorActive], ([version, active]) => {
   if (active && version !== builtVersion) build()
 })
+watch(() => work.work?.id, () => ver.value++)
 watch(() => work.mubuSetId, () => ver.value++)
 watch(focusedRootId, () => ver.value++)
-watch(() => work.mubuRevision, () => ver.value++)
-watch(() => work.mubu.map(n => [n.id,n.parentId,n.sortOrder,n.deletedAt,n.heading,n.weight||'',(n.tags||[]).join(',')].join(':')).join('|'), () => ver.value++)
+watch(() => work.mubuRevision, () => {
+  if (localTextMutating) return
+  ver.value++
+})
 watch(() => work.mubuTagMeta, () => ver.value++, { deep: true })
-watch(
-  () => work.mubu.length,
-  () => ver.value++
-)
 watch(() => ui.mubuQuery, () => ver.value++)
 watch(
   () => ui.loreFocusId,
@@ -140,19 +138,19 @@ async function locateRow(id, focus = false) {
 }
 onMounted(() => { if (editorActive.value && builtVersion < 0) build() })
 
-/* 折叠状态展开成可见行（供 siblingsOf / 光标上下 / 拖拽复用） */
-function flattenRows(list, depth = 0) {
+/* 折叠状态展开成可见行（供 siblingsOf / 光标上下 / 拖拽复用；搜索期间视觉自动展开不改写持久化 fold） */
+function flattenRows(list, depth = 0, forceExpand = false) {
   const out = []
   const walk = (ls, d) => {
     for (const n of ls) {
       out.push({ node: n, depth: d })
-      if (!n.fold) walk(n.children, d + 1)
+      if (!n.fold || forceExpand) walk(n.children, d + 1)
     }
   }
   walk(list, depth)
   return out
 }
-const visible = computed(() => flattenRows(rows.value))
+const visible = computed(() => flattenRows(rows.value, 0, isSearching.value))
 // The toolbar can insert into the selected row or restore its last selection.
 const pinnedRows = computed(() => [
   visible.value[0]?.node.key,
@@ -164,8 +162,46 @@ const pinnedRows = computed(() => [
 ])
 const rowWindow = useLoreRowWindow(loreEditor, rowSurface, visible, pinnedRows)
 const { entries: renderRows, windowed: windowedRows } = rowWindow
-const entryTotal = computed(() => focusNode.value ? work.mubuDescendants(focusNode.value.id).length + 1 : work.liveMubu().length)
+const entryTotal = computed(() => (isSearching.value || !focusNode.value) ? work.mubuIndex.live.length : work.mubuDescendants(focusNode.value.id).length + 1)
 const filterText = computed(() => String(ui.mubuQuery || '').trim())
+function clearSearchHighlight() {
+  if (typeof CSS !== 'undefined' && CSS.highlights) CSS.highlights.delete('lore-search')
+}
+function syncSearchHighlight() {
+  if (typeof CSS === 'undefined' || !CSS.highlights || typeof Highlight === 'undefined' || typeof document === 'undefined') return
+  const tokens = searchTokens.value
+  if (!editorActive.value || !tokens.length || !rootEl.value) {
+    CSS.highlights.delete('lore-search')
+    return
+  }
+  const ranges = []
+  const textEls = rootEl.value.querySelectorAll('.ob-row.ob-search-hit .ob-text')
+  for (const el of textEls) {
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+    let node
+    while ((node = walker.nextNode())) {
+      const low = (node.nodeValue || '').toLowerCase()
+      if (!low) continue
+      for (const tok of tokens) {
+        let from = 0
+        while (from < low.length) {
+          const idx = low.indexOf(tok, from)
+          if (idx === -1) break
+          const range = document.createRange()
+          range.setStart(node, idx)
+          range.setEnd(node, idx + tok.length)
+          ranges.push(range)
+          from = idx + tok.length
+        }
+      }
+    }
+  }
+  if (ranges.length) CSS.highlights.set('lore-search', new Highlight(...ranges))
+  else CSS.highlights.delete('lore-search')
+}
+watch([renderRows, searchTokens, editorActive], () => {
+  nextTick(syncSearchHighlight)
+})
 function clearFilter() {
   ui.mubuQuery = ''
   ver.value++
@@ -184,7 +220,7 @@ const nodeCount = computed(() => {
 /* 底部提示行左端 = 当前条目的层级路径（原型 #write-location；未选中时退回当前集） */
 const locatePath = computed(() => {
   const id = ui.mubuSelectedId || ui.loreFocusId || contentRootId.value
-  const byId = new Map(work.liveMubu().map((n) => [n.id, n]))
+  const byId = work.mubuIndex.byId
   const segs = []
   let cur = id ? byId.get(id) : null
   let guard = 0
@@ -373,7 +409,12 @@ function onInput(row, e) {
   const el = e.currentTarget
   const text = loreText(el)
   const html = cleanLoreHtml(el.innerHTML)
-  work.mubuSetText(row.node.id, text, html)
+  localTextMutating = true
+  try {
+    work.mubuSetText(row.node.id, text, html)
+  } finally {
+    localTextMutating = false
+  }
   row.node.text = text
   row.node.html = html
   rememberPosition()
@@ -397,6 +438,17 @@ function fmt(cmd, val = null) {
   pushUndo()
   document.execCommand(cmd, false, val)
   syncFocusedRow()
+}
+function resetColor(kind) {
+  const active = document.activeElement?.classList?.contains('ob-text')
+    ? document.activeElement
+    : (ctx.rowId ? rowTextEl(ctx.rowId) : null)
+  if (!active) return
+  pushUndo()
+  if (clearLoreInlineColor(active, kind)) {
+    const id = active.closest('[data-node]')?.dataset.node?.slice(2)
+    if (id) work.mubuSetText(id, loreText(active), cleanLoreHtml(active.innerHTML))
+  }
 }
 
 function addSibling(row) {
@@ -590,10 +642,10 @@ function onBackspace(row) {
   }
 }
 
-/* ---------- 拖拽（三区指示 + 悬停自动展开 + FLIP） ---------- */
+/* ---------- 拖拽（虚拟滚动 + 推动让位 + FLIP 落位） ---------- */
 const loreSort = useLoreSort(loreEditor, work, () => [
-  contentRootId.value, ui.mubuQuery, ui.loreScope, ui.loreRootId, ui.mubuSelectedId
-], () => ver.value++, undefined, { freeEntries: true, prepareLift: rowWindow.expandForDrag })
+  contentRootId.value, ui.mubuQuery, ui.loreScope, ui.loreRootId
+], () => ver.value++, undefined, { freeEntries: true, rowWindow })
 watch(editorActive, (active) => {
   if (active) {
     nextTick(rowWindow.updateViewport)
@@ -850,13 +902,37 @@ function relChipText(id) {
   return s.count > 1 ? `${s.label} +${s.count - 1}` : s.label
 }
 const relPop = ref(null) // { nodeId, x, y, flip }
+const relPopEl = ref(null)
 const relPopEntries = computed(() => (relPop.value ? work.loreLinksOf('mubu', relPop.value.nodeId) : []))
 let relPopTimer = null
 function showRelPop(id, e) {
   clearTimeout(relPopTimer)
   const r = e.currentTarget.getBoundingClientRect()
   const flip = r.bottom > window.innerHeight - 220 && r.top > 220
-  relPop.value = { nodeId: id, x: Math.max(8, Math.min(r.left, window.innerWidth - 380)), y: flip ? r.top - 6 : r.bottom + 6, flip }
+  relPop.value = { nodeId: id, x: Math.max(8, Math.min(r.left, window.innerWidth - 300)), y: flip ? r.top - 6 : r.bottom + 6, flip }
+  nextTick(() => {
+    const el = relPopEl.value
+    if (!el || !relPop.value || relPop.value.nodeId !== id) return
+    const box = el.getBoundingClientRect()
+    const pad = 8
+    const gap = 6
+    const w = box.width || 280
+    const h = box.height || 140
+    let x = r.left + w <= window.innerWidth - pad ? r.left : r.right - w
+    x = Math.max(pad, Math.min(x, window.innerWidth - w - pad))
+    let nextFlip = false
+    let y = r.bottom + gap
+    if (y + h > window.innerHeight - pad) {
+      if (r.top - gap - h >= pad) {
+        nextFlip = true
+        y = r.top - gap
+      } else {
+        nextFlip = false
+        y = Math.max(pad, window.innerHeight - h - pad)
+      }
+    }
+    relPop.value = { nodeId: id, x, y, flip: nextFlip }
+  })
 }
 function hideRelPopSoon() {
   clearTimeout(relPopTimer)
@@ -952,10 +1028,12 @@ onDeactivated(() => {
   foldMenuOpen.value = false
   unbindMubuListeners()
   clearTimeout(relPopTimer)
+  clearSearchHighlight()
 })
 onBeforeUnmount(() => {
   unbindMubuListeners()
   clearTimeout(relPopTimer)
+  clearSearchHighlight()
 })
 
 /* ---------- 外壳（LoreWorkspace）驱动的入口 ----------
@@ -1000,16 +1078,22 @@ defineExpose({
         <template #trigger>
           <button class="tb" title="字体颜色" @mousedown.prevent><span style="border-bottom: 3px solid var(--accent)">A</span></button>
         </template>
-        <div class="ob-swatches">
-          <button v-for="c in COLORS" :key="c" class="swatch" :style="{ background: c }" :title="c" @mousedown.prevent @click="fmt('foreColor', c)" />
+        <div class="ob-swatch-pop">
+          <div class="ob-swatches">
+            <button v-for="c in COLORS" :key="c" class="swatch" :style="{ background: c }" :title="c" @mousedown.prevent @click="fmt('foreColor', c)" />
+          </div>
+          <button type="button" class="ob-swatch-reset" title="仅恢复默认字体颜色，保留加粗等其他格式" @mousedown.prevent @click="resetColor('color')">恢复默认颜色</button>
         </div>
       </NPopover>
       <NPopover trigger="click" :show-arrow="false">
         <template #trigger>
           <button class="tb" title="底色" @mousedown.prevent>底</button>
         </template>
-        <div class="ob-swatches">
-          <button v-for="c in HIGHLIGHTS" :key="c" class="swatch" :style="{ background: c }" :title="c" @mousedown.prevent @click="fmt('hiliteColor', c)" />
+        <div class="ob-swatch-pop">
+          <div class="ob-swatches">
+            <button v-for="c in HIGHLIGHTS" :key="c" class="swatch" :style="{ background: c }" :title="c" @mousedown.prevent @click="fmt('hiliteColor', c)" />
+          </div>
+          <button type="button" class="ob-swatch-reset" title="仅清除文字底色，保留加粗与字体颜色等其他格式" @mousedown.prevent @click="resetColor('background')">恢复无底色</button>
         </div>
       </NPopover>
       <button class="tb" title="清除格式" @mousedown.prevent @click="fmt('removeFormat')">清除</button>
@@ -1035,7 +1119,7 @@ defineExpose({
       <NPopover trigger="click" :show-arrow="false"><template #trigger><button class="tb" title="节点标题级别" @mousedown.prevent>H⌄</button></template><div class="lore-heading-menu"><button v-for="level in [0, 1, 2, 3]" :key="level" @mousedown.prevent @click="setHeading(level)">{{ level ? ['','一级标题','二级标题','三级标题'][level] : '普通节点' }}</button></div></NPopover>
       <button class="tb" title="插入双链" @mousedown.prevent @click="requestLink"><OIcon name="link" :size="12" /> 链接</button>
       <button class="tb lore-toolbar-overflow" :aria-expanded="mobileToolsOpen" @mousedown.prevent @click="mobileToolsOpen = !mobileToolsOpen">{{ mobileToolsOpen ? '收起工具' : '更多' }}</button>
-      <small class="ob-count">{{ nodeCount }} / {{ entryTotal }} 条目</small>
+      <small class="ob-count">{{ isSearching ? `命中 ${searchHitCount} / ${entryTotal} 条目` : `${nodeCount} / ${entryTotal} 条目` }}</small>
     </div>
 
     <input ref="imageInput" type="file" :accept="imageAccept" multiple hidden @change="onImageFiles" />
@@ -1054,12 +1138,14 @@ defineExpose({
           ['heading-' + row.node.heading]: !!row.node.heading,
           'has-children': row.node.hasChildren,
           'ns-row-on': ui.mubuSelectedId === row.node.id,
+          'ob-search-hit': row.node.searchHit,
+          'ob-search-ctx': row.node.searchContext,
         }"
 
         @contextmenu="onRowCtx(row, $event)"
       >
         <span v-for="d in row.depth" :key="d" class="ob-guide" :style="{ left: (d - 1) * 22 + 12 + 'px' }" />
-        <button class="ob-fold-toggle" :class="{ folded: row.node.fold, empty: !row.node.hasChildren }" :disabled="!row.node.hasChildren" :aria-expanded="!row.node.fold" :aria-label="row.node.fold ? '展开子节点' : '折叠子节点'" @click="toggleFold(row)"><OIcon name="caret-right" :size="12" /></button>
+        <button class="ob-fold-toggle" :class="{ folded: row.node.fold && !isSearching, empty: !row.node.hasChildren }" :disabled="!row.node.hasChildren" :aria-expanded="isSearching || !row.node.fold" :aria-label="row.node.fold ? '展开子节点' : '折叠子节点'" @click="toggleFold(row)"><OIcon name="caret-right" :size="12" /></button>
         <button
           class="ob-bullet"
           :class="{ 'has-children': row.node.hasChildren, folded: row.node.fold }"
@@ -1099,6 +1185,7 @@ defineExpose({
             v-for="t in row.node.tags"
             :key="t"
             class="ob-tag"
+            :class="{ 'is-search-hit': isTagSearchHit(t) }"
             type="button"
             :title="`筛选标签「${t}」`"
             @mousedown.prevent
@@ -1141,9 +1228,11 @@ defineExpose({
       </div>
       </section>
 
-      <!-- 关联关系悬停浮层（行尾卡片 hover；移入浮层保持，点击行跳转） -->
+      <!-- 关联关系悬停浮层（传送到 body，避免被 .lore-pane 的 backdrop-filter / overflow 偏移与裁切） -->
+      <Teleport to="body">
       <div
         v-if="relPop && relPopEntries.length"
+        ref="relPopEl"
         class="ob-relpop"
         :class="{ flip: relPop.flip }"
         :style="{ left: relPop.x + 'px', top: relPop.y + 'px' }"
@@ -1154,7 +1243,9 @@ defineExpose({
         <div class="ob-relpop-head">关联关系</div>
         <LoreRelRows :entries="relPopEntries" compact @pick="jumpRel" />
       </div>
+      </Teleport>
 
+      <Teleport to="body">
       <div v-if="ctx.open" ref="ctxEl" class="ob-ctx" :style="{ left: ctx.x + 'px', top: ctx.y + 'px' }" @contextmenu.prevent>
         <template v-if="!ctx.linkSearch">
         <div class="ctx-item" :class="{ disabled: !selectionText() }" @mousedown.prevent @click="doCutText()"><span>剪切</span><span class="hint">Ctrl+X</span></div>
@@ -1168,10 +1259,12 @@ defineExpose({
         <div class="ob-ctx-colors" @mousedown.prevent>
           <span style="font-size: 11px; color: var(--text-dim)">颜色</span>
           <button v-for="c in COLORS" :key="c" class="swatch" :style="{ background: c }" :title="c" @mousedown.prevent @click="runCtx(() => fmt('foreColor', c))" />
+          <button type="button" class="swatch swatch-reset" title="恢复默认字体颜色（保留其他格式）" aria-label="恢复默认字体颜色" @mousedown.prevent @click="runCtx(() => resetColor('color'))" />
         </div>
         <div class="ob-ctx-colors" @mousedown.prevent>
           <span style="font-size: 11px; color: var(--text-dim)">底色</span>
           <button v-for="c in HIGHLIGHTS" :key="c" class="swatch" :style="{ background: c }" :title="c" @mousedown.prevent @click="runCtx(() => fmt('hiliteColor', c))" />
+          <button type="button" class="swatch swatch-reset" title="恢复无底色（保留其他格式）" aria-label="恢复无底色" @mousedown.prevent @click="runCtx(() => resetColor('background'))" />
         </div>
         <div class="ctx-item" @mousedown.prevent @click="runCtx(() => fmt('removeFormat'))"><span>清除格式</span></div>
         <div class="ctx-sep" />
@@ -1208,6 +1301,7 @@ defineExpose({
           <button class="ctx-btn" style="width: 100%; margin-top: 8px" type="button" @mousedown.prevent @click="ctx.linkSearch = false">返回</button>
         </div>
       </div>
+      </Teleport>
     </div>
       <footer class="fusion-write-footer">
         <span class="wf-path">{{ locatePath }}</span>

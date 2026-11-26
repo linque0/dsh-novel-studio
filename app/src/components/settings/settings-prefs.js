@@ -21,7 +21,25 @@ export const LATIN_FONTS = {
 export const FONT_MAP = CJK_FONTS
 export const LATIN_MAP = LATIN_FONTS
 
-export const SETTINGS_DEFAULTS = { editorFont: 'song', editorLatin: 'none', fontSize: 17, topbarAutoHide: false, pageTransitions: true, flowSpeed: 1, panelTheme: 'host' }
+export const UI_FONT_SCALE_MIN = 85
+export const UI_FONT_SCALE_MAX = 140
+export const UI_FONT_SCALE_STEP = 5
+export const UI_FONT_SCALE_DEFAULT = 100
+export const UI_FONT_SCALE_PRESETS = [
+  { key: 'compact', label: '紧凑', value: 90 },
+  { key: 'standard', label: '标准', value: 100 },
+  { key: 'large', label: '偏大', value: 115 },
+  { key: 'xlarge', label: '超大', value: 130 }
+]
+
+export function normalizeUiFontScale(value) {
+  const n = value == null || value === '' ? NaN : Number(value)
+  if (!Number.isFinite(n)) return UI_FONT_SCALE_DEFAULT
+  const stepped = Math.round(n / UI_FONT_SCALE_STEP) * UI_FONT_SCALE_STEP
+  return Math.max(UI_FONT_SCALE_MIN, Math.min(UI_FONT_SCALE_MAX, stepped))
+}
+
+export const SETTINGS_DEFAULTS = { editorFont: 'song', editorLatin: 'none', fontSize: 17, uiFontScale: UI_FONT_SCALE_DEFAULT, topbarAutoHide: false, pageTransitions: true, flowSpeed: 1, panelTheme: 'dark' }
 
 /* 总稿 model.mjs:7 的 13–24px 区间与 12 步撤销窗口 */
 const FONT_SIZE_MIN = 13
@@ -31,7 +49,7 @@ export const SETTINGS_HISTORY_LIMIT = 12
 export const SETTINGS_SAVE_ERROR = '改动尚未保存，当前选择仍保留。请释放存储空间后重试。'
 
 /* 归一即真源：任何来源（appconfig、备份、跨窗口广播）的偏好都先过这里，
-   字体 key 只认表里有的，字号取整后夹在 13–24，topbarAutoHide 只认 === true。 */
+   字体 key 只认表里有的，字号取整后夹在 13–24，全局字体倍率夹在 85–140（步进 5），topbarAutoHide 只认 === true。 */
 export function normalizeSettingsPrefs(p = {}) {
   const src = p && typeof p === 'object' ? p : {}
   const size = src.fontSize == null ? NaN : Number(src.fontSize)
@@ -39,6 +57,7 @@ export function normalizeSettingsPrefs(p = {}) {
     editorFont: Object.hasOwn(CJK_FONTS, src.editorFont) ? src.editorFont : SETTINGS_DEFAULTS.editorFont,
     editorLatin: Object.hasOwn(LATIN_FONTS, src.editorLatin) ? src.editorLatin : SETTINGS_DEFAULTS.editorLatin,
     fontSize: Number.isFinite(size) ? Math.max(FONT_SIZE_MIN, Math.min(FONT_SIZE_MAX, Math.round(size))) : SETTINGS_DEFAULTS.fontSize,
+    uiFontScale: normalizeUiFontScale(src.uiFontScale),
     topbarAutoHide: src.topbarAutoHide === true,
     pageTransitions: src.pageTransitions !== false
   }

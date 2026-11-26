@@ -85,6 +85,7 @@ export const useWorkStore = defineStore('work', {
     lorelinks: [], // 条目级关联关系（关系链接）：设定↔设定 / 设定↔人物（Dexie v12 lorelinks 表，随作品全量载入）
     loreGraph: {}, // 关联关系图谱布局 { '<kind:id>'(中心): { '<kind:id>'(邻居): { x, y } } }（appconfig loreGraph:<workId>）
     olTypes: [], // 自定义模块类型（8.8.2-G2）：[{ name, color }]，节点以 mtype 引用
+    olTagColors: {}, // 大纲卡片自定义标签色覆盖 { [name]: hex }（appconfig olTagColors:<workId>）
     olUndo: [],
     olRedo: [],
     olUndoAt: 0,
@@ -259,6 +260,7 @@ export const useWorkStore = defineStore('work', {
       this.olUndo = []; this.olRedo = []; this.olUndoAt = 0
       await this.loadCanvasPrefs()
       await this.loadOlTypes()
+      await this.loadOlTagColors()
       await this.loadWordGoal()
       await this.loadMubuTagMeta()
       await this.loadMubuSet()
@@ -892,6 +894,7 @@ export const useWorkStore = defineStore('work', {
         row.sortOrder = siblings.reduce((m, s) => Math.max(m, s.sortOrder || 0), -1000) + 1000
         this.mubu.push(row)
       }
+      this.mubuRevision++
       autosave.mark('mubu', row)
       return row
     },
@@ -991,20 +994,25 @@ export const useWorkStore = defineStore('work', {
       const n = this.mubu.find((x) => x.id === id)
       if (!n) return
       n.fold = !n.fold
+      this.mubuRevision++
       autosave.mark('mubu', n)
     },
 
     mubuFoldAll(v) {
+      let changed = false
       for (const n of this.liveMubu()) {
         if (!this.mubuChildren(n.id).length) continue
         if (n.fold !== v) {
           n.fold = v
           autosave.mark('mubu', n)
+          changed = true
         }
       }
+      if (changed) this.mubuRevision++
     },
 
     mubuSetFoldMap(foldedIds, scopeIds = null) {
+      let changed = false
       for (const n of this.liveMubu()) {
         if (scopeIds && !scopeIds.has(n.id)) continue
         if (!this.mubuChildren(n.id).length) continue
@@ -1012,8 +1020,10 @@ export const useWorkStore = defineStore('work', {
         if (!!n.fold !== next) {
           n.fold = next
           autosave.mark('mubu', n)
+          changed = true
         }
       }
+      if (changed) this.mubuRevision++
     },
 
     mubuDescendants(id) {
@@ -1082,6 +1092,7 @@ export const useWorkStore = defineStore('work', {
         })
         if (wasParent !== targetParent) this.mubuNormalize(wasParent)
       }
+      this.mubuRevision++
     },
 
     mubuMoveOrder(id, dir) {
@@ -1094,6 +1105,7 @@ export const useWorkStore = defineStore('work', {
       const tmp = siblings[i].sortOrder
       siblings[i].sortOrder = siblings[j].sortOrder
       siblings[j].sortOrder = tmp
+      this.mubuRevision++
       autosave.mark('mubu', siblings[i])
       autosave.mark('mubu', siblings[j])
     },
@@ -1105,6 +1117,7 @@ export const useWorkStore = defineStore('work', {
         n.deletedAt = t
         autosave.mark('mubu', n)
       }
+      this.mubuRevision++
       this.ensureMubuSet()
     },
 
@@ -1122,6 +1135,7 @@ export const useWorkStore = defineStore('work', {
         n.deletedAt = null
         autosave.mark('mubu', n)
       }
+      this.mubuRevision++
     },
 
     async mubuPurge(id) {
@@ -1129,6 +1143,7 @@ export const useWorkStore = defineStore('work', {
       await db.mubu.bulkDelete(all)
       this.mubu = this.mubu.filter((n) => !all.includes(n.id))
       await this.purgeLoreLinksFor('mubu', all)
+      this.mubuRevision++
       this.ensureMubuSet()
     },
 
@@ -1240,11 +1255,15 @@ export const useWorkStore = defineStore('work', {
     olnodeAdd(parentId, fields = {}, afterId = null) {
       this.olnodePushUndo(true)
       const siblings = this.olnodeChildren(parentId)
+      const cleanTags = Array.isArray(fields.tags)
+        ? [...new Set(fields.tags.map((t) => String(t || '').trim().slice(0, 16)).filter(Boolean))]
+        : []
       const row = {
         id: uid(), workId: this.work.id, parentId: parentId || null, refId: null,
         kind: 'event', title: '', text: '', html: null, fold: false, sortOrder: 0,
         canvasX: null, canvasY: null, w: null, h: null, shape: 'process', status: '', pin: false, rels: [],
         deletedAt: null, createdAt: now(), updatedAt: now(), ...fields,
+        tags: cleanTags,
         ...(fields.kind === 'event' && !fields.status ? { status: 'planned' } : {})
       }
       if (afterId) {
@@ -1377,6 +1396,18 @@ export const useWorkStore = defineStore('work', {
         n.h = Math.round(h)
         n.manualH = true
       }
+      autosave.mark('olnodes', n)
+    },
+
+    /** 清除容器/节点手动尺寸锁，使其恢复自适应展开或默认折叠尺寸 */
+    olnodeClearSize(id) {
+      const n = this.olnodes.find((x) => x.id === id)
+      if (!n) return
+      if (n.w == null && n.h == null && !n.manualW && !n.manualH) return
+      n.w = null
+      n.h = null
+      delete n.manualW
+      delete n.manualH
       autosave.mark('olnodes', n)
     },
 
@@ -1646,6 +1677,62 @@ export const useWorkStore = defineStore('work', {
       autosave.mark('olnodes', n)
     },
 
+    /** 大纲卡片自定义标签配色表（按作品隔离，未覆盖的标签自动按 tagColor(name) 散列配色） */
+    async loadOlTagColors() {
+      try {
+        const row = await db.appconfig.get('olTagColors:' + this.work?.id)
+        this.olTagColors = row?.value && typeof row.value === 'object' && !Array.isArray(row.value) ? { ...row.value } : {}
+      } catch {
+        this.olTagColors = {}
+      }
+    },
+    async saveOlTagColors() {
+      if (!this.work) return
+      await db.appconfig.put({ key: 'olTagColors:' + this.work.id, value: JSON.parse(JSON.stringify(this.olTagColors || {})) })
+    },
+    olTagColorOf(name) {
+      const key = String(name || '').trim()
+      if (!key) return tagColor('')
+      return this.olTagColors?.[key] || tagColor(key)
+    },
+    olTagSetColor(name, color) {
+      const key = String(name || '').trim().slice(0, 16)
+      if (!key) return
+      const hex = String(color || '').trim()
+      const next = { ...(this.olTagColors || {}) }
+      if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(hex)) next[key] = hex
+      else delete next[key]
+      this.olTagColors = next
+      this.saveOlTagColors()
+    },
+    olAllTags() {
+      const counts = new Map()
+      for (const n of this.liveOlnodes()) {
+        if (!Array.isArray(n.tags)) continue
+        for (const raw of n.tags) {
+          const name = String(raw || '').trim()
+          if (!name) continue
+          counts.set(name, (counts.get(name) || 0) + 1)
+        }
+      }
+      return [...counts.entries()]
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-CN'))
+        .map(([name, count]) => ({ name, count, color: this.olTagColorOf(name), customColor: Boolean(this.olTagColors?.[name]) }))
+    },
+    olnodeSetTags(id, tags) {
+      const n = this.olnodes.find((x) => x.id === id)
+      if (!n) return
+      const next = [...new Set(
+        (Array.isArray(tags) ? tags : [])
+          .map((t) => String(t || '').trim().slice(0, 16))
+          .filter(Boolean)
+      )]
+      if (JSON.stringify(n.tags || []) === JSON.stringify(next)) return
+      this.olnodePushUndo()
+      n.tags = next
+      autosave.mark('olnodes', n)
+    },
+
     /**
      * 章节锚点懒挂载（8.8.2-G1）：首次在右栏输入本章速记时才创建锚点节点，
      * refId 关联章节（显示状态点与字数、可跳正文），不再预生成。
@@ -1883,18 +1970,22 @@ export const useWorkStore = defineStore('work', {
     },
 
     /* ---------- 连接点（挂在宿主连线上，v1.0.13） ---------- */
-    /** 在宿主连线 (ownerId, relId) 的路径参数 t 处创建连接点，返回 { id, t, bornAt }；
-     * bornAt 用于创建后短暂高亮（方便确认位置），随后淡出隐藏 */
-    olnodeJunctionAdd(ownerId, relId, t) {
+    /** 在宿主连线 (ownerId, relId) 的路径参数 t 处创建连接点，返回 { id, t, label, bornAt }；
+     * bornAt 用于创建后短暂高亮（方便确认位置），随后转为常驻分叉点态 */
+    olnodeJunctionAdd(ownerId, relId, t, opts = {}) {
       const n = this.olnodes.find((x) => x.id === ownerId)
       if (!n || !Array.isArray(n.rels)) return null
       const rel = flattenRelations([n]).find(e => e.rel.id === relId)?.rel
       if (!rel) return null
       this.olnodePushUndo(true)
-      const j = { id: uid(), t: Math.max(0, Math.min(1, t)), bornAt: Date.now() }
+      const tv = Number.isFinite(t) ? Math.max(0.04, Math.min(0.96, t)) : 0.5
+      const j = { id: uid(), t: tv, label: String(opts?.label || '').trim().slice(0, 24), bornAt: Date.now() }
       rel.junctions = [...(rel.junctions || []), j]
       autosave.mark('olnodes', n)
       return j
+    },
+    olnodeJunctionPatch(ownerId, relId, junctionId, patch = {}) {
+      return this.olnodeRelGesture({ type: 'junction-patch', ownerId, relId, junctionId, patch })
     },
     olnodeJunctionRemove(ownerId, relId, junctionId) {
       return this.olnodeRelGesture({ type: 'junction-remove', ownerId, relId, junctionId })

@@ -39,7 +39,7 @@ export const useAssistantTaskStore=defineStore('assistant-task',{
     async start(){
       const ai=useAiStore(),work=useWorkStore();this.error=''
       if(!ai.loaded)await ai.loadSettings()
-      if(!ai.ready){this.error='请先在工坊设置中配置模型';return false}
+      if(!ai.ready){this.error='请先在书典设置中配置模型';return false}
       const extraction=this.selected?.extraction
       const taskRequest={type:this.type,workId:work.work.id,chapterId:this.chapterId,targetId:this.module==='chapters'?this.chapterId:this.targetId||null,chapterIds:extraction?this.type==='memory.extract'?[this.chapterId]:this.chapterIds:[],selection:this.module==='chapters'?this.selection:''}
       ai.prepare('',{})

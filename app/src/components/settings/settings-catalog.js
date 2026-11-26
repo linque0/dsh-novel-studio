@@ -7,7 +7,7 @@
 export const SETTINGS_PAGES = [
   { key: 'appearance', title: '外观与排版', desc: '字体、字号与写作空间', icon: 'type', sub: '让文字呈现为你习惯的样子' },
   { key: 'data', title: '备份与数据', desc: '导入导出、备份与回收站', icon: 'storage', sub: '整理作品，备份每一次创作' },
-  { key: 'about', title: '帮助与关于', desc: '常用操作、手册与版本', icon: 'book', sub: '了解工坊，也找到顺手的用法' }
+  { key: 'about', title: '帮助与关于', desc: '常用操作、手册与版本', icon: 'book', sub: '了解书典，也找到顺手的用法' }
 ]
 
 export const SETTINGS_PAGE_KEYS = ['appearance', 'data', 'about']
@@ -15,9 +15,9 @@ export const SETTINGS_PAGE_KEYS = ['appearance', 'data', 'about']
 export const SETTINGS_CATALOG = [
   { id: 'editorFont', page: 'appearance', title: '中文正文字体', desc: '选择正文中的中文字形', terms: '思源宋体 文楷 京华老宋 朝华 云游 黑体 字体 font' },
   { id: 'editorLatin', page: 'appearance', title: '西文字体', desc: '英文与数字的字形搭配', terms: '英文 拉丁 Playfair Gothic 字体' },
-  { id: 'fontSize', page: 'appearance', title: '正文字号', desc: '在13–24px之间调整阅读与编辑字号', terms: '大小 排版 字号 缩放' },
+  { id: 'uiFontScale', page: 'appearance', title: '全局字体大小', desc: '在 85%–140% 之间调整全站界面、导航、菜单与弹窗文字大小', terms: '全局 字体 大小 缩放 大字 清晰 视力 界面 UI UX 字号' },
   { id: 'flowSpeed', page: 'appearance', title: '流动速度', desc: '调节背景动画速度', terms: '背景 动画 速度 静止' },
-  { id: 'panelTheme', page: 'appearance', title: '面板明暗', desc: '跟随宿主或独立选择浅色、深色', terms: '夜间 日间 主题 浅色 深色 宿主' },
+  { id: 'panelTheme', page: 'appearance', title: '主题切换', desc: '在浅色与深色面板之间切换，流动背景继续使用当前配色', terms: '深色 浅色 主题 面板 夜间 日间 明暗 切换 dark light' },
   { id: 'topbarAutoHide', page: 'appearance', title: '默认隐藏顶栏', desc: '移至顶部展开，让写作空间更安静', terms: '自动收起 导航 沉浸 界面' },
   { id: 'pageTransitions', page: 'appearance', title: '界面切换动画', desc: '书架与模块切换时的液态转场效果', terms: '动画 转场 切换 液态 过渡 瞬切 性能' },
   { id: 'storageLocation', page: 'data', title: '作品数据存储位置', desc: '把作品库搬到别的文件夹', terms: '路径 目录 移动 迁移 存储位置 数据目录 磁盘 library 备份盘' },
@@ -28,7 +28,7 @@ export const SETTINGS_CATALOG = [
   { id: 'trash', page: 'data', title: '回收站', desc: '找回删除的条目，或彻底移除', terms: '恢复 删除 还原 清理' },
   { id: 'help', page: 'about', title: '帮助与快捷键', desc: '了解常用操作与键盘入口', terms: '手册 使用 操作 Escape Tab Ctrl S' },
   { id: 'stats', page: 'about', title: '写作概览', desc: '查看作品、章节与正文的规模', terms: '统计 字数 数据' },
-  { id: 'version', page: 'about', title: '关于小说工坊', desc: '版本与本地优先的创作方式', terms: '版本 关于 幻流 DSH' }
+  { id: 'version', page: 'about', title: '关于空想书典', desc: '版本与本地优先的创作方式', terms: '版本 关于 幻流 DSH 空想书典' }
 ]
 
 /* 检索口径同总稿 model.mjs:18：trim + 小写，命中 title/desc/terms 任一段即算；空查询不返回全表。 */

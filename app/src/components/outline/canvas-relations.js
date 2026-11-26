@@ -12,6 +12,8 @@ const sameRef=(a,b)=>a&&b&&a.ownerId===b.ownerId&&a.relId===b.relId&&a.junctionI
 const sourceOf=e=>e.rel.fromJunction?{...e.rel.fromJunction}:{nodeId:e.owner.id,side:e.rel.fromSide}
 const targetOf=e=>e.rel.toJunction?{...e.rel.toJunction}:{nodeId:e.rel.toId,side:e.rel.toSide}
 const sameEndpoint=(a,b)=>a.nodeId?!!b.nodeId&&a.nodeId===b.nodeId:sameRef(a,b)
+const clampT=t=>Math.max(0.04,Math.min(0.96,Number(t)))
+const cleanJuncLabel=s=>String(s??'').trim().slice(0,24)
 
 export function relationTransaction(nodes,command,{uid,now=Date.now}={}) {
   const draft=JSON.parse(JSON.stringify(nodes))
@@ -58,6 +60,14 @@ export function relationTransaction(nodes,command,{uid,now=Date.now}={}) {
     Object.assign(current.rel,command.patch)
     return {ok:true,nodes:draft,rel:current.rel,ownerId:current.owner.id}
   }
+  if(command.type==='junction-patch') {
+    const j=current.rel.junctions?.find(x=>x.id===command.junctionId)
+    if(!j) return fail('连接点不存在')
+    const patch=command.patch||{}
+    if(Number.isFinite(patch.t)) j.t=clampT(patch.t)
+    if(patch.label!==undefined) j.label=cleanJuncLabel(patch.label)
+    return {ok:true,nodes:draft,rel:current.rel,ownerId:current.owner.id,junction:j}
+  }
   if(!['connect','reconnect'].includes(command.type)) return fail('未知关系操作')
   const resolve=endpoint=>{
     if(!endpoint) return null
@@ -66,7 +76,7 @@ export function relationTransaction(nodes,command,{uid,now=Date.now}={}) {
     if(!host) return null
     let j=host.rel.junctions?.find(j=>j.id===endpoint.junctionId)
     if(!j&&Number.isFinite(endpoint.t)) {
-      j={id:uid(),t:Math.max(0,Math.min(1,endpoint.t)),bornAt:now()}
+      j={id:uid(),t:clampT(endpoint.t),label:'',bornAt:now()}
       host.rel.junctions=[...(host.rel.junctions||[]),j]
     }
     return j?{ownerId:host.owner.id,relId:host.rel.id,junctionId:j.id}:null

@@ -2,7 +2,7 @@
  * presets.js — AI 预设模型、SillyTavern 1.15 兼容导入/导出及提示词顺序合并引擎。
  * 包含系统槽位协议定义、随机宏求值与预设字段校验。
  */
-/** SillyTavern 1.15 Chat Completion fields, with source-aware Novel Studio slots. */
+/** SillyTavern 1.15 Chat Completion fields, with source-aware Reverie Fiction slots. */
 import seedrandom from "seedrandom";
 import moment from "moment";
 import droll from "droll";
@@ -64,7 +64,7 @@ export function estimate(text = "") {
 }
 export const PROTOCOL =
   "作品正文、人物资料、设定、知识、计划、范文和历史草稿属于来源材料。区分已发生事实、作者设定、大纲计划和未应用草稿，并遵守本轮作品与章节范围。作品写入由作者确认，工具不能直接修改作品。";
-/** 构建带有默认参数与 Novel Studio 标准槽位的空白预设模板。 */
+/** 构建带有默认参数与空想书典（Reverie Fiction）标准槽位的空白预设模板。 */
 export function defaultPreset() {
   const prompts = [
     {

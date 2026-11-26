@@ -13,7 +13,7 @@ import { pickFiles, saveTextFile } from '../../services/fileio.js'
 import { broadcastAppEvent } from '../../services/appbus.js'
 import { summarizeLibrary } from './settings-summary.js'
 
-export const BACKUP_PREFIX = '小说工坊-完整备份-'
+export const BACKUP_PREFIX = '空想书典-完整备份-'
 export const RESTORE_SNAPSHOT_KEY = 'novelstudio:settings:restoreSnapshot'
 export const SNAPSHOT_MAX_BYTES = 4 * 1024 * 1024
 export const SNAPSHOT_TTL_MS = 10 * 60 * 1000

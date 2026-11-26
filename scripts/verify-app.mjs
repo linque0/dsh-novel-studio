@@ -4053,8 +4053,8 @@ async function settingsProbe(frame, out, width) {
       + (currentCat[0] ? currentCat[0].getAttribute('data-page') : '(无)') + '（期望 1 项 / about）')
   /* 页脚版本号不带 v（总稿 app.mjs:22 的 nav-foot 就是「小说工坊 · 0.2.8」）；
      关于页那句「DSH 插件版 · v0.2.8」仍带 v，两条都要在，别把哪一条改跑偏。 */
-  need('侧栏页脚带版本号（不带 v）', txt('.nav-foot').indexOf('小说工坊 · 0.2.8') >= 0 && txt('.nav-foot').indexOf('v0.2.8') < 0,
-    '实测「' + txt('.nav-foot') + '」（期望含 小说工坊 · 0.2.8，且不含 v0.2.8：总稿 nav-foot 不带 v）')
+  need('侧栏页脚带版本号（不带 v）', txt('.nav-foot').indexOf('空想书典 · 0.2.8') >= 0 && txt('.nav-foot').indexOf('v0.2.8') < 0,
+    '实测「' + txt('.nav-foot') + '」（期望含 空想书典 · 0.2.8，且不含 v0.2.8：总稿 nav-foot 不带 v）')
   /* 侧栏页脚必须是块级两行：themes.css 里那条未加 .lore-shell 前缀的
      .nav-foot{display:flex;white-space:nowrap} 曾把说明行顶成同一行、并被 .pane 的 overflow 裁掉
      （2026-11-06 在 settings-fusion.css:62 补 display:block;white-space:normal 修复）。
@@ -4302,11 +4302,11 @@ async function settingsProbe(frame, out, width) {
       '实测「' + txt('.backup-time') + '」（期望 尚未创建备份）')
 
     click('[data-act="backup"]')
-    const dlRes = await req('download', { prefix: '小说工坊-完整备份-', suffix: '.json', timeoutMs: 30000 })
+    const dlRes = await req('download', { prefix: '空想书典-完整备份-', suffix: '.json', timeoutMs: 30000 })
     const dlName = dlRes && !dlRes.error ? String(dlRes.name) : ''
-    need('完整备份真实落盘', !!dlName && /^小说工坊-完整备份-\d{4}-\d{2}-\d{2}\.json$/.test(dlName) && Number(dlRes.size) > 100,
+    need('完整备份真实落盘', !!dlName && /^空想书典-完整备份-\d{4}-\d{2}-\d{2}\.json$/.test(dlName) && Number(dlRes.size) > 100,
       dlRes && !dlRes.error
-        ? ('实测磁盘文件「' + dlName + '」' + dlRes.size + ' 字节，正文首段「' + String(dlRes.head || '').slice(0, 40) + '」（期望 小说工坊-完整备份-YYYY-MM-DD.json 且内容非空）')
+        ? ('实测磁盘文件「' + dlName + '」' + dlRes.size + ' 字节，正文首段「' + String(dlRes.head || '').slice(0, 40) + '」（期望 空想书典-完整备份-YYYY-MM-DD.json 且内容非空）')
         : '未等到下载：' + JSON.stringify(dlRes))
     await wait(700)
     const backupTimeTxt = txt('.backup-time')
@@ -4630,7 +4630,7 @@ async function settingsRestoreProbe(frame, out, width) {
     before.error ? before.error : ('实测作品 ' + JSON.stringify(before.works) + '（期望 >=2 本：恢复要能看出差异）'))
 
   click('[data-act="backup"]')
-  const dl = await req('download', { prefix: '小说工坊-完整备份-', suffix: '.json', timeoutMs: 30000 })
+  const dl = await req('download', { prefix: '空想书典-完整备份-', suffix: '.json', timeoutMs: 30000 })
   need('恢复链路的第一步：真实备份落盘', !!dl && !dl.error && Number(dl.size) > 100,
     dl && !dl.error ? ('实测磁盘文件「' + dl.name + '」' + dl.size + ' 字节') : ('未等到备份：' + JSON.stringify(dl)))
   const prep = await req('prepare-backup', { source: dl && dl.name ? dl.name : '', target: 'settings-restore-target.json', title: '换库验证书', chapterTitle: '恢复后的第一章' }, 30000)

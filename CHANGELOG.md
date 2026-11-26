@@ -1,6 +1,8 @@
 # 更新记录 · Changelog
 
-本文档记录 `dsh-novel-studio`（小说工坊 DSH 插件版）各版本同步自桌面端 `novel-studio` 的核心能力与构建产物变更。
+> **更名说明**：本插件原名「小说工坊 DSH 插件版」，随桌面端已正式更名为 **「空想书典（Reverie Fiction）DSH 插件版」**；为兼容宿主安装与共享作品库，npm 包名 `@linque0/dsh-novel-studio`、插件标识 `novel-studio` 及共享指针路径维持原值。
+
+本文档记录 `dsh-novel-studio`（空想书典 DSH 插件版）各版本同步自桌面端 `novel-studio` 的核心能力与构建产物变更。
 
 ---
 

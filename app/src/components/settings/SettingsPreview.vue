@@ -7,7 +7,14 @@ import { computed, inject, ref, watch } from 'vue'
 import { useUiStore } from '../../stores/ui'
 import { useWorkStore } from '../../stores/work'
 import { stripTags } from '../../services/wordcount.js'
-import { CJK_FONTS, LATIN_FONTS } from './settings-prefs.js'
+import {
+  CJK_FONTS,
+  LATIN_FONTS,
+  UI_FONT_SCALE_MIN,
+  UI_FONT_SCALE_MAX,
+  UI_FONT_SCALE_STEP,
+  normalizeUiFontScale
+} from './settings-prefs.js'
 import { SETTINGS_TOAST_KEY } from './settings-toast.js'
 
 const FALLBACK_WORK = '长夜将明'
@@ -46,9 +53,10 @@ const cjkFont = computed(() => CJK_FONTS[ui.editorFont] || CJK_FONTS.song)
 const latinFont = computed(() => LATIN_FONTS[ui.editorLatin] || LATIN_FONTS.none)
 /* 西文栈在前：拉丁字符落到西文字形，汉字回落中文栈（与 stores/ui.js 的 --editor-font 同序） */
 const previewFont = computed(() => [latinFont.value.stack, cjkFont.value.stack].filter(Boolean).join(', '))
+const uiScale = computed(() => normalizeUiFontScale(ui.uiFontScale))
 const previewSize = computed(() => `${ui.fontSize}px`)
 const fontName = computed(() => cjkFont.value.label + (ui.editorLatin !== 'none' ? ' / ' + latinFont.value.label : ''))
-const sizeName = computed(() => `${ui.fontSize} px · 行高 1.95`)
+const sizeName = computed(() => `全局 ${uiScale.value}% · 正文 ${ui.fontSize} px`)
 
 /* ---------- 字体载入：切字体先报「正在载入」，落定后写回常态文案 ----------
  * token 防竞态：连点字体时只允许最后一次载入改写 caption，
@@ -75,12 +83,10 @@ async function loadFonts() {
 
 watch(() => [ui.editorFont, ui.editorLatin], loadFonts)
 
-/* ---------- 字号：窄屏预览里直接调，边界与外观页一致 ---------- */
-const MIN_SIZE = 13
-const MAX_SIZE = 24
-function stepSize(delta) {
-  const next = Math.min(MAX_SIZE, Math.max(MIN_SIZE, Number(ui.fontSize) + delta))
-  if (next !== ui.fontSize) ui.applyPref('fontSize', next)
+/* ---------- 全局字体大小：窄屏预览里直接调，边界与外观页一致 ---------- */
+function stepScale(delta) {
+  const next = normalizeUiFontScale(uiScale.value + delta * UI_FONT_SCALE_STEP)
+  if (next !== uiScale.value) ui.applyPref('uiFontScale', next)
 }
 function onPickFont(event) {
   ui.applyPref('editorFont', event.target.value)
@@ -102,11 +108,11 @@ function onPickFont(event) {
         <option v-for="(font, key) in CJK_FONTS" :key="key" :value="key">{{ font.label }}</option>
       </select>
       <div class="size-stepper">
-        <button type="button" data-act="font-down" aria-label="减小预览字号" title="减小预览字号" :disabled="ui.fontSize <= MIN_SIZE" @click="stepSize(-1)">
+        <button type="button" data-act="ui-scale-down" aria-label="减小全局字体大小" title="减小全局字体大小" :disabled="uiScale <= UI_FONT_SCALE_MIN" @click="stepScale(-1)">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /></svg>
         </button>
-        <output id="preview-mobile-size">{{ ui.fontSize }}<small>px</small></output>
-        <button type="button" data-act="font-up" aria-label="增大预览字号" title="增大预览字号" :disabled="ui.fontSize >= MAX_SIZE" @click="stepSize(1)">
+        <output id="preview-mobile-size">{{ uiScale }}<small>%</small></output>
+        <button type="button" data-act="ui-scale-up" aria-label="增大全局字体大小" title="增大全局字体大小" :disabled="uiScale >= UI_FONT_SCALE_MAX" @click="stepScale(1)">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
         </button>
       </div>

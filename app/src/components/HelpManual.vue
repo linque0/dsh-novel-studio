@@ -84,9 +84,9 @@ const nextSection = computed(() =>
     : null
 )
 
-const modalTitle = computed(() => (nsPlugin ? '小说工坊使用手册' : '小说工坊桌面版使用手册'))
+const modalTitle = computed(() => (nsPlugin ? '空想书典使用手册' : '空想书典桌面版使用手册'))
 const colophonText = computed(() =>
-  nsPlugin ? `小说工坊插件版 · v${APP_VERSION}` : `小说工坊桌面版 · v${APP_VERSION}`
+  nsPlugin ? `空想书典插件版 · v${APP_VERSION}` : `空想书典桌面版 · v${APP_VERSION}`
 )
 
 function scrollMainTop() {

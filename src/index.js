@@ -61,7 +61,7 @@ const VERSION = (() => {
 
 /* 稳定 persona：不含时间戳/版本号/作品名，保证多轮之间字节一致（命中前缀缓存）。 */
 const PERSONA = [
-  '你是小说工坊的创作助手，和作者在同一份作品库上工作。',
+  '你是空想书典的创作助手，和作者在同一份作品库上工作。',
   '作品库里有正文、目录、人物、设定与规划；它们都以工具返回的当前版本为准，不要凭记忆复述。',
   '读正文先看目录与字数，再按游标分页读取；不要假装读过未读取的章节。',
   '规划是意图，正文是事实；作者设定是创作约束，不能当作已发生的剧情。',
@@ -340,7 +340,7 @@ export async function apply(ctx, config = {}) {
   }
   if (failedTools.length) ctx.logger?.warn?.('[novel-studio] 共 ' + failedTools.length + ' 个工具未注册');
   if (!library) {
-    ctx.logger?.warn?.('[novel-studio] 未指定作品库：请设置 libraryDir 或让小说工坊写入 ' + pointerPath());
+    ctx.logger?.warn?.('[novel-studio] 未指定作品库：请设置 libraryDir 或让空想书典写入 ' + pointerPath());
   }
 
   /* 技能 */

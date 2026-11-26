@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import { fileURLToPath } from 'node:url'
 import { readFileSync } from 'node:fs'
 import vue from '@vitejs/plugin-vue'
+import postcssUiFontScale from './tools/postcss-ui-font-scale.mjs'
 
 /* 版本号只有一个真源：仓库根 package.json（app/package.json 是前端工程自己的版本，不是插件版本）。
    手工抄一份必然与发布号漂移，所以构建时现读。 */
@@ -14,6 +15,11 @@ export default defineConfig({
   root: fileURLToPath(new URL('.', import.meta.url)),
   base: './',
   plugins: [vue()],
+  css: {
+    postcss: {
+      plugins: [postcssUiFontScale()]
+    }
+  },
   define: { __NS_PLUGIN__: JSON.stringify(true), __NS_VERSION__: JSON.stringify(version) },
   build: {
     outDir: '../assets/app',

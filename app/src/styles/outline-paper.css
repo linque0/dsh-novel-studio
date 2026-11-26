@@ -933,6 +933,40 @@
   background: color-mix(in srgb, var(--oc-line, #dfe3dc) 70%, transparent);
 }
 .oc-mini-content { position: relative; }
+@keyframes oc-mini-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes oc-mini-group-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+  }
+}
+.oc-mini-scroll.oc-mini-entering,
+.oc-mini-scroll.oc-mini-leaving {
+  overflow: hidden;
+}
+.oc-mini-scroll.oc-mini-entering .oc-mini {
+  animation: oc-mini-card-in 210ms cubic-bezier(0.22, 1, 0.36, 1) var(--mini-delay, 0ms) both;
+}
+.oc-mini-scroll.oc-mini-leaving {
+  pointer-events: none;
+  transform-origin: center top;
+  animation: oc-mini-group-out 180ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
 @media (prefers-reduced-motion: reduce) {
   .oc-canvas-surface { transition: none; }
+  .oc-mini-scroll.oc-mini-entering .oc-mini,
+  .oc-mini-scroll.oc-mini-leaving { animation: none !important; }
 }

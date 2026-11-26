@@ -112,6 +112,7 @@ const metaOf = (n, depth) => {
     badge: [n.kind === 'event' && n.status ? STATUS[n.status] : '', ch ? `${ch.wordCount || 0}字` : '', n.kind === 'container' ? `${work.olnodeChildren(n.id).length}项` : '', rels ? `↔${rels}` : ''].filter(Boolean).join(' '),
     mtype,
     mcolor: mtype ? work.olTypes.find((t) => t.name === mtype)?.color || 'var(--text-dim)' : '',
+    tags: Array.isArray(n.tags) ? n.tags : [],
     broken: showBroken.value && (isTail || isMissing),
     brokenTip: isTail ? '烂尾情节（无后继）' : isMissing ? '缺铺垫（无来源）' : ''
   }
@@ -122,7 +123,7 @@ const modules = computed(() => {
   const nodes = work.liveOlnodes()
   const match = (m) =>
     (typeFilter.value === '全部' || m.type === typeFilter.value || m.mtype === typeFilter.value) &&
-    (!kw || m.label.toLowerCase().includes(kw))
+    (!kw || m.label.toLowerCase().includes(kw) || m.tags.some((t) => t.toLowerCase().includes(kw)))
   const byParent = new Map()
   for (const n of nodes) {
     const p = n.parentId || null
@@ -214,7 +215,7 @@ onMounted(() => {
      </button>
      <NDropdown trigger="click" :options="draftAddOptions" @select="draftAction"><button type="button" aria-label="添加模块"><Glyph name="plus" :size="16"/></button></NDropdown>
    </div>
-   <label v-if="nodeCount" class="tree-search"><Glyph name="search" :size="14"/><input v-model="q" placeholder="搜索事件、章节…" aria-label="侧栏搜索模块"/></label>
+   <label v-if="nodeCount" class="tree-search"><Glyph name="search" :size="14"/><input v-model="q" placeholder="搜索事件、标签、章节…" aria-label="侧栏搜索模块"/></label>
    <div v-if="advancedOpen" class="draft-tree-filters"><button v-for="t in TYPES" :key="t" type="button" :aria-pressed="typeFilter===t" @click="typeFilter=t">{{t}}</button><input v-model="newTypeName" placeholder="新类型名称" @keydown.enter="addType"/><button type="button" @click="addType">添加类型</button><button v-for="t in customTypes" :key="t.name" type="button" @click="work.olTypeRemove(t.name)">移除 {{t.name}}</button></div>
    <button v-if="nodeCount" type="button" class="tree-topline" @click="home">全书情节 <span class="count">{{nodeCount}}</span></button>
    <div class="draft-tree-scroll" aria-label="故事结构树">

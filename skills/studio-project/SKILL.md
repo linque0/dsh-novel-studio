@@ -1,6 +1,6 @@
 ---
 name: studio-project
-description: 在小说工坊作品库里接手当前作品，按需查阅目录、正文、人物与设定；讨论剧情与写作时使用。
+description: 在空想书典（Reverie Fiction）作品库里接手当前作品，按需查阅目录、正文、人物与设定；讨论剧情与写作时使用。
 ---
 
 # 作品库接手

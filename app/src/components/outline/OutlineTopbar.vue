@@ -33,7 +33,7 @@ function action(key){
 <template>
   <AutoHideTopbar class="outline-topbar-shell" :auto-hide="ui.topbarAutoHide" @update:auto-hide="v=>ui.setPref('topbarAutoHide',v)">
     <header class="outline-topbar app-topbar" :class="{'panel-topbar':detached}">
-      <button class="brand" type="button" aria-label="小说工坊，返回书架" @click="emit('navigate','shelf')">小说工坊 <small>幻流</small></button>
+      <button class="brand" type="button" aria-label="空想书典，返回书架" @click="emit('navigate','shelf')">空想书典 <small>幻流</small></button>
       <nav class="nav" aria-label="功能模块"><button v-for="item in nav" :key="item.key" type="button" :data-nav="item.key" :class="{active:item.key==='outline'}" :aria-current="item.key==='outline'?'page':undefined" @click="emit('navigate',item.key)">{{item.label}}</button></nav>
       <div class="top-actions"><span class="saved app-topbar-save" :data-save-state="ui.autosave.saving?'saving':ui.autosave.pending?'dirty':'saved'" role="status"><Glyph name="check" :size="13"/> {{saved}}</span><button class="round" type="button" aria-label="搜索" @click="ui.searchOpen=true"><Glyph name="search"/></button><WritingStatsEntry class="round" /><NDropdown trigger="click" :options="options" placement="bottom-end" @select="action"><button class="round" type="button" aria-label="设置"><Glyph name="gear"/></button></NDropdown></div>
       <span class="outline-mobile-title">{{work.work?.title}}</span>

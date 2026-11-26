@@ -17,7 +17,7 @@ const stamp = () => {
 
 export async function backupAll() {
   const json = await exportBackupJson()
-  return saveTextFile(`novel-studio-备份-${stamp()}.json`, json)
+  return saveTextFile(`空想书典-备份-${stamp()}.json`, json)
 }
 
 export async function restoreBackup(arrayBuffer) {
@@ -257,7 +257,7 @@ export async function buildBookDocx(work, volumes, chapters, onlyIds) {
   const coreXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${esc(work.title)}</dc:title>${work.author ? `<dc:creator>${esc(work.author)}</dc:creator>` : ''}<dcterms:created xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:created></cp:coreProperties>`
   const appXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Novel Studio</Application></Properties>`
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Reverie Fiction</Application></Properties>`
   const zip = new JSZip()
   zip.file('[Content_Types].xml', contentTypesXml)
   zip.folder('_rels').file('.rels', relsXml)

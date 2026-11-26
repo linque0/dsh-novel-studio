@@ -121,7 +121,7 @@ async function boot() {
   /* 设置窗口与全局预设窗口：无作品上下文，不打开作品 */
   if (s.type === 'settings' || s.type === 'ai-presets' && s.workId === '__global__') {
     status.value = 'ready'
-    document.title = '小说工坊 · ' + (PANEL_TITLES[s.type] || '面板')
+    document.title = '空想书典 · ' + (PANEL_TITLES[s.type] || '面板')
     return
   }
   try {
@@ -148,7 +148,7 @@ async function boot() {
   if (s.type === 'lore' && s.entityId) ui.mubuSelectedId = s.entityId
   if (s.type === 'snippets') work.selSnippetId = s.entityId || work.liveSnippets[0]?.id || null
   status.value = 'ready'
-  document.title = `小说工坊 · ${work.work?.title || ''} · ${panelTitle.value}`
+  document.title = `空想书典 · ${work.work?.title || ''} · ${panelTitle.value}`
 }
 
 /* 实体锁跟随面板当前选中（章节/人物/灵感；大纲/设定为整模块锁无需迁移） */

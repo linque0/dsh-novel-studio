@@ -163,7 +163,11 @@ function selectNode(id) {
 }
 async function navigateFromTree(id, created = false) {
   if (!id) return
-  if (ui.loreScope !== 'all' && ui.loreRootId && !work.mubuPath(id).some(node => node.id === ui.loreRootId)) showAllEntries()
+  const searching = Boolean(String(ui.mubuQuery || '').trim())
+  if (ui.loreScope !== 'all' && ui.loreRootId && !work.mubuPath(id).some(node => node.id === ui.loreRootId)) {
+    if (searching && !created) ui.navigateLore({ rootId: null, rootPath: [], scope: 'all' })
+    else showAllEntries()
+  }
   if (ui.loreView === 'detail') ui.navigateLore({ activeId: id, selectedId: id })
   selectNode(id)
   await nextTick()

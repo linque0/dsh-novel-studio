@@ -57,10 +57,10 @@ const scrollKey = computed(() => (query.value ? 'search' : page.value))
 const breadcrumb = computed(() => (query.value ? '搜索' : page.value === 'appearance' ? '外观' : page.value === 'data' ? '数据' : '关于'))
 const headTitle = computed(() => (query.value ? '搜索设置' : pageMeta.value.title))
 const footRight = computed(() => {
-  if (query.value) return '快速定位工坊偏好'
+  if (query.value) return '快速定位书典偏好'
   if (page.value === 'appearance') return '改动即时生效'
   if (page.value === 'data') return '作品与偏好 · 当前设备'
-  return '小说工坊 · 幻流'
+  return '空想书典 · 幻流'
 })
 const saveState = computed(() => (ui.prefsSave.error ? 'error' : ui.prefsSave.pending ? 'dirty' : 'saved'))
 
